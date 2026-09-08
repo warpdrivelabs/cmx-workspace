@@ -1,72 +1,73 @@
-# CMX Presentation — 元数据驱动平台前端
+# CMX Workspace — 元数据驱动企业平台 · 多仓工作区
 
-> 元数据驱动的企业级全栈平台前端：门户运行时 + 可视化设计器 + 数据层 Web Components。
-> 与后端 [cmx-container](https://github.com/) 配套。
+CMX 全家桶工作区：**10 个 Rust 后端微服务仓 + 3 个前端仓 + 1 个开发控制台**，元数据驱动（换一份定义 JSON 即得一套单据/字典/报表/流程），根仓承载导航、技能、文档与脚本等共享资产。
 
-![License](https://img.shields.io/badge/license-Apache--2.0-blue)
+## 目录结构
 
-## 这是什么
-
-**presentation** 是 npm workspace monorepo：
-
-- **CMXPortalManager**（门户运行时，路由 `/portal/`）
-- **CMXHTMLDesigner**（可视化设计器，路由 `/html/`）
-- **packages/cmx-data-comp**（数据层 Web Components：主从表格、组合框、树表、公式编辑器、单据/字典/报表组件…）
-- **packages/cmx-ui5-runtime**（共享 UI5/Tabler 运行时，路由 `/shared/`）
-
-后端 **cmx-container**（Rust 多 crate workspace）提供元数据驱动的单据（DOC）/ 数据字典（DCT）/ 报表（RPT）/ 流程（FLOW）存储与服务、异步任务中心、插件系统。
-
-## 核心特性
-
-- **元数据驱动**：换一份定义 JSON 即得一套 L1..Ln 单据的装载/回存/建表，零专属代码。
-- **数据层组件**：主从协调（CmxMasterSlave）、列模型（CmxColumnModel）、数据集（CmxDataSet）、增量 changeset。
-- **报表**：可视化设计器 + 应用器、自定义取数函数（QM/QC）、浮动行列动态展开、协同编辑。
-- **无框架 Web Components**：组件层不依赖 React/Vue/Angular，可嵌入任意宿主。
+```
+cmx-workspace/
+├── backend/                    # Rust 后端仓（10 个独立 Git 仓）
+│   ├── cmx-container/          # 公用库 + 插件平台 + 资产真源 assets/<svc>/（无 server bin）
+│   ├── cmx-portalservice/      # 门户主应用 cmx-portal-server  :8080
+│   ├── cmx-flowengine/         # 流程 cmx-flow-server           :8091
+│   ├── cmx-report/             # 报表 cmx-rpt-server            :8092
+│   ├── cmx-model/              # 模型/元数据中心 :8093
+│   ├── cmx-rulesengine/        # 规则 :8094
+│   ├── cmx-mdm/                # 主数据治理 :8095
+│   ├── cmx-ontology/           # 企业本体平台 :8097
+│   ├── cmx-data-auth/          # 数据权限引擎 :8098
+│   └── cmx-agent/              # 桌面智能体（CLI/桌面壳，M1）
+├── frontend/                   # 前端仓（3 个独立 Git 仓）
+│   ├── cmx-enterprise-portal/  # 前端 npm workspace（Portal + Designer + 组件包）
+│   ├── cmx-mega-sheet/         # 自研电子表格引擎（TypeScript Web Components）
+│   └── cmx-ontology-graph/     # 本体图可视化编辑组件
+├── cmx-launcher/               # 开发服务控制台 :8100（启停/日志/target 治理）
+├── .agents/skills/             # 跨子项目技能（12 个）
+├── documents/                  # 人工方案库（唯一真源）
+├── docs/                       # 历史 / 专题设计资料（只读参考）
+├── scripts/                    # 根级脚本（资产发布等）
+└── AGENTS.md                   # AI 协作导航 + 全局硬约束（必读）
+```
 
 ## 快速开始
 
-### 依赖
-- Node + npm、（配合后端）Rust + PostgreSQL
-
-### 构建
 ```bash
-npm install
-npm run build          # 构建各子项目（portal / designer / 共享运行时）
+# 1. 克隆本仓（backend/frontend/launcher 为空壳，子仓见下一步）
+git clone https://gitee.com/warpdrivelabs/cmx-workspace.git
+cd cmx-workspace
+
+# 2. 初始化 14 个子仓（幂等，可重跑；对 AI 说"初始化工程"亦可）
+bash .agents/skills/workspace-init/scripts/init-workspace.sh
+
+# 3. 前端（:5173）
+cd frontend/cmx-enterprise-portal && npm install && npm run dev:portal
+
+# 4. 后端门户主应用（:8080，需 PostgreSQL）
+cd backend/cmx-portalservice && ./portal.sh
 ```
 
-### 测试
-```bash
-npm test               # vitest
-npm run lint
-```
+日常开发推荐用 [`cmx-launcher`](cmx-launcher/README.md)（:8100）一键启停全部服务；各引擎微服务用各仓 `*.sh` 启动，详见 `AGENTS.md` §七。
 
-前后端一键起、同源托管等见后端 cmx-container 的 README。
+## 文档与规范
 
-## 架构
+| 资料 | 位置 | 说明 |
+|------|------|------|
+| AI 协作导航 | `AGENTS.md` | 目录规范、技能索引、全局硬约束、Git 多仓规则 |
+| 方案库 | `documents/` | 跨子项目方案/计划唯一真源（按 `yyyyMMdd_模块_中文标题.md` 命名） |
+| 历史专题资料 | `docs/` | 只读参考，勿写新方案 |
+| 仓库 Wiki | `.qoder/repowiki/` | 自动生成，与代码冲突以代码为准 |
+| 各仓手册 | 各子仓 `README.md` / `docs/` | 架构 / API / 测试手册 |
 
-```
-presentation (前端 monorepo)              cmx-container (后端 Rust workspace)
-├─ CMXPortalManager   /portal/            ├─ crates/web/web-server        HTTP 入口
-├─ CMXHTMLDesigner    /html/              ├─ crates/libs/cmx-biz          单据/字典业务
-├─ packages/cmx-data-comp   数据层组件     ├─ crates/libs/cmx-rpt/*        报表
-└─ packages/cmx-ui5-runtime /shared/      ├─ crates/libs/cmx-flow/*       流程引擎
-                                          ├─ crates/libs/cmx-job/*        异步任务中心
-   构建产物 dist/ ← web-server 同源托管 →  └─ crates/libs/cmx-*            字典/门户/插件…
-```
+## 仓库清单
 
-## 第三方与商业依赖（部署方必读）
+14 个子仓均为独立 Git 仓（远端统一 `gitee.com/warpdrivelabs`），清单真源在 `init-workspace.sh`：
 
-本项目**核心**采用 Apache-2.0，但部分**增强组件**目前依赖商业授权库。开源产物**不打包**这些商业包；使用相关功能需自备合法授权：
+`backend/`：cmx-container · cmx-portalservice · cmx-agent · cmx-flowengine · cmx-report · cmx-model · cmx-rulesengine · cmx-mdm · cmx-ontology · cmx-data-auth
+`frontend/`：cmx-enterprise-portal · cmx-mega-sheet · cmx-ontology-graph
+根下：cmx-launcher
 
-| 组件 | 用途 | 授权 | 状态 |
-|------|------|------|------|
-| `@mescius/spread-sheets`·`spread-excelio`（SpreadJS） | 报表可视化设计器/应用器的电子表格引擎 | 商业 | 隔离在 `packages/cmx-data-comp/src/components/spreadjs/` 单一 wrapper 之后；替换/可选化方案评估中 |
-| `@infragistics/*`（Ignite UI） | 部分表格/仪表组件 | 商业 | 使用面盘点中；非报表主链路 |
+> 子仓内容**不进本仓**（嵌套独立仓）；提交前 `git status -sb` 确认范围，详见 `AGENTS.md` §六。
 
-> 报表设计器的电子表格引擎替换方案（含开源引擎评估）见 `docs/`。未持有上述商业授权时，相关设计器功能不可用，但不影响其余组件与后端。
+## 参与贡献 / 安全 / 许可
 
-## 参与贡献
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请见 [SECURITY.md](SECURITY.md)（**勿开公开 Issue**）。
-
-## 许可证
-[Apache-2.0](LICENSE)。
+见 [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)（**勿开公开 Issue**） · [LICENSE](LICENSE)（Apache-2.0）

@@ -298,7 +298,6 @@ npm workspace 在 `frontend/cmx-enterprise-portal/`（**不是工作区根**）�
 ### 根目录遗留（重组后失效，待清理）
 
 - `e2e-struct.mjs` / `shot-hdr.mjs`：Playwright 脚本，写死旧机器 macOS 路径（`/Users/nanomesh/...`），已不可用。
-- 根 `README.md`：仍是旧"presentation monorepo"自述，与现三分结构不符（前端自述见 `frontend/cmx-enterprise-portal/`）。
 - `.gitignore` 中 `docs-site/` 相关规则：`docs-site/` 目录已不存在，为历史遗留。
 
 ***
