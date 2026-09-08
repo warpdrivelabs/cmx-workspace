@@ -20,7 +20,7 @@
 | `.agents/skills/`    | 根级跨子项目技能（11 个，见 §三）                                                                      |
 | `documents/`         | 人工方案库（唯一真源，见 §四、8 / §九）                                                                  |
 | `docs/`              | 历史 / 专题设计资料区（只读参考，见 §九）                                                                   |
-| `scripts/`           | 根级脚本（**`init-workspace.sh` 子仓初始化** / `publish-assets.sh` / `check-asset-ownership.py` / `generate_*.py` ×3） |
+| `scripts/`           | 根级脚本（`publish-assets.sh` / `check-asset-ownership.py` / `generate_*.py` ×3）              |
 | `.qoder/repowiki/`   | 自动生成的仓库 Wiki + 模块知识库（生成物，勿手改）                                                              |
 
 ### 1.2 `backend/` —— Rust 后端仓（10 个）
@@ -111,7 +111,7 @@
 | `meta-enricher`         | 批量**补全元数据**字段 edit/display/width 等列属性（EDIT_MODES 规范值域，幂等）                                          |
 | `plan-naming`           | 用 `/plan` 创建方案文档（全工作区唯一真源）                                                                          |
 | `cmx-flow-toolkit`      | cmx-flowengine 双模式：流程定义部署、流程测试数据重建                                                               |
-| `workspace-init`        | **刚克隆根仓后的工作区初始化**：一句"初始化工程"触发，跑 `scripts/init-workspace.sh` 幂等克隆 14 个子仓 + 校验 + 后续步骤指引        |
+| `workspace-init`        | **刚克隆根仓后的工作区初始化**：一句"初始化工程"触发，跑技能自带 `scripts/init-workspace.sh` 幂等克隆 14 个子仓 + 校验 + 后续步骤指引 |
 | `config-sync`           | 根级版（与 cmx-container 内同名技能**内容不同、各自演化**：根级面向全工作区，container 版面向其仓内 `config/` 模板）                      |
 | `sql-guide`             | 根级版（同上，与 container 内同名技能内容不同）                                                                     |
 
@@ -194,8 +194,7 @@
 > **🚀 新克隆根仓后的初始化**：clone `cmx-workspace` 后 `backend/`、`frontend/`、`cmx-launcher/` 为空，对 AI 说一句**"初始化工程"**（触发技能 `workspace-init`），或直接执行：
 >
 > ```bash
-> ./scripts/init-workspace.sh            # 幂等克隆全部 14 个子仓（--depth 1 浅克隆 / --update 顺带更新 / --dry-run 试跑）
-> # PowerShell / cmd 终端改用：bash scripts/init-workspace.sh（Windows 装 Git 即自带 bash）
+> bash .agents/skills/workspace-init/scripts/init-workspace.sh   # 幂等完整克隆全部 14 个子仓（--update 顺带更新 / --dry-run 试跑）
 > ```
 >
 > 子仓清单**唯一真源**在该脚本的 `REPOS` 数组；新增/下线子仓时改脚本并同步本节仓库清单。

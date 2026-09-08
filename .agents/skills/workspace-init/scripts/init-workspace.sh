@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
-# 初始化 CMX 工作区：把 14 个子仓按 backend/ + frontend/ + cmx-launcher/ 三分结构克隆到位。
+# 初始化 CMX 工作区：把 14 个子仓按 backend/ + frontend/ + cmx-launcher/ 三分结构克隆到位（完整克隆，不浅克）。
 # 幂等：已存在的 Git 仓默认跳过；非 Git 目录视为冲突报错（不自动覆盖，人工处理）。
 # 本脚本的 REPOS 清单是子仓清单唯一真源——新增/下线子仓时改这里，并同步 AGENTS.md §六。
-# 用法: ./scripts/init-workspace.sh [--depth N] [--update] [--dry-run]
-#   --depth N   浅克隆（如 --depth 1 只拉最新一层提交，省时省盘；后续需要全量历史再 git fetch --unshallow）
+# 用法: bash .agents/skills/workspace-init/scripts/init-workspace.sh [--update] [--dry-run]
 #   --update    已存在的仓顺带 git pull --ff-only 更新（默认跳过不动）
 #   --dry-run   只打印将执行的动作，不实际 clone/pull
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# 脚本位于 <根>/.agents/skills/workspace-init/scripts/，向上 4 层即工作区根
+ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
+[ -f "$ROOT/AGENTS.md" ] || { echo "定位工作区根失败: $ROOT（缺少 AGENTS.md，请确认脚本位于 cmx-workspace 工作区内）" >&2; exit 2; }
 ORG="https://gitee.com/warpdrivelabs"
 
-DEPTH=""
 UPDATE=0
 DRY=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --depth)   DEPTH="${2:?--depth 需要参数}"; shift 2 ;;
     --update)  UPDATE=1; shift ;;
     --dry-run) DRY=1; shift ;;
-    *) echo "未知参数: $1（用法: $0 [--depth N] [--update] [--dry-run]）" >&2; exit 2 ;;
+    *) echo "未知参数: $1（用法: $0 [--update] [--dry-run]）" >&2; exit 2 ;;
   esac
 done
 
@@ -62,9 +61,9 @@ for path in $(printf '%s\n' "${!REPOS[@]}" | sort); do
     echo "✗ 冲突    $path 已存在但不是 Git 仓（人工处理后再跑，本脚本不覆盖）" >&2
     conflicted=$((conflicted+1)); conflict_list="$conflict_list $path"
   else
-    echo "+ clone   $path  ←  $url${DEPTH:+ （depth $DEPTH）}"
+    echo "+ clone   $path  ←  $url"
     if [ "$DRY" -eq 1 ]; then ok=$((ok+1)); continue; fi
-    if git clone ${DEPTH:+--depth "$DEPTH"} "$url" "$dst"; then ok=$((ok+1)); else failed=$((failed+1)); fail_list="$fail_list $path"; fi
+    if git clone "$url" "$dst"; then ok=$((ok+1)); else failed=$((failed+1)); fail_list="$fail_list $path"; fi
   fi
 done
 
