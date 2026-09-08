@@ -299,7 +299,6 @@ npm workspace 在 `frontend/cmx-enterprise-portal/`（**不是工作区根**）�
 
 ### 根目录遗留（重组后失效，待清理）
 
-- `e2e-struct.mjs` / `shot-hdr.mjs`：Playwright 脚本，写死旧机器 macOS 路径（`/Users/nanomesh/...`），已不可用。
 - `.gitignore` 中 `docs-site/` 相关规则：`docs-site/` 目录已不存在，为历史遗留。
 
 ***
@@ -312,7 +311,7 @@ npm workspace 在 `frontend/cmx-enterprise-portal/`（**不是工作区根**）�
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `.qoder/repowiki/zh/content/`         | **仓库 Wiki（自动生成，中文）**——前端侧为主：`项目概览.md` / `快速开始.md` / `开发指南.md` + 11 个专题目录（`架构设计`、`门户管理器 (CMXPortalManager)`、`可视化设计器 (CMXHTMLDesigner)`、`数据组件库 (cmx-data-comp)`、`电子表格引擎 (cmx-mega-sheet)`、`共享包`、`扩展开发`、`最佳实践`、`故障排除`、`部署运维`、`API 参考文档`） | **入门 / 补背景首选**（读，别改）；元数据 `.qoder/repowiki/zh/meta/repowiki-metadata.json` |
 | `.qoder/repowiki/knowledge/zh/`       | **模块知识库（自动生成）**——含 `_index.yaml` + 构建发布体系、配置体系（TOML + Nacos）、日志体系（tracing / chassis）、错误处理体系、样式体系（UI5 + Neo）、npm 依赖管理等条目 | **改某模块前**先读该条目的 `概述` / `架构设计` / `技术栈` / `编码规范` / `特殊配置与命令` |
-| `documents/`                          | **人工方案库（唯一真源，见 §四、8）**——根 37 个方案散文件 + `plans/`（22）、`MDM主数据管理平台/`（20）、`复杂问题分析/`（3）、`技术债/`（3）                                    | **新方案 / 计划写这里**，按 `plan-naming` 命名                     |
+| `documents/`                          | **人工方案库（唯一真源，见 §四、8）**——根 42 个散文件（33 md + 9 html，含方案与专题研究文档）+ `plans/`（22）、`MDM主数据管理平台/`（20）、`复杂问题分析/`（3）、`技术债/`（3）                                    | **新方案 / 计划写这里**，按 `plan-naming` 命名                     |
 | `docs/`                              | **历史 / 专题设计资料区**——79 个条目（DCT/DOC 元数据、MDM、Rust-WASM、SAP FI/CO 参考、报表 / 权限 / 编码引擎、WorkBuddy / cmx-agent 系列、本体平台系列等 + `CMXPortalManager+CMXHTMLDesigner-模型体系文档/`、`assets/`、`.cache/` 脚本抓取缓存） | **查历史设计**用；❌ 不要往里写新方案                                 |
 | 子仓 `docs/` + `README.md`             | 各仓自身架构 / API / 测试手册（如 `backend/cmx-container/docs/{sql,assessments}`、`backend/cmx-flowengine/docs/{usage,biz-test,agent-flows}`、`backend/cmx-report/docs/summary`、`backend/cmx-rulesengine/docs/full-test`） | 后端细节查这里；跨子项目材料**不要**塞进去（§六、4）                       |
 
