@@ -1,6 +1,6 @@
 # BPMN 定义语法与部署契约（重参考）
 
-> 模式A（定义创建）的完整语法契约。真源：`cmx-flowengine/docs/usage/{02,03,04,05,06}-*.md`；
+> 模式A（定义创建）的完整语法契约。真源：`backend/cmx-flowengine/docs/usage/{02,03,04,05,06}-*.md`；
 > 本文件是"写 spec + 部署 + 冒烟"所需的全部速查，不必回读全部文档。
 
 ## 1. spec JSON 结构（create_flow_def.py 输入）
@@ -100,7 +100,7 @@ endEvent 可省：出度 0 的节点自动连到唯一终点；终点多个时�
   先用模式B 的复原 SQL 灌入（examples/manifest-20260816.json 里有 fin_review/dept_review 两套矩阵），
   或直接给 callActivity 用 `calledElement` 直调。
 - 语义 BPMN 无 DI：设计工作台打开自动 BFS 布局，不必生成图形坐标。
-- 生成物落盘建议：`cmx-flowengine/docs/<测试集>/defs/<key>.bpmn`（与既有 defs 目录同级惯例），
+- 生成物落盘建议：`backend/cmx-flowengine/docs/<测试集>/defs/<key>.bpmn`（与既有 defs 目录同级惯例），
   spec 文件与 BPMN 同目录留存，便于模式B 下一轮把该定义纳入复原范围。
 
 ## 9. 常见坑（模式A）

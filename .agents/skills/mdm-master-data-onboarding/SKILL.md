@@ -22,7 +22,7 @@ description: 指导在 CMX MDM 模块新增一种主数据类型（客户/物料
 你改/配的东西                                            生效方式
 ────────────────────────────────────────────────────────────────
 ① DCT 元数据 JSON（头+明细字典）                         文件即真源，运行时直读
-   cmx-container/assets/model/data/meta/definitions/basic/dataplatform/mdm/
+   backend/cmx-container/assets/model/data/meta/definitions/basic/dataplatform/mdm/
         dataplatform_dct_meta_v1.json
 ② 物理表 + seed                                         模型中心 deploy（DCT→SEED 顺序）
    seed/cm_<type>.json（文件名=物理表名）
@@ -48,9 +48,9 @@ description: 指导在 CMX MDM 模块新增一种主数据类型（客户/物料
 
 | # | 产物 | 文件/位置 | 操作 | 性质 |
 |---|---|---|---|---|
-| 1 | DCT 字典元数据 | `cmx-container/assets/model/data/meta/definitions/basic/dataplatform/mdm/dataplatform_dct_meta_v1.json` | 改：`dictionaryTables` 追加头表 `customer` + 明细表 | 纯配置 |
+| 1 | DCT 字典元数据 | `backend/cmx-container/assets/model/data/meta/definitions/basic/dataplatform/mdm/dataplatform_dct_meta_v1.json` | 改：`dictionaryTables` 追加头表 `customer` + 明细表 | 纯配置 |
 | 2 | seed 示例数据 | `…/mdm/seed/cm_customer.json`（+ 明细 `cm_customer_bank.json`） | 新建 | 纯数据 |
-| 3 | 菜单节点 | `cmx-container/assets/model/data/menu-pages/basic/dataplatform/mdm/mdm-menu.json` | 改：加「客户列表」workspace-node | 纯配置 |
+| 3 | 菜单节点 | `backend/cmx-container/assets/model/data/menu-pages/basic/dataplatform/mdm/mdm-menu.json` | 改：加「客户列表」workspace-node | 纯配置 |
 | 4 | 编码规则 | `docs/sql/v2/biz/migrations/<日期>_<序号>_customer_code_rule.up.sql`（cmx_code_rule 在业务库） | 新建迁移 seed | 数据 |
 | 5 | 查重规则（可选） | 同上迁移，或查重界面维护 | seed `md_match_config` | 数据 |
 | 6 | **激活映射** | `mdm_activation`（运行库） | 「激活映射配置器」UI 配 create+update | **必配，最易漏** |
@@ -175,7 +175,7 @@ description: 指导在 CMX MDM 模块新增一种主数据类型（客户/物料
 
 ## 六、菜单节点（props 注入 + 必须同步 cmx_menu）
 
-改 `cmx-container/assets/model/data/menu-pages/basic/dataplatform/mdm/mdm-menu.json`。**菜单为职能三段式（2026-08-19 重组）**：`mdm-archives`（主数据档案，按往来单位/物料/财务/组织人事四域夹归组实体）/ `mdm-cr-all`（变更申请单，全类型聚合，**勿动**）/ `mdm-governance`（治理与分发）。**新类型只做一件事**：在对应域夹下加 1 个档案节点——**不再加配对的「XX单据列表」节点**，聚合节点 `mdm-cr-all` 的类型下拉/类型列按激活映射动态生成，新类型接入自动出现。新域无处安放时先与用户确认建新域夹。**公共页恒定 `portal.mdm.master-list`，差异全在 props**：
+改 `backend/cmx-container/assets/model/data/menu-pages/basic/dataplatform/mdm/mdm-menu.json`。**菜单为职能三段式（2026-08-19 重组）**：`mdm-archives`（主数据档案，按往来单位/物料/财务/组织人事四域夹归组实体）/ `mdm-cr-all`（变更申请单，全类型聚合，**勿动**）/ `mdm-governance`（治理与分发）。**新类型只做一件事**：在对应域夹下加 1 个档案节点——**不再加配对的「XX单据列表」节点**，聚合节点 `mdm-cr-all` 的类型下拉/类型列按激活映射动态生成，新类型接入自动出现。新域无处安放时先与用户确认建新域夹。**公共页恒定 `portal.mdm.master-list`，差异全在 props**：
 
 ```jsonc
 {

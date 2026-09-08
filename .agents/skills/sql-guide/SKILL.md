@@ -1,11 +1,16 @@
 ---
 name: sql-guide
-description: SQL 编写与维护指南（docs/sql/v2 双库目录 platform/biz、init_ddl/init_dml、migrations 增量迁移）。当用户要求编写或维护 SQL 文件、新建表（必须先询问归属主库还是业务库）、建迁移文件、或询问 init/migrations 使用规范时必用。
+description: SQL 编写与维护指南（SQL 真源目录 backend/cmx-container/docs/sql/，v2 双库目录 platform/biz、init_ddl/init_dml、migrations 增量迁移）。当用户要求编写或维护 SQL 文件、新建表（必须先询问归属主库还是业务库）、建迁移文件、或询问 init/migrations 使用规范时必用。
 ---
 
 # SQL 编写与维护指南（v2 · 主库/业务库分离）
 
 本文档定义 cmx-container 项目中 SQL 文件的编写规范和维护流程。
+
+> **⚠️ SQL 真源目录（2026-09 结构重组强调）**：SQL 文件一律写入 **`backend/cmx-container/docs/sql/`**。
+> 下文所有 `docs/sql/...` 均为**相对 cmx-container 仓根**的写法，实际定位时必须带上 `backend/` 前缀；
+> 旧平铺路径 `cmx-container/docs/sql/`（工作区根下）已不存在，勿写入。
+
 结构与引擎行为自 2026-08-19 起按 v2 执行；旧目录 `docs/sql/init | migrations | seed/`
 是历史归档，**只读不改不再被引擎读取**。
 
@@ -14,7 +19,7 @@ description: SQL 编写与维护指南（docs/sql/v2 双库目录 platform/biz�
 ## 一、目录结构与库划分规则
 
 ```
-docs/sql/v2/
+backend/cmx-container/docs/sql/v2/     # SQL 真源，全部新增/修改都写这里
 ├── platform/                     # → 主库（[[databases]] default = true 的数据源）
 │   ├── init_ddl.sql              # 全部 cmx_ 平台表全量 DDL（无损幂等）
 │   ├── init_dml.sql              # 主库全部内置种子（无损幂等）

@@ -162,7 +162,7 @@ const fmtT = (t) => (__CMX_DT ? __CMX_DT.fmtDateTime(t) : (t ? String(t) : ''))
 - HTML 片段：`.html` 文件，含可选 `<script>`（由宿主包函数作用域执行）
 
 ### Step 4：登记 index.json
-native-page 需在 `cmx-container/assets/portal/data/native-pages/index.json` 登记：
+native-page 需在 `backend/cmx-container/assets/portal/data/native-pages/index.json` 登记：
 ```jsonc
 { "id":"portal.xxx.xxx", "name":"页面名", "details":"说明", "sourceType":"js", "relPath":"portal/xxx/xxx.js" }
 ```

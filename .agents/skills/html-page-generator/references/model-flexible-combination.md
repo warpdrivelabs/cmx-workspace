@@ -95,7 +95,7 @@ columnModel.setMembers(columns)  ← 改写目标列模型
 | `module` | 模块 | `fi_gl_base_data` / `cmxfico` |
 | `scenario` | 业务场景 | `account`（科目辅助核算）/ `trade`（交易明细） |
 
-后端：模型中心微服务（独立仓 `cmx-model`），规则真源 `cmx-model/data/meta/flexible-combination/<domain>/<app>/<module>/<scenario>.json`，门户经反代暴露 `/api/flexible-combination/*`（`cmx-container/assets/model/data/meta/` 下同名文件为迁移遗留副本，勿改）。
+后端：模型中心微服务（独立仓 `cmx-model`），规则真源 `backend/cmx-model/data/meta/flexible-combination/<domain>/<app>/<module>/<scenario>.json`，门户经反代暴露 `/api/flexible-combination/*`（`backend/cmx-container/assets/model/data/meta/` 下同名文件为迁移遗留副本，勿改）。
 
 ---
 

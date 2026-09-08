@@ -629,8 +629,8 @@ def validate_rows(rows):
 # 引擎表结构演进后需先对账再更新此处（见 SKILL.md「DDL 对账」）。
 DDL_IAM = r"""
 -- 对齐平台真源（列超集；时间列为 TIMESTAMP 无时区，与平台一致）：
---   cmx-container/docs/sql/migrations/20260615_002_iam_tables.up.sql（user/role/user_role）
---   cmx-container/docs/sql/migrations/20260720_001_cmx_flow_engine.up.sql（org/position/user_position/subflow_binding）
+--   backend/cmx-container/docs/sql/migrations/20260615_002_iam_tables.up.sql（user/role/user_role）
+--   backend/cmx-container/docs/sql/migrations/20260720_001_cmx_flow_engine.up.sql（org/position/user_position/subflow_binding）
 CREATE TABLE IF NOT EXISTS cmx_user (
     id            VARCHAR(64)  NOT NULL,
     username      VARCHAR(100) NOT NULL,

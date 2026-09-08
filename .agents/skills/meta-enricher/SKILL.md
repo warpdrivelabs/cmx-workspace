@@ -1,11 +1,11 @@
 ---
 name: meta-enricher
-description: 为 CMX 字典/单据元数据（cmx-container/assets/model/data/meta/definitions）批量补全 edit / display / width / required / visible / frozen 等列属性。当用户要求"补全元数据字段的录入控件和显示属性""按规范值域给字段加 edit.mode/display""修复元数据的合法值"或提到 EDIT_MODES、display.mode、field-edit-display-modes、cmx-field-uicontrol、cmx-field-schema、enrich-meta 时必用。严格按 cmx-data-comp 规范值域生成，幂等不覆盖手工值。
+description: 为 CMX 字典/单据元数据（backend/cmx-container/assets/model/data/meta/definitions）批量补全 edit / display / width / required / visible / frozen 等列属性。当用户要求"补全元数据字段的录入控件和显示属性""按规范值域给字段加 edit.mode/display""修复元数据的合法值"或提到 EDIT_MODES、display.mode、field-edit-display-modes、cmx-field-uicontrol、cmx-field-schema、enrich-meta 时必用。严格按 cmx-data-comp 规范值域生成，幂等不覆盖手工值。
 ---
 
 # Meta Enricher（元数据属性补全器）
 
-为 `cmx-container/assets/model/data/meta/definitions/**` 下的字典/单据/字段集 JSON，**自动按 cmx-data-comp 规范值域**补全 `edit.*` / `display.*` / `width` / `required` / `visible` / `frozen` 等列属性。
+为 `backend/cmx-container/assets/model/data/meta/definitions/**` 下的字典/单据/字段集 JSON，**自动按 cmx-data-comp 规范值域**补全 `edit.*` / `display.*` / `width` / `required` / `visible` / `frozen` 等列属性。
 
 > **核心原则**：不发明短名、不踩规。edit.mode 严格用 `packages/cmx-data-comp/src/lib/cmx-field-uicontrol.js` 的 `EDIT_MODES` 16 规范值；display.mode 严格用 `packages/cmx-data-comp/src/lib/cmx-field-schema.js` 中 `display.mode` 控件的 options 合法值（7 个含空串：''/text/number/badge/link/icon/actions；actions 属页面级操作列，元数据补全不涉及）。
 
@@ -36,17 +36,17 @@ description: 为 CMX 字典/单据元数据（cmx-container/assets/model/data/me
 ```bash
 # 1. 补全（dry-run：先输出到 .out.json，看 diff 再覆盖）
 node .agents/skills/meta-enricher/scripts/enrich-meta.mjs \
-  cmx-container/assets/model/data/meta/definitions/base/base_dct_meta_v1.json \
+  backend/cmx-container/assets/model/data/meta/definitions/base/base_dct_meta_v1.json \
   /tmp/base_dct.out.json
 
 # 2. 校验（CI 友好：发现非法值 exit code=1）
 node .agents/skills/meta-enricher/scripts/verify-meta.mjs \
-  cmx-container/assets/model/data/meta/definitions/base/base_dct_meta_v1.json \
-  cmx-container/assets/model/data/meta/definitions/fi/cmxfico/gl/cmxfico_dct_meta_v3.json
+  backend/cmx-container/assets/model/data/meta/definitions/base/base_dct_meta_v1.json \
+  backend/cmx-container/assets/model/data/meta/definitions/fi/cmxfico/gl/cmxfico_dct_meta_v3.json
 
 # 3. 批量：对 definitions 下所有 base + fi/cmxfico 文件
-for f in cmx-container/assets/model/data/meta/definitions/base/*.json \
-         cmx-container/assets/model/data/meta/definitions/fi/cmxfico/gl/*.json; do
+for f in backend/cmx-container/assets/model/data/meta/definitions/base/*.json \
+         backend/cmx-container/assets/model/data/meta/definitions/fi/cmxfico/gl/*.json; do
   out="/tmp/$(basename $f .json).out.json"
   node .agents/skills/meta-enricher/scripts/enrich-meta.mjs "$f" "$out"
   node .agents/skills/meta-enricher/scripts/verify-meta.mjs "$out"

@@ -4,7 +4,7 @@
 // 本脚本属于 menu-generator 技能（.agents/skills/menu-generator/scripts/），从技能目录向上
 // 定位根仓库，再进入 cmx-container 扫描 assets/model/data/menu-pages（兼容旧 data/menu-pages）并输出 SQL。
 //
-// 背景：菜单以 JSON 文件存放在 cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json，
+// 背景：菜单以 JSON 文件存放在 backend/cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json，
 // 现迁移到数据库 cmx_menu 表（节点级映射：每节点一行，workspace/dialogspace 等富数据入
 // definition JSONB）。本脚本自动扫描所有 menu-pages 文件，递归展平树、计算树形字段
 // (depth/code_path/id_path/leaf/parent)、处理跨文件重复 code，输出可核对、可重跑的 INSERT。
@@ -18,10 +18,10 @@
 //   node .agents/skills/menu-generator/scripts/gen_menu_migration.mjs --write     # 写入 SQL 文件
 //
 // 写入产物（仅 --write 模式，唯一产物）：
-//   cmx-container/docs/sql/v2/platform/menu_seed.sql   （全量最新菜单，每次重生成覆盖）
+//   backend/cmx-container/docs/sql/v2/platform/menu_seed.sql   （全量最新菜单，每次重生成覆盖）
 //   （历史首迁 20260716_001_menu_pages_to_cmx_menu 已并入 migrations/20260819_001_baseline.up.sql，脚本不再生成）
 //
-// 扫描规则：遍历 cmx-container/assets/model/data/menu-pages/**/*.json（兼容旧 data/menu-pages 回退），
+// 扫描规则：遍历 backend/cmx-container/assets/model/data/menu-pages/**/*.json（兼容旧 data/menu-pages 回退），
 // 文件路径 <domain>/<app>/<module>/<file>.json
 // 对应 cmx_menu 的 domain_code/application_code/module_code（模块本身由 DAM 派生，不落入 cmx_menu；
 // 文件内 items 作为该模块的菜单根节点）。
@@ -70,14 +70,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 function findCmxContainer () {
   let cur = __dirname
   for (let i = 0; i < 10; i++) {
-    const candidate = join(cur, 'cmx-container')
-    if (existsSync(join(candidate, 'assets', 'model', 'data', 'menu-pages'))) return candidate
-    if (existsSync(join(candidate, 'data', 'menu-pages'))) return candidate
+    // 2026-09 结构重组后 cmx-container 在 backend/ 下，新路径优先、旧平铺回退
+    for (const cand of [join(cur, 'backend', 'cmx-container'), join(cur, 'cmx-container')]) {
+      if (existsSync(join(cand, 'assets', 'model', 'data', 'menu-pages'))) return cand
+      if (existsSync(join(cand, 'data', 'menu-pages'))) return cand
+    }
     const parent = dirname(cur)
     if (parent === cur) break
     cur = parent
   }
-  throw new Error(`未找到 cmx-container/assets/model/data/menu-pages（从 ${__dirname} 向上查找失败）`)
+  throw new Error(`未找到 backend/cmx-container/assets/model/data/menu-pages（从 ${__dirname} 向上查找失败）`)
 }
 
 const CONTAINER = findCmxContainer()
@@ -222,7 +224,7 @@ const deleteLines = delTriples.map((t) => {
   return `DELETE FROM cmx_menu WHERE domain_code = '${d}' AND application_code = '${a}' AND module_code = '${m}';`
 })
 
-const header = `-- 菜单 INSERT（由 .agents/skills/menu-generator/scripts/gen_menu_migration.mjs 自动扫描 cmx-container/assets/model/data/menu-pages 生成，可重跑）
+const header = `-- 菜单 INSERT（由 .agents/skills/menu-generator/scripts/gen_menu_migration.mjs 自动扫描 backend/cmx-container/assets/model/data/menu-pages 生成，可重跑）
 -- 模块本身由 DAM 派生（不在 cmx_menu）；此处仅各模块下的菜单 items 作为该模块菜单根节点。
 -- 节点级映射：workspace/dialogspace 等富数据入 definition JSONB；跨文件冲突 code 加 _dup 后缀。
 -- 幂等保证：先按 domain/application/module 删除旧数据，再插入最新（重跑 = 重置为文件最新状态）。`

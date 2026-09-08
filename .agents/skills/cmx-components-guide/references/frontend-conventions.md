@@ -154,7 +154,7 @@ const fmtD = (t) => (__CMX_DT ? __CMX_DT.fmtDate(t) : (t ? String(t) : ''))     
 
 **cmx 可视组件速查**：完整分类速查表、选型决策树 -> 本技能 [`../SKILL.md`](../SKILL.md) 第一节 / 第二节。
 
-**UI5 版本约定**：全栈 `@ui5/webcomponents` `^2.23.2`，经 `packages/cmx-ui5-runtime` 统一 `boot()` 装载；业务代码只按需 `import '@ui5/webcomponents/dist/Xxx.js'`，禁止 `boot()`/`import bundle.esm`（与第二节 4、第三节红线一致）。**导出业务页**（`cmx-container/assets/portal/data/html-pages/sources/`，运行在 pageview iframe）经 importmap + CDN 装载，`../../../../cmx-html-designer` 拼的 importmap 版本须与运行时一致，发现漂移（如 2.22.0 vs 2.23.2）立即对齐。UI5 允许标签清单以 `../../../../cmx-html-designer` + `fiori/*.json`（约 150 个）为准。
+**UI5 版本约定**：全栈 `@ui5/webcomponents` `^2.23.2`，经 `packages/cmx-ui5-runtime` 统一 `boot()` 装载；业务代码只按需 `import '@ui5/webcomponents/dist/Xxx.js'`，禁止 `boot()`/`import bundle.esm`（与第二节 4、第三节红线一致）。**导出业务页**（`backend/cmx-container/assets/portal/data/html-pages/sources/`，运行在 pageview iframe）经 importmap + CDN 装载，`../../../../cmx-html-designer` 拼的 importmap 版本须与运行时一致，发现漂移（如 2.22.0 vs 2.23.2）立即对齐。UI5 允许标签清单以 `../../../../cmx-html-designer` + `fiori/*.json`（约 150 个）为准。
 
 **判定流程**：需求 → 查 cmx 速查有没有 → 没有则查 UI5 允许清单 → 还没有才考虑自建，并核对第六节白名单。
 

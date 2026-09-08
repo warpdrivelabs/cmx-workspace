@@ -347,7 +347,7 @@ export const CMX_<NAME>_SKIN_CSS = `
 
 ## 六、页面级 Neo 风覆盖（科技风页面才用）
 
-如果页面要"科技感"（深色网格背景 + 玻璃质感卡片），在页头 `<style>` 复制 Neo token 派生块（与门户根 `portal-neo-theme.css` 对齐）。参考真实范例：`cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html`。
+如果页面要"科技感"（深色网格背景 + 玻璃质感卡片），在页头 `<style>` 复制 Neo token 派生块（与门户根 `portal-neo-theme.css` 对齐）。参考真实范例：`backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html`。
 
 **注意**：不要每页重定义不同数值的 `--neo-*`（会造成漂移）；要么直接用继承的门户根变量，要么完整复制门户根的派生块。
 
@@ -409,7 +409,7 @@ export const CMX_<NAME>_SKIN_CSS = `
 | **皮肤运行时（共享助手：resolveSkin / applyNeoSkin / setSkinStyle / applyPageStyleId）** | `packages/cmx-data-comp/src/lib/cmx-skin-runtime.js` |
 | **KPI 卡片 Neo 皮肤源** | `packages/cmx-data-comp/src/lib/cmx-kpi-card-neo-skin.js` |
 | **描述列表 Neo 皮肤源** | `packages/cmx-data-comp/src/lib/cmx-desc-list-neo-skin.js` |
-| 根布局骨架范例页 | `cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html` |
-| Neo 风范例页（页头 token） | `cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` |
+| 根布局骨架范例页 | `backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html` |
+| Neo 风范例页（页头 token） | `backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` |
 | **Neo 主题完整接入指引**（接入步骤 / 皮肤源结构 / 组件清单） | `neo-theme-onboarding.md` |
 | 组件规范 | `frontend-conventions.md`（本目录，前端复用规范真源） |

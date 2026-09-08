@@ -7,7 +7,7 @@
 的节点 **upsert** 进 cmx_menu，让已运行环境立即生效。
 
 数据库解析（不硬编码）：
-  1. 只读 cmx-portalservice/.env 取 CONFIG_FILE（如 ./portal-server-dev.toml）
+  1. 只读 backend/cmx-portalservice/.env 取 CONFIG_FILE（如 ./portal-server-dev.toml）
   2. 解析该 toml 的 [[databases]]，取 default=true 的 db_url（默认/平台库）；
      source_type="biz" 的是业务库，菜单不写业务库
   3. 解析 postgres URL → host/port/user/password/dbname
@@ -31,23 +31,27 @@ def menu_pages_dir(root):
 def find_container_root():
     d = os.path.dirname(os.path.abspath(__file__))
     for _ in range(8):
-        # 自身即容器根，或兄弟目录 cmx-container（.agents 与 cmx-container 同级时）
-        for cand in (d, os.path.join(d, "cmx-container")):
+        # 自身即容器根，或兄弟目录 cmx-container（.agents 与 cmx-container 同级时）；
+        # 2026-09 结构重组后 cmx-container 在 backend/ 下，一并兼容
+        for cand in (d, os.path.join(d, "cmx-container"),
+                     os.path.join(d, "backend", "cmx-container")):
             if menu_pages_dir(cand):
                 return cand
         d = os.path.dirname(d)
     raise SystemExit("未找到 cmx-container 根（含 data/menu-pages 或 assets/model/data/menu-pages）")
 
 def resolve_db_url(root):
-    # 库配置真源 = cmx-portalservice/.env（cmx-container 的兄弟仓，CONFIG_FILE 相对其解析）；
-    # cmx-container/.env 只是蓝本，仅在 portalservice 不存在时回退。不回退 .env.local。
+    # 库配置真源 = backend/cmx-portalservice/.env（cmx-container 的兄弟仓，CONFIG_FILE 相对其解析）；
+    # backend/cmx-container/.env 只是蓝本，仅在 portalservice 不存在时回退。不回退 .env.local。
     svc_dir = next((cand for cand in (
+        os.path.normpath(os.path.join(root, "..", "backend", "cmx-portalservice")),
         os.path.normpath(os.path.join(root, "..", "cmx-portalservice")),
+        os.path.join(root, "backend", "cmx-portalservice"),
         os.path.join(root, "cmx-portalservice"),
         root,
     ) if os.path.isfile(os.path.join(cand, ".env"))), None)
     if svc_dir is None:
-        raise SystemExit("未找到 cmx-portalservice/.env")
+        raise SystemExit("未找到 backend/cmx-portalservice/.env")
     env = {}
     p = os.path.join(svc_dir, ".env")
     for line in open(p, encoding="utf-8"):
@@ -100,7 +104,7 @@ def main():
         raise SystemExit(__doc__)
     root = find_container_root()
     arg = sys.argv[1]
-    # 绝对路径直用；相对路径优先按当前目录解析（如从工作区根传 cmx-container/assets/...），
+    # 绝对路径直用；相对路径优先按当前目录解析（如从工作区根传 backend/cmx-container/assets/...），
     # 不存在再按 cmx-container 根拼接（如传 assets/model/data/menu-pages/...）
     if os.path.isabs(arg):
         path = arg
@@ -113,7 +117,8 @@ def main():
     doc = json.load(open(path, encoding="utf-8"))
     items = doc["items"] if isinstance(doc, dict) and "items" in doc else doc
 
-    db = parse_url(resolve_db_url(root))
+    # CMX_MENU_DB_URL 可显式指定目标库（如运行中服务的 CONFIG_FILE 被 env 覆盖、与 .env 文件不一致时）
+    db = parse_url(os.environ.get("CMX_MENU_DB_URL") or resolve_db_url(root))
     nodes = []
     def walk(list_, parent, depth, id_path, code_path):
         for i, n in enumerate(list_):

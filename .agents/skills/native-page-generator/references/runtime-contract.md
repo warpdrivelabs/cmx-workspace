@@ -1,7 +1,7 @@
 # 运行时契约（native-page 装载链路 + 宿主 CE + 后端）
 
 > 何时读：所有 native-page 形态都建议读——理解页面是怎么被加载和渲染的。
-> 源码：`../../../../cmx-portal-manager` + `cmx-container/crates/libs/cmx-form/src/pages/native.rs`
+> 源码：`../../../../cmx-portal-manager` + `backend/cmx-container/crates/libs/cmx-form/src/pages/native.rs`
 
 ---
 
@@ -112,7 +112,7 @@ materializeNativePage 按 sourceType 分流：
 
 native-page 存储分两部分（源码 `cmx-form/src/pages/native.rs`）：
 
-**索引**：`cmx-container/assets/portal/data/native-pages/index.json`
+**索引**：`backend/cmx-container/assets/portal/data/native-pages/index.json`
 ```jsonc
 [
   {
@@ -125,7 +125,7 @@ native-page 存储分两部分（源码 `cmx-form/src/pages/native.rs`）：
 ]
 ```
 
-**源码**：`cmx-container/assets/portal/data/native-pages/sources/<relPath>`（如 `portal/doc/doc-loader.js`）
+**源码**：`backend/cmx-container/assets/portal/data/native-pages/sources/<relPath>`（如 `portal/doc/doc-loader.js`）
 
 > 索引字段定义源码：`native.rs`；sourceType / relPath 校验：`native.rs`。
 
@@ -138,7 +138,7 @@ native-page 存储分两部分（源码 `cmx-form/src/pages/native.rs`）：
 | POST | `/api/native-pages` | upsert（写源文件 + 更新 index.json） |
 | POST | `/api/native-pages/batch` | 批量取（body `{ ids: [...] }`） |
 
-路由注册：`cmx-container/crates/libs/cmx-apis/cmx-common-api/src/handlers/portal/mod.rs`（native-pages 路由段）
+路由注册：`backend/cmx-container/crates/libs/cmx-apis/cmx-common-api/src/handlers/portal/mod.rs`（native-pages 路由段）
 
 ### 4.3 单页完整返回（NativePageFull）
 
@@ -231,11 +231,11 @@ native-page 本身只是源码文件，**必须通过菜单节点才能在门户
 | 用途 | 路径 |
 | --- | --- |
 | 运行时宿主 | `../../../../cmx-portal-manager` |
-| 后端存储契约 | `cmx-container/crates/libs/cmx-form/src/pages/native.rs` |
-| 索引文件 | `cmx-container/assets/portal/data/native-pages/index.json` |
-| 源码目录 | `cmx-container/assets/portal/data/native-pages/sources/` |
+| 后端存储契约 | `backend/cmx-container/crates/libs/cmx-form/src/pages/native.rs` |
+| 索引文件 | `backend/cmx-container/assets/portal/data/native-pages/index.json` |
+| 源码目录 | `backend/cmx-container/assets/portal/data/native-pages/sources/` |
 | 菜单节点配置 | `../../../../cmx-portal-manager` |
 | cmx 助手预挂 | `../../../../cmx-portal-manager` |
-| JS 模块页范例 | `cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js` |
-| HTML 片段范例 | `cmx-container/assets/portal/data/native-pages/sources/demo/product-explorer.html` |
-| 列表页范例 | `cmx-container/assets/portal/data/native-pages/sources/portal/notify/center.js` |
+| JS 模块页范例 | `backend/cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js` |
+| HTML 片段范例 | `backend/cmx-container/assets/portal/data/native-pages/sources/demo/product-explorer.html` |
+| 列表页范例 | `backend/cmx-container/assets/portal/data/native-pages/sources/portal/notify/center.js` |

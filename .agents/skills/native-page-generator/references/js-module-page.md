@@ -1,7 +1,7 @@
 # JS 模块页深度指南（native-page 重点形态）
 
 > 何时读：生成 JS 模块形态的 native-page（生产级、可复用 cmx 组件/助手）。
-> 最佳真实范例：`cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js`（445 行，元数据驱动）
+> 最佳真实范例：`backend/cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js`（445 行，元数据驱动）
 
 ---
 

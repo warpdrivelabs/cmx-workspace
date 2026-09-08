@@ -10,7 +10,7 @@
 
 **仅适用于前端硬编码的 menu-node**（JS 对象，如 `../../../../cmx-portal-manager`）。
 
-**不适用于 menu-pages JSON 文件**（`cmx-container/assets/model/data/menu-pages/**/*.json`）——`gen_menu_migration.mjs` 不处理这两个字段，写了会被丢弃。如需在 menu-pages 中使用，需先扩展 `gen_menu_migration.mjs` 把字段映射到 `cmx_menu.definition` JSONB。
+**不适用于 menu-pages JSON 文件**（`backend/cmx-container/assets/model/data/menu-pages/**/*.json`）——`gen_menu_migration.mjs` 不处理这两个字段，写了会被丢弃。如需在 menu-pages 中使用，需先扩展 `gen_menu_migration.mjs` 把字段映射到 `cmx_menu.definition` JSONB。
 
 典型适用场景：
 - 系统级工作台（集群数据源、DAM 注册中心、菜单管理、帮助中心、通知中心）

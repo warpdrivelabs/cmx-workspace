@@ -22,7 +22,7 @@
 
 返回某张字典表的列定义（caption/类型/PK/是否自分级），供前端构造列模型。
 
-**Query 参数**（`DctQuery`，源码 `cmx-model/crates/cmx-model-app/src/handlers/dct.rs`，模型中心独立仓）：
+**Query 参数**（`DctQuery`，源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/dct.rs`，模型中心独立仓）：
 
 | 参数 | 必填 | 含义 |
 | --- | --- | --- |
@@ -32,7 +32,7 @@
 | `dict` | 是 | 字典表 dictCode，如 `currency` / `gl_account` / `bus_partner` |
 | `file` | 否 | 定义文件名；缺失时自动扫描含该 dictCode 的 DCT 文件（优先 isDefault，回退最高版本） |
 
-**响应 `data`**（源码 `cmx-model/crates/cmx-model-app/src/handlers/dct.rs`）：
+**响应 `data`**（源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/dct.rs`）：
 ```jsonc
 {
   "dictCode": "gl_account",
@@ -62,7 +62,7 @@
 
 **Query**：同 1.1 的 `DctQuery`（domain/application/module/dict[/file]）。
 
-**请求体**（`DctSearchBody`，源码 `cmx-model/crates/cmx-model-app/src/handlers/dct.rs`）：
+**请求体**（`DctSearchBody`，源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/dct.rs`）：
 
 ```jsonc
 {
@@ -99,7 +99,7 @@ Path 参数 `id`。
 
 返回单据的 N 层结构（L1..LN），每层带列定义，附父子关系。**通用单据前端页据此端点动态构建 N 层主从 schema + 各层 grid 列头**。
 
-**Query 参数**（`DocDataQuery`，源码 `cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
+**Query 参数**（`DocDataQuery`，源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
 
 | 参数 | 必填 | 含义 |
 | --- | --- | --- |
@@ -112,7 +112,7 @@ Path 参数 `id`。
 | `limit` | 否 | 根层限制行数 |
 | `depth` | 否 | 装载深度（懒下钻） |
 
-**响应 `data`**（源码 `cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
+**响应 `data`**（源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
 ```jsonc
 {
   "layers": [
@@ -141,7 +141,7 @@ Path 参数 `id`。
 
 ### 2.2 `GET|POST /api/doc/data/sqlx-dataset-json` —— 装载单据数据（最常用）
 
-**命名规则**（源码 `cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：`/api/doc/data/<驱动>-<内存模式>-<传输>`
+**命名规则**（源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：`/api/doc/data/<驱动>-<内存模式>-<传输>`
 - 驱动：`sqlx`（默认连接池）/ `tokio`（tokio-postgres 直连）
 - 内存模式：`dataset`（老 DataSet，全拷贝）/ `zmc`（ZmcDataSet，零拷贝）
 - 传输：`json` / `msgpack`
@@ -180,7 +180,7 @@ Path 参数 `id`。
 
 **Query**：`domain/application/module/file`（同 2.1）。
 
-**请求体**（`saveBody`，源码 `cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
+**请求体**（`saveBody`，源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）：
 ```jsonc
 {
   "saveMode": "merge",          // 'merge'（增量）| 'replace'（全替换）
@@ -195,7 +195,7 @@ Path 参数 `id`。
 
 **响应 `data`**：`{ ok, affected: { cv_header: 3 }, warnings?: [...] }`
 
-**校验失败**：HTTP 200 但 `code = 422`，`data.violations` 含校验诊断（源码 `cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）。前端应用 `presentDocError` 对话框展示。
+**校验失败**：HTTP 200 但 `code = 422`，`data.violations` 含校验诊断（源码 `backend/cmx-model/crates/cmx-model-app/src/handlers/doc.rs`）。前端应用 `presentDocError` 对话框展示。
 
 ### 2.4 `POST /api/doc/save/batch` —— 批量回存多单
 
@@ -211,7 +211,7 @@ body `{ domain, application, module, file, layer, parentId }` → `{ rows: [...]
 
 ### 3.1 DOC 元数据驱动四层凭证页（html-page 范例）
 
-**文件**：`cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/voucher-doc.html`
+**文件**：`backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/voucher-doc.html`
 
 **特点**：
 - 用 `cmx-master-slave` 模型组件 + 4 个 `cmx-column-model`（手工配列）
@@ -239,13 +239,13 @@ fetch('/api/doc/data/sqlx-dataset-json?' + q.toString(), {
 
 ### 3.2 DCT 字典主数据管理页（html-page 范例）
 
-**文件**：`cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/gl-master-data-demo.html`
+**文件**：`backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/gl-master-data-demo.html`
 
 **特点**：用 `CmxDCTMeta` 模型组件加载字典定义 + 字典选择/展示。参考其 `__designer_meta__.models` 里的 `CmxDCTMeta` 配置。
 
 ### 3.3 DOC 元数据驱动 N 层动态页（native-page 范例，更通用）
 
-**文件**：`cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js`（445 行）
+**文件**：`backend/cmx-container/assets/model/web/ui-native/portal/doc/doc-loader.js`（445 行）
 
 **特点**：
 - **零硬编码**：层数 N、各层列、主从关系全部来自 `/api/doc/meta`

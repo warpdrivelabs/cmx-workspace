@@ -279,7 +279,7 @@ L3 需要加载后端字典 / 单据定义
 </script>
 ```
 
-> 完整真实样例（凭证四层主从）见 `cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html`。
+> 完整真实样例（凭证四层主从）见 `backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html`。
 
 ---
 

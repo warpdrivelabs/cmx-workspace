@@ -8,7 +8,7 @@ cmx-flowengine 流程定义创建器
 可选经 REST 三步（validate → draft → publish 热装载）部署到 flow-server，并可起一个
 冒烟实例验证首节点停留位置。
 
-语法契约源：cmx-flowengine/docs/usage/{02,03,04,05}-*.md（完整语法表见技能
+语法契约源：backend/cmx-flowengine/docs/usage/{02,03,04,05}-*.md（完整语法表见技能
 references/bpmn-def-guide.md）。只支持引擎白名单元素；黑名单元素（task/scriptTask/
 sendTask/…）直接拒绝。
 

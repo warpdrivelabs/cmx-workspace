@@ -41,7 +41,7 @@ CMX 的 "neo 主题" **不是一套 CSS 变量，也不是一套 class 命名约
 
 **与 SAP UI5 `--sap*` 关系**：
 - **neo 不是覆盖 sap 令牌**，而**依赖 sap 令牌**派生亮/暗。所有 neo 色值都写成 `color-mix(in srgb, var(--neo-cyan) 28%, var(--sapList_Background, #fff))` 的形式，让亮色主题下接近 cyan tint、暗色主题下自然变深。
-- 证据：[portal-neo-theme.css](../../../../cmx-portal-manager/src/lib/portal-neo-theme.css)（`--neo-glass` / `--neo-border` / `--neo-border-subtle` / `--neo-glow` 都用 `color-mix(..., var(--sap...))`）
+- 证据：[portal-neo-theme.css](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.css)（`--neo-glass` / `--neo-border` / `--neo-border-subtle` / `--neo-glow` 都用 `color-mix(..., var(--sap...))`）
 - 证据：[cmx-form-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)（`--neo-form-base: var(--sapGroup_ContentBackground, var(--sapList_Background, #f4f6f8))`）
 
 ### 1.2 完整设计令牌清单
@@ -76,7 +76,7 @@ CMX 的 "neo 主题" **不是一套 CSS 变量，也不是一套 class 命名约
 > **新组件约定**：皮肤文件内应再定义**本组件专属的 `--neo-<name>-*` 局部变量**（accent / base / font-size / radius 等），让 `:host(.cmx-<name>-neo)` 自己用，不污染全局。
 
 **页面级（独立部署的"科技风"页面，如 `voucher-neo.html`）**：
-- 见 [voucher-neo.html](../../../../cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html)，额外加了 `--neo-edge-highlight` / `--neo-shadow` / `--neo-panel-bg`，并在根 `data-node-id="vn-root"` 上重新声明全套 `--neo-*` 派生块（防止脱离 Portal 时缺令牌）。
+- 见 [voucher-neo.html](../../../../backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html)，额外加了 `--neo-edge-highlight` / `--neo-shadow` / `--neo-panel-bg`，并在根 `data-node-id="vn-root"` 上重新声明全套 `--neo-*` 派生块（防止脱离 Portal 时缺令牌）。
 
 ### 1.3 视觉特征（从 CSS 推断）
 
@@ -87,8 +87,8 @@ CMX 的 "neo 主题" **不是一套 CSS 变量，也不是一套 class 命名约
 | **字号** | 表单字段 `0.76rem`，表头 `0.68-0.72rem`，KPI 主值 `0.95-1.4rem`（来自 voucher-neo）。 |
 | **圆角** | 表单输入框 `7px`（[form line 100](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)），表单元件 `10px`（[form line 46](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)），grid 外壳 `8px`（[grid line 38](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js)），form 容器 `9px`（[form line 16](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)）。 |
 | **间距** | form-item 间距 `0.32rem`（[form line 34](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)），input 高度 `1.52rem`（[form line 9](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)），页面主间距 `10px gap`（[page-style-guide.md](page-style-guide.md)）。 |
-| **装饰** | `inset 2-3px 0 0 <accent>` 强光左侧条（form/grid current-row）；`backdrop-filter: blur(6-8px)` 玻璃质感；`box-shadow` 多层（外发光 + 内侧高光）；`drop-shadow` 荧光（grid current-row 用 box-shadow，button hover 用 drop-shadow）；底部 1px 三色 linear-gradient 渐变高光（`PORTAL_NEO_ACCENT_LINE`，见 [portal-neo-theme.js](../../../../cmx-portal-manager/src/lib/portal-neo-theme.js)）。 |
-| **背景图案** | 工作区 / 侧栏：双 radial-gradient（紫左上 / 青右下），叠加 1px 1px 网格 + mask 渐变（[portal-neo-theme.js](../../../../cmx-portal-manager/src/lib/portal-neo-theme.js)）。 |
+| **装饰** | `inset 2-3px 0 0 <accent>` 强光左侧条（form/grid current-row）；`backdrop-filter: blur(6-8px)` 玻璃质感；`box-shadow` 多层（外发光 + 内侧高光）；`drop-shadow` 荧光（grid current-row 用 box-shadow，button hover 用 drop-shadow）；底部 1px 三色 linear-gradient 渐变高光（`PORTAL_NEO_ACCENT_LINE`，见 [portal-neo-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.js)）。 |
+| **背景图案** | 工作区 / 侧栏：双 radial-gradient（紫左上 / 青右下），叠加 1px 1px 网格 + mask 渐变（[portal-neo-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.js)）。 |
 | **明暗模式** | 不维护 dark 变体：靠 `color-mix` + `var(--sapList_Background, #fff)` / `var(--sapList_Background, #1a1f26)` 自动适配。例外：grid 在 `revo-grid[theme^="dark"]` 显式分叉（[grid line 15-17](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js)、[grid line 67-72](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js)）。 |
 
 ---
@@ -98,14 +98,14 @@ CMX 的 "neo 主题" **不是一套 CSS 变量，也不是一套 class 命名约
 ### 2.1 三条启用路径（按优先级）
 
 1. **全局默认（推荐）** — 门户启动时设 `globalThis.__cmxDefaultFormSkin = 'neo'`，所有 cmx-ui5-form 实例**自动**应用 neo，无需每页声明。
-   - 证据：[import-ui5-and-app.js](../../../../cmx-portal-manager/src/import-ui5-and-app.js)
+   - 证据：[import-ui5-and-app.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/import-ui5-and-app.js)
    - 文档：[page-style-guide.md](page-style-guide.md)、[page-style-guide.md](page-style-guide.md)
 2. **单组件显式** — 在组件上写 `data-cmx-skin="neo"`，覆盖全局默认（"显式优先"原则）。
 3. **单组件关闭** — 在组件上写 `data-cmx-skin="plain" | "default" | "none"` 或 grid 专属的 `data-cmx-skin="flat"`，关闭 neo。
 
 ### 2.2 注入位置与作用域
 
-- **Portal 根**：`portal-neo-theme.css` 4-49 行把全套 `--neo-*` 注入 `:root`，被 Vite 用 `@import url('./lib/portal-neo-theme.css')` 引入 [app-shell.css](../../../../cmx-portal-manager/src/app-shell.css)。
+- **Portal 根**：`portal-neo-theme.css` 4-49 行把全套 `--neo-*` 注入 `:root`，被 Vite 用 `@import url('./lib/portal-neo-theme.css')` 引入 [app-shell.css](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/app-shell.css)。
 - **JS 兜底**：`portal-neo-theme.js` 的 `initPortalNeoTheme()` 可在运行时把 `:root` 变量二次注入到 `document.head`（幂等，按 id 查重）。
 - **cmx 组件 Shadow DOM**：通过 `applyNeoSkin()` 注入，**作用域为 `ShadowRoot` 内部**。`:host(.cmx-<name>-neo)` 选择器只匹配该组件自己的 host 元素，不影响其他组件。Skin 的 CSS 变量通过 `:host(.cmx-<name>-neo) { --neo-<name>-accent: ... }` 声明，由于 Shadow DOM 边界允许 `inherit` 自定义属性，所以根 `:root` 上的 `--neo-cyan` 会自动透传进 Skin 内的 `color-mix(... var(--neo-cyan) ...)` 公式。
 - **业务页面 Shadow**：`page-style-guide.md` 明确说"业务页运行在 Portal shadow 下，自动继承这些变量"。
@@ -114,7 +114,7 @@ CMX 的 "neo 主题" **不是一套 CSS 变量，也不是一套 class 命名约
 
 neo 没有"light neo"和"dark neo"两套变量。**只有一套**，通过 `color-mix(in srgb, var(--sapList_Background, #fff) 88%, transparent)` 这样的公式，**自动**随 UI5 的 `--sapList_Background` 在 light/dark 主题间切换。
 
-- 证据：[portal-neo-theme.css](../../../../cmx-portal-manager/src/lib/portal-neo-theme.css) `--neo-glass` 用 `var(--sapList_Background, #fff)` 作 fallback
+- 证据：[portal-neo-theme.css](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.css) `--neo-glass` 用 `var(--sapList_Background, #fff)` 作 fallback
 - 证据：[grid line 15-17](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js) grid 显式分叉 dark 主题：`revo-grid[theme^="dark"] { --revo-grid-bg: color-mix(in srgb, var(--neo-grid-accent) 10%, var(--sapList_Background, #1a1f26)); }`
 
 **结论**：新组件**不需要**写 dark variant，只要在色值公式里始终引用 `--sap*` 而不是硬编码白色/黑色。
@@ -133,7 +133,7 @@ neo 没有"light neo"和"dark neo"两套变量。**只有一套**，通过 `colo
 | 皮肤运行时（共享助手） | `packages/cmx-data-comp/src/lib/cmx-skin-runtime.js` | 1-130 |
 | Portal 壳层应用（shellbar / sidebar / statusbar / activity / splitter） | `portal-shellbar.js`、`portal-side-nav-shell.js`、`portal-side-nav-menu.js`、`portal-status-bar.js`、`portal-activity-bar.js`、`portal-app-shell.js`、`portal-content-area-shell.js`、`portal-log-panel.js` | 见 portal-neo-theme.js 各 `PORTAL_NEO_*_STYLES` 引用 |
 | 模块主题色（侧栏字典 / 树 / 文件） | `../../../../cmx-portal-manager` | line 65（`--neo-cyan: side.accent`） |
-| 业务示范页 | `cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` | 4-17 派生块 |
+| 业务示范页 | `backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` | 4-17 派生块 |
 | 设计器 Inspector | `../../../../cmx-html-designer`（data-cmx-skin placeholder=neo） | — |
 | 文档 / 规范 | `frontend-conventions.md`、`page-style-guide.md`、`cmx-components-guide/references/{form,grid}-components.md` | — |
 
@@ -303,7 +303,7 @@ neo skin 文件**只在**该变量确实需要在 neo 模式下重写时才提�
 
 ### 4.6 静态资源（CSS 变量）从哪里来
 
-`var(--neo-cyan)` 等**不需要组件自己注入**，由 `portal-neo-theme.css` 在 Portal 启动时挂到 `:root`，Shadow DOM 边界允许自定义属性继承。**但**如果新组件可能被独立使用（如 `cmx-html-pages` 导出页脱离 Portal），要在组件自己 ShadowRoot 的 `<style>` 顶部复制 `PORTAL_NEO_ROOT_VARS`（来自 [portal-neo-theme.js](../../../../cmx-portal-manager/src/lib/portal-neo-theme.js)）作为 `:host { ... }` 兜底，参照 [voucher-neo.html](../../../../cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) 的做法。
+`var(--neo-cyan)` 等**不需要组件自己注入**，由 `portal-neo-theme.css` 在 Portal 启动时挂到 `:root`，Shadow DOM 边界允许自定义属性继承。**但**如果新组件可能被独立使用（如 `cmx-html-pages` 导出页脱离 Portal），要在组件自己 ShadowRoot 的 `<style>` 顶部复制 `PORTAL_NEO_ROOT_VARS`（来自 [portal-neo-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.js)）作为 `:host { ... }` 兜底，参照 [voucher-neo.html](../../../../backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) 的做法。
 
 ---
 
@@ -317,12 +317,12 @@ neo skin 文件**只在**该变量确实需要在 neo 模式下重写时才提�
 |---|---|---|
 | `.neo-panel` / `.neo-panel-head` | 科技风分区容器 + 标题 | [page-style-guide.md](page-style-guide.md) |
 | `.neo-meta-strip` / `.neo-lane` | 品牌装饰条（白名单允许原生 div 自建） | `frontend-conventions.md` 第六节 div 白名单 |
-| `.neo-hero` | 大型 hero 区（voucher-neo 首页） | [voucher-neo.html](../../../../cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) |
-| `.neo-kpi` / `.neo-kpi-status` / `.neo-kpi-val` / `.neo-ok` / `.neo-warn` | KPI 卡片 | [voucher-neo-page-functions.md](../../../../cmx-portal-manager/docs/voucher-neo-page-functions.md) |
-| `.neo-title-text` | 渐变文字标题 | [voucher-neo.html](../../../../cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) |
+| `.neo-hero` | 大型 hero 区（voucher-neo 首页） | [voucher-neo.html](../../../../backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) |
+| `.neo-kpi` / `.neo-kpi-status` / `.neo-kpi-val` / `.neo-ok` / `.neo-warn` | KPI 卡片 | [voucher-neo-page-functions.md](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/docs/voucher-neo-page-functions.md) |
+| `.neo-title-text` | 渐变文字标题 | [voucher-neo.html](../../../../backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html) |
 | `.cmx-form-neo` / `.cmx-form-neo--mint` | form neo 激活类 | [cmx-form-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js) / [line 20](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js) |
 | `.cmx-grid-neo` / `.cmx-grid-neo--{mint,violet,cyan,azure}` | grid neo 激活类 | [cmx-grid-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js) / [line 18-35](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js) |
-| `.cmx-tab-reorder-target-before/after` | 拖放目标荧光侧条 | [portal-content-area-shell.js](../../../../cmx-portal-manager/src/components/portal-content-area-shell.js) |
+| `.cmx-tab-reorder-target-before/after` | 拖放目标荧光侧条 | [portal-content-area-shell.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/components/portal-content-area-shell.js) |
 | `.cmx-current-row` | grid 当前行 | [cmx-grid-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-grid-neo-skin.js) |
 
 ### 5.2 关键 CSS 模式（可直接复用的"neo 七招"）
@@ -333,9 +333,9 @@ neo skin 文件**只在**该变量确实需要在 neo 模式下重写时才提�
 2. **多层外发光** — `box-shadow: 0 8px 28px <color>, 0 2px 12px <color>, inset 0 1px 0 <highlight>`
 3. **drop-shadow 荧光** — `filter: drop-shadow(0 0 6px <accent-tint>)`（按钮 hover）
 4. **玻璃质感** — `background: <glass-color>; backdrop-filter: blur(6-8px)`
-5. **渐变边框** — `background: linear-gradient(90deg, transparent, violet, cyan, mint, transparent 85%)` 一条 1px 顶/底高光线（`PORTAL_NEO_ACCENT_LINE`，[portal-neo-theme.js](../../../../cmx-portal-manager/src/lib/portal-neo-theme.js)）
+5. **渐变边框** — `background: linear-gradient(90deg, transparent, violet, cyan, mint, transparent 85%)` 一条 1px 顶/底高光线（`PORTAL_NEO_ACCENT_LINE`，[portal-neo-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.js)）
 6. **field-level 4 色循环** — `nth-child(4n+1/2/3/0)` 换 accent，让相邻字段不同色（[form line 147-150](../../../../packages/cmx-data-comp/src/lib/cmx-form-neo-skin.js)）
-7. **背景网格** — `linear-gradient(<cyan 10%> 1px, transparent 1px)` × 横竖 + `mask-image: linear-gradient(180deg, #000 0%, transparent 88%)`（[portal-neo-theme.js](../../../../cmx-portal-manager/src/lib/portal-neo-theme.js)）
+7. **背景网格** — `linear-gradient(<cyan 10%> 1px, transparent 1px)` × 横竖 + `mask-image: linear-gradient(180deg, #000 0%, transparent 88%)`（[portal-neo-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.js)）
 
 ---
 
@@ -503,7 +503,7 @@ export { CmxPanel }
 | **皮肤运行时（共享助手）** | `packages/cmx-data-comp/src/lib/cmx-skin-runtime.js` | 1-130 |
 | Form 引用皮肤 | `packages/cmx-data-comp/src/components/cmx-ui5-form.js` | 64-65, 225-247 |
 | Grid 引用皮肤 | `packages/cmx-data-comp/src/components/cmx-revo-grid.js` | 31, 334-357 |
-| Neo 风业务页范例 | `cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` | 1-260 |
+| Neo 风业务页范例 | `backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/voucher-neo.html` | 1-260 |
 | 样式统一指南 | `page-style-guide.md`（本目录） | 1-243 |
 | 前端复用规范 | `frontend-conventions.md` | 1-179 |
 | 设计器组件注册 | `../../../../cmx-html-designer` | 17-580 |
@@ -567,8 +567,8 @@ CMX 主题的"颜色变化"实际上由**两个完全独立**的机制叠加:
 | `cmx-pager` 用了 `--sap*` | [cmx-pager.js](../../../../packages/cmx-data-comp/src/components/cmx-pager.js) `color: var(--sapContent_LabelColor, #6a6d70); background: var(--sapList_HeaderBackground, transparent);` |
 | `cmx-text-input` 把 `<ui5-input>` 套在 Shadow DOM | [cmx-text-input.js](../../../../packages/cmx-data-comp/src/components/cmx-text-input.js) `const input = document.createElement('ui5-input'); this.shadowRoot.append(style, input);` |
 | `cmx-floating-dialog` 把 `<ui5-button>` 套在 Shadow DOM | [cmx-floating-dialog.js](../../../../packages/cmx-data-comp/src/components/cmx-floating-dialog.js) `const b = document.createElement('ui5-button');` |
-| UI5 主题 ID 判定 | [portal-module-theme.js](../../../../cmx-portal-manager/src/lib/portal-module-theme.js) `if (attr) return /(_dark|_hcb|dark|black)$/.test(attr) \|\| attr.includes('_hcb')` |
-| Neo 皮肤引用 `--sapList_Background` 作 fallback | [portal-neo-theme.css](../../../../cmx-portal-manager/src/lib/portal-neo-theme.css) `--neo-glass: color-mix(in srgb, var(--sapList_Background, #fff) 88%, transparent);` |
+| UI5 主题 ID 判定 | [portal-module-theme.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-module-theme.js) `if (attr) return /(_dark|_hcb|dark|black)$/.test(attr) \|\| attr.includes('_hcb')` |
+| Neo 皮肤引用 `--sapList_Background` 作 fallback | [portal-neo-theme.css](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/lib/portal-neo-theme.css) `--neo-glass: color-mix(in srgb, var(--sapList_Background, #fff) 88%, transparent);` |
 
 **对未接 neo 组件的影响**:
 
@@ -600,7 +600,7 @@ CMX 主题的"颜色变化"实际上由**两个完全独立**的机制叠加:
 | `cmx-empty-state` | [cmx-empty-state-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-empty-state-neo-skin.js) | TDD 推进中 |
 | `cmx-filter-bar` | [cmx-filter-bar-neo-skin.js](../../../../packages/cmx-data-comp/src/lib/cmx-filter-bar-neo-skin.js) | TDD 推进中 |
 
-**全局默认开关**在 [import-ui5-and-app.js](../../../../cmx-portal-manager/src/import-ui5-and-app.js) 已集中声明,注释明确列出 7 个目标组件(包括 `cmx-desc-list` 还没找到对应 skin 文件):
+**全局默认开关**在 [import-ui5-and-app.js](../../../../frontend/cmx-enterprise-portal/cmx-portal-manager/src/import-ui5-and-app.js) 已集中声明,注释明确列出 7 个目标组件(包括 `cmx-desc-list` 还没找到对应 skin 文件):
 
 ```js
 /** 展示类组件（panel / toolbar / status-tag / empty-state / desc-list / filter-bar）默认 Neo 皮肤 */

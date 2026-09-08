@@ -1,7 +1,7 @@
 # HTML 片段页指南（native-page 轻量形态）
 
 > 何时读：生成 HTML 片段形态的 native-page（纯静态展示 / 简单交互 / 跨区域联动 demo）。
-> 真实范例：`cmx-container/assets/portal/data/native-pages/sources/demo/product-explorer.html`（38 行）
+> 真实范例：`backend/cmx-container/assets/portal/data/native-pages/sources/demo/product-explorer.html`（38 行）
 
 ---
 

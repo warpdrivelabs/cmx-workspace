@@ -1,7 +1,7 @@
 # 页面组装（HTML + __designer_meta__ + pageFns + DOM 绑定）
 
 > 何时读：L1+ 组装完整 HTML 页面时（除 L0 纯展示外都建议读）。
-> 真实样例：`cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html`
+> 真实样例：`backend/cmx-container/assets/portal/data/html-pages/sources/fi/cmxfico/gl/erp-voucher-cnpc-ms.html`
 
 ---
 

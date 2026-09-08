@@ -5,16 +5,16 @@ description: 指导生成 CMX 门户菜单。当用户要求新增菜单 / 添�
 
 # 菜单生成器
 
-指导你为 CMX 门户**新增 / 修改 / 删除菜单**：改 `cmx-container/assets/model/data/menu-pages/**/<file>.json`（菜单文件，定义真源）后**必须同步 `cmx_menu` 表**（§3.4 `sync_menu_db.py`）侧栏才生效；`docs/sql/v2/platform/menu_seed.sql` 与迁移文件仅在用户主动要求生成 SQL 时由脚本产出。
+指导你为 CMX 门户**新增 / 修改 / 删除菜单**：改 `backend/cmx-container/assets/model/data/menu-pages/**/<file>.json`（菜单文件，定义真源）后**必须同步 `cmx_menu` 表**（§3.4 `sync_menu_db.py`）侧栏才生效；`docs/sql/v2/platform/menu_seed.sql` 与迁移文件仅在用户主动要求生成 SQL 时由脚本产出。
 
-> **铁律：菜单只改 `cmx-container/assets/model/data/menu-pages/` 下的 JSON 文件，SQL 永远由脚本生成，不手写 SQL；改完 JSON 必须同步 `cmx_menu`（§3.4 `sync_menu_db.py`），侧栏才生效。** **默认不重生成 menu_seed.sql**：常规增删改 = 改 JSON + 同步 cmx_menu 即完成；只有当用户明确说"生成 SQL / 更新 SQL / 初始化新环境"时，才跑脚本产出 `menu_seed.sql`（v2） 等文件。用户未要求 SQL，不擅自跑生成脚本。
+> **铁律：菜单只改 `backend/cmx-container/assets/model/data/menu-pages/` 下的 JSON 文件，SQL 永远由脚本生成，不手写 SQL；改完 JSON 必须同步 `cmx_menu`（§3.4 `sync_menu_db.py`），侧栏才生效。** **默认不重生成 menu_seed.sql**：常规增删改 = 改 JSON + 同步 cmx_menu 即完成；只有当用户明确说"生成 SQL / 更新 SQL / 初始化新环境"时，才跑脚本产出 `menu_seed.sql`（v2） 等文件。用户未要求 SQL，不擅自跑生成脚本。
 
 ---
 
 ## 一、核心数据流（必须理解）
 
 ```
-cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json   （你手写的源 · 定义真源）
+backend/cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json   （你手写的源 · 定义真源）
         │
         │  ① 常规生效路径（必做）：改完 JSON 同步 cmx_menu ——
         │     python3 .agents/skills/menu-generator/scripts/sync_menu_db.py <菜单文件>（在工作区根执行）
@@ -34,7 +34,7 @@ docs/sql/v2/platform/migrations/20260819_001_baseline.up.sql  （基线，含菜
 
 - **模块（如总账 gl、报表 report）不属于菜单**，由 DAM 派生（`cmx_module` 表 + manifest），不落入 cmx_menu。
 - 一个菜单文件 = 一个模块的菜单根节点集合。文件路径 `menu-pages/fi/cmxfico/gl/explorer-menu.json` 决定 `domain_code=fi, application_code=cmxfico, module_code=gl`。
-- 模块 manifest（`cmx-container/assets/portal/data/modules/<d>/<a>/<m>/module.json`）的 `resources.menus[].menuRef` 指向菜单文件，是 DAM 派生 → DB 回源的桥梁，必须与文件路径对齐。
+- 模块 manifest（`backend/cmx-container/assets/portal/data/modules/<d>/<a>/<m>/module.json`）的 `resources.menus[].menuRef` 指向菜单文件，是 DAM 派生 → DB 回源的桥梁，必须与文件路径对齐。
 
 ---
 
@@ -42,7 +42,7 @@ docs/sql/v2/platform/migrations/20260819_001_baseline.up.sql  （基线，含菜
 
 文件顶层：`{ "version": 1, "items": [ <节点>, ... ] }`，或直接是数组。
 
-**节点字段**（参考 `cmx-container/assets/model/data/menu-pages/fi/cmxfico/gl/explorer-menu.json`）：
+**节点字段**（参考 `backend/cmx-container/assets/model/data/menu-pages/fi/cmxfico/gl/explorer-menu.json`）：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -94,8 +94,8 @@ docs/sql/v2/platform/migrations/20260819_001_baseline.up.sql  （基线，含菜
 ```
 
 **实际项目范例**：
-- `cmx-container/assets/model/data/menu-pages/fi/cmxfico/report/report-menu.json` 根 `id: "report"`，子节点 `report-portal-console` / `report-user-edit` / `report-grp-pages` 等
-- `cmx-container/assets/model/data/menu-pages/fi/cmxfico/gl/explorer-menu.json` 根 `id: "gl"`，子节点建议改为 `gl-portal-console` / `gl-user-edit` / `gl-grp-pages` 等
+- `backend/cmx-container/assets/model/data/menu-pages/fi/cmxfico/report/report-menu.json` 根 `id: "report"`，子节点 `report-portal-console` / `report-user-edit` / `report-grp-pages` 等
+- `backend/cmx-container/assets/model/data/menu-pages/fi/cmxfico/gl/explorer-menu.json` 根 `id: "gl"`，子节点建议改为 `gl-portal-console` / `gl-user-edit` / `gl-grp-pages` 等
 
 **冲突兜底**：即使按上述规范写，脚本仍保留 `_dup` 兜底机制（按路径排序后扫到冲突 code 自动加后缀），保证不会因冲突导致 SQL 生成失败；新写菜单不要依赖兜底，应主动用 prefix。
 
@@ -107,7 +107,7 @@ docs/sql/v2/platform/migrations/20260819_001_baseline.up.sql  （基线，含菜
 
 ### 3.1 新增菜单节点
 
-1. **定位目标文件**：`cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json`。模块不存在则新建文件（需同时建 manifest + DAM 注册，见 §四）。
+1. **定位目标文件**：`backend/cmx-container/assets/model/data/menu-pages/<domain>/<app>/<module>/<file>.json`。模块不存在则新建文件（需同时建 manifest + DAM 注册，见 §四）。
 2. **在 items 数组或某节点 children 中插入新节点**，按上表字段填写。`id` **必须带文件专属 prefix**（见 §2.1，如 `<module>-<业务名>`），保证跨文件不冲突；只在文件内唯一不够。
 3. 跑 `sync_menu_db.py` 同步 cmx_menu（§3.4）——侧栏刷新即生效。
 4. **（可选 · 仅当用户要求 SQL 时）跑脚本重生成**（在仓库任意位置均可，脚本自动定位 cmx-container）：
@@ -143,7 +143,7 @@ python3 .agents/skills/menu-generator/scripts/sync_menu_db.py assets/model/data/
 ```
 
 **数据库不硬编码**，脚本自动解析：
-1. **只读 `cmx-portalservice/.env`** 取 `CONFIG_FILE`（如 `./portal-server-dev.toml`，相对 `cmx-portalservice/` 解析）；
+1. **只读 `backend/cmx-portalservice/.env`** 取 `CONFIG_FILE`（如 `./portal-server-dev.toml`，相对 `backend/cmx-portalservice/` 解析）；
 2. 解析该 toml 的 `[[databases]]`，取 `default = true` 的 `db_url`（默认/平台库）；`source_type = "biz"` 的是**业务库**，菜单不写业务库；
 3. 解析 postgres URL（user/password/host/port/dbname）→ 经 `psql` 执行先删后插同步。
 
@@ -157,8 +157,8 @@ python3 .agents/skills/menu-generator/scripts/sync_menu_db.py assets/model/data/
 
 新增一个模块的菜单需要三处配套（缺一不可，否则 DAM 派生/DB 回源断链）：
 
-1. **菜单文件**：`cmx-container/assets/model/data/menu-pages/<domain>/<app>/<newmodule>/<file>.json`
-2. **模块 manifest**：`cmx-container/assets/portal/data/modules/<domain>/<app>/<newmodule>/module.json`，`resources.menus[].menuRef` 指向菜单文件（如 `fi.cmxfico.newmodule.explorer-menu`，前 3 段必须 = domain/app/module）
+1. **菜单文件**：`backend/cmx-container/assets/model/data/menu-pages/<domain>/<app>/<newmodule>/<file>.json`
+2. **模块 manifest**：`backend/cmx-container/assets/portal/data/modules/<domain>/<app>/<newmodule>/module.json`，`resources.menus[].menuRef` 指向菜单文件（如 `fi.cmxfico.newmodule.explorer-menu`，前 3 段必须 = domain/app/module）
 3. **DAM 主数据**：`cmx_domain` / `cmx_application` / `cmx_module` 三表插入（domain/app 已存在则只插 module）
 
 > 第 4 步"跑脚本生成 SQL"仅当用户主动要求 SQL 时执行，默认不需要。
@@ -173,7 +173,7 @@ python3 .agents/skills/menu-generator/scripts/sync_menu_db.py assets/model/data/
 
 **触发时机**：**默认不跑**。仅当用户主动要求"生成 SQL / 更新 SQL / 同步数据库 / 初始化菜单种子"时才执行。常规菜单增删改 = 改 JSON + `sync_menu_db.py` 同步 cmx_menu 即生效（§3.4）。
 
-**职责**：只管 SQL 生成。自动扫描 `cmx-container/assets/model/data/menu-pages/**/*.json`，展平树、计算树形字段、处理冲突、输出 SQL。**不读写 JSON 菜单内容**（那是你/用户的职责）。
+**职责**：只管 SQL 生成。自动扫描 `backend/cmx-container/assets/model/data/menu-pages/**/*.json`，展平树、计算树形字段、处理冲突、输出 SQL。**不读写 JSON 菜单内容**（那是你/用户的职责）。
 
 **扫描规则**：路径 `<domain>/<app>/<module>/<file>.json` 的前 3 段 = cmx_menu 的 domain_code/application_code/module_code。
 
@@ -206,7 +206,7 @@ python3 .agents/skills/menu-generator/scripts/sync_menu_db.py assets/model/data/
 ## 六、检查清单（交付前自检）
 
 **默认检查（每次增删改都要）**：
-- [ ] 改了 `cmx-container/assets/model/data/menu-pages/` 下的 JSON 文件？（不是直接改 SQL）
+- [ ] 改了 `backend/cmx-container/assets/model/data/menu-pages/` 下的 JSON 文件？（不是直接改 SQL）
 - [ ] 跑了 `sync_menu_db.py` 同步 cmx_menu？（不同步侧栏不生效）
 - [ ] 新增/修改的节点 `id` 都带了文件专属 prefix（推荐 `<module>-<业务名>`，见 §2.1）？
 - [ ] 新建模块时三处配套齐全？（菜单文件 / manifest / DAM 表）
