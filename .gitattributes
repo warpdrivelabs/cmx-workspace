@@ -1,0 +1,2 @@
+# bash 脚本必须保持 LF——Windows 机器 autocrlf 检出成 CRLF 会导致 bash 报 "\r" 错误
+*.sh text eol=lf
