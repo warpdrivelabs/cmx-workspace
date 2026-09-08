@@ -6,7 +6,7 @@
 > - `backend/cmx-container` @ 63af989f（onto 三页 designer/explorer/workshop + vendor）
 > - `backend/cmx-ontology`（后端小改：乐观锁、删接口级联；从 main 新建同名分支）
 > - `frontend/cmx-enterprise-portal`（W0：cmx-data-comp 子集 bundle 构建脚本；从 main 新建同名分支）
-> 状态：定稿待用户确认开工
+> 状态：**已实施（2026-09-08）**——四仓 `feat/onto-designer-ux`：组件 4566263 / 后端 9f7124f / portal W0 a83688e / container a501c1b2。验收：组件 vitest 82 绿 + demo 自检 49 绿 + md5 双侧对账；后端 cargo check + clippy 干净 + 冒烟 10/10（B0 六步、B1 级联、B2 留痕）；真机 E2E 通过虚线增删→D6 自动落库（version 1→2→3）、撤销再落库、实现边面板、删除接口级联、亮/暗主题矩阵（截图 /tmp/onto-ux/）。实施中发现并修正两处方案外缺陷：视图级/数据级分级判定初版逻辑反了（已修）、native-pages 响应无 Cache-Control 致浏览器缓存旧壳（已加 no-cache）。
 
 ## 一、背景与问题
 
