@@ -63,7 +63,7 @@
 
 | 目录                                                                                          | 权威规范 / 技能目录                                                                  |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `backend/cmx-container`                                                                     | `backend/cmx-container/AGENTS.md`（19 章）+ `.agents/skills/`（14 个）              |
+| `backend/cmx-container`                                                                     | `backend/cmx-container/AGENTS.md`（19 章）+ `.agents/skills/`（12 个）              |
 | `backend/cmx-agent`                                                                         | `backend/cmx-agent/AGENTS.md`（不变量 / fail-closed / crate 分层等架构约束）             |
 | `backend/cmx-portalservice` / `backend/cmx-flowengine` / `backend/cmx-report` / `backend/cmx-rulesengine` / `backend/cmx-mdm` / `backend/cmx-model` / `backend/cmx-ontology` / `backend/cmx-data-auth` | 业务层薄，遵循 `backend/cmx-container/AGENTS.md`（各仓 README 有架构说明）   |
 | `frontend/cmx-mega-sheet` / `frontend/cmx-ontology-graph` / `frontend/cmx-decision-graph`  | 无（遵循就近代码风格；`README.md` 是唯一手册）                                                 |
@@ -76,7 +76,7 @@
 
 ## 三、技能索引
 
-需要时点开 `.agents/skills/<name>/SKILL.md` 查看，不要求预读。根目录 12 个（跨子项目）+ `backend/cmx-container/.agents/skills/` 14 个（Rust 后端）。
+需要时点开 `.agents/skills/<name>/SKILL.md` 查看，不要求预读。根目录 12 个（跨子项目）+ `backend/cmx-container/.agents/skills/` 12 个（Rust 后端）。
 
 > ⚠️ 结构重组后，部分技能正文里的仓库内路径引用仍是旧平铺路径（如 `cmx-container/assets/…`），使用时按 §首部约定加 `backend/` / `frontend/` 前缀解读；后续逐步修正技能正文。
 
@@ -88,8 +88,6 @@
 | `modql`                             | 设计 Filter / Entity、动态查询过滤 |
 | `cmx-sql-execution`                 | 手写 SQL、构造 DataValue         |
 | `pg-table-generator`                | 新建 PostgreSQL 表 DDL          |
-| `sql-guide`                         | 编写 / 维护 SQL 迁移、`init_ddl.sql` |
-| `config-sync`                       | 新增 / 修改 TOML 配置项或环境变量       |
 | `wasm-plugin-developer`             | 开发 WASM 插件项目                |
 | `plugin-metadata-generator`         | 创建 / 修改插件表、种子数据            |
 | `plugin-fn-doc`                     | 编写 `#[plugin_fn]` 函数文档注释     |
@@ -113,8 +111,8 @@
 | `plan-naming`           | 用 `/plan` 创建方案文档（全工作区唯一真源）                                                                          |
 | `cmx-flow-toolkit`      | cmx-flowengine 双模式：流程定义部署、流程测试数据重建                                                               |
 | `workspace-init`        | **刚克隆根仓后的工作区初始化**：一句"初始化工程"触发，跑技能自带 `scripts/init-workspace.sh` 幂等克隆 15 个子仓 + 校验 + 后续步骤指引 |
-| `config-sync`           | 根级版（与 cmx-container 内同名技能**内容不同、各自演化**：根级面向全工作区，container 版面向其仓内 `config/` 模板）                      |
-| `sql-guide`             | 根级版（同上，与 container 内同名技能内容不同）                                                                     |
+| `config-sync`           | 全工作区唯一版（原 cmx-container 内同名技能已删除）：面向全工作区，新增 / 修改 TOML 配置项或环境变量后同步模板与手册                |
+| `sql-guide`             | 全工作区唯一版（原 cmx-container 内同名技能已删除）：SQL 真源在 `backend/cmx-container/docs/sql/`                            |
 
 ### 技能编写规范（新增/修改技能必读）
 
