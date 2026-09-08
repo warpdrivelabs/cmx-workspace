@@ -2,6 +2,7 @@
 # 初始化 CMX 工作区：把 15 个子仓按 backend/ + frontend/ + cmx-launcher/ 三分结构克隆到位（完整克隆，不浅克）。
 # 幂等：已存在的 Git 仓默认跳过；非 Git 目录视为冲突报错（不自动覆盖，人工处理）。
 # 本脚本的 REPOS 清单是子仓清单唯一真源——新增/下线子仓时改这里，并同步 AGENTS.md §六。
+# 兼容 macOS 自带 bash 3.2（不使用关联数组），Git Bash / WSL / Linux 同样可跑。
 # 用法: bash .agents/skills/workspace-init/scripts/init-workspace.sh [--update] [--dry-run]
 #   --update    已存在的仓顺带 git pull --ff-only 更新（默认跳过不动）
 #   --dry-run   只打印将执行的动作，不实际 clone/pull
@@ -23,29 +24,32 @@ while [ $# -gt 0 ]; do
 done
 
 # 清单：工作区相对路径 -> 仓库名（clone 用各仓默认分支：除 mega-sheet 为 master 外均为 main）
-declare -A REPOS=(
-  [backend/cmx-container]=cmx-container
-  [backend/cmx-portalservice]=cmx-portalservice
-  [backend/cmx-agent]=cmx-agent
-  [backend/cmx-flowengine]=cmx-flowengine
-  [backend/cmx-report]=cmx-report
-  [backend/cmx-rulesengine]=cmx-rulesengine
-  [backend/cmx-model]=cmx-model
-  [backend/cmx-mdm]=cmx-mdm
-  [backend/cmx-ontology]=cmx-ontology
-  [backend/cmx-data-auth]=cmx-data-auth
-  [frontend/cmx-enterprise-portal]=cmx-enterprise-portal
-  [frontend/cmx-mega-sheet]=cmx-mega-sheet
-  [frontend/cmx-ontology-graph]=cmx-ontology-graph
-  [frontend/cmx-decision-graph]=cmx-decision-graph
-  [cmx-launcher]=cmx-launcher
+# 用有序数组而非关联数组，兼容 macOS 自带 bash 3.2；元素形如 "相对路径:仓库名"。
+REPOS=(
+  "backend/cmx-container:cmx-container"
+  "backend/cmx-portalservice:cmx-portalservice"
+  "backend/cmx-agent:cmx-agent"
+  "backend/cmx-flowengine:cmx-flowengine"
+  "backend/cmx-report:cmx-report"
+  "backend/cmx-rulesengine:cmx-rulesengine"
+  "backend/cmx-model:cmx-model"
+  "backend/cmx-mdm:cmx-mdm"
+  "backend/cmx-ontology:cmx-ontology"
+  "backend/cmx-data-auth:cmx-data-auth"
+  "frontend/cmx-enterprise-portal:cmx-enterprise-portal"
+  "frontend/cmx-mega-sheet:cmx-mega-sheet"
+  "frontend/cmx-ontology-graph:cmx-ontology-graph"
+  "frontend/cmx-decision-graph:cmx-decision-graph"
+  "cmx-launcher:cmx-launcher"
 )
+total_repos=${#REPOS[@]}
 
 ok=0; skipped=0; updated=0; failed=0; conflicted=0
 fail_list=""; conflict_list=""
 
-for path in $(printf '%s\n' "${!REPOS[@]}" | sort); do
-  name="${REPOS[$path]}"
+for entry in "${REPOS[@]}"; do
+  path="${entry%%:*}"
+  name="${entry##*:}"
   dst="$ROOT/$path"
   url="$ORG/$name.git"
 
@@ -70,7 +74,7 @@ done
 
 echo
 echo "===== 汇总 ====="
-echo "新克隆 $ok · 跳过 $skipped · 更新 $updated · 失败 $failed · 冲突 $conflicted / 共 ${#REPOS[@]} 仓"
+echo "新克隆 $ok · 跳过 $skipped · 更新 $updated · 失败 $failed · 冲突 $conflicted / 共 $total_repos 仓"
 [ -n "$fail_list" ]    && echo "失败:$fail_list（网络问题可重跑本脚本，已克隆的会自动跳过）"
 [ -n "$conflict_list" ] && echo "冲突:$conflict_list（目录存在但非 Git 仓，请人工确认）"
 
