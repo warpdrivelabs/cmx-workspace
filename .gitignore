@@ -21,3 +21,6 @@ docs-site/public/
 docs-site/resources/
 docs-site/.hugo_build.lock
 /package-lock.json
+/cmx-launcher/launcher_state.json
+/cmx-launcher/logs/
+.venv/
