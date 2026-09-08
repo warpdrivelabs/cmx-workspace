@@ -15,7 +15,7 @@
 | 目录 / 文件              | 是什么                                                                                     |
 | -------------------- | -------------------------------------------------------------------------------------- |
 | `backend/`           | **全部 Rust 后端仓**（10 个独立 Git 仓，见 §1.2）                                                      |
-| `frontend/`          | **全部前端仓**（3 个独立 Git 仓：`cmx-enterprise-portal` npm workspace / `cmx-mega-sheet` / `cmx-ontology-graph`） |
+| `frontend/`          | **全部前端仓**（4 个独立 Git 仓：`cmx-enterprise-portal` npm workspace / `cmx-mega-sheet` / `cmx-ontology-graph` / `cmx-decision-graph`） |
 | `cmx-launcher/`      | **开发服务控制台**（独立 Git 仓，Python FastAPI + 原生 JS 单页，<http://127.0.0.1:8100>）——一键启停 / 实时日志 / target 磁盘治理 |
 | `.agents/skills/`    | 根级跨子项目技能（11 个，见 §三）                                                                      |
 | `documents/`         | 人工方案库（唯一真源，见 §四、8 / §九）                                                                  |
@@ -38,7 +38,7 @@
 | `cmx-data-auth`       | **数据权限引擎微服务（`cmx-dataauth-server`，:8098）**，PDP 部分求值产出约束 AST 多后端编译（SQL / 内存谓词 / ES）+ 列脱敏 + ReBAC，一芯多壳（dataauth-core / store-pg / app / server） | Rust / axum                      |
 | `cmx-agent`           | **企业桌面智能体微服务**（复刻腾讯云 WorkBuddy，「形/核/体」三层；当前 M1：内核回合循环 + 五层守卫 + 会话 JSONL 落库 + JSON 前门，**CLI/桌面壳、无 HTTP 端口**；构建测试一律加 `--offline`）。有自己的 `AGENTS.md`，与 cmx-container 无跨仓 path 引用 | Rust / edition 2024              |
 
-### 1.3 `frontend/` —— 前端仓（3 个）
+### 1.3 `frontend/` —— 前端仓（4 个）
 
 | 目录                                | 是什么                                                                                     | 技术栈                                   |
 | --------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
@@ -51,6 +51,7 @@
 | └ `packages/cmx-shared`           | **共享纯工具域注册中心**（运行时挂 `globalThis.cmx.{domain}`，native/html 资产页经全局取用，与组件库解耦）                    | 原生 JS / Vitest 4                    |
 | `cmx-mega-sheet`                  | 自研电子表格引擎（`<cmx-megasheet>` 自定义元素，零运行时依赖，含公式引擎 / 画布渲染 / XLSX·PDF·CSV IO）                        | TypeScript / Web Components / Vitest |
 | `cmx-ontology-graph`              | 本体图可视化编辑 Web Component（ER 图：富卡片对象 + 基数关系边 + 接口虚线），`cmx-ontology` 前端四区工作台引用                     | TypeScript / 零框架零运行时依赖               |
+| `cmx-decision-graph`              | 决策图（JDM DAG）可视化编辑 Web Component（`<cmx-decision-graph>`：自动分层布局 / 拖拽 / 拉线连边防成环 / 只读预览），`cmx-rulesengine` 前端引用，对标 `cmx-mega-sheet` | TypeScript / 零框架零运行时依赖               |
 
 > `cmx-enterprise-portal` 内部的 `cmx-portal-manager` / `cmx-html-designer` / `packages/*` **均非独立 Git 仓**，随 `cmx-enterprise-portal` 仓提交（见 §六）。
 
@@ -65,7 +66,7 @@
 | `backend/cmx-container`                                                                     | `backend/cmx-container/AGENTS.md`（19 章）+ `.agents/skills/`（14 个）              |
 | `backend/cmx-agent`                                                                         | `backend/cmx-agent/AGENTS.md`（不变量 / fail-closed / crate 分层等架构约束）             |
 | `backend/cmx-portalservice` / `backend/cmx-flowengine` / `backend/cmx-report` / `backend/cmx-rulesengine` / `backend/cmx-mdm` / `backend/cmx-model` / `backend/cmx-ontology` / `backend/cmx-data-auth` | 业务层薄，遵循 `backend/cmx-container/AGENTS.md`（各仓 README 有架构说明）   |
-| `frontend/cmx-mega-sheet` / `frontend/cmx-ontology-graph`                                   | 无（遵循就近代码风格；`README.md` 是唯一手册）                                                 |
+| `frontend/cmx-mega-sheet` / `frontend/cmx-ontology-graph` / `frontend/cmx-decision-graph`  | 无（遵循就近代码风格；`README.md` 是唯一手册）                                                 |
 | `frontend/cmx-enterprise-portal/cmx-portal-manager` / `cmx-html-designer`                   | 技能 `cmx-components-guide`（`references/frontend-conventions.md`）                 |
 | `frontend/cmx-enterprise-portal/packages/cmx-data-comp`                                     | 技能 `cmx-components-guide`（封装源头，改导出 API 需评审）                                  |
 | `frontend/cmx-enterprise-portal/packages/cmx-ui5-runtime` / `packages/cmx-icon-resource` / `packages/cmx-shared` | 无专项规范（ui5-runtime / icon-resource 改动影响 Portal + Designer 两端，须双端构建验证）    |
@@ -111,7 +112,7 @@
 | `meta-enricher`         | 批量**补全元数据**字段 edit/display/width 等列属性（EDIT_MODES 规范值域，幂等）                                          |
 | `plan-naming`           | 用 `/plan` 创建方案文档（全工作区唯一真源）                                                                          |
 | `cmx-flow-toolkit`      | cmx-flowengine 双模式：流程定义部署、流程测试数据重建                                                               |
-| `workspace-init`        | **刚克隆根仓后的工作区初始化**：一句"初始化工程"触发，跑技能自带 `scripts/init-workspace.sh` 幂等克隆 14 个子仓 + 校验 + 后续步骤指引 |
+| `workspace-init`        | **刚克隆根仓后的工作区初始化**：一句"初始化工程"触发，跑技能自带 `scripts/init-workspace.sh` 幂等克隆 15 个子仓 + 校验 + 后续步骤指引 |
 | `config-sync`           | 根级版（与 cmx-container 内同名技能**内容不同、各自演化**：根级面向全工作区，container 版面向其仓内 `config/` 模板）                      |
 | `sql-guide`             | 根级版（同上，与 container 内同名技能内容不同）                                                                     |
 
@@ -189,12 +190,12 @@
 
 ## 六、Git 仓库分布与操作注意
 
-本工作区是**根仓 + 14 个独立子仓**：根仓 `cmx-workspace.git`（gitee `warpdrivelabs` org）承载根级共享资产；`backend/` 10 仓 + `frontend/` 3 仓 + `cmx-launcher/` 1 仓均为独立 Git 仓，远端统一在 gitee `warpdrivelabs` org。`frontend/cmx-enterprise-portal` 内部的 `cmx-portal-manager` / `cmx-html-designer` / `packages/*` **非独立 Git**，随该仓提交。原 `cmx-portal` / `cmx-devops` 仓未拉取，忽略。
+本工作区是**根仓 + 15 个独立子仓**：根仓 `cmx-workspace.git`（gitee `warpdrivelabs` org）承载根级共享资产；`backend/` 10 仓 + `frontend/` 4 仓 + `cmx-launcher/` 1 仓均为独立 Git 仓，远端统一在 gitee `warpdrivelabs` org。`frontend/cmx-enterprise-portal` 内部的 `cmx-portal-manager` / `cmx-html-designer` / `packages/*` **非独立 Git**，随该仓提交。原 `cmx-portal` / `cmx-devops` 仓未拉取，忽略。
 
 > **🚀 新克隆根仓后的初始化**：clone `cmx-workspace` 后 `backend/`、`frontend/`、`cmx-launcher/` 为空，对 AI 说一句**"初始化工程"**（触发技能 `workspace-init`），或直接执行：
 >
 > ```bash
-> bash .agents/skills/workspace-init/scripts/init-workspace.sh   # 幂等完整克隆全部 14 个子仓（--update 顺带更新 / --dry-run 试跑）
+> bash .agents/skills/workspace-init/scripts/init-workspace.sh   # 幂等完整克隆全部 15 个子仓（--update 顺带更新 / --dry-run 试跑）
 > ```
 >
 > 子仓清单**唯一真源**在该脚本的 `REPOS` 数组；新增/下线子仓时改脚本并同步本节仓库清单。
@@ -213,6 +214,7 @@
 | `frontend/cmx-enterprise-portal/`               | Git     | `cmx-enterprise-portal.git`（前端 npm workspace，main 分支） |
 | `frontend/cmx-mega-sheet/`                      | Git     | `cmx-mega-sheet.git`（**master 分支**）      |
 | `frontend/cmx-ontology-graph/`                  | Git     | `cmx-ontology-graph.git`（main 分支）        |
+| `frontend/cmx-decision-graph/`                  | Git     | `cmx-decision-graph.git`（main 分支）        |
 | `cmx-launcher/`                                 | Git     | `cmx-launcher.git`（开发服务控制台）            |
 
 ### 操作要点

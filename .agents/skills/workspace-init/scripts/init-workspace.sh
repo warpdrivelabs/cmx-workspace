@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 初始化 CMX 工作区：把 14 个子仓按 backend/ + frontend/ + cmx-launcher/ 三分结构克隆到位（完整克隆，不浅克）。
+# 初始化 CMX 工作区：把 15 个子仓按 backend/ + frontend/ + cmx-launcher/ 三分结构克隆到位（完整克隆，不浅克）。
 # 幂等：已存在的 Git 仓默认跳过；非 Git 目录视为冲突报错（不自动覆盖，人工处理）。
 # 本脚本的 REPOS 清单是子仓清单唯一真源——新增/下线子仓时改这里，并同步 AGENTS.md §六。
 # 用法: bash .agents/skills/workspace-init/scripts/init-workspace.sh [--update] [--dry-run]
@@ -37,6 +37,7 @@ declare -A REPOS=(
   [frontend/cmx-enterprise-portal]=cmx-enterprise-portal
   [frontend/cmx-mega-sheet]=cmx-mega-sheet
   [frontend/cmx-ontology-graph]=cmx-ontology-graph
+  [frontend/cmx-decision-graph]=cmx-decision-graph
   [cmx-launcher]=cmx-launcher
 )
 
