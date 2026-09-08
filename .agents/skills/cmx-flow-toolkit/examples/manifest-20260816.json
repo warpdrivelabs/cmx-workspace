@@ -1,0 +1,127 @@
+{
+  "_comment": "cmx-flowengine 20260816 两测试数据重建清单（身份/绑定/版本覆盖）。字段契约见技能 SKILL.md。",
+  "seed_time": "2026-08-16 02:00:00+00",
+  "publish_time": "2026-08-16 12:00:00+00",
+  "iam": {
+    "orgs": [
+      {"id": "zongbu", "code": "ZB", "name": "总部", "parent_id": null, "path": "/zongbu", "leader_user_id": "u_ceo"},
+      {"id": "fin_bj", "code": "FINBJ", "name": "北京财务部", "parent_id": "zongbu", "path": "/zongbu/fin_bj", "leader_user_id": "u_bjlead"},
+      {"id": "fin_sh", "code": "FINSH", "name": "上海财务部", "parent_id": "zongbu", "path": "/zongbu/fin_sh", "leader_user_id": "u_shlead"},
+      {"id": "fin_bj_g1", "code": "FBJG1", "name": "北京财务一组", "parent_id": "fin_bj", "path": "/zongbu/fin_bj/fin_bj_g1", "leader_user_id": "u_bjg1"},
+      {"id": "branch_gz", "code": "BGZ", "name": "广州分公司", "parent_id": "zongbu", "path": "/branch_gz", "leader_user_id": null}
+    ],
+    "roles": [
+      {"id": "finance", "code": "finance", "name": "财务角色"},
+      {"id": "manager", "code": "manager", "name": "经理角色"},
+      {"id": "director", "code": "director", "name": "总监角色"},
+      {"id": "cashier", "code": "cashier", "name": "出纳角色"},
+      {"id": "auditor", "code": "auditor", "name": "审计角色"}
+    ],
+    "positions": [
+      {"id": "cfo", "code": "cfo", "name": "首席财务官", "org_id": "zongbu"},
+      {"id": "fin_mgr", "code": "fin_mgr", "name": "财务经理", "org_id": "fin_bj"},
+      {"id": "clerk", "code": "clerk", "name": "财务专员", "org_id": "fin_bj"}
+    ],
+    "users": [
+      {"id": "u_ceo", "username": "u_ceo", "nickname": "首席执行官", "org_id": "zongbu"},
+      {"id": "u_bjlead", "username": "u_bjlead", "nickname": "北京财务负责人", "org_id": "fin_bj"},
+      {"id": "u_shlead", "username": "u_shlead", "nickname": "上海财务负责人", "org_id": "fin_sh"},
+      {"id": "u_fin1", "username": "u_fin1", "nickname": "财务专员1", "org_id": "fin_bj"},
+      {"id": "u_fin2", "username": "u_fin2", "nickname": "财务专员2", "org_id": "fin_bj"},
+      {"id": "u_fin3", "username": "u_fin3", "nickname": "财务专员3", "org_id": "fin_sh"},
+      {"id": "u_cashier1", "username": "u_cashier1", "nickname": "出纳1", "org_id": "fin_bj"},
+      {"id": "u_auditor1", "username": "u_auditor1", "nickname": "审计1", "org_id": "zongbu"},
+      {"id": "u_cfo", "username": "u_cfo", "nickname": "财务总监CFO", "org_id": "zongbu"},
+      {"id": "u_bjg1", "username": "u_bjg1", "nickname": "北京一组员", "org_id": "fin_bj_g1"},
+      {"id": "u_gz1", "username": "u_gz1", "nickname": "广州员工", "org_id": "branch_gz"},
+      {"id": "u_emp", "username": "u_emp", "nickname": "总部员工·张三", "org_id": "zongbu"},
+      {"id": "u_emp2", "username": "u_emp2", "nickname": "上海员工·李四", "org_id": "fin_sh"},
+      {"id": "u_emp3", "username": "u_emp3", "nickname": "北京员工·王五", "org_id": "fin_bj"},
+      {"id": "u_emp4", "username": "u_emp4", "nickname": "外派员工·赵六", "org_id": "zongbu"},
+      {"id": "u_emp6", "username": "u_emp6", "nickname": "总部员工·钱七", "org_id": "zongbu"},
+      {"id": "u_emp7", "username": "u_emp7", "nickname": "总部员工·孙八", "org_id": "zongbu"},
+      {"id": "u_other", "username": "u_other", "nickname": "其他用户", "org_id": "zongbu"},
+      {"id": "u_mgr", "username": "u_mgr", "nickname": "总部部门经理", "org_id": "zongbu"},
+      {"id": "u_director", "username": "u_director", "nickname": "总部总监", "org_id": "zongbu"},
+      {"id": "u_cashier", "username": "u_cashier", "nickname": "总部出纳", "org_id": "zongbu"},
+      {"id": "u_finb", "username": "u_finb", "nickname": "上海分公司财务", "org_id": "fin_sh"},
+      {"id": "u_applicant", "username": "u_applicant", "nickname": "测试申请人", "org_id": "fin_bj"},
+      {"id": "boss", "username": "boss", "nickname": "老板", "org_id": "zongbu"},
+      {"id": "xiaoli", "username": "xiaoli", "nickname": "小李", "org_id": "fin_sh"},
+      {"id": "bjuser", "username": "bjuser", "nickname": "北京用户", "org_id": "fin_bj"},
+      {"id": "alice_init", "username": "alice_init", "nickname": "发起人A", "org_id": "zongbu"},
+      {"id": "bob_init", "username": "bob_init", "nickname": "发起人B", "org_id": "zongbu"},
+      {"id": "u_ser", "username": "u_ser", "nickname": "串行主流程发起人", "org_id": "zongbu"},
+      {"id": "subrej", "username": "subrej", "nickname": "子流程退回发起人", "org_id": "zongbu"}
+    ],
+    "user_roles": [
+      {"id": "ur1", "user_id": "u_ceo", "role_id": "manager"},
+      {"id": "ur2", "user_id": "u_ceo", "role_id": "director"},
+      {"id": "ur3", "user_id": "u_bjlead", "role_id": "manager"},
+      {"id": "ur4", "user_id": "u_shlead", "role_id": "manager"},
+      {"id": "ur5", "user_id": "u_fin1", "role_id": "finance"},
+      {"id": "ur6", "user_id": "u_fin2", "role_id": "finance"},
+      {"id": "ur7", "user_id": "u_fin3", "role_id": "finance"},
+      {"id": "ur8", "user_id": "u_cashier1", "role_id": "cashier"},
+      {"id": "ur9", "user_id": "u_auditor1", "role_id": "auditor"},
+      {"id": "ur10", "user_id": "u_cfo", "role_id": "director"}
+    ],
+    "user_positions": [
+      {"id": "up1", "user_id": "u_cfo", "position_id": "cfo", "is_primary": true},
+      {"id": "up2", "user_id": "u_bjlead", "position_id": "fin_mgr", "is_primary": true},
+      {"id": "up3", "user_id": "u_fin1", "position_id": "clerk", "is_primary": true}
+    ]
+  },
+  "subflow_bindings": [
+    {"called_key": "fin_review", "org_id": "zongbu", "target_definition_key": "fin_review_hq", "enabled": true, "remark": "总部→三级复核（精确）"},
+    {"called_key": "fin_review", "org_id": "fin_sh", "target_definition_key": "fin_review_branch", "enabled": true, "remark": "上海财务部→单签（精确）"},
+    {"called_key": "fin_review", "org_id": null, "target_definition_key": "fin_review_hq", "enabled": true, "remark": "默认兜底→三级复核"},
+    {"called_key": "dept_review", "org_id": "zongbu", "target_definition_key": "sub_review", "enabled": true, "remark": "总部→通用复核（精确）"},
+    {"called_key": "dept_review", "org_id": "fin_sh", "target_definition_key": "sub_risk", "enabled": true, "remark": "上海→风控（精确）"},
+    {"called_key": "dept_review", "org_id": "fin_bj", "target_definition_key": "fin_review_hq", "enabled": true, "remark": "北京→三级复核（精确，孙组织继承）"},
+    {"called_key": "dept_review", "org_id": "branch_gz", "target_definition_key": "fin_review_branch", "enabled": true, "remark": "广州独立根→单签（不继承总部）"},
+    {"called_key": "dept_review", "org_id": "fin_bj_g1", "target_definition_key": "sub_risk", "enabled": false, "remark": "北京一组（禁用→回落继承 fin_bj）"},
+    {"called_key": "dept_review", "org_id": null, "target_definition_key": "sub_review", "enabled": true, "remark": "默认兜底→通用复核"}
+  ],
+  "form_bindings": [
+    {"form_key": "pay.review", "kind": "html", "html_page": "flow-pay-review-form", "biz_table": "cf_pay_request", "domain": "fi", "application": "cmxfico", "module": "gl", "title": "请款单复核（HTML 表单）", "updated_at": "2026-08-17 19:37:16.691259+08"},
+    {"form_key": "pay.review.html", "kind": "html", "html_page": "flow-pay-review-form", "biz_table": "cf_pay_request", "domain": "fi", "application": "cmxfico", "module": "gl", "title": "请款单复核（HTML 表单）", "updated_at": "2026-08-17 19:37:16.70757+08"},
+    {"form_key": "expense.form", "kind": "workspace", "biz_table": "cf_expense", "domain": "fi", "application": "cmxfico", "module": "gl", "title": "差旅报销工作台", "updated_at": "2026-08-17 19:37:16.715599+08"}
+  ],
+  "def_versions": {
+    "travel_expense": 1,
+    "fin_review_hq": 1,
+    "fin_review_branch": 1,
+    "main_serial_multi": 1,
+    "main_parallel_multi": 1,
+    "main_org_routed": 1,
+    "main_nested": 1,
+    "main_varmap": 1,
+    "main_nobinding": 1,
+    "sub_review": 1,
+    "sub_risk": 1,
+    "sub_middle": 1,
+    "sub_grandchild": 1,
+    "sub_varchild": 1
+  },
+  "def_notes": {
+    "travel_expense": "biz-test 差旅报销",
+    "fin_review_hq": "biz-test 差旅报销",
+    "fin_review_branch": "biz-test 差旅报销",
+    "main_serial_multi": "full-test 子流程专项",
+    "main_parallel_multi": "full-test 子流程专项",
+    "main_org_routed": "full-test 子流程专项",
+    "main_nested": "full-test 子流程专项",
+    "main_varmap": "full-test 子流程专项",
+    "main_nobinding": "full-test 子流程专项",
+    "sub_review": "full-test 子流程专项",
+    "sub_risk": "full-test 子流程专项",
+    "sub_middle": "full-test 子流程专项",
+    "sub_grandchild": "full-test 子流程专项",
+    "sub_varchild": "full-test 子流程专项"
+  },
+  "called_targets": {
+    "fin_review": ["fin_review_hq", "fin_review_branch"],
+    "dept_review": ["sub_review", "sub_risk", "fin_review_hq", "fin_review_branch"]
+  }
+}

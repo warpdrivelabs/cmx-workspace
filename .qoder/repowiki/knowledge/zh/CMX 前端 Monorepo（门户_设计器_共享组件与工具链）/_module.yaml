@@ -1,0 +1,21 @@
+schema_version: 1
+module_path: ""
+title: CMX 前端 Monorepo（门户/设计器/共享组件与工具链）
+scope:
+    - README.md
+    - CONTRIBUTING.md
+    - AGENTS.md
+    - .gitignore
+    - .npmrc
+    - .stignore
+    - package.json
+    - package-lock.json
+    - e2e-struct.mjs
+    - shot-hdr.mjs
+    - docker命令.txt
+    - LICENSE
+    - SECURITY.md
+    - cmx-logo.png
+source_files: []
+depends_on: []
+related_to: []

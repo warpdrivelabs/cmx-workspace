@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报表两模式加载存储 · ReportModel 单一事实源设计方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea; --cyan:#22d3ee;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:320px 1fr;max-width:1560px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.active{color:var(--ink);background:var(--panel2);border-left-color:var(--accent)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.accent{border-color:var(--accent);color:#bcd3ff}
+  .chip.green{border-color:var(--accent2);color:#a7f3c8}
+  .chip.warn{border-color:var(--warn);color:#fde3af}
+  .chip.purple{border-color:var(--purple);color:#e5cbff}
+  section{margin:0 0 44px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 16px;padding-top:10px;letter-spacing:-.01em}
+  h2.sec .n{color:var(--accent);margin-right:10px;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#dfe4f0}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--cyan);letter-spacing:.02em}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c8d3e8}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.8px;line-height:1.6;color:#c8d3e8}
+  pre .c{color:#6b7280}
+  pre .k{color:var(--purple)}
+  pre .s{color:#a7f3c8}
+  pre .f{color:var(--accent)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .panel.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .card h4{margin-top:0}
+  .callout{border-left:3px solid var(--accent);background:linear-gradient(90deg,rgba(79,140,255,.08),transparent);padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--warn);background:linear-gradient(90deg,rgba(245,158,11,.09),transparent)}
+  .callout.green{border-left-color:var(--accent2);background:linear-gradient(90deg,rgba(34,197,94,.09),transparent)}
+  .callout.danger{border-left-color:var(--danger);background:linear-gradient(90deg,rgba(239,68,68,.09),transparent)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#dfe4f0;font-weight:600}
+  td code{font-size:12px}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:5px;font-family:var(--mono)}
+  .tag.pk{background:rgba(199,146,234,.16);color:var(--purple);border:1px solid rgba(199,146,234,.3)}
+  .tag.blob{background:rgba(245,158,11,.16);color:var(--warn);border:1px solid rgba(245,158,11,.3)}
+  .tag.new{background:rgba(34,197,94,.16);color:var(--accent2);border:1px solid rgba(34,197,94,.3)}
+  .tag.exist{background:rgba(154,163,184,.14);color:var(--ink-dim);border:1px solid var(--line)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0}
+  .flow .node{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 14px;font-size:13px}
+  .flow .node.hot{border-color:var(--accent);color:#bcd3ff}
+  .flow .node.store{border-color:var(--accent2);color:#a7f3c8}
+  .flow .arr{color:var(--accent);font-size:18px}
+  .kv{display:grid;grid-template-columns:180px 1fr;gap:6px 14px;margin:10px 0;font-size:13.5px}
+  .kv .k{color:var(--ink-dim)}
+  .num-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;margin-right:8px}
+  .mode-tab{display:inline-block;padding:4px 12px;border-radius:7px 7px 0 0;font-weight:600;font-size:13px}
+  .mode-a{background:rgba(79,140,255,.14);color:#bcd3ff;border:1px solid var(--accent);border-bottom:0}
+  .mode-b{background:rgba(34,197,94,.14);color:#a7f3c8;border:1px solid var(--accent2);border-bottom:0}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:28px 0}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-dim);margin:8px 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#overview"><span class="n">0</span>核心结论 · TL;DR</a>
+  <a href="#principle"><span class="n">1</span>ReportModel 单一事实源</a>
+  <a href="#model" class="sub">1.1 模型完整结构</a>
+  <a href="#hierarchy" class="sub">1.2 结构层级 Region▸Row×Col▸Cell</a>
+  <a href="#split" class="sub">1.3 版式层 vs 数据层</a>
+  <a href="#responsibility" class="sub">1.4 组件职责边界</a>
+  <a href="#storage"><span class="n">2</span>存储映射 · 表结构</a>
+  <a href="#tables" class="sub">2.1 17 表全景</a>
+  <a href="#fmt-blob" class="sub">2.2 report_fmt BLOB 详解</a>
+  <a href="#relational" class="sub">2.3 关系表 vs BLOB 双写</a>
+  <a href="#modeA"><span class="n">3</span>模式一 · 设计版式</a>
+  <a href="#modeA-load" class="sub">3.1 加载链路</a>
+  <a href="#modeA-save" class="sub">3.2 存储链路</a>
+  <a href="#modeA-api" class="sub">3.3 端点契约</a>
+  <a href="#modeB"><span class="n">4</span>模式二 · 报表数据</a>
+  <a href="#modeB-load" class="sub">4.1 加载链路</a>
+  <a href="#modeB-save" class="sub">4.2 存储链路</a>
+  <a href="#modeB-api" class="sub">4.3 端点契约</a>
+  <a href="#serialize"><span class="n">5</span>序列化契约</a>
+  <a href="#dbmap"><span class="n">6</span>模型 ↔ 关系表映射</a>
+  <a href="#backend"><span class="n">7</span>后端改动清单</a>
+  <a href="#frontend"><span class="n">8</span>前端改动清单</a>
+  <a href="#phases"><span class="n">9</span>实施阶段</a>
+  <a href="#open"><span class="n">10</span>待定 · 边界</a>
+</nav>
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX · 财务报表平台 · RPT</div>
+  <h1>报表两模式加载存储 —— ReportModel 单一事实源方案</h1>
+  <div class="sub">设计版式（样式/属性/结构，Excel 兼容 BLOB）与报表数据（单元格取值）分离加载存储，统一收敛到一个 ReportModel；SpreadJS 组件只负责可视化与编辑。</div>
+  <div class="meta">
+    <span class="chip accent">native-pages · portal.rpt.designer</span>
+    <span class="chip">cmx-spreadjs-sheet</span>
+    <span class="chip green">fico-db · cr_* 物理表</span>
+    <span class="chip warn">仅方案 · 不动代码</span>
+    <span class="chip purple">公式计算/校验 暂缓</span>
+  </div>
+</header>
+
+<!-- ============ 0 ============ -->
+<section id="overview">
+  <h2 class="sec"><span class="n">0</span>核心结论 · TL;DR</h2>
+  <div class="panel">
+    <ol style="margin:0">
+      <li><b>ReportModel 是唯一事实源。</b>报表的<b>结构</b>（sheet/区域/行/列）、<b>版式</b>（列宽行高/合并/样式/数字格式）、<b>属性</b>（报表/sheet/区域元数据）、<b>数据</b>（单元格取值）全部在一个 JS 模型对象里。SpreadJS 组件只是这个模型的<b>渲染器 + 编辑器</b>，不持有独立真相。</li>
+      <li><b>结构层级：<code>Report ▸ Sheet ▸ Region ▸ Row×Col ▸ Cell</code>。</b>一个报表多 sheet，一个 sheet 多区域，<b>行/列/单元格都定义在区域里</b>——单元格 = 区域内 某行 × 某列（<code>region_code + row_id + col_id</code>）。<b>不定义区域时，系统提供默认区域</b>（覆盖整个 sheet）承载所有行列单元格。见 <a href="#hierarchy">§1.2</a>。</li>
+      <li><b>两种模式共享同一个 ReportModel，只是加载/存储的"层"不同：</b>
+        <ul style="margin:6px 0">
+          <li><span class="mode-tab mode-a">模式一 · 设计版式</span> 加载/存储 <code>meta + sheets[].{props,grid} + regions[].{rows,cols,cells(结构与样式,不含运行值)}</code>。落地到 <code>cr_report_fmt.doc_content</code>（Excel 最新格式 BLOB）+ 关系表（<code>cr_report_sheet / cr_report_region / cr_report_row / cr_report_col</code>，行列表均以 region_code 为唯一键成分）。</li>
+          <li><span class="mode-tab mode-b">模式二 · 报表数据</span> 在<b>完整版式已加载</b>的前提下，仅加载/存储<b>单元格数据</b>（<code>cr_cell_data</code>，按 org+period+region+row_id+col_id 维度），回填进同一个 ReportModel 的 <code>regions[].cells[].value</code>。</li>
+        </ul>
+      </li>
+      <li><b>Excel 最新格式 = SpreadJS 原生 SSJSON</b>（<code>workbook.toJSON()</code>）存入 <code>doc_content</code> BLOB，兼具"完整可复原"与"可 xlsx 互转"；关系表是<b>可查询的镜像投影</b>（供取数引擎/报表列表按区域+行列检索），不是主真相。<b>BLOB 为主，关系表为投影</b>。</li>
+      <li><b>公式的定义与计算过程本方案不展开</b>——模型里为公式<b>预留字段</b>（cell.formula / row.formula / col.formula / element 计算校验公式），加载存储链路<b>原样透传</b>，计算引擎另案（M2 已有 <code>/api/rpt/compute</code> 雏形）。</li>
+    </ol>
+  </div>
+  <div class="callout green"><b>一句话架构：</b>一个模型（ReportModel）· 两层加载（版式层 / 数据层）· 两处落地（BLOB 主 + 关系表投影）· 组件纯展示编辑。</div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="principle">
+  <h2 class="sec"><span class="n">1</span>ReportModel 单一事实源</h2>
+  <p>当前 <code>designer.js</code> 的 <code>reportModel(st)</code> 只造了一个演示骨架（title/编码/版本几个格）。本方案把它升级为承载<b>全部报表信息</b>的完整模型。组件 <code>cmx-spreadjs-sheet</code> 的 <code>setReportModel()</code> 消费它渲染，编辑事件回写它，<code>getReportModel()</code> / <code>getWorkbook().toJSON()</code> 导出它。</p>
+
+  <h3 id="model">1.1 模型完整结构</h3>
+  <div class="panel">
+<pre><span class="c">// ReportModel —— 报表单一事实源（设计版式 + 数据 + 属性 全在此）</span>
+{
+  <span class="f">meta</span>: {                         <span class="c">// 报表级属性（↔ cr_report_list / cr_report_version）</span>
+    reportCode, reportName, version,   <span class="c">// 身份三元</span>
+    reportType, reportCategory,        <span class="c">// 类型/类别</span>
+    periodType, currencyCode, amountUnit, entityScope,
+    dataSource, isStatutory, remark,
+    versionStatus, isCurrent, effectiveFrom, effectiveTo,
+    formatCode                         <span class="c">// 关联 cr_report_fmt</span>
+  },
+
+  <span class="f">sheets</span>: [ {                      <span class="c">// 每个 sheet（↔ cr_report_sheet，sheet_index 排序）</span>
+    id, name, sheetIndex,
+    <span class="f">props</span>: {                       <span class="c">// sheet 属性（↔ cr_report_sheet 各列）</span>
+      sheetType, tabColor, rowCount, colCount,
+      headerRows, fixedRows, fixedCols,
+      paperSize, orientation, fontFamily, fontSize,
+      showGridline, isHidden, titleStyle, headerStyle
+    },
+    <span class="f">grid</span>: {                        <span class="c">// sheet 级画布版式（列宽/行高/合并/样式类）——跨区域共享</span>
+      rows, cols,
+      colWidths:{A:56,B:140,...}, rowHeights:{1:34,...},
+      merges:['B1:E1', ...],
+      styleClasses:{ title:{bold,fontSize,align,fillColor,fontColor}, label:{...} }
+    },
+    <span class="f">regions</span>: [ {                   <span class="c">// ★ 区域是行/列/单元格的容器（↔ cr_report_region）</span>
+      code, name, type,                <span class="c">// 区域身份（region_code 在 row/col/cell 唯一键里）</span>
+      startCell, endCell,              <span class="c">// 区域在画布上的矩形范围（A1 坐标）</span>
+      startRow, startCol, endRow, endCol,
+      direction, isRepeatable, isMerged, freezeFlag, dataSource,
+      bgColor, borderStyle, style,
+      isDefault,                       <span class="c">// ★ 是否系统默认区域（未显式定义区域时）</span>
+
+      <span class="f">rows</span>: [ {                    <span class="c">// 行定义在区域内（↔ cr_report_row，含层级）</span>
+        id, code, name, rowNo, lineNo, rowType,
+        parentId, fullPath, levelNo, isLeaf,
+        formula, accountRange, balanceDir, indent, isBold
+      } ],
+      <span class="f">cols</span>: [ {                    <span class="c">// 列定义在区域内（↔ cr_report_col，含层级）</span>
+        id, code, name, colNo, colLetter, colType,
+        parentId, fullPath, levelNo, isLeaf,
+        valueType, periodOffset, width, decimals, align, formula, isHidden
+      } ],
+      <span class="f">cells</span>: {                    <span class="c">// 单元格 = 区域内 某行 × 某列 的交点（A1 键，相对/绝对）</span>
+        "B1": {
+          type:'text|calc|fetch|ref',  <span class="c">// 单元格类型</span>
+          rowId, colId, cellRef,       <span class="c">// ★ 由区域内 row×col 决定（rowId/colId → 本区域行列）</span>
+          value: ...,                   <span class="c">// ← 模式二数据层回填（cr_cell_data）</span>
+          formula:'=QM("1001")',        <span class="c">// ← 公式（本方案透传，不计算）</span>
+          class:'title',                <span class="c">// 样式类引用（引 sheet.grid.styleClasses）</span>
+          style:{bold,italic,align,valign,fontColor,fillColor,format,border,fontSize,fontFamily,wordWrap},
+          <span class="c">// —— 数据元素绑定（设计态；↔ cr_cell_element_map）——</span>
+          elementCode, valueType, dataSource, calcFormula, checkFormula,
+          isEditable, numberFormat
+        }
+      }
+    } ]
+  } ],
+
+  <span class="f">workbookJson</span>: { ... }          <span class="c">// SpreadJS 原生 SSJSON（toJSON），Excel 最新格式的完整快照</span>
+}</pre>
+  </div>
+  <div class="callout warn"><b>★ 层级关系（本次修正）：</b><code>报表 Report → Sheet(多) → Region(多) → 行 Row × 列 Col → 单元格 Cell</code>。行、列、单元格<b>都定义在区域里</b>——一个单元格由"它所属区域内的某行 × 某列"确定（<code>region_code + row_id + col_id</code>，这正是 DB 里 <code>cr_report_row/col/cell_data</code> 唯一键的构成）。<b>不定义区域时，系统提供一个覆盖整个 sheet 的默认区域</b>（<code>isDefault:true</code>，如 <code>region_code='__default__'</code>），所有行列单元格挂在其下——语义与显式区域完全一致，保证"总有一个区域承载单元格"。</div>
+  <div class="callout"><b>为什么 grid 仍在 sheet 级、而 rows/cols/cells 下沉到 region？</b><code>grid</code>（列宽/行高/合并/样式类）是 SpreadJS <b>画布</b>属性，天然属于整个 sheet（一列的宽度不分区域）；而 <code>rows/cols/cells</code> 是<b>业务结构</b>，按区域切分（同一 sheet 上"资产区""负债区"各有自己的行列体系）。二者视角不同，不矛盾——区域的 <code>startCell:endCell</code> 把业务行列<b>投影</b>到画布网格坐标。</div>
+  <div class="callout"><b>为什么同时保留结构化字段 与 workbookJson？</b>结构化字段（region→row/col/cell）是<b>业务视角</b>（供关系表投影、取数引擎按区域+行列检索）；<code>workbookJson</code> 是<b>渲染视角</b>（SpreadJS 无损复原画布）。存储时<b>两者都写</b>：BLOB 存 workbookJson（主），关系表存结构化字段（投影）。见 <a href="#relational">§2.3</a>。</div>
+
+  <h3 id="hierarchy">1.2 结构层级 —— Report ▸ Sheet ▸ Region ▸ Row×Col ▸ Cell</h3>
+  <div class="panel">
+<pre><span class="f">Report</span> (报表 · cr_report_list + cr_report_version)
+ └─ <span class="f">Sheet</span> ×N            (子表 · cr_report_sheet · sheet_index 排序)
+     ├─ grid              (sheet 级画布：列宽/行高/合并/样式类 — 跨区域共享)
+     └─ <span class="f">Region</span> ×N        (★ 区域 · cr_report_region · 行列单元格的容器)
+         │                  未显式定义 → 系统默认区域 __default__（覆盖整个 sheet）
+         ├─ <span class="f">Row</span> ×N        (行 · cr_report_row · 唯一键含 region_code · 可层级)
+         ├─ <span class="f">Col</span> ×N        (列 · cr_report_col · 唯一键含 region_code · 可层级)
+         └─ <span class="f">Cell</span>          (单元格 = 本区域内 某 Row × 某 Col 的交点)
+              = region_code + row_id + col_id   ← cr_cell_data / cr_cell_element_map 唯一键</pre>
+  </div>
+  <div class="legend">
+    <span>■ <b>一个报表</b> 可多 Sheet</span>
+    <span>■ <b>一个 Sheet</b> 可多 Region</span>
+    <span>■ <b>一个 Region</b> 定义自己的 Row/Col 体系</span>
+    <span>■ <b>Cell</b> 由 Region 内 Row×Col 决定</span>
+    <span>■ <b>无 Region</b> → 默认区域兜底</span>
+  </div>
+  <div class="callout"><b>默认区域语义：</b>当报表设计未划分区域时，系统隐式提供一个 <code>region_code='__default__'</code>、<code>isDefault:true</code> 的区域，其范围 = 整个 sheet（<code>startCell='A1'</code>, <code>endCell</code>= 右下角）。所有行/列/单元格挂在它下面——落库时 <code>cr_report_row/col/cell_data.region_code='__default__'</code>，与显式区域走<b>完全相同</b>的读写链路。前端渲染/取数无需为"有无区域"分叉。</div>
+
+  <h3 id="split">1.3 版式层 vs 数据层 —— 两模式的边界</h3>
+  <div class="grid2">
+    <div class="card" style="border-color:var(--accent)">
+      <h4 style="color:#bcd3ff">模式一 · 设计版式层</h4>
+      <p style="margin:6px 0;font-size:13.5px">"这张报表长什么样"——与组织/期间<b>无关</b>，一次设计多期复用。</p>
+      <ul style="font-size:13px;margin:6px 0">
+        <li><code>meta</code>（报表/版本属性）</li>
+        <li><code>sheets[].props</code>（sheet 属性）</li>
+        <li><code>sheets[].grid</code>（sheet 级画布：列宽/行高/合并/样式类）</li>
+        <li><code>sheets[].regions[]</code>（★ 区域 = 行列单元格容器）</li>
+        <li><code>regions[].rows / cols</code>（区域内行列设置，含层级、公式定义）</li>
+        <li><code>regions[].cells[].{type,formula,class,style,element绑定}</code>（结构+样式+公式，<b>不含运行值</b>）</li>
+        <li><code>workbookJson</code>（Excel 最新格式快照）</li>
+      </ul>
+      <div class="legend"><span>落地 → <code>cr_report_fmt.doc_content</code>(BLOB) + <code>cr_report_sheet/region/row/col</code></span></div>
+    </div>
+    <div class="card" style="border-color:var(--accent2)">
+      <h4 style="color:#a7f3c8">模式二 · 报表数据层</h4>
+      <p style="margin:6px 0;font-size:13.5px">"某组织某期间，各格实际是多少"——依赖<b>组织+期间</b>，每期一份值。</p>
+      <ul style="font-size:13px;margin:6px 0">
+        <li>单元格实际取值 <code>cells[].value</code></li>
+        <li>字符值 / 数值双存（<code>text_value</code> / <code>num_value</code>）</li>
+        <li>数据状态（待取/已算/手工/锁定）</li>
+        <li>数据元素绑定回读（<code>element_code</code>）</li>
+        <li>计算时间、是否手工、币种、金额单位</li>
+      </ul>
+      <div class="legend"><span>落地 → <code>cr_cell_data</code>（org_code + period_code + 8 元唯一键）</span></div>
+      <p style="margin:8px 0 0;font-size:12.5px;color:var(--ink-dim)">前置：必须先加载模式一的完整版式，数据才有"格子"可落。</p>
+    </div>
+  </div>
+
+  <h3 id="responsibility">1.4 组件职责边界（关键原则）</h3>
+  <table>
+    <tr><th>层</th><th>职责</th><th>不做</th></tr>
+    <tr><td><b>ReportModel</b><br><span class="tag exist">JS 模型对象</span></td><td>持有全部真相：结构/版式/属性/数据/公式定义</td><td>不渲染、不算公式</td></tr>
+    <tr><td><b>cmx-spreadjs-sheet</b><br><span class="tag exist">组件</span></td><td>把模型渲染成电子表格；接收编辑（样式/合并/值/列宽）回写模型；<code>toJSON/fromJSON</code> 序列化；xlsx 导入导出</td><td>不持有独立真相、不定义业务语义、不落库、不算业务公式（单元格间算术由 SpreadJS 原生算，取数由后端）</td></tr>
+    <tr><td><b>designer.js</b><br><span class="tag exist">native-page</span></td><td>装载中枢：调后端加载→组装 ReportModel→喂组件；采集编辑→序列化→调后端存储；三区属性面板读写 model</td><td>不直接碰 SpreadJS 内部 API（走组件方法契约）</td></tr>
+    <tr><td><b>后端 report_design</b><br><span class="tag new">待补端点</span></td><td>版式 BLOB + 关系表读写；数据层 cr_cell_data 读写；模型↔表映射</td><td>不感知 SpreadJS 格式细节（BLOB 对后端是不透明字节）</td></tr>
+  </table>
+  <div class="callout green">这正是既有 [[fico-ws-workspace]] 的"装载全集中在 model 页 / 组件只展示"范式在报表场景的复用。</div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="storage">
+  <h2 class="sec"><span class="n">2</span>存储映射 · 表结构</h2>
+  <p>fico-db 已部署 17 张 <code>cr_*</code> 报表字典表（见 <a href="#tables">§2.1</a>）。本方案<b>不新增表</b>，全部复用；仅需补后端读写端点。</p>
+
+  <h3 id="tables">2.1 17 表全景（按模型层归类）</h3>
+  <table>
+    <tr><th>模型层</th><th>dictCode</th><th>物理表</th><th>主键 / 唯一键</th><th>作用</th></tr>
+    <tr><td rowspan="2" style="color:#bcd3ff">报表/版本<br>(meta)</td><td><code>report_list</code></td><td><code>cr_report_list</code></td><td><span class="tag pk">code</span></td><td>报表主档</td></tr>
+    <tr><td><code>report_version</code></td><td><code>cr_report_version</code></td><td><span class="tag pk">code</span></td><td>版本（report_code 关联）</td></tr>
+    <tr><td style="color:var(--warn)">版式 BLOB</td><td><code>report_fmt</code></td><td><code>cr_report_fmt</code></td><td><span class="tag pk">report_code+version_code</span></td><td><span class="tag blob">doc_content</span> Excel 格式快照</td></tr>
+    <tr><td rowspan="4" style="color:#bcd3ff">结构投影<br>(设计版式)</td><td><code>report_sheet</code></td><td><code>cr_report_sheet</code></td><td><span class="tag pk">report+version+sheet_index</span></td><td>sheet 属性</td></tr>
+    <tr><td><code>report_region</code></td><td><code>cr_report_region</code></td><td><span class="tag pk">report+version+sheet+region</span></td><td>区域定义</td></tr>
+    <tr><td><code>report_row</code></td><td><code>cr_report_row</code></td><td><span class="tag pk">id</span> · 层级</td><td>行字典（含公式）</td></tr>
+    <tr><td><code>report_col</code></td><td><code>cr_report_col</code></td><td><span class="tag pk">id</span> · 层级</td><td>列字典（含公式）</td></tr>
+    <tr><td style="color:#a7f3c8">数据层</td><td><code>cell_data</code></td><td><code>cr_cell_data</code></td><td><span class="tag pk">id</span> · 8元唯一键</td><td>单元格运行值（org+period）</td></tr>
+    <tr><td rowspan="2" style="color:var(--purple)">元素绑定</td><td><code>cell_element_map</code></td><td><code>cr_cell_element_map</code></td><td><span class="tag pk">id</span> · 6元唯一键</td><td>格↔数据元素映射（设计态）</td></tr>
+    <tr><td><code>data_element</code></td><td><code>cr_data_element</code></td><td><span class="tag pk">code</span></td><td>数据元素（含计算/校验公式）</td></tr>
+    <tr><td rowspan="6" style="color:var(--ink-dim)">字典/枚举<br>(下拉值域)</td><td><code>report_category</code></td><td><code>cr_report_category</code></td><td>code</td><td>报表类别</td></tr>
+    <tr><td><code>period_type</code></td><td><code>cr_period_type</code></td><td>code</td><td>编报期间类型</td></tr>
+    <tr><td><code>entity_scope</code></td><td><code>cr_entity_scope</code></td><td>code</td><td>编制口径</td></tr>
+    <tr><td><code>amount_unit</code></td><td><code>cr_amount_unit</code></td><td>code</td><td>金额单位</td></tr>
+    <tr><td><code>element_category</code></td><td><code>cr_element_category</code></td><td>code</td><td>元素分类</td></tr>
+    <tr><td><code>consol_org</code> / <code>acct_calendar</code></td><td><code>cr_consol_org</code> / <code>cr_acct_calendar</code></td><td>—</td><td>合并组织 / 会计日历</td></tr>
+  </table>
+
+  <h3 id="fmt-blob">2.2 report_fmt · BLOB 详解（模式一主存储）</h3>
+  <div class="panel tight">
+    <table style="margin:0">
+      <tr><th>列</th><th>类型</th><th>用途</th></tr>
+      <tr><td><code>report_code</code> <span class="tag pk">PK</span></td><td>VARCHAR(64)</td><td>报表编码</td></tr>
+      <tr><td><code>version_code</code> <span class="tag pk">PK</span></td><td>VARCHAR(64)</td><td>版本编码 → 一版一份格式</td></tr>
+      <tr><td><code>doc_content</code> <span class="tag blob">BLOB</span></td><td>BYTEA</td><td><b>Excel 最新格式字节流</b>：SpreadJS SSJSON（gzip 可选）或 xlsx 二进制</td></tr>
+      <tr><td><code>doc_format</code></td><td>VARCHAR(16)</td><td>格式标识：<code>ssjson</code> / <code>xlsx</code> / <code>ssjson-gz</code></td></tr>
+      <tr><td><code>mime_type</code></td><td>VARCHAR(128)</td><td><code>application/json</code> 或 xlsx mime</td></tr>
+      <tr><td><code>file_size</code></td><td>BIGINT</td><td>字节大小（校验/展示）</td></tr>
+      <tr><td><code>content_hash</code></td><td>VARCHAR(128)</td><td>SHA-256：并发覆盖检测 + 秒传去重</td></tr>
+      <tr><td><code>storage_type</code></td><td>VARCHAR(16)</td><td><code>inline</code>(BLOB内联) / <code>external</code>(外部存储)</td></tr>
+      <tr><td><code>external_uri</code></td><td>VARCHAR(512)</td><td>storage_type=external 时的对象存储 URI（大文档留活口）</td></tr>
+    </table>
+  </div>
+  <div class="callout warn"><b>格式选型建议：</b>主用 <code>doc_format='ssjson'</code>（<code>workbook.toJSON()</code>）——SpreadJS 无损、含公式/样式/合并/列宽的一切，加载即 <code>fromJSON</code> 秒复原。<code>xlsx</code> 仅在"导出给 Excel"时按需转（<code>spread-excelio</code>）。<b>DB 里存 ssjson，不存 xlsx</b>（xlsx 是导出产物，非主存储）。</div>
+
+  <h3 id="relational">2.3 关系表 vs BLOB · 双写与职责</h3>
+  <div class="flow">
+    <div class="node hot">ReportModel</div>
+    <div class="arr">→</div>
+    <div class="node store">cr_report_fmt.doc_content<br><span style="font-size:11px;color:var(--ink-dim)">BLOB · 主真相 · 无损复原</span></div>
+    <div class="arr">+</div>
+    <div class="node store">cr_report_sheet/region/row/col<br><span style="font-size:11px;color:var(--ink-dim)">关系投影 · 可查询检索</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h4>BLOB（主）</h4>
+      <ul style="font-size:13px">
+        <li>加载报表设计态：<b>只读 BLOB</b> → <code>fromJSON</code>，一次复原全部</li>
+        <li>权威、无损、含 SpreadJS 内部细节</li>
+        <li>对后端不透明（just bytes）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>关系表（投影）</h4>
+      <ul style="font-size:13px">
+        <li>取数引擎按 <code>report+version+sheet+region+row+col</code> 检索"哪格取哪个元素"</li>
+        <li>报表设计资产统计（sheet/区域/行/列计数，已用于 property 面板）</li>
+        <li>跨报表 <code>RPTAREA</code> 取区域（见既有方案）</li>
+        <li>存储时从 model 派生写入；加载版式态<b>不依赖</b>它（BLOB 已够）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>一致性规则：</b>保存设计版式时<b>事务内同时</b>写 BLOB + 重建关系表投影（先 <code>DELETE ... WHERE report+version</code> 再批量 <code>INSERT</code>，幂等）。BLOB 写成功但投影失败 → 整事务回滚。<b>BLOB 是真相，投影可从 model 重建</b>，故投影损坏可由"重存一次"修复。</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="modeA">
+  <h2 class="sec"><span class="n">3</span>模式一 · 设计版式 加载/存储</h2>
+  <p>报表设计师打开报表 → 加载版式 → 画布上改样式/结构/属性/公式定义 → 保存版式。全程与 org/period 无关。</p>
+
+  <h3 id="modeA-load">3.1 加载链路</h3>
+  <div class="flow">
+    <div class="node">打开报表<br><span style="font-size:11px;color:var(--ink-dim)">openReportDesigner(code,ver)</span></div>
+    <div class="arr">→</div>
+    <div class="node hot">GET /report-design/reports/{code}/layout?version=</div>
+    <div class="arr">→</div>
+    <div class="node">后端读 cr_report_fmt.doc_content<br>+ 关系表补属性</div>
+    <div class="arr">→</div>
+    <div class="node hot">designer.js 组装 ReportModel</div>
+    <div class="arr">→</div>
+    <div class="node store">sheet.setReportModel(model)</div>
+  </div>
+  <div class="panel">
+<pre><span class="c">// designer.js —— 加载版式（model 中枢）</span>
+<span class="k">async function</span> <span class="f">loadLayout</span>(st){
+  <span class="k">const</span> {reportCode, version} = st.props
+  <span class="k">const</span> data = <span class="k">await</span> apiJson(`/api/report-design/reports/${enc(reportCode)}/layout?version=${enc(version)}`)
+  <span class="c">// data = { fmt:{doc_content, doc_format, content_hash}, meta, sheets, regions, rows, cols }</span>
+  <span class="k">const</span> model = buildReportModel(st, data)   <span class="c">// 组装完整 ReportModel</span>
+  st.__model = model
+  st.__contentHash = data.fmt?.content_hash    <span class="c">// 保存时做乐观并发校验</span>
+  <span class="k">const</span> sheet = sheetElOf(root)
+  <span class="k">if</span> (data.fmt?.doc_content) {
+    sheet.setWorkbookJson(decodeDoc(data.fmt))  <span class="c">// ← 优先：BLOB 无损复原（fromJSON）</span>
+  } <span class="k">else</span> {
+    sheet.setReportModel(model)                  <span class="c">// ← 回退：无 BLOB 时按结构化字段渲染（新报表）</span>
+  }
+}</pre>
+  </div>
+  <div class="callout"><b>加载优先级：</b>有 <code>doc_content</code> BLOB → <code>fromJSON</code>（快、无损）；无 BLOB（全新报表首次设计）→ 按 <code>grid/cells</code> 结构化字段 <code>setReportModel</code> 渲染初始骨架。两条路都产出同一个在屏模型。</div>
+
+  <h3 id="modeA-save">3.2 存储链路</h3>
+  <div class="flow">
+    <div class="node store">保存按钮（已就绪的 saveDesign）</div>
+    <div class="arr">→</div>
+    <div class="node hot">采集：wb.toJSON() + 派生结构化字段</div>
+    <div class="arr">→</div>
+    <div class="node hot">POST /report-design/reports/{code}/layout</div>
+    <div class="arr">→</div>
+    <div class="node store">事务：写 BLOB + 重建关系投影</div>
+  </div>
+  <div class="panel">
+<pre><span class="c">// designer.js —— 保存版式（替换当前 saveDesign 的"本地下载占位"）</span>
+<span class="k">async function</span> <span class="f">saveLayout</span>(sheet, st){
+  <span class="k">const</span> wbJson = sheet.getWorkbook().toJSON({includeBindingSource:true})
+  <span class="k">const</span> model  = sheet.getReportModel()          <span class="c">// 结构化视角</span>
+  <span class="k">const</span> payload = {
+    version: st.props.version,
+    fmt: {
+      doc_content: encodeDoc(wbJson),               <span class="c">// ssjson (可 gzip→base64)</span>
+      doc_format: 'ssjson', mime_type:'application/json',
+      content_hash: st.__contentHash                <span class="c">// 乐观锁：后端比对，冲突则 409</span>
+    },
+    sheets:  deriveSheets(model),                    <span class="c">// → cr_report_sheet</span>
+    regions: deriveRegions(model),                   <span class="c">// → cr_report_region（含默认区域 __default__）</span>
+    rows:    deriveRows(model),                       <span class="c">// → cr_report_row（每行带 sheetCode+regionCode）</span>
+    cols:    deriveCols(model),                       <span class="c">// → cr_report_col（每列带 sheetCode+regionCode）</span>
+    cellMap: deriveCellElementMap(model)             <span class="c">// → cr_cell_element_map（region+row_id+col_id）</span>
+  }
+  <span class="k">const</span> res = <span class="k">await</span> apiJson(`/api/report-design/reports/${enc(st.props.reportCode)}/layout`,
+    {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+  st.__contentHash = res.content_hash               <span class="c">// 更新哈希，供下次保存</span>
+  toast(root, '报表设计已保存', 'success')
+}</pre>
+  </div>
+  <div class="callout green"><b>复用现成：</b>标题区"保存"按钮的 <code>saveDesign()</code> 已实现（当前是本地 JSON 下载占位）——只需把内部换成 <code>saveLayout()</code> 走后端端点。toast/事件广播已就绪。</div>
+  <div class="callout"><b>derive* 的遍历与默认区域：</b>四个 <code>derive*()</code> 遍历 <code>model.sheets[].regions[].{rows,cols,cells}</code>，为每条记录带上 <code>sheetCode + regionCode</code>（写进对应 <code>cr_report_row/col</code> 唯一键）。若某 sheet 无显式区域，model 里已有一个 <code>isDefault:true</code> 的 <code>__default__</code> 区域兜底，遍历逻辑<b>无需分叉</b>——所有行列单元格都从"某个区域"派生，落库 region_code 恒有值。</div>
+
+  <h3 id="modeA-api">3.3 端点契约（新增）</h3>
+  <table>
+    <tr><th>方法/路径</th><th>入参</th><th>出参</th><th>行为</th></tr>
+    <tr><td><span class="tag new">GET</span> <code>/report-design/reports/{code}/layout</code></td><td>query <code>version</code></td><td><code>{fmt,meta,sheets,regions,rows,cols,cellMap}</code></td><td>读 BLOB + 关系表 → 组装</td></tr>
+    <tr><td><span class="tag new">POST</span> <code>/report-design/reports/{code}/layout</code></td><td><code>{version,fmt,sheets,regions,rows,cols,cellMap}</code></td><td><code>{content_hash,savedAt}</code></td><td>事务：UPSERT cr_report_fmt + 重建 4 张关系表 + cell_element_map</td></tr>
+  </table>
+  <div class="callout warn"><b>并发保护：</b>POST 带 <code>content_hash</code>（加载时拿到的）。后端比对 DB 现值，不一致 → <code>409 版式已被他人更新，请刷新</code>（走 [[dct-doc-error-presenter]] 的专业对话框）。首存 hash 为空则跳过校验。</div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="modeB">
+  <h2 class="sec"><span class="n">4</span>模式二 · 报表数据 加载/存储</h2>
+  <p>在<b>完整版式已加载</b>（模式一产出的在屏 ReportModel）的前提下，选定<b>组织 + 期间</b>，加载该维度下各单元格的实际取值回填进模型；编辑后按同维度存储。</p>
+  <div class="callout danger"><b>强前置依赖：</b>数据层<b>不能独立加载</b>。没有版式（格子、区域、行列定义），单元格数据无处安放。UI 上：报表数据视图必须先有版式，再出现 <code>[组织] [期间]</code> 选择器。</div>
+
+  <h3 id="modeB-load">4.1 加载链路</h3>
+  <div class="flow">
+    <div class="node">选组织+期间</div>
+    <div class="arr">→</div>
+    <div class="node hot">POST /report-design/reports/{code}/data/query<br><span style="font-size:11px;color:var(--ink-dim)">{version,orgCode,periodCode}</span></div>
+    <div class="arr">→</div>
+    <div class="node">后端 SELECT cr_cell_data<br>WHERE 8元键</div>
+    <div class="arr">→</div>
+    <div class="node hot">回填 model.cells[addr].value</div>
+    <div class="arr">→</div>
+    <div class="node store">sheet.setCellValues(valuesMap)</div>
+  </div>
+  <div class="panel">
+<pre><span class="c">// designer.js —— 加载报表数据（版式已在屏）</span>
+<span class="k">async function</span> <span class="f">loadData</span>(sheet, st, orgCode, periodCode){
+  <span class="k">const</span> rows = <span class="k">await</span> apiJson(`/api/report-design/reports/${enc(st.props.reportCode)}/data/query`,
+    {method:'POST', body:JSON.stringify({version:st.props.version, orgCode, periodCode})})
+  <span class="c">// rows = [{cell_ref, sheet_code, region_code, row_id, col_id, text_value, num_value, value_type, data_status, element_code}]</span>
+  <span class="k">const</span> valuesMap = {}
+  <span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> rows){
+    <span class="k">const</span> v = r.value_type==='number' ? r.num_value : r.text_value
+    valuesMap[r.cell_ref] = v
+    mergeIntoModel(st.__model, r)   <span class="c">// 定位 sheet→region→cells[cell_ref]，回填 value + 数据状态</span>
+  }
+  sheet.setCellValues(valuesMap)     <span class="c">// 组件按 cell_ref(A1 画布坐标) 覆盖值（保留版式与公式）</span>
+}</pre>
+  </div>
+  <div class="callout"><b>画布坐标 vs 区域坐标：</b>后端按 <code>region+row_id+col_id</code> 存值；回填时 <code>mergeIntoModel</code> 依 <code>sheet_code+region_code</code> 定位到 model 的对应区域，写进 <code>region.cells[cell_ref]</code>。而喂给组件的 <code>setCellValues</code> 用 <code>cell_ref</code>（A1 <b>画布</b>坐标）——因为 SpreadJS 画布是全 sheet 统一坐标系，区域只是它上面的逻辑矩形。<b>region 的 <code>startCell:endCell</code> 是"区域行列 ↔ 画布 A1"的换算桥。</b></div>
+  <div class="callout"><b>值覆盖 vs 公式：</b><code>setCellValues</code> 只覆盖<b>取数格</b>的显示值（如 QM 取数结果），<b>不动</b>纯公式格（SUM 等由 SpreadJS 原生重算）。这与既有 [[rpt-designer-mode]] 的"取数后端算、算术前端算"边界一致；本方案<b>只搬运值</b>，不触发计算。</div>
+
+  <h3 id="modeB-save">4.2 存储链路</h3>
+  <div class="panel">
+<pre><span class="c">// designer.js —— 存储报表数据（按 org+period 落 cr_cell_data）</span>
+<span class="k">async function</span> <span class="f">saveData</span>(sheet, st, orgCode, periodCode){
+  <span class="k">const</span> model = sheet.getReportModel()
+  <span class="k">const</span> cells = collectDataCells(model)   <span class="c">// 遍历 regions[].cells，取有值/手工录入的格（带 sheetCode+regionCode）</span>
+  <span class="k">const</span> payload = {
+    version: st.props.version, orgCode, periodCode,
+    cells: cells.map(c => ({
+      sheetCode:c.sheetCode, regionCode:c.regionCode,
+      rowId:c.rowId, colId:c.colId, cellRef:c.addr,
+      elementCode:c.elementCode, valueType:c.valueType,
+      textValue:c.text, numValue:c.num,
+      dataStatus:c.status, isManual:c.isManual
+    }))
+  }
+  <span class="k">await</span> apiJson(`/api/report-design/reports/${enc(st.props.reportCode)}/data`,
+    {method:'POST', body:JSON.stringify(payload)})
+  toast(root,'报表数据已保存','success')
+}</pre>
+  </div>
+  <div class="callout"><b>唯一键 UPSERT：</b><code>cr_cell_data</code> 8元唯一键 <code>(org,period,report,version,sheet,region,row_id,col_id)</code> → 后端 <code>ON CONFLICT ... DO UPDATE</code>，重复保存幂等；<code>id</code> BIGINT 代理键由后端铸号（见 [[bigint-id-backend-generation]]）。</div>
+
+  <h3 id="modeB-api">4.3 端点契约（新增）</h3>
+  <table>
+    <tr><th>方法/路径</th><th>入参</th><th>出参</th><th>行为</th></tr>
+    <tr><td><span class="tag new">POST</span> <code>/report-design/reports/{code}/data/query</code></td><td><code>{version,orgCode,periodCode}</code></td><td><code>[{cell_ref,sheet_code,region_code,row_id,col_id,text_value,num_value,value_type,data_status,element_code}]</code></td><td>SELECT cr_cell_data WHERE 维度键</td></tr>
+    <tr><td><span class="tag new">POST</span> <code>/report-design/reports/{code}/data</code></td><td><code>{version,orgCode,periodCode,cells[]}</code></td><td><code>{saved:N}</code></td><td>批量 UPSERT cr_cell_data</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--ink-dim)">查询设计成 POST（维度参数多、便于扩展过滤），与既有 <code>report-design/*</code> 命名一致。</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="serialize">
+  <h2 class="sec"><span class="n">5</span>序列化契约 · 组件新增方法</h2>
+  <p>组件需补两个方法承接 BLOB 存取（其余已在契约内，见记忆 [[rpt-spreadjs-designer-toolbar]]）：</p>
+  <table>
+    <tr><th>方法</th><th>签名</th><th>实现</th><th>状态</th></tr>
+    <tr><td><code>getWorkbookJson()</code></td><td><code>() → object</code></td><td><code>this._spread.toJSON({includeBindingSource:true})</code></td><td><span class="tag new">新增</span>（现有 <code>getWorkbook()</code> 可间接，建议显式封装）</td></tr>
+    <tr><td><code>setWorkbookJson(json)</code></td><td><code>(object) → Promise</code></td><td><code>this._spread.fromJSON(json)</code> + kickResize + undoManager.clear()</td><td><span class="tag new">新增</span></td></tr>
+    <tr><td><code>setCellValues(map)</code></td><td><code>({addr:value}) → void</code></td><td>逐格 <code>sheet.setValue(r,c,v)</code>，保留公式/样式</td><td><span class="tag new">新增</span>（模式二数据回填；Ignite 版已有同名，镜像即可）</td></tr>
+    <tr><td><code>getReportModel()</code></td><td><code>() → ReportModel</code></td><td>已存 <code>this._report</code>；需扩展为回读画布最新版式（见下）</td><td><span class="tag exist">扩展</span></td></tr>
+  </table>
+  <div class="callout warn"><b>getReportModel 的两种语义，需明确：</b>
+    <ul style="margin:6px 0">
+      <li><b>浅回读</b>（当前实现）：返回最后一次 <code>setReportModel</code> 的对象——<b>不含</b>画布上用户后续的编辑。</li>
+      <li><b>深回读</b>（本方案需要）：<code>getWorkbookJson()</code> 拿 SSJSON（含全部编辑）作为 BLOB；结构化字段（sheets/rows/cols）由 designer.js 的 <code>derive*()</code> 从 <code>workbookJson</code> + 属性面板状态<b>派生</b>。</li>
+    </ul>
+    <b>结论：</b>BLOB 走 <code>getWorkbookJson()</code>（权威）；关系投影走 designer.js 派生（业务字段大多来自属性面板，不是画布）。二者职责不重叠。</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="dbmap">
+  <h2 class="sec"><span class="n">6</span>模型 ↔ 关系表 字段映射</h2>
+  <h4>meta ↔ cr_report_list / cr_report_version</h4>
+  <div class="kv">
+    <div class="k">reportCode / reportName</div><div>code / name</div>
+    <div class="k">reportType / reportCategory</div><div>report_type / report_category</div>
+    <div class="k">periodType / currencyCode</div><div>period_type / currency_code</div>
+    <div class="k">amountUnit / entityScope</div><div>amount_unit / entity_scope</div>
+    <div class="k">version / versionStatus</div><div>cr_report_version.code / version_status</div>
+    <div class="k">isCurrent / effectiveFrom</div><div>is_current / effective_from</div>
+  </div>
+  <h4>sheets[].props ↔ cr_report_sheet</h4>
+  <div class="kv">
+    <div class="k">sheetIndex / name</div><div>sheet_index / name</div>
+    <div class="k">rowCount / colCount</div><div>row_count / col_count</div>
+    <div class="k">fixedRows / fixedCols</div><div>fixed_rows / fixed_cols</div>
+    <div class="k">fontFamily / fontSize</div><div>font_family / font_size</div>
+    <div class="k">showGridline / tabColor</div><div>show_gridline / tab_color</div>
+    <div class="k">titleStyle / headerStyle</div><div>title_style / header_style <span style="color:var(--ink-dim)">(JSON串)</span></div>
+  </div>
+  <h4>sheets[].regions ↔ cr_report_region</h4>
+  <div class="kv">
+    <div class="k">code / name / type</div><div>region_code / region_name / region_type</div>
+    <div class="k">startCell / endCell</div><div>start_cell / end_cell</div>
+    <div class="k">startRow…endCol</div><div>start_row / start_col / end_row / end_col</div>
+    <div class="k">direction / isRepeatable</div><div>direction / is_repeatable</div>
+    <div class="k">freezeFlag / style</div><div>freeze_flag / style <span style="color:var(--ink-dim)">(JSON串)</span></div>
+  </div>
+  <h4>sheets[].regions[].rows / cols ↔ cr_report_row / cr_report_col（区域内 · 含层级 + 公式）</h4>
+  <div class="kv">
+    <div class="k">(所属) sheetCode / regionCode</div><div>sheet_code / region_code <span style="color:var(--warn)">(唯一键成分 · 无区域→__default__)</span></div>
+    <div class="k">id / code / name</div><div>id(BIGINT后端铸号) / code / name</div>
+    <div class="k">rowNo / colNo / colLetter</div><div>row_no / col_no / col_letter</div>
+    <div class="k">parentId / levelNo / isLeaf</div><div>parent_id / level_no / is_leaf <span style="color:var(--ink-dim)">(层级)</span></div>
+    <div class="k">formula</div><div>formula <span style="color:var(--warn)">(本方案透传，不计算)</span></div>
+    <div class="k">accountRange / balanceDir</div><div>account_range / balance_dir</div>
+    <div class="k">valueType / periodOffset</div><div>value_type / period_offset <span style="color:var(--ink-dim)">(列)</span></div>
+  </div>
+  <h4>regions[].cells[] ↔ cr_cell_element_map（设计态绑定）+ cr_cell_data（运行值）</h4>
+  <div class="kv">
+    <div class="k">(所属) sheetCode / regionCode</div><div>sheet_code / region_code <span style="color:var(--warn)">(唯一键成分)</span></div>
+    <div class="k">addr / cellRef</div><div>cell_ref</div>
+    <div class="k">elementCode</div><div>element_code → cr_data_element</div>
+    <div class="k">rowId / colId</div><div>row_id / col_id (BIGINT，对齐<b>本区域</b>行列表 id)</div>
+    <div class="k">value(number)</div><div>cr_cell_data.num_value DECIMAL(28,6)</div>
+    <div class="k">value(text)</div><div>cr_cell_data.text_value VARCHAR(1024)</div>
+    <div class="k">valueType / dataStatus</div><div>value_type / data_status</div>
+    <div class="k">isManual / computeTime</div><div>is_manual / compute_time</div>
+  </div>
+  <div class="callout"><b>row_id / col_id 的桥接：</b>单元格通过 <code>sheet+region+row_id+col_id</code> 关联到<b>本区域内</b>行列字典的 <code>id</code>（BIGINT）——同一 sheet 不同区域的行列 id 各自独立。设计态保存版式时，行列表先落库拿到真 id，再回填单元格的 rowId/colId（临时id→真id 契约，见 [[bigint-id-backend-generation]]）。</div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="backend">
+  <h2 class="sec"><span class="n">7</span>后端改动清单</h2>
+  <div class="panel">
+    <h4>report_design.rs · 新增 4 端点（复用现成 query_rows / execute helper，RPT_DB_ID=fico-db）</h4>
+    <table style="margin:8px 0">
+      <tr><th>函数</th><th>SQL 要点</th></tr>
+      <tr><td><code>report_design_load_layout</code><br><span class="tag new">GET layout</span></td><td>SELECT cr_report_fmt(BLOB) + cr_report_sheet/region/row/col WHERE report+version → 组装 JSON</td></tr>
+      <tr><td><code>report_design_save_layout</code><br><span class="tag new">POST layout</span></td><td>事务：UPSERT cr_report_fmt(content_hash 乐观锁) + DELETE&INSERT 4 关系表 + cr_cell_element_map</td></tr>
+      <tr><td><code>report_design_query_data</code><br><span class="tag new">POST data/query</span></td><td>SELECT cr_cell_data WHERE org+period+report+version</td></tr>
+      <tr><td><code>report_design_save_data</code><br><span class="tag new">POST data</span></td><td>批量 UPSERT cr_cell_data ON CONFLICT(8元唯一键) DO UPDATE</td></tr>
+    </table>
+    <h4>mod.rs · 注册 4 路由</h4>
+<pre>.route("/report-design/reports/{code}/layout",
+       get(report_design::report_design_load_layout)
+         .post(report_design::report_design_save_layout))
+.route("/report-design/reports/{code}/data/query",
+       post(report_design::report_design_query_data))
+.route("/report-design/reports/{code}/data",
+       post(report_design::report_design_save_data))</pre>
+  </div>
+  <div class="callout"><b>BLOB 编解码：</b><code>doc_content</code> 是 BYTEA。前端 ssjson 走 base64（或 gzip+base64）传输，后端 <code>base64::decode</code> 存字节。file_size/content_hash 后端算（不信前端）。复用 [[dct-doc-column-validation-errcode]] 的落库校验范式。</div>
+  <div class="callout warn"><b>确认项：</b>tokio-postgres 写 BYTEA 需参数化二进制绑定；现有 <code>execute_sql_with_json</code> 是否支持 bytea 入参待核（可能需补一个 <code>execute_sql_with_bytea</code> 或走 base64 存 TEXT 列的折中）。这是<b>后端唯一技术风险点</b>。</div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="frontend">
+  <h2 class="sec"><span class="n">8</span>前端改动清单</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4>cmx-spreadjs-sheet.js <span class="tag exist">组件·需重构建门户</span></h4>
+      <ul style="font-size:13px">
+        <li><span class="tag new">+</span> <code>getWorkbookJson()</code></li>
+        <li><span class="tag new">+</span> <code>setWorkbookJson(json)</code>（fromJSON + kickResize + undoManager.clear）</li>
+        <li><span class="tag new">+</span> <code>setCellValues(map)</code>（数据回填，保留公式/样式）</li>
+        <li><span class="tag exist">~</span> <code>getReportModel()</code> 语义澄清（浅回读 → 配合 designer 派生）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>designer.js <span class="tag exist">native-page·改源即生效</span></h4>
+      <ul style="font-size:13px">
+        <li><span class="tag new">+</span> <code>buildReportModel(st,data)</code> 组装完整模型</li>
+        <li><span class="tag new">+</span> <code>loadLayout / saveLayout</code>（模式一）</li>
+        <li><span class="tag new">+</span> <code>loadData / saveData</code>（模式二）+ 组织/期间选择器</li>
+        <li><span class="tag new">+</span> <code>derive{Sheets,Regions,Rows,Cols,CellElementMap}</code> 派生投影</li>
+        <li><span class="tag new">+</span> <code>encodeDoc/decodeDoc</code>（ssjson ↔ base64[/gzip]）</li>
+        <li><span class="tag exist">~</span> <code>saveDesign</code> 内部：本地下载占位 → <code>saveLayout</code></li>
+        <li><span class="tag exist">~</span> property 三区面板读写 model（报表/sheet/区域/行列/单元格属性）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout green"><b>UI 已就绪的支点：</b>content 工具栏（保存/导入/导出/撤销/重做/样式）+ property 区（报表/sheet/区域/单元格/元素 5 个属性 tab）+ explorer 数据元素拖拽——本次只把"读写 model + 调后端"接上，UI 骨架无需重做。</div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="phases">
+  <h2 class="sec"><span class="n">9</span>实施阶段（建议顺序）</h2>
+  <div class="panel">
+    <p><span class="num-badge">1</span><b>ReportModel 定型 + 组件序列化</b>：<code>getWorkbookJson/setWorkbookJson/setCellValues</code> 三方法 + <code>buildReportModel</code>。E2E 验证 toJSON→fromJSON round-trip 无损。<span class="tag exist">纯前端</span></p>
+    <p><span class="num-badge">2</span><b>模式一后端</b>：<code>GET/POST layout</code> 两端点 + BLOB 存取（先攻克 bytea 写入风险点）。curl 验证 BLOB 落库/回读一致。<span class="tag new">后端</span></p>
+    <p><span class="num-badge">3</span><b>模式一前端接线</b>：<code>loadLayout/saveLayout</code> + <code>derive*</code>，<code>saveDesign</code> 改走后端。E2E：设计→保存→重开无损复原。</p>
+    <p><span class="num-badge">4</span><b>模式二后端</b>：<code>POST data/query</code> + <code>POST data</code>，cr_cell_data UPSERT。</p>
+    <p><span class="num-badge">5</span><b>模式二前端接线</b>：组织/期间选择器 + <code>loadData/saveData</code> + 值回填。E2E：选期间→数据回填→改值→保存→重载一致。</p>
+    <p><span class="num-badge">6</span><b>关系投影 + 元素映射</b>：保存版式时重建 sheet/region/row/col + cell_element_map（供取数引擎）。</p>
+    <p style="margin-top:14px;color:var(--ink-dim)"><span class="num-badge" style="background:var(--warn)">后</span>公式计算/校验引擎（M2 compute 扩展）—— <b>本方案外</b>，模型已预留字段透传。</p>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="open">
+  <h2 class="sec"><span class="n">10</span>待定 · 边界 · 需你拍板</h2>
+  <table>
+    <tr><th>#</th><th>议题</th><th>建议默认</th></tr>
+    <tr><td>1</td><td>BLOB 存 <code>ssjson</code> 还是 <code>xlsx</code>？</td><td><b>ssjson</b>（无损/秒复原）；xlsx 仅导出时转</td></tr>
+    <tr><td>2</td><td>ssjson 是否 gzip 压缩？</td><td>>64KB 时 gzip（<code>doc_format=ssjson-gz</code>），小则直存</td></tr>
+    <tr><td>3</td><td>bytea 写入方案（后端风险点）</td><td>优先真 BYTEA 参数绑定；退路 base64 存 TEXT</td></tr>
+    <tr><td>4</td><td>关系表投影是否<b>本期必做</b>？</td><td>模式一/二可先只靠 BLOB 跑通；投影作为 §9 阶段6（取数引擎需要时）</td></tr>
+    <tr><td>5</td><td>数据层多期批量加载？</td><td>先单期（org+period）；多期对比另案</td></tr>
+    <tr><td>6</td><td>并发乐观锁粒度</td><td>content_hash 整份（够用）；不做单元格级</td></tr>
+    <tr><td>7</td><td>属性面板字段 → model → 关系表 的派生细节</td><td>先覆盖高频字段，逐步补全</td></tr>
+    <tr><td>8</td><td>默认区域 <code>region_code</code> 命名 + 范围</td><td><code>__default__</code>，范围 = 整个 sheet；显式建区域后是否自动收缩/删除默认区待定</td></tr>
+    <tr><td>9</td><td>区域重叠 / 区域间行列 id 是否全局唯一</td><td>行列 id 全局 BIGINT 唯一（后端铸号）；区域不重叠（校验另案）</td></tr>
+  </table>
+  <div class="callout"><b>明确排除（你已指示）：</b>计算公式与校验公式的<b>定义交互</b>、<b>计算过程/求值引擎</b>本方案不展开——模型仅<b>预留字段并原样透传</b>（cell.formula / row.formula / col.formula / data_element.calc_formula / check_formula），加载存储不解析、不求值。</div>
+</section>
+
+<hr class="soft">
+<p style="color:var(--ink-dim);font-size:13px">CMX 财务报表平台 · RPT · 报表两模式加载存储方案 · 单一 ReportModel 事实源 · 仅设计不涉代码改动 · 公式计算另案</p>
+</main>
+</div>
+<script>
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const obs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const id=e.target.id;links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id))}})},{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

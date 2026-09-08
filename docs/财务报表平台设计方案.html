@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财务报表平台 · 自定义样式/取数/落地/多组织汇总合并 设计方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:310px 1fr;max-width:1520px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .mono-block .g{color:#86efac}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--ink-dim)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:6px}
+  .tag.new{background:#0e1a30;color:#9ec1ff;border-color:#274a86}
+  .tag.reuse{background:#0e2417;color:#86efac;border-color:#1f6f3f}
+  .tag.mod{background:#241a08;color:#fcd57a;border-color:#7a5a14}
+  .kbd{font-family:var(--mono);font-size:12px;background:#0b0d14;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#c9d4ee}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .foot{color:var(--ink-dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line)}
+  a.ilink{color:var(--accent);text-decoration:none}a.ilink:hover{text-decoration:underline}
+  .num-badge{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);font-weight:700;font-size:12px;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+  /* 报表专用：Excel 网格示意 */
+  table.xl{border-collapse:collapse;margin:14px 0;font-size:12.6px;font-family:var(--mono);width:auto;min-width:60%}
+  table.xl th,table.xl td{border:1px solid #31374a;padding:5px 10px;text-align:right;white-space:nowrap}
+  table.xl th{background:#0d1220;color:#7c88a5;text-align:center;font-weight:600}
+  table.xl td.rh{background:#0d1220;color:#7c88a5;text-align:center;width:34px}
+  table.xl td.txt{text-align:left;color:#e6e9f0}
+  table.xl td.fx{background:#0e1a30;color:#9ec1ff;text-align:left}
+  table.xl td.exp{background:#0e1c14;color:#86efac;text-align:left}
+  table.xl td.tot{background:#180e30;color:#d6b4ff;font-weight:600}
+  .fxbar{display:flex;align-items:center;gap:0;margin:12px 0;font-family:var(--mono);font-size:12.6px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .fxbar .addr{background:#0d1220;color:#7c88a5;padding:8px 14px;border-right:1px solid var(--line);min-width:70px;text-align:center}
+  .fxbar .fxicon{background:#0d1220;color:#e0af68;padding:8px 12px;border-right:1px solid var(--line);font-style:italic}
+  .fxbar .expr{background:var(--code-bg);color:#c9d4ee;padding:8px 14px;flex:1}
+  .layers{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+  .layer{border:1px solid var(--line);border-radius:9px;padding:12px 16px;background:var(--panel)}
+  .layer .lh{font-weight:700;color:#fff;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+  .layer .ld{color:var(--ink-dim);font-size:12.8px}
+  .layer.l-fe{border-left:3px solid var(--accent)}
+  .layer.l-fn{border-left:3px solid var(--purple)}
+  .layer.l-calc{border-left:3px solid var(--warn)}
+  .layer.l-data{border-left:3px solid var(--accent2)}
+  .layer.l-store{border-left:3px solid #64748b}
+  .two-col-fn{columns:2;column-gap:20px}
+  @media(max-width:1100px){.two-col-fn{columns:1}}
+  .fn-item{break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  .fn-item code{background:none;border:none;padding:0;color:#7aa2f7;font-weight:600}
+  .fn-item .d{color:var(--ink-dim);font-size:12.5px;margin-top:3px;display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#s0"><span class="n">§0</span>结论速览</a>
+  <a href="#s1"><span class="n">§1</span>现状盘点：可复用资产</a>
+  <a href="#s2"><span class="n">§2</span>目标 · 非目标 · 设计原则</a>
+  <a href="#s3"><span class="n">§3</span>领域模型：模板 / 实例 / 单元格</a>
+  <a class="sub" href="#s3-1">3.1 报表模板 vs 报表实例</a>
+  <a class="sub" href="#s3-2">3.2 单元格坐标系与区块</a>
+  <a class="sub" href="#s3-3">3.3 扩展格：Excel 式动态展开</a>
+  <a class="sub" href="#s3-4">3.4 组织 / 期间 / 参数维度</a>
+  <a href="#s4"><span class="n">§4</span>RPT 报表元数据结构</a>
+  <a class="sub" href="#s4-1">4.1 metaKind:RPT 顶层结构</a>
+  <a class="sub" href="#s4-2">4.2 grid 表样 + cells 单元格</a>
+  <a class="sub" href="#s4-3">4.3 datasets 取数数据集</a>
+  <a class="sub" href="#s4-4">4.4 与 DOC/DCT 结构对照</a>
+  <a href="#s5"><span class="n">§5</span>取数公式引擎</a>
+  <a class="sub" href="#s5-1">5.1 公式语言与解析</a>
+  <a class="sub" href="#s5-2">5.2 内置财务函数库</a>
+  <a class="sub" href="#s5-3">5.3 跨系统取数（跨 DAM）</a>
+  <a class="sub" href="#s5-4">5.4 自定义取数函数</a>
+  <a class="sub" href="#s5-5">5.5 取数底座：编译为 ZmcDataSet 查询</a>
+  <a href="#s6"><span class="n">§6</span>报表计算引擎</a>
+  <a class="sub" href="#s6-1">6.1 依赖 DAG 与拓扑求值</a>
+  <a class="sub" href="#s6-2">6.2 取数下推 · 批量合并 · 并行</a>
+  <a class="sub" href="#s6-3">6.3 勾稽校验与平衡检查</a>
+  <a href="#s7"><span class="n">§7</span>数据落地：cr_* 报表表</a>
+  <a class="sub" href="#s7-1">7.1 三张核心表</a>
+  <a class="sub" href="#s7-2">7.2 版本快照与留痕</a>
+  <a class="sub" href="#s7-3">7.3 表间取数（报表引用报表）</a>
+  <a href="#s8"><span class="n">§8</span>多组织：共享 / 汇总 / 合并</a>
+  <a class="sub" href="#s8-1">8.1 三个概念的严格区分</a>
+  <a class="sub" href="#s8-2">8.2 共享：模板组织无关</a>
+  <a class="sub" href="#s8-3">8.3 汇总 rollup（管理口径）</a>
+  <a class="sub" href="#s8-4">8.4 合并 consolidation（法定口径）</a>
+  <a href="#s9"><span class="n">§9</span>后端方案（cmx-container）</a>
+  <a class="sub" href="#s9-1">9.1 新增 cmx-biz/src/rpt/</a>
+  <a class="sub" href="#s9-2">9.2 模型中心 compile_rpt</a>
+  <a class="sub" href="#s9-3">9.3 计算服务与调度</a>
+  <a href="#s10"><span class="n">§10</span>API 契约（/api/rpt/*）</a>
+  <a href="#s11"><span class="n">§11</span>前端 Excel 式报表工作台</a>
+  <a class="sub" href="#s11-1">11.1 四区工作台布局</a>
+  <a class="sub" href="#s11-2">11.2 report-grid 网格组件</a>
+  <a class="sub" href="#s11-3">11.3 公式栏与函数向导</a>
+  <a href="#s12"><span class="n">§12</span>典型报表范例</a>
+  <a href="#s13"><span class="n">§13</span>复用 / 新增清单</a>
+  <a href="#s14"><span class="n">§14</span>落地阶段</a>
+  <a href="#s15"><span class="n">§15</span>关键决策与风险</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX 元数据平台 · 设计方案</div>
+  <h1>财务报表平台 · 设计方案</h1>
+  <div class="sub">用户自定义报表样式 · 灵活跨系统取数公式 · 可扩展取数函数 · Excel 式操作 · 数据落地与表间取数 · 同表多组织共享 / 汇总 / 合并。作为第三类 <code>metaKind:RPT</code>，长在既有"三元定义 → 模型中心 → ZmcDataSet 装载 → 四区工作台"全链路之上。后端 <code>cmx-container</code>，前端 <code>CMXPortalManager / cmx-data-comp</code>。</div>
+  <div class="meta">
+    <span class="chip b">后端 cmx-container / Rust · axum</span>
+    <span class="chip b">前端 Web Components · cmx-data-comp</span>
+    <span class="chip g">复用 DOC/DCT 零拷贝列式管线</span>
+    <span class="chip p">新增 metaKind:RPT → /api/rpt/*</span>
+    <span class="chip w">状态：设计（不动代码）</span>
+  </div>
+</header>
+
+<!-- §0 结论速览 -->
+<section id="s0">
+<h2 class="sec"><span class="num">§0</span>结论速览</h2>
+<p class="lead">财务报表平台不是一个"新系统"，而是既有元数据平台的<b>第三种建模对象</b>。DOC 建模"业务单据"、DCT 建模"数据字典"，本方案新增 <code>RPT</code> 建模"报表"。三者共用同一条流水线：设计期 JSON 定义 → 模型中心编译建物理表 → tokio-postgres 并行装载 → ZmcDataSet 零拷贝列式管线 → 四区工作台渲染。报表所需的三样独有能力——<b>Excel 式表样、灵活取数公式、多组织汇总合并</b>——以最小增量挂接在这条链路的对应环节上。</p>
+
+<div class="card">
+<div class="legend">
+  <span class="status"><span class="dot have"></span>复用既有（零改动 / 配置级）</span>
+  <span class="status"><span class="dot partial"></span>小改（既有模块加分支）</span>
+  <span class="status"><span class="dot new"></span>新增（报表独有）</span>
+</div>
+<table>
+<thead><tr><th>能力（用户诉求）</th><th>落点</th><th>做法</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td>自定义报表样式（行列/合并格/字体/边框）</td><td>RPT 元数据 <code>grid</code> 段</td><td>把"表样"建模为单元格矩阵 JSON，与 DOC 的 <code>voucherTables</code> 平级</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>灵活取数公式（可视化配置）</td><td>单元格 <code>formula</code> + 取数引擎</td><td>公式 AST → 编译为 ZmcDataSet 聚合查询下推 DB</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>从财务/销售/HR 等多系统取数</td><td>跨 DAM 引用（已有）</td><td>复用"三元定义跨 DAM 引用"：<code>fx('销售', ...)</code> 解析到 <code>sd</code> 域物理表</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td>取数函数可自定义</td><td>函数注册表 + 插件</td><td>内置函数库 + WASM 插件（复用 cmx-plugin 沙箱）注册自定义函数</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td>类 Excel 操作界面 / 应用方式</td><td>report-grid 组件</td><td>四区工作台 + 公式栏 + 函数向导，编辑态复用 CmxColumnModel 编辑器</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>数据落地数据库</td><td><code>cr_*</code> 报表表</td><td>模型中心 <code>compile_rpt</code> 建 3 张表（实例头 / 单元格值 / 快照），与 <code>cv_*/cf_*</code> 同构</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td>表间取数（报表引用报表）</td><td><code>RPTREF()</code> 函数</td><td>读另一张已落地报表实例的单元格值；DAG 跨报表连边</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>同一张表在不同组织间共享</td><td>模板组织无关</td><td>模板（表样+公式）不含组织；实例 = 模板 × 组织 × 期间</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td>可汇总（管理口径）</td><td>rollup</td><td>沿组织树把子公司实例单元格逐格相加，复用 DOC <code>aggregations</code> 上卷思想</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>可合并（法定口径）</td><td>consolidation</td><td>汇总 + 抵消分录（内部往来/投资权益）；抵消建模为特殊数据集</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>一句话架构</h3>
+<div class="callout key">
+<div class="t">核心洞察</div>
+报表 = <b>表样（grid）</b> + <b>取数（formula → dataset）</b> + <b>组织维度（rollup/consolidation）</b>。表样是静态排版，取数是把单元格绑定到"从某些物理表按某些维度聚合出一个数"，组织维度是把同一套取数在组织树上复制并相加。三者中只有"取数"触及数据，而取数的底座——按维度从 <code>cv_*/cf_*</code> 表聚合——正是 ZmcDataSet 管线已经在做的事。<b>报表引擎不自己读数据库，它把公式翻译成 DOC/DCT 已有的查询。</b>
+</div>
+
+<h3>全景数据流</h3>
+<div class="mono-block"><span class="c">// 设计期（报表设计师，一次）</span>
+report_meta.json  <span class="k">──compile_rpt──▶</span>  cr_report_instance / cr_cell_value / cr_report_snapshot  <span class="c">（3 张物理表）</span>
+
+<span class="c">// 运行期（每次出表：模板 × 组织 × 期间）</span>
+用户点"计算"
+  │
+  ├─▶ <span class="f">RptEngine</span>：读 grid + cells，建单元格<span class="a">依赖 DAG</span>
+  │      │
+  │      ├─ 取数格 fx(...)  <span class="k">──▶</span> <span class="f">FetchPlanner</span>：同源同维度的取数<span class="g">合并成一条 SQL</span>
+  │      │                              <span class="k">──▶</span> 下推 <span class="f">tokio-postgres</span> 并行查 cv_*/cf_*（多域）
+  │      │                              <span class="k">──▶</span> ZmcDataSet 列式结果回填单元格
+  │      ├─ 计算格 =B3+C3  <span class="k">──▶</span> 拓扑序求值（纯内存）
+  │      └─ 引用格 RPTREF  <span class="k">──▶</span> 读 cr_cell_value（另一报表实例）
+  │
+  ├─▶ 借贷/勾稽<span class="a">校验</span>（复用 DOC validationRules 思路）
+  │
+  └─▶ 落地：写 cr_cell_value（本期实例）+ 可选 cr_report_snapshot（版本留痕）
+         │
+         └─▶ 多组织：rollup（子→父逐格相加）/ consolidation（+抵消分录）
+</div>
+</section>
+
+<!-- ================= §1 现状盘点 ================= -->
+<section id="s1">
+<h2 class="sec"><span class="num">§1</span>现状盘点：可复用资产</h2>
+<p class="lead">报表平台之所以能"小增量"落地，是因为它要用的地基基本都已就位。下表是设计前必须认清的既有资产——凡标"复用"者，报表方案直接站在其上，不重造。</p>
+
+<table>
+<thead><tr><th>既有资产</th><th>位置</th><th>报表平台如何用</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><b>三元定义体系</b><br>metaKind = DOC / DCT / REL</td><td><code>data/meta/definitions/**</code><br><code>/api/definitions/*</code></td><td>新增 <code>RPT</code> 为第四种 metaKind，走同一套 store/base/overlay 机制</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>字段三元语义</b><br>dimType = dimension / measure / attribute / relation</td><td>各 *_meta_*.json 的 <code>fields[]</code></td><td>取数即"按 dimension 分组、对 measure 聚合"——公式引擎直接读字段的 dimType/agg</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>模型中心编译器</b><br>compile → PgTableDefineExecutor 建表</td><td><code>cmx-api/.../portal/model_center.rs</code></td><td>新增 <code>compile_rpt</code>：把 RPT 定义编译成 3 张 <code>cr_*</code> 表；台账登记 rpt_version</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td><b>ZmcDataSet 零拷贝管线</b><br>6 组驱动×内存×传输</td><td><code>cmx-infra/cmx-rowsource</code><br><code>/api/doc/data/tokio-zmc-msgpack</code></td><td>取数结果、报表落地读取全走此管线；报表就是它的又一个消费者</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>tokio-postgres 并行 DB 层</b></td><td><code>cmx-infra/cmx-database-pg</code></td><td>一张报表的多个取数格 = 多条聚合查询，天然并行；正是此层的用武之地</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>跨 DAM 引用</b><br>DRN 跨域/应用/模块引用</td><td>"三元定义统一"方案</td><td>报表从"销售/HR/库存"取数 = 引用 <code>sd/hr/inv</code> 域的物理表，机制已存在</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>落库列校验 + 错误码库</b><br>CmxErrCode + violations</td><td><code>dct-doc-column-validation</code></td><td>报表落地 <code>cr_cell_value</code> 前的类型/精度校验、勾稽错误统一走错误码库</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>bigint 后端铸号</b></td><td><code>bigint-id-backend-generation</code></td><td><code>cr_*</code> 主键、报表实例号沿用 52 位安全整数铸号</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>四区工作台框架</b><br>model/explorer/content/property</td><td><code>fico-ws</code> 8 页 + <code>host.workspace</code></td><td>报表工作台照搬四区骨架：model 装载中枢 / content 放网格 / property 放公式属性</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>CmxColumnModel / 编辑器</b><br>字段类型/编辑控件/字典下拉</td><td><code>cmx-data-comp/src/lib/*</code></td><td>报表参数录入、单元格编辑控件、字典型维度下拉直接复用</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>cmx-plugin WASM 沙箱</b></td><td><code>cmx-plugin</code> / plugins</td><td>"自定义取数函数"以 WASM 插件形式注册，沙箱隔离，热插拔</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td><b>report 模块占位</b><br>菜单"报表数据管理"</td><td><code>data/modules/fi/cmxfico/report/</code><br><code>report-menu.json</code></td><td>报表工作台菜单节点、html-pages 挂载点已预留</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<div class="t">已有 vs 缺口</div>
+真正"缺"的只有报表独有的三块：<b>①</b> 单元格网格模型（grid/cells，Excel 式表样与公式）；<b>②</b> 取数公式引擎（把公式编译成聚合查询 + 函数库）；<b>③</b> 多组织汇总/合并算法（rollup/consolidation）。其余全部复用。这与当初"DCT 补齐 = 镜像 DOC 的 cv_* 闭环"是同一种打法。
+</div>
+</section>
+
+<!-- ================= §2 目标 · 非目标 ================= -->
+<section id="s2">
+<h2 class="sec"><span class="num">§2</span>目标 · 非目标 · 设计原则</h2>
+
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#86efac">✓ 目标（本方案覆盖）</h4>
+<ul>
+<li><b>自定义表样</b>：任意行列、合并单元格、表头/表体/表尾、字体边框对齐等排版属性，所见即所得。</li>
+<li><b>灵活取数公式</b>：单元格绑定取数公式，可视化配置"从哪张表、按哪些维度过滤、取哪个度量、做何聚合"。</li>
+<li><b>跨系统取数</b>：财务、销售、HR、库存等不同域/应用的物理表，统一寻址取数。</li>
+<li><b>取数函数可扩展</b>：内置财务函数库（期初期末/发生额/余额等）+ 用户自定义函数注册。</li>
+<li><b>Excel 式操作</b>：公式栏、单元格引用（B3、区域 B3:B10）、填充、函数向导，贴近会计习惯。</li>
+<li><b>数据落地</b>：报表结果入库，可查历史、可留版本快照、可作为下游数据源。</li>
+<li><b>表间取数</b>：一张报表引用另一张已落地报表的单元格（如利润表净利润带入资产负债表未分配利润）。</li>
+<li><b>多组织</b>：模板跨组织共享；按组织树汇总（管理合并）；按法定口径合并（含抵消）。</li>
+</ul>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#fca5a5">✗ 非目标（本期不做 / 另案）</h4>
+<ul>
+<li><b>通用 BI / 自助分析（Ad-hoc OLAP）</b>：本方案面向"格式固定、口径固定"的法定与管理报表，不是拖拽式多维分析看板（那是 flexible-combination 的方向）。</li>
+<li><b>图表可视化引擎</b>：柱图/饼图等留作报表输出的后续渲染层，先把"数"算准落地。</li>
+<li><b>完整 Excel 兼容</b>：不追求 100% 复刻 Excel 全部 400+ 函数与 VBA；只做财务报表必需子集 + 可扩展入口。</li>
+<li><b>实时流式报表</b>：报表是"某期间某时点"的快照式产物，非实时流。</li>
+<li><b>合并抵消的全自动推断</b>：抵消规则需人工配置内部交易对手关系，引擎执行但不臆测。</li>
+</ul>
+</div>
+</div>
+
+<h3>设计原则</h3>
+<div class="card">
+<ol>
+<li><b>报表是第三类元数据，不是新孤岛。</b> 一切能落到"metaKind:RPT + 走既有流水线"的，绝不新起炉灶。判据：若某能力 DOC/DCT 已有，报表只允许"加分支/加参数"，不允许 fork。</li>
+<li><b>取数引擎不碰数据库，只生成查询。</b> 公式编译的终点是一个 ZmcDataSet 查询描述，交给既有 DOC/DCT 装载底座执行。引擎层零 SQL 字符串拼接、零直连。</li>
+<li><b>模板与实例严格分离。</b> 表样+公式=模板（组织无关、可共享）；数据=实例（模板×组织×期间）。这是"多组织共享/汇总/合并"能成立的前提。</li>
+<li><b>声明式优先。</b> 表样、公式、数据集、抵消规则全部是 JSON 定义，可版本化、可 diff、可跨环境迁移，与 DOC/DCT 定义同库同管。</li>
+<li><b>落地即契约。</b> 报表一旦计算落地，其单元格值就是稳定的对外数据源，下游（表间取数、汇总、审计）依赖它，故必须有版本快照与留痕。</li>
+<li><b>组织维度正交。</b> 组织不进模板、不进公式，只在"实例化"和"汇总/合并"两个环节介入，保证同一模板在任意组织复用。</li>
+</ol>
+</div>
+</section>
+
+<!-- §3 领域模型 -->
+<section id="s3">
+<h2 class="sec"><span class="num">§3</span>领域模型：模板 / 实例 / 单元格</h2>
+<p class="lead">在写任何结构之前，先把三个概念钉死：<b>报表模板</b>（组织无关的表样+公式）、<b>报表实例</b>（模板在某组织某期间的一次计算结果）、<b>单元格</b>（表样的最小单位，可以是文字、取数、计算或引用）。整个平台就是围绕这三者运转。</p>
+
+<h3 id="s3-1">3.1 报表模板 vs 报表实例</h3>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0">📄 报表模板 Template（设计期产物）</h4>
+<p>一份 <code>metaKind:RPT</code> 的 JSON 定义。包含：</p>
+<ul>
+<li><b>表样 grid</b>：几行几列、合并格、样式</li>
+<li><b>单元格 cells</b>：每格的类型与公式</li>
+<li><b>数据集 datasets</b>：取数指向哪些物理表</li>
+<li><b>参数 params</b>：出表时要用户填的（期间、组织由上下文给）</li>
+</ul>
+<div class="callout key" style="margin-bottom:0">
+<div class="t">组织无关</div>
+模板里<b>绝不写死组织</b>。"取本组织本期科目 1001 余额"——"本组织"是实例化时注入的上下文变量 <code>@org</code>，不是常量。这是共享的前提。
+</div>
+</div>
+<div class="card">
+<h4 style="margin-top:0">📊 报表实例 Instance（运行期产物）</h4>
+<p>模板 × 组织 × 期间 × 一次计算 = 一个实例。落地为 <code>cr_report_instance</code> 一行 + <code>cr_cell_value</code> 若干行。</p>
+<div class="mono-block" style="margin:8px 0"><span class="c">实例主键 = </span>
+  tpl_id  <span class="c">资产负债表模板</span>
++ org_id  <span class="c">华东子公司</span>
++ period  <span class="c">2026-06</span>
++ scope   <span class="c">single｜rollup｜consol</span>
+</div>
+<p style="margin-bottom:0">同一模板可派生无数实例：不同公司、不同月份、单体/汇总/合并口径各一份，互不干扰，可对比可追溯。</p>
+</div>
+</div>
+
+<div class="flow">
+  <div class="step"><div class="badge">T</div><div class="body"><b>模板</b>（设计一次）：资产负债表.rpt.json —— 61 行、若干取数格、组织无关</div></div>
+  <div class="step"><div class="badge">×</div><div class="body"><b>笛卡尔展开</b>：模板 × {华东,华南,总部} × {2026-05,2026-06} × {单体,汇总} </div></div>
+  <div class="step"><div class="badge">I</div><div class="body"><b>实例</b>（计算 N 次）：每个组合一份落地实例，单元格值入 <code>cr_cell_value</code></div></div>
+  <div class="step"><div class="badge">▲</div><div class="body"><b>汇总/合并</b>：华东+华南 实例逐格相加 → 总部汇总实例；再叠抵消 → 合并实例</div></div>
+</div>
+
+<h3 id="s3-2">3.2 单元格坐标系与区块</h3>
+<p>报表本质是一张二维单元格矩阵，坐标沿用 Excel 习惯：<b>列 A/B/C…、行 1/2/3…、单元格 B3、区域 B3:D10</b>。会计人员零学习成本。每个单元格有一个 <b>cellType</b>：</p>
+
+<table>
+<thead><tr><th>cellType</th><th>含义</th><th>示例</th><th>求值方式</th></tr></thead>
+<tbody>
+<tr><td><code>text</code></td><td>静态文字（表头、项目名、行次）</td><td>"货币资金"、"资产负债表"</td><td>常量，不求值</td></tr>
+<tr><td><code>fetch</code> <span class="tag new">取数格</span></td><td>从物理表取数（本方案核心）</td><td><code>=QM("1001")</code> 取科目期末余额</td><td>编译为聚合查询下推 DB</td></tr>
+<tr><td><code>calc</code></td><td>纯单元格算术（不碰 DB）</td><td><code>=B3+B4-B5</code>、<code>=SUM(B3:B10)</code></td><td>拓扑序内存求值</td></tr>
+<tr><td><code>ref</code> <span class="tag new">引用格</span></td><td>表间取数（引另一报表实例）</td><td><code>=RPTREF('利润表','净利润')</code></td><td>读 cr_cell_value</td></tr>
+<tr><td><code>param</code></td><td>参数回显（期间、编制单位）</td><td><code>=@period</code>、<code>=@org.name</code></td><td>上下文注入</td></tr>
+</tbody>
+</table>
+
+<h4>区块（Block）：给坐标赋予业务语义</h4>
+<p>裸坐标（B3）对人不友好。模板可把矩形区域命名为<b>区块</b>并打标签，公式与样式按区块批量作用，也让"表头/表体/表尾"可被识别（打印分页、多组织汇总时"仅表体参与相加"）：</p>
+<div class="mono-block"><span class="k">"blocks"</span>: [
+  { <span class="a">"id"</span>: <span class="s">"title"</span>,   <span class="a">"range"</span>: <span class="s">"A1:F1"</span>,  <span class="a">"role"</span>: <span class="s">"header"</span>, <span class="a">"merge"</span>: <span class="k">true</span> },
+  { <span class="a">"id"</span>: <span class="s">"colhead"</span>, <span class="a">"range"</span>: <span class="s">"A2:F2"</span>,  <span class="a">"role"</span>: <span class="s">"header"</span> },
+  { <span class="a">"id"</span>: <span class="s">"body"</span>,    <span class="a">"range"</span>: <span class="s">"A3:F60"</span>, <span class="a">"role"</span>: <span class="s">"body"</span>,   <span class="a">"rollupSummable"</span>: <span class="k">true</span> },
+  { <span class="a">"id"</span>: <span class="s">"footer"</span>,  <span class="a">"range"</span>: <span class="s">"A61:F61"</span>, <span class="a">"role"</span>: <span class="s">"footer"</span> }
+]
+</div>
+<div class="callout">
+<div class="t">对应既有概念</div>
+区块的 <code>role</code>/<code>rollupSummable</code> 与 DOC 里字段的 <code>dimType</code>/<code>agg</code> 是同一种设计手法——<b>用元数据标注"这块数据在聚合时如何参与"</b>。多组织汇总时，只有 <code>rollupSummable:true</code> 的取数格逐格相加，表头文字与合计公式不加（合计在相加后重算）。
+</div>
+
+<h3 id="s3-3">3.3 扩展格：Excel 式动态展开</h3>
+<p>财务报表常有"明细行数不定"的场景——销售明细表、库存明细表、辅助核算余额表，行数取决于数据。Excel 靠人手拖动，报表平台靠<b>扩展格（expand cell）</b>：模板里画<b>一行模板行</b>，声明"沿某数据集的某维度纵向展开"，计算时按实际维度值克隆成 N 行。</p>
+<div class="mono-block"><span class="c">// 模板第 5 行声明为扩展行：每个存货类别展开一行</span>
+<span class="k">"expands"</span>: [
+  {
+    <span class="a">"id"</span>: <span class="s">"inv_rows"</span>,
+    <span class="a">"anchorRow"</span>: 5,              <span class="c">// 模板行（样式/公式的样板）</span>
+    <span class="a">"direction"</span>: <span class="s">"down"</span>,          <span class="c">// down 纵向 / right 横向（如按月份铺 12 列）</span>
+    <span class="a">"overDataset"</span>: <span class="s">"inv_balance"</span>,  <span class="c">// 沿哪个数据集展开</span>
+    <span class="a">"byDimension"</span>: <span class="s">"category_id"</span>,  <span class="c">// 每个不同维度值一行</span>
+    <span class="a">"sort"</span>: <span class="s">"category_code asc"</span>
+  }
+]
+<span class="c">// 扩展行内公式用 @row 指代"当前展开维度值"</span>
+A5 = <span class="s">"=@row.category_name"</span>     <span class="c">// 类别名称</span>
+C5 = <span class="s">"=SUMQTY(@row.category_id)"</span>  <span class="c">// 该类别数量，取数按当前行维度过滤</span>
+</div>
+<p style="margin-bottom:0">横向扩展（<code>direction:right</code>）用于"按 12 个月/4 个季度平铺列"，本质相同。扩展是<b>纯排版层</b>能力，不改取数与落地模型——展开后的每格仍是普通 fetch/calc 格。</p>
+
+<h3 id="s3-4">3.4 组织 / 期间 / 参数维度</h3>
+<p>报表实例由若干上下文变量确定。这些变量在模板里以 <code>@</code> 前缀引用，实例化时注入：</p>
+<table>
+<thead><tr><th>上下文变量</th><th>来源</th><th>作用</th><th>关联字典</th></tr></thead>
+<tbody>
+<tr><td><code>@org</code></td><td>工作台当前组织 / 汇总遍历</td><td>取数的组织过滤、编制单位显示</td><td><code>acct_entity</code>（组织机构字典）</td></tr>
+<tr><td><code>@period</code></td><td>用户选择</td><td>会计期间过滤（发生额、期末余额）</td><td><code>fiscal_period</code></td></tr>
+<tr><td><code>@currency</code></td><td>参数 / 组织默认</td><td>本位币 vs 原币，折算</td><td><code>currency</code></td></tr>
+<tr><td><code>@scope</code></td><td>出表口径选择</td><td>single 单体 / rollup 汇总 / consol 合并</td><td>—</td></tr>
+<tr><td><code>@params.*</code></td><td>模板自定义参数</td><td>如"是否含未过账"、"科目级次"</td><td>各自绑定</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">为什么组织必须是变量而非模板字段</div>
+若把组织写进模板，则"华东资产负债表"和"华南资产负债表"要各存一份模板——违背"同一张表跨组织共享"。把 <code>@org</code> 作为注入变量，一份模板服务全集团，且"汇总"就退化成"对同一模板遍历组织树、把结果相加"，"合并"退化成"汇总再叠抵消"。<b>组织正交是整个多组织能力的地基。</b>
+</div>
+</section>
+
+<!-- §4 RPT 元数据结构 -->
+<section id="s4">
+<h2 class="sec"><span class="num">§4</span>RPT 报表元数据结构</h2>
+<p class="lead">报表模板是一份 <code>*_rpt_meta_v1.json</code>，与 <code>*_doc_meta_*.json</code>、<code>*_dct_meta_*.json</code> 同目录、同存储机制、同 <code>/api/definitions/*</code> 入口。顶层 <code>metaKind:"RPT"</code>，可引用 <code>base_rpt_meta_v1.json</code> 复用通用字段集（编制单位/期间/审核状态等报表页眉字段）。</p>
+
+<h3 id="s4-1">4.1 metaKind:RPT 顶层结构</h3>
+<div class="mono-block"><span class="k">{</span>
+  <span class="a">"reportMeta"</span>: {
+    <span class="a">"metaKind"</span>: <span class="s">"RPT"</span>,               <span class="c">// ← 第三类建模对象</span>
+    <span class="a">"reportCode"</span>: <span class="s">"BS"</span>,
+    <span class="a">"reportName"</span>: <span class="s">"资产负债表"</span>,
+    <span class="a">"category"</span>: <span class="s">"statutory"</span>,        <span class="c">// statutory 监管 / management 管理</span>
+    <span class="a">"version"</span>: 1,
+    <span class="a">"organizationDict"</span>: <span class="s">"acct_entity"</span>,  <span class="c">// 组织维度绑定的字典（同 DOC）</span>
+    <span class="a">"periodDict"</span>: <span class="s">"fiscal_period"</span>,
+    <span class="a">"orgAware"</span>: <span class="k">true</span>,               <span class="c">// 参与多组织共享/汇总/合并</span>
+    <span class="a">"consolidatable"</span>: <span class="k">true</span>          <span class="c">// 允许法定合并</span>
+  },
+  <span class="a">"baseRptMetaRef"</span>: {                    <span class="c">// 复用 base（同 baseDocMetaRef 机制）</span>
+    <span class="a">"file"</span>: <span class="s">"base_rpt_meta_v1.json"</span>,
+    <span class="a">"fieldSets"</span>: [<span class="s">"reportHeaderFields"</span>, <span class="s">"reportAuditFields"</span>]
+  },
+  <span class="a">"params"</span>:   [ <span class="c">/* §3.4 出表参数 */</span> ],
+  <span class="a">"grid"</span>:     { <span class="c">/* §4.2 表样：行列/合并/样式/区块/扩展 */</span> },
+  <span class="a">"cells"</span>:    { <span class="c">/* §4.2 单元格：type + formula + style */</span> },
+  <span class="a">"datasets"</span>: [ <span class="c">/* §4.3 取数数据集：指向物理表 */</span> ],
+  <span class="a">"checks"</span>:   [ <span class="c">/* §6.3 勾稽校验规则 */</span> ],
+  <span class="a">"consolidation"</span>: { <span class="c">/* §8.4 合并抵消规则 */</span> }
+<span class="k">}</span>
+</div>
+
+<h3 id="s4-2">4.2 grid 表样 + cells 单元格</h3>
+<p><code>grid</code> 描述"画布"（几行几列、列宽行高、合并、区块、扩展、样式类），<code>cells</code> 描述"每格填什么"（类型、公式、格式化、单格样式覆盖）。两者按坐标关联，职责分离便于 diff 与复用。</p>
+<div class="grid2">
+<div>
+<h4>grid（画布）</h4>
+<div class="mono-block"><span class="a">"grid"</span>: {
+  <span class="a">"rows"</span>: 61, <span class="a">"cols"</span>: 6,
+  <span class="a">"colWidths"</span>: { <span class="a">"A"</span>:220, <span class="a">"B"</span>:60, <span class="a">"C"</span>:120 },
+  <span class="a">"merges"</span>: [<span class="s">"A1:F1"</span>, <span class="s">"A2:A2"</span>],
+  <span class="a">"blocks"</span>: [ <span class="c">/* §3.2 */</span> ],
+  <span class="a">"expands"</span>: [ <span class="c">/* §3.3 */</span> ],
+  <span class="a">"styleClasses"</span>: {
+    <span class="a">"tot"</span>: { <span class="a">"bold"</span>:true, <span class="a">"topBorder"</span>:<span class="s">"double"</span> },
+    <span class="a">"num"</span>: { <span class="a">"align"</span>:<span class="s">"right"</span>, <span class="a">"format"</span>:<span class="s">"#,##0.00"</span> }
+  }
+}
+</div>
+</div>
+<div>
+<h4>cells（内容）</h4>
+<div class="mono-block"><span class="a">"cells"</span>: {
+  <span class="a">"A1"</span>: { <span class="a">"type"</span>:<span class="s">"text"</span>, <span class="a">"value"</span>:<span class="s">"资产负债表"</span>, <span class="a">"class"</span>:<span class="s">"title"</span> },
+  <span class="a">"E1"</span>: { <span class="a">"type"</span>:<span class="s">"param"</span>, <span class="a">"value"</span>:<span class="s">"=@org.name"</span> },
+  <span class="a">"A3"</span>: { <span class="a">"type"</span>:<span class="s">"text"</span>, <span class="a">"value"</span>:<span class="s">"货币资金"</span> },
+  <span class="a">"C3"</span>: {
+    <span class="a">"type"</span>:<span class="s">"fetch"</span>, <span class="a">"class"</span>:<span class="s">"num"</span>,
+    <span class="a">"formula"</span>:<span class="s">"=QM('1001')+QM('1002')"</span>,
+    <span class="a">"dataset"</span>:<span class="s">"gl_balance"</span>
+  },
+  <span class="a">"C30"</span>:{ <span class="a">"type"</span>:<span class="s">"calc"</span>, <span class="a">"class"</span>:<span class="s">"tot"</span>,
+           <span class="a">"formula"</span>:<span class="s">"=SUM(C3:C29)"</span> }
+}
+</div>
+</div>
+</div>
+<p style="margin-bottom:0">前端把 grid+cells 渲染成 <code>report-grid</code>（§11.2）；单元格样式类 <code>class</code> 引用 <code>styleClasses</code>，与 CSS class 思路一致，样式集中可维护。</p>
+
+<h3 id="s4-3">4.3 datasets 取数数据集</h3>
+<p>取数格不直接写"从哪张表"，而是引用一个<b>命名数据集</b>。数据集是"物理表 + 可取度量 + 可用维度"的声明，把"表在哪、字段叫什么"与"公式怎么写"解耦——公式只认业务语义（科目、期末），数据集负责映射到物理列。这正是复用三元定义 <code>dimType/refDict</code> 的地方。</p>
+<div class="mono-block"><span class="a">"datasets"</span>: [
+  {
+    <span class="a">"id"</span>: <span class="s">"gl_balance"</span>,               <span class="c">// 公式里 dataset:'gl_balance'</span>
+    <span class="a">"source"</span>: {                          <span class="c">// ← 跨 DAM 定位物理表（§5.3）</span>
+      <span class="a">"domain"</span>:<span class="s">"fi"</span>, <span class="a">"app"</span>:<span class="s">"cmxfico"</span>, <span class="a">"module"</span>:<span class="s">"gl"</span>,
+      <span class="a">"table"</span>: <span class="s">"cv_gl_balance"</span>          <span class="c">// 总账余额物理表（模型中心已建）</span>
+    },
+    <span class="a">"measures"</span>: [                        <span class="c">// 可被公式取的度量（measure 字段）</span>
+      { <span class="a">"key"</span>:<span class="s">"begin"</span>,  <span class="a">"col"</span>:<span class="s">"begin_balance"</span>, <span class="a">"agg"</span>:<span class="s">"sum"</span> },
+      { <span class="a">"key"</span>:<span class="s">"debit"</span>,  <span class="a">"col"</span>:<span class="s">"debit_amount"</span>,  <span class="a">"agg"</span>:<span class="s">"sum"</span> },
+      { <span class="a">"key"</span>:<span class="s">"credit"</span>, <span class="a">"col"</span>:<span class="s">"credit_amount"</span>, <span class="a">"agg"</span>:<span class="s">"sum"</span> },
+      { <span class="a">"key"</span>:<span class="s">"end"</span>,    <span class="a">"col"</span>:<span class="s">"end_balance"</span>,   <span class="a">"agg"</span>:<span class="s">"sum"</span> }
+    ],
+    <span class="a">"dimensions"</span>: [                      <span class="c">// 可过滤/分组的维度（dimension 字段 + refDict）</span>
+      { <span class="a">"key"</span>:<span class="s">"account"</span>, <span class="a">"col"</span>:<span class="s">"account_code"</span>, <span class="a">"refDict"</span>:<span class="s">"gl_account"</span>, <span class="a">"hierarchical"</span>:<span class="k">true</span> },
+      { <span class="a">"key"</span>:<span class="s">"org"</span>,     <span class="a">"col"</span>:<span class="s">"entity_id"</span>,    <span class="a">"refDict"</span>:<span class="s">"acct_entity"</span>, <span class="a">"bindContext"</span>:<span class="s">"@org"</span> },
+      { <span class="a">"key"</span>:<span class="s">"period"</span>,  <span class="a">"col"</span>:<span class="s">"period_code"</span>,  <span class="a">"refDict"</span>:<span class="s">"fiscal_period"</span>, <span class="a">"bindContext"</span>:<span class="s">"@period"</span> }
+    ],
+    <span class="a">"defaultFilters"</span>: [                  <span class="c">// 隐式过滤（如仅已过账）</span>
+      { <span class="a">"col"</span>:<span class="s">"doc_status"</span>, <span class="a">"op"</span>:<span class="s">"="</span>, <span class="a">"val"</span>:<span class="s">"posted"</span> }
+    ]
+  }
+]
+</div>
+<div class="callout key">
+<div class="t">bindContext 是共享/汇总的关键钩子</div>
+维度声明 <code>bindContext:"@org"</code> 表示"该维度自动绑定实例上下文的组织"。于是同一份公式 <code>QM('1001')</code> 在华东实例里过滤 entity_id=华东，在华南实例里过滤华南——<b>公式零改动，组织由上下文注入</b>。汇总时引擎遍历组织树重设 <code>@org</code> 即可复算。这把"组织正交"落到了数据集层面。
+</div>
+
+<h3 id="s4-4">4.4 与 DOC / DCT 结构对照</h3>
+<p>三类 metaKind 是"同构而不同用"。认清对应关系，就能把 DOC/DCT 已验证的存储/装载/编译代码最大化搬过来：</p>
+<table>
+<thead><tr><th>维度</th><th>DOC 单据</th><th>DCT 字典</th><th>RPT 报表 <span class="tag new">本方案</span></th></tr></thead>
+<tbody>
+<tr><td>建模对象</td><td>主从多层业务单据</td><td>平铺/自分级字典</td><td>二维单元格报表</td></tr>
+<tr><td>结构骨架</td><td><code>voucherSchema</code> 三层</td><td><code>dictionaryTables</code> 平铺</td><td><code>grid</code> + <code>cells</code> 矩阵</td></tr>
+<tr><td>字段/单元</td><td><code>fields[]</code>（dimType）</td><td><code>fields[]</code></td><td><code>cells{}</code>（cellType）</td></tr>
+<tr><td>层间关系</td><td><code>relations</code>（外键）</td><td><code>parent_id</code> 自引用</td><td>单元格<b>依赖 DAG</b>（公式引用）</td></tr>
+<tr><td>聚合</td><td><code>aggregations</code> 上卷</td><td>—</td><td>公式 SUM/取数 agg + 组织 rollup</td></tr>
+<tr><td>物理表前缀</td><td><code>cv_*</code></td><td><code>cf_*</code></td><td><code>cr_*</code></td></tr>
+<tr><td>校验</td><td><code>validationRules</code></td><td>列级校验</td><td><code>checks</code> 勾稽（同引擎）</td></tr>
+<tr><td>装载端点</td><td><code>/api/doc/data/*</code></td><td><code>/api/dct/data/*</code></td><td><code>/api/rpt/data/*</code></td></tr>
+<tr><td>装载底座</td><td colspan="3" style="text-align:center;color:#86efac">共用 ZmcDataSet 零拷贝列式管线 + tokio-postgres 并行 DB 层</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<div class="t">最大差异 = 关系模型</div>
+DOC 的层间关系是<b>数据行的外键</b>（header→entry），RPT 的"关系"是<b>单元格间的公式依赖</b>（C30=SUM(C3:C29)、C3=QM(...)）。所以 RPT 独有的引擎工作是"建单元格 DAG 并拓扑求值"（§6），而 DOC 的 BFS 树遍历不直接适用。但"取数格 → 聚合查询 → ZmcDataSet"这一段，与 DOC 装载完全同构。
+</div>
+</section>
+
+<!-- §5 取数公式引擎 -->
+<section id="s5">
+<h2 class="sec"><span class="num">§5</span>取数公式引擎</h2>
+<p class="lead">这是报表平台的心脏。用户要的"灵活取数"落到实处，就是：<b>一条会计师能读懂的公式，被解析成 AST，再编译成一个按维度聚合的 ZmcDataSet 查询，下推到对应物理表执行。</b>公式层只谈业务语义，物理细节全由数据集（§4.3）承接。引擎自己不写 SQL 字符串、不直连数据库。</p>
+
+<h3 id="s5-1">5.1 公式语言与解析</h3>
+<p>公式是"Excel 语法 + 财务函数"的混合体。三种记号：单元格引用（<code>B3</code>、<code>C3:C29</code>）、算术运算符（<code>+ - * / ()</code>）、函数调用（<code>QM('1001')</code>）。解析产出标准 AST：</p>
+<div class="fxbar">
+  <span class="addr">C3</span>
+  <span class="fxicon">fx</span>
+  <span class="expr">=QM('1001', '2026-06') + QM('1002', '2026-06')</span>
+</div>
+<div class="mono-block"><span class="c">// 解析为 AST（引擎内部表示）</span>
+Add(
+  Call(<span class="s">"QM"</span>, [Str(<span class="s">"1001"</span>), Str(<span class="s">"2026-06"</span>)]),   <span class="c">// 取数节点 → 待下推 DB</span>
+  Call(<span class="s">"QM"</span>, [Str(<span class="s">"1002"</span>), Str(<span class="s">"2026-06"</span>)])
+)
+<span class="c">// 节点分两类：</span>
+<span class="c">//   ① fetch 节点（QM/FS/SUMQTY...）→ 触达数据库，交 FetchPlanner 规划</span>
+<span class="c">//   ② 纯算子（Add/Sub/CellRef/SUM...）→ 拓扑序内存求值</span>
+</div>
+<div class="callout">
+<div class="t">实现取向</div>
+公式解析器是小型 Pratt/递归下降解析器（几百行 Rust），无需引入完整脚本引擎。函数名大小写不敏感，参数支持字面量、单元格引用、上下文变量 <code>@period</code>。AST 缓存在模板编译产物里，运行期不重复解析。
+</div>
+
+<h3 id="s5-2">5.2 内置财务函数库</h3>
+<p>取数函数分两族：<b>取数函数</b>（触达 DB，返回一个聚合值）和<b>计算函数</b>（对已有单元格值做运算，纯内存）。下面是财务报表必备的内置集，均通过函数注册表登记，每个函数声明它编译成什么样的聚合查询：</p>
+
+<h4>取数函数（fetch，下推 DB）</h4>
+<div class="two-col-fn">
+<div class="fn-item"><code>QC(account, [period], [dim...])</code><span class="d">科目期初余额。→ 对 gl_balance 按 account 过滤、取 begin 度量、sum</span></div>
+<div class="fn-item"><code>QM(account, [period], [dim...])</code><span class="d">科目期末余额（最常用）。→ 取 end 度量</span></div>
+<div class="fn-item"><code>JE(account, dir, [period])</code><span class="d">发生额。dir=D借方/C贷方/DC净额。→ 取 debit/credit</span></div>
+<div class="fn-item"><code>LJ(account, dir, [period])</code><span class="d">本年累计发生额。→ period 展开为年初至今区间</span></div>
+<div class="fn-item"><code>FS(account, dir, [period])</code><span class="d">科目对方发生额（对方科目分析）</span></div>
+<div class="fn-item"><code>SUMQTY(dim..., [ds])</code><span class="d">数量合计（库存/数量金额核算）。→ 取 quantity 度量</span></div>
+<div class="fn-item"><code>DGET(ds, measure, {filters})</code><span class="d">通用取数（万能）：任意数据集+度量+维度过滤，可视化配置的底层形态</span></div>
+<div class="fn-item"><code>CFITEM(item, [period])</code><span class="d">现金流量项目金额。→ 按 cashflow_item 维度聚合明细</span></div>
+</div>
+
+<h4>计算/聚合函数（calc，纯内存）</h4>
+<div class="two-col-fn">
+<div class="fn-item"><code>SUM / AVG / MAX / MIN / COUNT(range)</code><span class="d">区域聚合，如 SUM(C3:C29)</span></div>
+<div class="fn-item"><code>IF(cond, a, b) / IFS(...)</code><span class="d">条件取值（如余额方向判断）</span></div>
+<div class="fn-item"><code>ROUND / ABS / MAX / MIN</code><span class="d">数值处理、进位、取绝对值</span></div>
+<div class="fn-item"><code>RPTREF(report, cell, [period])</code><span class="d">表间取数（§7.3），读另一报表实例</span></div>
+<div class="fn-item"><code>PY(cell) / PP(cell)</code><span class="d">同格上年同期 / 上期值（自动切 @period 重算或读快照）</span></div>
+<div class="fn-item"><code>RATE(a, b) / GROWTH(a, b)</code><span class="d">占比、增长率（管理报表常用）</span></div>
+</div>
+
+<div class="callout key">
+<div class="t">"取数函数可自定义"的本质</div>
+每个取数函数不过是"<b>对某数据集，取某度量，施加某组维度过滤，做某聚合</b>"的一个<b>命名快捷方式</b>。<code>QM('1001')</code> ≡ <code>DGET('gl_balance','end',{account:'1001', org:@org, period:@period})</code>。所以"自定义取数函数"= 用户用 <code>DGET</code> 的能力封装一个业务别名。引擎只需认识 <code>DGET</code> 这一个原语，其余全是它的宏展开（§5.4）。
+</div>
+
+<h3 id="s5-3">5.3 跨系统取数（跨 DAM）</h3>
+<p>"从财务、销售、HR、库存等多个系统取数"在本架构里不是难题——因为所有系统的物理表都由同一个模型中心建在同一套库里，且<b>跨 DAM 引用</b>（domain/application/module 三段寻址）机制已存在。报表取数跨系统，就是数据集的 <code>source</code> 指向不同的域：</p>
+<table>
+<thead><tr><th>报表</th><th>取数系统</th><th>DAM 寻址（domain/app/module）</th><th>物理表示例</th></tr></thead>
+<tbody>
+<tr><td>资产负债表 / 利润表</td><td>财务·总账</td><td><code>fi / cmxfico / gl</code></td><td><code>cv_gl_balance</code></td></tr>
+<tr><td>销售明细表</td><td>销售</td><td><code>sd / cmxsd / order</code></td><td><code>cv_sales_order</code></td></tr>
+<tr><td>人力资源报表</td><td>人力资源</td><td><code>hr / cmxhr / payroll</code></td><td><code>cv_payroll</code></td></tr>
+<tr><td>库存账 / 库存明细表</td><td>库存</td><td><code>inv / cmxinv / stock</code></td><td><code>cv_stock_balance</code></td></tr>
+<tr><td>管理费用表</td><td>财务（多科目/多维）</td><td><code>fi / cmxfico / gl</code></td><td><code>cv_gl_balance</code>（按费用科目+部门维）</td></tr>
+</tbody>
+</table>
+<div class="mono-block"><span class="c">// 一张"部门管理费用与人均"报表，同时从 财务 + HR 两系统取数</span>
+C5 = <span class="s">"=DGET('exp_by_dept','end',{dept:@row.dept})"</span>        <span class="c">// 数据集 → fi/cmxfico/gl</span>
+D5 = <span class="s">"=DGET('hr_headcount','cnt',{dept:@row.dept})"</span>       <span class="c">// 数据集 → hr/cmxhr/payroll</span>
+E5 = <span class="s">"=C5/D5"</span>                                          <span class="c">// 人均费用（纯 calc）</span>
+</div>
+<div class="callout">
+<div class="t">跨系统 = 跨数据集，不是跨连接</div>
+公式作者<b>看不到"系统"这个概念</b>，只看到数据集名（<code>exp_by_dept</code>、<code>hr_headcount</code>）。系统归属被封装在数据集的 <code>source.domain</code> 里。引擎按 domain 把取数分组，交给 tokio-postgres 并行执行——同库不同 schema 直接查，未来若某系统独立部署，只需数据集 source 增加连接标识，公式与引擎零改动。这正是 fico-ws 当年预留的"凭证服务器与元数据服务器分离时只改 service 配置"的同款解耦。
+</div>
+
+<h3 id="s5-4">5.4 自定义取数函数</h3>
+<p>三个层次满足"取数函数可自定义"，由易到难、由配置到代码：</p>
+<div class="layers">
+<div class="layer l-data">
+<div class="lh"><span class="num-badge">1</span>数据集别名（零代码，配置级）</div>
+<div class="ld">在模板 <code>datasets</code> 里定义新数据集，公式用 <code>DGET('新数据集', ...)</code> 即可。覆盖 90% 场景——"从哪张表取、能取哪些度量"都是配置。</div>
+</div>
+<div class="layer l-fn">
+<div class="lh"><span class="num-badge">2</span>函数宏（低代码，声明式）</div>
+<div class="ld">在函数注册表登记一个"宏函数"，声明它如何展开为 <code>DGET</code>。例：定义 <code>费用(科目,部门)</code> = <code>DGET('exp_by_dept','end',{account:$1, dept:$2, org:@org, period:@period})</code>。会计用中文函数名，引擎展开求值。宏定义本身是 JSON，可挂在租户/应用级共享。</div>
+</div>
+<div class="layer l-fn">
+<div class="lh"><span class="num-badge">3</span>WASM 插件函数（全代码，沙箱）</div>
+<div class="ld">复杂逻辑（如特殊税额计算、跨表勾稽、外部口径换算）写成 WASM 插件，通过既有 <code>cmx-plugin</code> 沙箱注册为函数。引擎在求值到该函数节点时，把参数与取数结果传入插件，取回标量。沙箱隔离、热插拔、多语言（Rust/AssemblyScript）。</div>
+</div>
+</div>
+<div class="mono-block"><span class="c">// 函数注册表条目（三种函数统一登记，kind 区分）</span>
+<span class="k">{</span>
+  <span class="a">"name"</span>: <span class="s">"费用"</span>, <span class="a">"kind"</span>: <span class="s">"macro"</span>,          <span class="c">// alias | macro | wasm | builtin</span>
+  <span class="a">"params"</span>: [<span class="s">"account"</span>, <span class="s">"dept"</span>],
+  <span class="a">"expand"</span>: <span class="s">"DGET('exp_by_dept','end',{account:$account, dept:$dept, org:@org, period:@period})"</span>,
+  <span class="a">"scope"</span>: <span class="s">"app:fi.cmxfico"</span>,               <span class="c">// 生效范围：全局/应用/租户/模板</span>
+  <span class="a">"returns"</span>: <span class="s">"decimal"</span>
+<span class="k">}</span>
+<span class="k">{</span>
+  <span class="a">"name"</span>: <span class="s">"个税"</span>, <span class="a">"kind"</span>: <span class="s">"wasm"</span>,
+  <span class="a">"plugin"</span>: <span class="s">"tax-calc@1.2.0"</span>, <span class="a">"entry"</span>: <span class="s">"calc_iit"</span>,  <span class="c">// 指向 WASM 插件导出函数</span>
+  <span class="a">"params"</span>: [<span class="s">"gross"</span>, <span class="s">"base"</span>], <span class="a">"returns"</span>: <span class="s">"decimal"</span>
+<span class="k">}</span>
+</div>
+
+<h3 id="s5-5">5.5 取数底座：编译为 ZmcDataSet 查询</h3>
+<p>取数节点的终点，是构造一个与 DOC/DCT 查询同构的查询描述，交给既有装载底座。以 <code>QM('1001')</code> 为例：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>宏展开</b>：<code>QM('1001')</code> → <code>DGET('gl_balance','end',{account:'1001', org:@org, period:@period})</code></div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>绑定上下文</b>：<code>@org</code>→华东 entity_id、<code>@period</code>→'2026-06'，得到具体过滤条件</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>查数据集</b>：从 <code>gl_balance</code> 数据集查到 measure <code>end</code>→物理列 <code>end_balance</code>、维度 <code>account</code>→<code>account_code</code>（层级维度自动展开为科目区间）</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>构造查询描述</b>：<code>{table:cv_gl_balance, select:sum(end_balance), where:[account_code∈子树, entity_id=华东, period='2026-06', doc_status='posted']}</code></div></div>
+  <div class="step"><div class="badge">5</div><div class="body"><b>下推执行</b>：交 tokio-postgres 并行执行 → ZmcDataSet 列式结果 → 取标量回填单元格 C3</div></div>
+</div>
+<div class="callout key">
+<div class="t">与 DOC 装载同构、可直接复用的部分</div>
+第 4~5 步产出的"查询描述 + 列式结果解码"与 DOC 的 <code>DocQuery</code> / <code>build_layer_select</code> / <code>ZmcDataSet</code> 完全同一套。取数引擎只负责把公式翻译到第 4 步的查询描述；从查询描述到数据库到列式结果，<b>一行新 DB 代码都不写</b>，复用 <code>cmx-database-pg</code> + <code>cmx-rowsource</code>。层级科目维度展开为"科目子树 code 集合"，与 DCT 自分级懒下钻 <code>WHERE key=ANY($ids)</code> 是同一手法。
+</div>
+</section>
+
+<!-- §6 计算引擎 -->
+<section id="s6">
+<h2 class="sec"><span class="num">§6</span>报表计算引擎</h2>
+<p class="lead">计算引擎接过一张模板 + 上下文（组织/期间/参数），产出全部单元格的值。核心是三步：<b>建依赖 DAG → 规划取数（合并+并行下推）→ 拓扑序求值</b>。这是 RPT 相对 DOC/DCT 唯一"全新"的一块引擎逻辑，但它调用的下层（DB、列式管线）全是既有的。</p>
+
+<h3 id="s6-1">6.1 依赖 DAG 与拓扑求值</h3>
+<p>单元格之间由公式形成有向依赖：<code>C30=SUM(C3:C29)</code> 依赖 C3…C29；<code>C3=QM('1001')</code> 依赖取数结果（外部输入，无前驱）。把全部单元格连成有向无环图，拓扑排序后逐层求值——上游先算，下游后算。</p>
+<div class="mono-block"><span class="c">取数格（DAG 的源，无前驱）</span>          <span class="c">计算格（依赖上游）</span>
+  C3  = QM('1001')      ──┐
+  C4  = QM('1122')      ──┤
+  ...                     ├──▶  C30 = SUM(C3:C29)  ──┐
+  C29 = QM('1601')      ──┘                          ├──▶  F61 = C30 + C45 （资产总计）
+  F3  = QM('2001')      ──────▶  F30 = SUM(F3:F29) ──┘
+                                                        <span class="c">（负债+权益总计，用于平衡校验）</span>
+</div>
+<div class="grid2">
+<div class="callout">
+<div class="t">环检测</div>
+建 DAG 时若发现环（A 依赖 B、B 依赖 A），立即报错并高亮涉及单元格——设计期就拦住，避免运行期死循环。复用错误码库输出 <code>violations</code>，前端在网格上标红。
+</div>
+<div class="callout">
+<div class="t">增量重算</div>
+编辑态改一个格，只需重算其下游子图（DAG 可达闭包），非全表重算——与 Excel 的依赖重算体验一致。运行期整表出表则一次全算。
+</div>
+</div>
+
+<h3 id="s6-2">6.2 取数下推 · 批量合并 · 并行</h3>
+<p>一张报表可能有几十上百个取数格。若每格发一条 SQL，会造成 N+1 查询风暴。<b>FetchPlanner</b> 在求值前把所有 fetch 节点收集起来，按"同数据集 + 同维度组合"归并成尽量少的批量查询：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>收集</b>：DAG 里所有 fetch 节点（如 60 个 QM，散落各行）统一收集，此刻还没查库</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>归并</b>：同属 <code>gl_balance</code>、同 <code>@org/@period</code>、只是 account 不同的 60 个取数 → 合并为<b>一条</b> <code>WHERE account_code = ANY([...60个]) GROUP BY account_code</code> 的批量查询</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>并行</b>：不同数据集（gl_balance / sales / hr）的批量查询用 <code>tokio-postgres</code> 并行发出——正是并行 DB 层的主场</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>回填</b>：ZmcDataSet 列式结果按 account_code 建索引，散射回各自单元格</div></div>
+</div>
+<div class="mono-block"><span class="c">// 朴素做法：60 格 × N 系统 = 上百条 SQL（慢、压库）</span>
+<span class="c">// FetchPlanner 后：</span>
+gl_balance:  <span class="g">1 条</span>  SELECT account_code, sum(end_balance) ... WHERE account_code=ANY($1) GROUP BY 1
+sales:       <span class="g">1 条</span>  SELECT ...
+hr:          <span class="g">1 条</span>  SELECT ...
+             <span class="k">└─▶ 3 条查询并行 → 全表取数完成</span>
+</div>
+<div class="callout key">
+<div class="t">这正是列式 + 并行架构的价值兑现点</div>
+"一张报表 = 少数几条批量聚合查询 + 并行" 把报表计算从"应用层循环取数"降为"数据库聚合一次成型"。归并键（同数据集同上下文维度）→ <code>ANY($ids)</code> 谓词 → 列式返回，三者都是既有 DOC/DCT 装载已验证的模式。报表引擎的性能上限由此锚定在数据库聚合能力上，而非应用层。
+</div>
+
+<h3 id="s6-3">6.3 勾稽校验与平衡检查</h3>
+<p>报表算完要能自检。<code>checks</code> 段声明勾稽规则，与 DOC 的 <code>validationRules</code> 同一引擎、同一错误码库、同 <code>level=error/warning</code> 语义。求值完成后逐条校验，不平则弹专业对话框（复用 <code>cmx-message-dialog</code> + <code>presentDocError</code>）：</p>
+<div class="mono-block"><span class="a">"checks"</span>: [
+  { <span class="a">"code"</span>:<span class="s">"bs_balance"</span>, <span class="a">"level"</span>:<span class="s">"error"</span>,
+    <span class="a">"expr"</span>:<span class="s">"F61 == C61"</span>,          <span class="c">// 资产总计 = 负债及权益总计</span>
+    <span class="a">"message"</span>:<span class="s">"资产负债表不平衡：资产总计与负债权益总计不相等"</span> },
+  { <span class="a">"code"</span>:<span class="s">"pl_tie"</span>, <span class="a">"level"</span>:<span class="s">"error"</span>,
+    <span class="a">"expr"</span>:<span class="s">"RPTREF('利润表','净利润') == PP('未分配利润增额')"</span>,
+    <span class="a">"message"</span>:<span class="s">"利润表净利润与资产负债表未分配利润变动勾稽不符"</span> },
+  { <span class="a">"code"</span>:<span class="s">"cf_tie"</span>, <span class="a">"level"</span>:<span class="s">"warning"</span>,
+    <span class="a">"expr"</span>:<span class="s">"现金净增加额 == 期末现金 - 期初现金"</span>,
+    <span class="a">"message"</span>:<span class="s">"现金流量表勾稽差异，请核对"</span> }
+]
+</div>
+<p style="margin-bottom:0">勾稽规则本身也可跨报表（<code>RPTREF</code>），这让"三大报表勾稽"（资产负债表↔利润表↔现金流量表）成为声明式规则，而非硬编码。</p>
+</section>
+
+<!-- §7 数据落地 -->
+<section id="s7">
+<h2 class="sec"><span class="num">§7</span>数据落地：cr_* 报表表</h2>
+<p class="lead">报表算完的结果必须入库，理由有三：① 历史可查（不必每次重算）；② 作为下游数据源（表间取数、汇总、合并都读它）；③ 审计留痕（谁在何时用何口径出的表）。落地模型由模型中心 <code>compile_rpt</code> 建三张 <code>cr_*</code> 物理表，与 <code>cv_*/cf_*</code> 同构、同铸号、同校验。</p>
+
+<h3 id="s7-1">7.1 三张核心表</h3>
+<div class="layers">
+<div class="layer l-store">
+<div class="lh"><code>cr_report_instance</code> · 报表实例头</div>
+<div class="ld">一次出表一行。主键 = 铸号 bigint。列：tpl_id / tpl_version / org_id / period / scope(single|rollup|consol) / currency / status(draft|final|archived) / calc_at / calc_by / param_json / check_result。<b>唯一约束</b> (tpl_id, org_id, period, scope) 保证同口径不重复。</div>
+</div>
+<div class="layer l-store">
+<div class="lh"><code>cr_cell_value</code> · 单元格值（报表数据主体）</div>
+<div class="ld">一个实例的每个"有值单元格"一行（稀疏存储，text/空格不入库）。列：instance_id / cell_addr(如 'C3') / row_no / col_no / block_id / num_value(decimal) / str_value / formula_snapshot / drill_key(下钻回溯键)。<b>这是表间取数、汇总、合并的读取对象。</b></div>
+</div>
+<div class="layer l-store">
+<div class="lh"><code>cr_report_snapshot</code> · 版本快照</div>
+<div class="ld">正式发布/归档时，把该实例的全部单元格值 + 模板版本冻结成一个不可变快照。列：snapshot_id / instance_id / seq / snapshot_at / operator / frozen_cells(列式二进制 或 明细行) / signature。用于对比、审计、监管报送留底。</div>
+</div>
+</div>
+<div class="callout">
+<div class="t">为何拆三表而非一张宽表</div>
+报表格数不定、稀疏、模板会演进——宽表（每格一列）不可行。"实例头 + 单元格长表 + 快照"是标准的元数据驱动落地范式，与 DOC 的"单据头 + 明细行"同构。<code>cr_cell_value</code> 用 (row_no, col_no) 数值坐标便于范围查询与汇总时逐格对齐。</div>
+
+<h3 id="s7-2">7.2 版本快照与留痕</h3>
+<p>报表有"编制中 / 已定版 / 已归档"生命周期，复用 DOC 的状态流思想（<code>voucherStatusFlow</code> 同款）：</p>
+<div class="mono-block">draft <span class="k">──计算/重算──▶</span> draft   <span class="c">// 可反复重算，覆盖 cr_cell_value</span>
+draft <span class="k">──定版 finalize──▶</span> final   <span class="c">// 写 cr_report_snapshot，锁定，下游可安全引用</span>
+final <span class="k">──归档 archive──▶</span> archived <span class="c">// 监管报送留底，不可变</span>
+final <span class="k">──重开 reopen──▶</span> draft    <span class="c">// 需权限；产生新快照 seq，旧快照保留</span>
+</div>
+<div class="callout key">
+<div class="t">落地即契约（呼应 §2 原则）</div>
+一旦 <code>final</code>，该实例单元格值就是稳定契约，表间取数/汇总/合并可放心引用。重开会生成新 snapshot seq，旧值永久留痕——满足"报表数据可追溯、监管可倒查"。铸号、乐观锁基线、409 冲突处理全复用 DOC save 的既有实现。</div>
+
+<h3 id="s7-3">7.3 表间取数（报表引用报表）</h3>
+<p>用户明确要求"表间还可以取数"。落地后，一张报表可用 <code>RPTREF()</code> 读另一张已落地报表实例的单元格。典型链条：<b>利润表.净利润 → 现金流量表补充资料 / 资产负债表.未分配利润</b>。</p>
+<div class="fxbar">
+  <span class="addr">D45</span>
+  <span class="fxicon">fx</span>
+  <span class="expr">=RPTREF('利润表', '净利润', @period, @org)</span>
+</div>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>解析引用</b>：RPTREF 目标 = (报表编码=利润表, 单元格/命名项=净利润, period=本期, org=本组织)</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>定位实例</b>：在 <code>cr_report_instance</code> 找到 (利润表模板, @org, @period, scope) 的 final 实例</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>读取值</b>：从 <code>cr_cell_value</code> 取该实例"净利润"命名项的 num_value（若引用未定版实例 → 触发按需计算或报错，按配置）</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>跨报表连边</b>：RPTREF 在 DAG 里连一条<b>跨报表依赖边</b>，出表调度按报表级拓扑序（先出利润表，再出资产负债表）</div></div>
+</div>
+<div class="callout warn">
+<div class="t">命名项优于裸坐标</div>
+表间取数应引用<b>命名项</b>（如 '净利润'）而非裸坐标（'D45'）——否则被引用报表调版式（插入一行），坐标漂移导致引用错位。模板可为关键单元格声明 <code>name</code>，<code>RPTREF</code> 优先按 name 解析。这与 §6.3 勾稽规则用命名项是同一考量。跨报表引用同样要做环检测（报表 A 引 B、B 引 A 报错）。
+</div>
+</section>
+
+<!-- §8 多组织 -->
+<section id="s8">
+<h2 class="sec"><span class="num">§8</span>多组织：共享 / 汇总 / 合并</h2>
+<p class="lead">用户诉求"同一张表在不同组织机构间可以共享、可以汇总、可以合并"。这三个词在财务语境里是<b>三件不同的事</b>，绝不能混为一谈。本方案把它们统一架在"组织正交"（§3.4）这一地基上：模板组织无关 → 共享天然成立；实例带组织 → 汇总是遍历相加；合并是汇总再叠抵消。</p>
+
+<h3 id="s8-1">8.1 三个概念的严格区分</h3>
+<table>
+<thead><tr><th>概念</th><th>是什么</th><th>作用对象</th><th>口径</th><th>典型场景</th></tr></thead>
+<tbody>
+<tr><td><b>共享</b> share</td><td>一份模板给多个组织复用</td><td><b>模板</b>（设计物）</td><td>—</td><td>集团统一资产负债表格式，各子公司套用</td></tr>
+<tr><td><b>汇总</b> rollup</td><td>子组织实例逐格相加为父组织</td><td><b>实例</b>（数据）</td><td>管理口径</td><td>事业部合计、区域合计、集团管理报表</td></tr>
+<tr><td><b>合并</b> consolidation</td><td>汇总 + 抵消内部交易</td><td><b>实例</b>（数据）</td><td>法定口径</td><td>合并资产负债表/利润表（对外披露）</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">一句话关系</div>
+<b>共享是模板层</b>（一对多复用），<b>汇总与合并是实例层</b>（多对一聚合）。且 <b>合并 = 汇总 + 抵消</b>。三者不是并列的三套机制，而是"组织正交"这一个设计的三种投影。想清这点，实现量骤减。
+</div>
+
+<h3 id="s8-2">8.2 共享：模板组织无关</h3>
+<p>因为模板里组织是注入变量 <code>@org</code>（§3.4）而非常量，一份模板<b>天然</b>能被任意组织实例化——这就是"共享"，无需额外机制。共享的粒度与可见性借既有体系表达：</p>
+<ul>
+<li><b>跨 DAM 可见性</b>：模板定义放在合适的 domain/app/module 层级，集团级模板放共享域，子公司专属模板放各自模块，复用"三元定义跨 DAM 引用"的可见性规则。</li>
+<li><b>overlay 个性化</b>：子公司若要在集团模板上微调（加一行本地指标），用既有 <code>overlay</code> 编译机制叠加，不改母版——与 DCT/DOC overlay 同款。</li>
+<li><b>组织适用范围</b>：模板可声明 <code>applicableOrgs</code>（组织树某节点及其子树），限定哪些组织可实例化。</li>
+</ul>
+
+<h3 id="s8-3">8.3 汇总 rollup（管理口径）</h3>
+<p>汇总 = 沿组织树，把子组织的同模板实例<b>逐格相加</b>得到父组织实例。这直接类比 DOC 的 <code>aggregations</code> 上卷（明细→分录→凭证头），只是这里沿的是<b>组织树</b>而非单据层级。</p>
+<div class="mono-block"><span class="c">// 组织树</span>
+集团总部
+ ├─ 华东大区 ────┬─ 上海子公司   BS 实例(2026-06, single)
+ │               └─ 杭州子公司   BS 实例(2026-06, single)
+ └─ 华南大区 ────── 广州子公司   BS 实例(2026-06, single)
+
+<span class="c">// rollup：华东大区实例 = 上海 ⊕ 杭州（逐格）</span>
+华东.C3 = 上海.C3 + 杭州.C3    <span class="c">// 货币资金逐格相加</span>
+华东.C30 = 上海.C30 + 杭州.C30  <span class="c">// 但合计格：相加后按公式重算更稳妥（见下）</span>
+</div>
+<div class="grid2">
+<div class="callout">
+<div class="t">只加"可加格"</div>
+逐格相加只作用于 <code>rollupSummable:true</code> 的取数格（§3.2 区块标记）。文字格不加；<b>合计/计算格相加后重算</b>（先加子公司的明细格，父公司合计格用自身公式基于已相加的明细重算），避免"率类指标"（如毛利率）被错误相加。这与 DOC "measure 才 sum、attribute 不 sum" 完全一致。
+</div>
+<div class="callout">
+<div class="t">两种实现路径</div>
+① <b>值汇总</b>：读子实例 <code>cr_cell_value</code> 逐格相加（快，依赖子实例已落地）。② <b>源汇总</b>：把 <code>@org</code> 直接绑定为"组织子树集合"，取数 SQL 一次 <code>WHERE entity_id = ANY(子树)</code> 聚合（一步到位，无需子实例先落地）。默认①用于报表体系，②用于即时汇总。②正是数据集 <code>bindContext:@org</code> 从"单值"扩到"集合"，SQL 层零改。
+</div>
+</div>
+
+<h3 id="s8-4">8.4 合并 consolidation（法定口径）</h3>
+<p>合并 = 汇总 + <b>抵消分录</b>。子公司间的内部交易（内部购销、内部往来、母对子投资 vs 子公司权益）在集团视角不存在，必须抵消。抵消建模为一类特殊的<b>抵消数据集</b>，其值参与合并逐格运算：</p>
+<div class="mono-block"><span class="a">"consolidation"</span>: {
+  <span class="a">"eliminations"</span>: [
+    {
+      <span class="a">"id"</span>: <span class="s">"intercompany_ar_ap"</span>,      <span class="c">// 内部往来抵消：应收↔应付</span>
+      <span class="a">"rule"</span>: <span class="s">"pair"</span>,
+      <span class="a">"dataset"</span>: <span class="s">"ic_transactions"</span>,       <span class="c">// 内部交易台账（标记 counterparty_org）</span>
+      <span class="a">"match"</span>: [<span class="s">"partner_org"</span>, <span class="s">"contract_id"</span>],  <span class="c">// 内部对手 + 合同配对</span>
+      <span class="a">"eliminate"</span>: { <span class="a">"debit"</span>:<span class="s">"1122应收"</span>, <span class="a">"credit"</span>:<span class="s">"2202应付"</span> }
+    },
+    {
+      <span class="a">"id"</span>: <span class="s">"equity_investment"</span>,       <span class="c">// 长期股权投资 vs 子公司所有者权益抵消</span>
+      <span class="a">"rule"</span>: <span class="s">"equity"</span>,
+      <span class="a">"parentHolding"</span>: <span class="s">"invest_ledger"</span>,
+      <span class="a">"subEquity"</span>: <span class="s">"sub_equity"</span>
+    },
+    {
+      <span class="a">"id"</span>: <span class="s">"unrealized_profit"</span>,       <span class="c">// 内部未实现损益（存货/固定资产）</span>
+      <span class="a">"rule"</span>: <span class="s">"custom"</span>, <span class="a">"fn"</span>: <span class="s">"wasm:consol-lib@2.0/unrealized"</span>
+    }
+  ],
+  <span class="a">"minorityInterest"</span>: { <span class="a">"enabled"</span>:<span class="k">true</span>, <span class="a">"cell"</span>:<span class="s">"少数股东权益"</span> }  <span class="c">// 少数股东权益</span>
+}
+</div>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>汇总</b>：先按 §8.3 得到子公司合计（rollup 结果）</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>抵消</b>：逐条 elimination 计算抵消金额（配对内部往来、投资权益对冲、未实现损益）→ 生成抵消列</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>合并值</b>：合并 = 汇总值 − 抵消值，逐格；少数股东权益单列</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>落地</b>：写 scope=consol 实例；抵消明细留痕（可倒查每笔抵消来源）</div></div>
+</div>
+<div class="callout warn">
+<div class="t">抵消需人工配置，引擎不臆测（呼应 §2 非目标）</div>
+内部交易对手关系（哪笔应收对应哪家子公司的应付）必须由业务标记（<code>counterparty_org</code>）或抵消台账提供。引擎负责按规则精确执行抵消与留痕，但<b>不猜测</b>未标记的内部交易。复杂抵消（未实现损益、递延所得税）走 WASM 插件（<code>rule:custom</code>），与 §5.4 自定义函数同一套插件机制。
+</div>
+<div class="callout key">
+<div class="t">共享/汇总/合并的复用账</div>
+共享 = 0 新机制（组织正交 + 既有 overlay/DAM 可见性）。汇总 = 逐格相加 + 复用 DOC agg 语义 + 复用 <code>ANY(子树)</code> 谓词。合并 = 汇总 + 抵消数据集（唯一较重的新增，但抵消规则声明式 + 复杂项走插件）。<b>三大能力真正的新代码集中在"抵消引擎"一处。</b>
+</div>
+</section>
+
+<!-- §9 后端方案 -->
+<section id="s9">
+<h2 class="sec"><span class="num">§9</span>后端方案（cmx-container）</h2>
+<p class="lead">后端遵循 DCT 补齐时的同款打法：<b>镜像 DOC 的服务结构，新增 <code>cmx-biz/src/rpt/</code> 模块 + <code>compile_rpt</code> 编译器 + <code>/api/rpt/*</code> handler</b>，装载/DB/校验全复用。下面按"编译期 / 运行期"两条线列出落点。</p>
+
+<h3 id="s9-1">9.1 新增 cmx-biz/src/rpt/</h3>
+<p>与 <code>cmx-biz/src/doc/</code>、<code>cmx-biz/src/dct/</code> 平级，新增报表业务模块。内部结构：</p>
+<table>
+<thead><tr><th>文件</th><th>职责</th><th>对标 / 复用</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><code>rpt/meta_view.rs</code></td><td>解析 RPT 定义（grid/cells/datasets/checks）→ RptMetaView</td><td>对标 <code>DocMetaView</code>/<code>DctMetaView</code></td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>rpt/formula/</code></td><td>公式解析器（lexer/parser/AST）+ 函数注册表</td><td>无对标，报表独有</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>rpt/engine.rs</code></td><td>DAG 构建、拓扑求值、增量重算</td><td>无对标，报表独有</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>rpt/fetch_planner.rs</code></td><td>取数节点收集/归并 → 查询描述</td><td>产出交给 <code>doc::sql_builder</code></td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>rpt/loader.rs</code></td><td>执行查询、读 cr_* 落地数据</td><td><b>复用</b> ZmcDataSet/tokio 驱动</td><td><span class="tag reuse">复用+薄封装</span></td></tr>
+<tr><td><code>rpt/saver.rs</code></td><td>写 cr_report_instance/cr_cell_value/snapshot</td><td>对标 <code>DocSaver</code>（铸号/乐观锁/校验）</td><td><span class="tag mod">镜像小改</span></td></tr>
+<tr><td><code>rpt/consolidate.rs</code></td><td>rollup 逐格相加 + 抵消引擎</td><td>复用 DOC agg 语义，抵消为新</td><td><span class="tag new">新增</span></td></tr>
+</tbody>
+</table>
+<div class="mono-block"><span class="c">// cmx-biz/src/lib.rs 增一行（与 doc/dct 并列）</span>
+<span class="k">pub mod</span> doc;
+<span class="k">pub mod</span> dct;
+<span class="k">pub mod</span> rpt;   <span class="c">// ← 新增</span>
+</div>
+
+<h3 id="s9-2">9.2 模型中心 compile_rpt</h3>
+<p>在 <code>model_center.rs</code> 里新增 <code>compile_rpt(report_meta)</code>，与 <code>compile_dct</code>/<code>compile_doc</code> 并列。它不为每张报表建表（报表格是稀疏的），而是<b>确保三张固定的 <code>cr_*</code> 表存在</b> + 登记报表台账：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>建/校验物理表</b>：<code>cr_report_instance</code>/<code>cr_cell_value</code>/<code>cr_report_snapshot</code> 三张表（首次部署建，后续幂等校验）。复用 <code>PgTableDefineExecutor</code>。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>校验数据集引用</b>：每个 dataset.source 指向的 <code>cv_*/cf_*</code> 表须已由对应模块部署（跨 DAM 依赖检查）。缺失则编译报错。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>编译公式</b>：解析全部 cells 公式 → AST，做环检测、函数存在性检查、维度/度量合法性校验，产出<b>编译产物</b>（AST 缓存 + DAG 骨架）随模板存储。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>登记台账</b>：<code>cmx_model_module.rpt_version/rpt_status</code>（镜像 dct_version/doc_version 台账列）。</div></div>
+</div>
+<div class="callout">
+<div class="t">编译期把错误左移</div>
+公式的环、未知函数、引用了不存在的度量/维度，全在 <code>compile_rpt</code> 阶段（设计期）暴露，而非运行期出表时才崩。这与"DCT/DOC 落库前列级校验"是同一理念——用元数据规范源做编译期校验，运行期只跑已验证的产物。</div>
+
+<h3 id="s9-3">9.3 计算服务与调度</h3>
+<p>运行期出表由 <code>RptService</code> 编排，支持三种触发：即时（用户点计算）、批量（月结一键出全部报表）、定时（调度到期自动出）：</p>
+<div class="mono-block"><span class="f">RptService::compute</span>(tpl_id, ctx{org, period, scope, params}) <span class="k">-&gt;</span> ReportInstance {
+   1. load RptMetaView + 编译产物（AST/DAG）        <span class="c">// 走 /api/definitions 缓存</span>
+   2. <span class="f">FetchPlanner</span>::plan(DAG.fetch_nodes)             <span class="c">// 归并取数</span>
+   3. <span class="f">Loader</span>::exec_parallel(queries)                  <span class="c">// tokio-postgres 并行 → ZmcDataSet</span>
+   4. <span class="f">Engine</span>::eval_topo(DAG, fetched, cell_refs)     <span class="c">// 拓扑求值 calc 格</span>
+   5. <span class="f">Checker</span>::run(checks)                            <span class="c">// 勾稽校验 → violations</span>
+   6. <span class="f">Saver</span>::persist(instance, cells)                 <span class="c">// 落地 cr_*（可选 finalize 快照）</span>
+   7. <span class="k">if</span> scope != single: <span class="f">Consolidator</span>::run(org_tree)  <span class="c">// 汇总/合并</span>
+}
+</div>
+<p style="margin-bottom:0">月结批量出表 = 对 (报表集 × 组织树 × 期间) 笛卡尔并行调度，天然可并行；报表间有 RPTREF 依赖的按报表级拓扑序编排（先利润表后资产负债表）。</p>
+</section>
+
+<!-- ================= §10 API 契约 ================= -->
+<section id="s10">
+<h2 class="sec"><span class="num">§10</span>API 契约（/api/rpt/*）</h2>
+<p class="lead">端点镜像 <code>/api/doc/*</code> 与 <code>/api/dct/*</code>，前缀 <code>/api/rpt</code>。<code>dev-local.toml</code> 的 <code>auth.whitelist</code> 需补 <code>"/api/rpt"</code>（与当初补 <code>/api/dct</code> 同）。</p>
+<table>
+<thead><tr><th>端点</th><th>方法</th><th>用途</th><th>请求/响应要点</th></tr></thead>
+<tbody>
+<tr><td><code>/api/rpt/meta</code></td><td><span class="pill post">POST</span></td><td>取报表模板元数据</td><td>body {refs:[{domain,app,module,file}]} → {grid,cells,datasets,checks}（同 /api/doc/meta）</td></tr>
+<tr><td><code>/api/rpt/compute</code></td><td><span class="pill post">POST</span></td><td>计算并返回报表实例（可不落地预览）</td><td>body {tpl, org, period, scope, params, persist:bool} → 单元格值 + 校验结果</td></tr>
+<tr><td><code>/api/rpt/data/tokio-zmc-msgpack</code></td><td><span class="pill post">POST</span></td><td>读已落地实例（零拷贝列式）</td><td>复用 DOC 同名端点管线，读 cr_cell_value</td></tr>
+<tr><td><code>/api/rpt/data/sqlx-dataset-json</code></td><td><span class="pill post">POST</span></td><td>读已落地实例（JSON 通道）</td><td>调试/小数据用</td></tr>
+<tr><td><code>/api/rpt/save</code></td><td><span class="pill post">POST</span></td><td>保存/定版实例</td><td>changeset + 乐观锁基线 + finalize 标志（同 /api/doc/save）</td></tr>
+<tr><td><code>/api/rpt/instances</code></td><td><span class="pill get">GET</span></td><td>列报表实例（按 tpl/org/period 过滤）</td><td>分页游标，explorer 区消费</td></tr>
+<tr><td><code>/api/rpt/snapshot</code></td><td><span class="pill post">POST</span></td><td>生成/读取版本快照</td><td>冻结/对比/归档</td></tr>
+<tr><td><code>/api/rpt/consolidate</code></td><td><span class="pill post">POST</span></td><td>汇总/合并出表</td><td>body {tpl, parentOrg, period, scope:rollup|consol} → 父组织实例 + 抵消明细</td></tr>
+<tr><td><code>/api/rpt/drill</code></td><td><span class="pill post">POST</span></td><td>单元格下钻</td><td>body {instance, cell} → drill_key 反查明细（凭证/单据行）</td></tr>
+<tr><td><code>/api/rpt/functions</code></td><td><span class="pill get">GET</span></td><td>取函数注册表（内置+自定义）</td><td>前端函数向导消费</td></tr>
+<tr><td><code>/api/model/deploy</code>（扩展）</td><td><span class="pill post">POST</span></td><td>部署报表（compile_rpt）</td><td>既有部署端点加 RPT 分支</td></tr>
+<tr><td><code>/api/definitions/*</code>（复用）</td><td>—</td><td>报表模板定义 CRUD</td><td>metaKind:RPT 走既有 store</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">下钻是报表的关键交互</div>
+<code>/api/rpt/drill</code>：单元格落地时记录 <code>drill_key</code>（取数时的维度过滤条件），点击数字可反查构成它的明细行——从"报表某格 3000万"下钻到"哪些凭证/单据/科目余额加出来的"。drill_key 复用取数查询描述的 WHERE 条件，回查即"去掉聚合、取明细行"，走 DOC 明细装载端点。这让报表不是死数字，而是可追溯到底层单据。
+</div>
+</section>
+
+<!-- §11 前端工作台 -->
+<section id="s11">
+<h2 class="sec"><span class="num">§11</span>前端 Excel 式报表工作台</h2>
+<p class="lead">用户要"类似 Excel 的操作界面、应用方式、报表函数"。前端照搬 <code>fico-ws</code> 四区工作台骨架，把中间内容区换成 <code>report-grid</code> 网格组件 + 顶部公式栏，属性区放单元格取数配置。装载中枢集中在 model 页，peer 页共享——与既有工作台通信契约一致。</p>
+
+<h3 id="s11-1">11.1 四区工作台布局</h3>
+<p>报表有两种态：<b>设计态</b>（报表设计师画模板、配公式）和<b>运行态</b>（会计出表、看数、下钻）。同一四区骨架，按角色切换工具集：</p>
+<div class="mono-block"><span class="c">┌─────────────────────────────────────────────────────────────┐</span>
+<span class="c">│</span> <span class="a">[公式栏 fx]</span>  C3 │ =QM('1001')+QM('1002')          <span class="f">[计算][定版][下钻]</span> <span class="c">│</span>
+<span class="c">├──────────────┬──────────────────────────────────┬───────────┤</span>
+<span class="c">│</span> <span class="g">explorer 区</span>  <span class="c">│</span>          <span class="g">content 区</span>            <span class="c">│</span> <span class="g">property 区</span><span class="c">│</span>
+<span class="c">│</span> 报表树/实例   <span class="c">│</span>      <span class="f">report-grid 网格</span>        <span class="c">│</span> 单元格属性 <span class="c">│</span>
+<span class="c">│</span>              <span class="c">│</span>   A      B      C      D       <span class="c">│</span>  ·类型     <span class="c">│</span>
+<span class="c">│</span> ▸资产负债表  <span class="c">│</span> 1 [====资产负债表 merged====]  <span class="c">│</span>  ·数据集   <span class="c">│</span>
+<span class="c">│</span>  ·华东 6月   <span class="c">│</span> 2 项目   行次  期末   年初    <span class="c">│</span>  ·公式/维度 <span class="c">│</span>
+<span class="c">│</span>  ·华南 6月   <span class="c">│</span> 3 货币资金  1  <span class="g">85,320</span> ...    <span class="c">│</span>  ·样式     <span class="c">│</span>
+<span class="c">│</span> ▸利润表      <span class="c">│</span> 4 应收票据  2  <span class="g">12,000</span> ...    <span class="c">│</span>  ·勾稽     <span class="c">│</span>
+<span class="c">│</span> ▸现金流量表  <span class="c">│</span> ...                            <span class="c">│</span>            <span class="c">│</span>
+<span class="c">└──────────────┴──────────────────────────────────┴───────────┘</span>
+   model 区（隐藏）：装载中枢，loadRptMeta + computeReport + 广播事件
+</div>
+<table>
+<thead><tr><th>区</th><th>页面</th><th>职责</th><th>复用</th></tr></thead>
+<tbody>
+<tr><td><b>model</b></td><td>rpt-ws-model</td><td>装载中枢：取模板元数据、调 compute、持有实例数据集、广播 <code>cmx-rpt-model</code> 事件</td><td>镜像 fico-ws-model</td></tr>
+<tr><td><b>explorer</b></td><td>rpt-ws-explorer</td><td>报表树 + 实例列表（按组织/期间）</td><td>镜像 explorer 批列表</td></tr>
+<tr><td><b>content</b></td><td>rpt-ws-content</td><td>report-grid 网格渲染 + 编辑 + 下钻</td><td>网格为新组件</td></tr>
+<tr><td><b>property</b></td><td>rpt-ws-prop-*</td><td>单元格属性（类型/公式/数据集/样式/勾稽），多子页</td><td>复用 CmxColumnModel 编辑器</td></tr>
+</tbody>
+</table>
+
+<h3 id="s11-2">11.2 report-grid 网格组件</h3>
+<p>唯一较重的新前端组件，一个 Web Component。职责：把 grid+cells 渲染成可编辑网格，处理选区、公式录入、合并单元格、扩展行展开、数字格式化、样式类应用。它<b>不自己取数</b>——数据来自 model 区 compute 结果，它只负责"画"和"交互"。</p>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0">渲染能力</h4>
+<ul>
+<li>行列表头（A/B/C… 1/2/3…）、冻结窗格</li>
+<li>合并单元格（merges）、区块底色（blocks.role）</li>
+<li>扩展行运行时克隆（expands → N 行）</li>
+<li>数字格式化（#,##0.00 / 千分位 / 负数红字）</li>
+<li>样式类（styleClasses：粗体/边框/对齐）</li>
+<li>取数格/计算格/引用格<b>色彩区分</b>（见本页示例配色）</li>
+</ul>
+</div>
+<div class="card">
+<h4 style="margin-top:0">交互能力</h4>
+<ul>
+<li>单元格选区、区域选择（B3:D10）</li>
+<li>公式栏联动（选中格 → fx 栏显示公式）</li>
+<li>点击插入单元格引用（Excel 式）</li>
+<li>取数格双击 → 下钻明细（/api/rpt/drill）</li>
+<li>设计态：拖拽调列宽、合并、套用样式</li>
+<li>右键菜单：插入行/列、设为取数格、命名</li>
+</ul>
+</div>
+</div>
+<div class="callout">
+<div class="t">渲染示例（本页配色语义）</div>
+下方即 report-grid 的一个片段示意：<span style="color:#9ec1ff">■蓝=取数格 fetch</span>、<span style="color:#86efac">■绿=计算格 calc</span>、<span style="color:#d6b4ff">■紫=合计/引用</span>、灰=文字。
+</div>
+<table class="xl">
+<tr><td class="rh"></td><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+<tr><td class="rh">1</td><td class="txt" colspan="4" style="text-align:center;color:#fff;font-weight:600">资产负债表</td></tr>
+<tr><td class="rh">2</td><td class="txt">项目</td><td class="txt">行次</td><td class="txt">期末余额</td><td class="txt">年初余额</td></tr>
+<tr><td class="rh">3</td><td class="txt">货币资金</td><td>1</td><td class="fx">85,320.00</td><td class="fx">72,100.00</td></tr>
+<tr><td class="rh">4</td><td class="txt">应收账款</td><td>2</td><td class="fx">42,600.00</td><td class="fx">38,900.00</td></tr>
+<tr><td class="rh">5</td><td class="txt">存货</td><td>3</td><td class="fx">156,000.00</td><td class="fx">140,200.00</td></tr>
+<tr><td class="rh">…</td><td class="txt">…</td><td>…</td><td>…</td><td>…</td></tr>
+<tr><td class="rh">30</td><td class="txt" style="font-weight:600">资产总计</td><td>31</td><td class="tot">1,283,920.00</td><td class="tot">1,150,300.00</td></tr>
+</table>
+<div class="fxbar">
+  <span class="addr">C30</span>
+  <span class="fxicon">fx</span>
+  <span class="expr">=SUM(C3:C29)   ← 计算格（绿），依赖上方取数格</span>
+</div>
+
+<h3 id="s11-3">11.3 公式栏与函数向导</h3>
+<p>会计不必手写公式语法。三种录入方式并存，贴合不同熟练度：</p>
+<div class="layers">
+<div class="layer l-fe">
+<div class="lh"><span class="num-badge">A</span>公式栏直接输入（熟手）</div>
+<div class="ld">选中格，在 fx 栏敲 <code>=QM('1001')+QM('1002')</code>，回车即绑定。支持函数名自动补全、参数提示、单元格点选插入引用——与 Excel 手感一致。</div>
+</div>
+<div class="layer l-fn">
+<div class="lh"><span class="num-badge">B</span>函数向导（新手）</div>
+<div class="ld">点 fx 图标弹向导：选函数（列出 <code>/api/rpt/functions</code> 内置+自定义）→ 填参数（科目从 <code>gl_account</code> 字典下拉、期间从 <code>fiscal_period</code> 下拉，复用 CmxColumnModel 字典编辑控件）→ 预览取数结果 → 确定。生成的公式回填 fx 栏。</div>
+</div>
+<div class="layer l-data">
+<div class="lh"><span class="num-badge">C</span>可视化取数配置（property 区）</div>
+<div class="ld">在属性区把取数格配成"数据集 + 度量 + 维度过滤"的表单，零公式：选 <code>gl_balance</code> → 度量"期末余额" → 维度 account=1001。等价于生成 <code>DGET</code>，但全程点选。适合复杂多维过滤。</div>
+</div>
+</div>
+<div class="callout key">
+<div class="t">前端复用清单</div>
+新增仅 <b>report-grid</b> 组件 + <b>cmx-rpt-source.js</b>（镜像 cmx-doc-source.js 的装载封装）。其余全复用：字典下拉/字段编辑控件（CmxColumnModel）、msgpack 解码（__cmxDataComp.decodeMsgpack）、专业消息对话框（勾稽错误 presentDocError）、四区工作台框架与事件总线、页面双注册机制（pages-list.json + index）。菜单挂 <code>report</code> 模块既有的"报表数据管理"节点下。
+</div>
+</section>
+
+<!-- §12 典型报表范例 -->
+<section id="s12">
+<h2 class="sec"><span class="num">§12</span>典型报表范例</h2>
+<p class="lead">把用户列举的各类报表逐一映射到本方案的取数模式，验证覆盖面。每张报表 = 一份 RPT 模板，差异只在"取哪个数据集、按哪些维度、用什么函数"，引擎与落地完全通用。</p>
+
+<table>
+<thead><tr><th>报表</th><th>类别</th><th>主数据集（取数系统）</th><th>关键函数 / 维度</th><th>多组织</th></tr></thead>
+<tbody>
+<tr><td><b>资产负债表</b></td><td>监管/法定</td><td>gl_balance（财务·总账）</td><td><code>QM(科目)</code> 期末余额；资产=负债+权益勾稽</td><td>汇总+合并</td></tr>
+<tr><td><b>利润表</b></td><td>监管/法定</td><td>gl_balance（财务·总账）</td><td><code>LJ(损益科目,方向)</code> 本年累计发生额</td><td>汇总+合并</td></tr>
+<tr><td><b>现金流量表</b></td><td>监管/法定</td><td>voucher_detail（现金流量项目维）</td><td><code>CFITEM(流量项目)</code> 按 cashflow_item 聚合；与 BS/PL 勾稽</td><td>汇总+合并</td></tr>
+<tr><td><b>管理费用表</b></td><td>管理</td><td>gl_balance（费用科目 × 部门维）</td><td><code>DGET(费用,{account,dept})</code> 扩展行按部门/费用项展开</td><td>汇总</td></tr>
+<tr><td><b>销售明细表</b></td><td>管理</td><td>sales_order（销售系统）</td><td>扩展行按订单/客户/商品；<code>SUM</code> 小计合计</td><td>汇总</td></tr>
+<tr><td><b>人力资源报表</b></td><td>管理</td><td>payroll / headcount（HR 系统）</td><td><code>DGET(hr,{dept})</code> 人数/薪酬；人均=费用/人数（跨系统）</td><td>汇总</td></tr>
+<tr><td><b>库存账</b></td><td>管理</td><td>stock_balance（库存系统）</td><td><code>QC/QM(存货)</code> 期初期末结存 + <code>JE</code> 收发</td><td>汇总</td></tr>
+<tr><td><b>库存明细表</b></td><td>管理</td><td>stock_transaction（库存系统）</td><td>扩展行按仓库/存货/批次；<code>SUMQTY</code> 数量、金额</td><td>汇总</td></tr>
+</tbody>
+</table>
+
+<h3>范例一：资产负债表（取数 + 勾稽 + 合并）</h3>
+<div class="mono-block"><span class="c">// 模板片段（组织无关，@org/@period 注入）</span>
+A1  text  <span class="s">"资产负债表"</span>                E1 param <span class="s">"=@org.name"</span>   F1 param <span class="s">"=@period"</span>
+<span class="c">// —— 资产方 ——</span>
+C3  fetch <span class="s">"=QM('1001')+QM('1002')"</span>     <span class="c">// 货币资金 = 库存现金+银行存款</span>
+C4  fetch <span class="s">"=QM('1122')-QM('1231')"</span>     <span class="c">// 应收账款净额 = 应收-坏账准备</span>
+C5  fetch <span class="s">"=QM('1401')+QM('1405')"</span>     <span class="c">// 存货</span>
+C30 calc  <span class="s">"=SUM(C3:C29)"</span>              <span class="c">// 资产总计</span>
+<span class="c">// —— 负债及权益方 ——</span>
+F30 calc  <span class="s">"=SUM(F3:F29)"</span>              <span class="c">// 负债及所有者权益总计</span>
+<span class="c">// —— 勾稽 ——</span>
+check bs_balance: <span class="s">"C30 == F30"</span> level=error <span class="s">"资产 ≠ 负债+权益"</span>
+<span class="c">// —— 合并（scope=consol）——</span>
+汇总华东+华南 → 抵消内部往来(1122↔2202) → 合并资产负债表</div>
+
+<h3>范例二：部门管理费用与人均（跨系统 + 扩展行）</h3>
+<div class="mono-block"><span class="c">// expands: 第 5 行按部门展开（overDataset:dept_list, byDimension:dept_id）</span>
+A5 calc  <span class="s">"=@row.dept_name"</span>                       <span class="c">// 部门名（展开维度）</span>
+C5 fetch <span class="s">"=DGET('exp_by_dept','end',{dept:@row.dept_id})"</span>   <span class="c">// 财务：该部门费用</span>
+D5 fetch <span class="s">"=DGET('hr_headcount','cnt',{dept:@row.dept_id})"</span>   <span class="c">// HR：该部门人数</span>
+E5 calc  <span class="s">"=ROUND(C5/D5, 2)"</span>                     <span class="c">// 人均费用（跨系统计算）</span>
+C99 calc <span class="s">"=SUM(C5:C98)"</span>                        <span class="c">// 费用合计（扩展区求和）</span>
+</div>
+<div class="callout key">
+<div class="t">一套引擎，全部覆盖</div>
+八类报表没有一类需要"特殊引擎"。差异全部落在<b>声明式配置</b>（数据集指向 / 函数选择 / 维度过滤 / 扩展维度 / 勾稽规则）里。这正是"元数据驱动"的价值：新增一张报表 = 新写一份 JSON 模板，零后端代码。取数系统再多（财务/销售/HR/库存/…），也只是数据集 source 的 domain 不同。
+</div>
+</section>
+
+<!-- §13 复用/新增清单 -->
+<section id="s13">
+<h2 class="sec"><span class="num">§13</span>复用 / 新增清单</h2>
+<p class="lead">一张全景表，量化"站在既有地基上"到底省了多少。绿=复用零改，黄=既有模块加分支，蓝=报表独有新增。新增集中在三处：<b>公式引擎、计算引擎(DAG)、抵消引擎</b>——其余都是复用或镜像。</p>
+
+<h3>后端</h3>
+<table>
+<thead><tr><th>组件</th><th>动作</th><th>说明</th><th>标记</th></tr></thead>
+<tbody>
+<tr><td>三元定义 store / base / overlay</td><td>复用</td><td>metaKind:RPT 走既有 <code>/api/definitions/*</code></td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>ZmcDataSet 零拷贝列式管线</td><td>复用</td><td>取数结果 + cr_* 读取全走它</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>tokio-postgres 并行 DB 层</td><td>复用</td><td>批量取数并行执行</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>doc::sql_builder（层查询）</td><td>复用</td><td>FetchPlanner 产出交它生成 SQL；<code>ANY($ids)</code> 谓词同构</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>DocSaver（铸号/乐观锁/校验）</td><td>镜像</td><td>RptSaver 镜像小改，写 cr_*</td><td><span class="tag mod">镜像小改</span></td></tr>
+<tr><td>落库列校验 + CmxErrCode</td><td>复用</td><td>cr_cell_value 落库 + 勾稽 violations</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>model_center compile_*</td><td>加分支</td><td>新增 compile_rpt（建 3 表 + 编译公式 + 台账）</td><td><span class="tag mod">加分支</span></td></tr>
+<tr><td>cmx-plugin WASM 沙箱</td><td>加分支</td><td>注册自定义/抵消函数</td><td><span class="tag mod">加分支</span></td></tr>
+<tr><td><b>rpt/formula 公式解析器</b></td><td>新增</td><td>lexer/parser/AST + 函数注册表</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><b>rpt/engine DAG 求值</b></td><td>新增</td><td>依赖图、拓扑序、增量重算、环检测</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><b>rpt/fetch_planner</b></td><td>新增</td><td>取数收集归并（薄，产出复用 sql_builder）</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><b>rpt/consolidate 抵消引擎</b></td><td>新增</td><td>rollup 逐格相加 + 合并抵消</td><td><span class="tag new">新增</span></td></tr>
+</tbody>
+</table>
+
+<h3>前端</h3>
+<table>
+<thead><tr><th>组件</th><th>动作</th><th>说明</th><th>标记</th></tr></thead>
+<tbody>
+<tr><td>四区工作台框架 + 事件总线</td><td>复用</td><td>照搬 fico-ws 骨架</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>CmxColumnModel 编辑器 / 字典下拉</td><td>复用</td><td>参数录入、函数向导取值、维度过滤</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>msgpack 解码 / 专业消息对话框</td><td>复用</td><td>装载解码、勾稽错误弹窗</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>页面双注册 + 菜单挂载</td><td>复用</td><td>pages-list + index；report 模块节点</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>cmx-doc-source.js</td><td>镜像</td><td>→ cmx-rpt-source.js（装载封装）</td><td><span class="tag mod">镜像</span></td></tr>
+<tr><td><b>report-grid 网格组件</b></td><td>新增</td><td>Excel 式渲染 + 交互 + 公式栏</td><td><span class="tag new">新增</span></td></tr>
+<tr><td><b>函数向导 / 可视化取数配置</b></td><td>新增</td><td>property 区取数表单</td><td><span class="tag new">新增</span></td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">新增聚焦，复用兜底</div>
+真正的智力密度在 <b>公式引擎 + DAG 求值 + 抵消引擎（后端）</b> 与 <b>report-grid（前端）</b>。这四块是报表区别于单据/字典的本质，值得投入；其余 70% 靠复用与镜像。这与 DCT 当初"新逻辑仅两处、其余复用 DOC"的判断一脉相承。
+</div>
+</section>
+
+<!-- ================= §14 落地阶段 ================= -->
+<section id="s14">
+<h2 class="sec"><span class="num">§14</span>落地阶段</h2>
+<p class="lead">分五个里程碑，每阶段可独立验证、可演示。先打通"单表单组织"最小闭环，再逐层加取数灵活性、落地、多组织。</p>
+<div class="flow">
+  <div class="step"><div class="badge">M1</div><div class="body"><b>元数据 + 编译（最小骨架）</b><span class="tag reuse">2-3 周</span><br>定义 RPT schema（grid/cells/datasets）+ base_rpt_meta；<code>compile_rpt</code> 建 3 张 cr_* 表 + 台账；<code>/api/definitions</code> 支持 metaKind:RPT。产出：能存一份报表模板定义。</div></div>
+  <div class="step"><div class="badge">M2</div><div class="body"><b>公式引擎 + 单表取数</b><span class="tag new">4-5 周</span><br>公式解析器 + 内置函数库（QM/QC/JE/SUM…）+ DAG 求值 + FetchPlanner；单组织单期间从 gl_balance 取数出资产负债表。产出：<code>/api/rpt/compute</code> 能算出一张真报表。</div></div>
+  <div class="step"><div class="badge">M3</div><div class="body"><b>前端工作台 + 落地</b><span class="tag new">4-5 周</span><br>report-grid 组件 + 公式栏 + 函数向导；cr_* 落地 + 快照 + 下钻；四区工作台接入 report 菜单。产出：会计能在界面出表、看数、下钻、存档。</div></div>
+  <div class="step"><div class="badge">M4</div><div class="body"><b>跨系统 + 自定义函数 + 表间取数</b><span class="tag mod">3-4 周</span><br>跨 DAM 数据集（销售/HR/库存）；函数宏 + WASM 自定义函数；RPTREF 表间取数 + 跨报表勾稽。产出：管理费用/销售/HR/库存报表可出，三大报表勾稽。</div></div>
+  <div class="step"><div class="badge">M5</div><div class="body"><b>多组织汇总 + 合并抵消</b><span class="tag new">4-6 周</span><br>rollup 逐格相加（值汇总 + 源汇总）；consolidation 抵消引擎（内部往来/投资权益/未实现损益）+ 少数股东权益；批量月结调度。产出：集团汇总报表、合并报表。</div></div>
+</div>
+<div class="callout">
+<div class="t">阶段独立可用</div>
+M2 结束即有"能算的报表"，M3 结束即有"能用的产品"，M4/M5 是能力扩展。每阶段都建立在前一阶段的可运行产物上，风险前置、价值早现。与 DOC/DCT 落地"先最小闭环、后加维度"的节奏一致。
+</div>
+</section>
+
+<!-- ================= §15 关键决策与风险 ================= -->
+<section id="s15">
+<h2 class="sec"><span class="num">§15</span>关键决策与风险</h2>
+
+<h3>关键决策（需产品/架构确认）</h3>
+<table>
+<thead><tr><th>议题</th><th>选项</th><th>建议</th></tr></thead>
+<tbody>
+<tr><td>公式语言</td><td>自研 Excel 式 DSL / 嵌 Lua / 嵌 Rhai 脚本</td><td><b>自研小 DSL</b>：财务函数语义强、需编译期校验与取数下推，通用脚本引擎反而难约束取数下推与安全</td></tr>
+<tr><td>取数下推粒度</td><td>逐格一 SQL / FetchPlanner 归并</td><td><b>归并</b>（§6.2）：必选，否则大报表 N+1 压库</td></tr>
+<tr><td>汇总实现</td><td>值汇总（读子实例）/ 源汇总（ANY 子树）</td><td><b>两者都要</b>：报表体系用值汇总（可留痕对账），即时查询用源汇总</td></tr>
+<tr><td>快照存储</td><td>列式二进制 / 明细行 / 双写</td><td><b>列式二进制</b>（复用 msgpack），大报表省空间；关键报表可选双写明细便于 SQL 审计</td></tr>
+<tr><td>非叶科目取数</td><td>末级汇总 / 存末级+汇总双份</td><td>科目层级维度<b>自动展开为末级 code 集合</b>再聚合（复用自分级下钻），避免重复计</td></tr>
+<tr><td>报表版式变更</td><td>坐标引用 / 命名项引用</td><td>表间取数与勾稽<b>强制命名项</b>（§7.3），坐标仅内部用</td></tr>
+</tbody>
+</table>
+
+<h3>风险与缓解</h3>
+<div class="grid2">
+<div class="callout warn">
+<div class="t">性能：大报表 × 多组织 × 月结</div>
+集团几百家组织 × 几十张报表月结，计算量大。<b>缓解</b>：①FetchPlanner 归并 + 并行；②组织树汇总可增量（子实例已算则父实例只加不重算）；③批量调度错峰 + 结果缓存；④列式聚合把重活压给 DB。架构本身（列式+并行）就是为此设计。
+</div>
+<div class="callout warn">
+<div class="t">正确性：勾稽与抵消易错</div>
+财务报表错一分钱都不行。<b>缓解</b>：①声明式勾稽规则强制校验（§6.3），不平不让定版；②抵消明细全留痕可倒查（§8.4）；③下钻到底层单据验证（§10 drill）；④快照留底支持期间对比发现异动。
+</div>
+<div class="callout warn">
+<div class="t">跨系统：数据口径/时点不一致</div>
+财务已过账、销售未结账，取数口径可能错位。<b>缓解</b>：①数据集 defaultFilters 显式声明口径（如仅 posted）；②取数带 as-of 时点；③报表实例记录各数据源快照时点，可复现。
+</div>
+<div class="callout warn">
+<div class="t">易用性：会计不会写公式</div>
+DSL 再简单也有门槛。<b>缓解</b>：①函数向导 + 可视化取数配置（§11.3）零公式出表；②模板由报表设计师预制，会计只填参数出表；③内置标准报表模板库（资产负债表/利润表等开箱即用）。
+</div>
+</div>
+
+<div class="callout key">
+<div class="t">总结</div>
+财务报表平台以 <b>metaKind:RPT</b> 作为第三类建模对象，复用既有"定义→编译→ZmcDataSet 装载→四区工作台"全链路，新增智力集中在<b>公式引擎、DAG 求值、抵消引擎、report-grid</b> 四处。用户的全部诉求——自定义样式、灵活取数、自定义函数、Excel 操作、数据落地、表间取数、多组织共享/汇总/合并——都在本架构里有明确落点，且大部分是既有能力的组合与延伸，而非从零发明。这与 DOC/DCT 的成功落地是同一套方法论。
+</div>
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="foot">
+  CMX 元数据平台 · 财务报表平台设计方案 · 2026-07-13 · 不动代码，仅设计文档。<br>
+  相关方案：<a class="ilink" href="业务单据数据装载与前端模型映射方案.html">业务单据装载</a> ·
+  <a class="ilink" href="DCT数据字典存储与加载服务方案.html">DCT 字典服务</a> ·
+  <a class="ilink" href="三元定义统一与跨DAM引用架构方案.html">三元定义统一与跨 DAM 引用</a> ·
+  <a class="ilink" href="模型中心-元数据建模与数据库部署方案.html">模型中心建模部署</a> ·
+  <a class="ilink" href="DCT-DOC-bigint主键ID生成与导入导出方案.html">bigint 主键生成</a>
+</div>
+</main>
+</div>
+</body>
+</html>

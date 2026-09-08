@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cmx 业务模块独立化 · 设计方案</title>
+<style>
+  :root{
+    --rust:#c65d21; --rust-2:#e08c4a; --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee;
+    --bg:#f7f8fb; --card:#ffffff; --code-bg:#0f1524; --code-ink:#d6def0;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --drop:#b4433a; --drop-bg:#fbecea;
+    --move:#8a6d1f; --move-bg:#faf3df; --accent:#2f6fed;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.7;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#1b2230 0%,#2a2140 55%,#3a2418 100%);color:#fff;padding:56px 24px 46px;margin-bottom:0}
+  header.hero .inner{max-width:1080px;margin:0 auto}
+  header.hero h1{margin:0 0 10px;font-size:34px;letter-spacing:.5px}
+  header.hero .tag{display:inline-block;background:rgba(224,140,74,.22);color:var(--rust-2);
+       border:1px solid rgba(224,140,74,.4);padding:3px 12px;border-radius:999px;font-size:12.5px;margin-bottom:18px}
+  header.hero p.lead{font-size:16.5px;color:#c7cfdd;max-width:820px;margin:6px 0}
+  header.hero .meta{margin-top:20px;font-size:13px;color:#94a0b4}
+  header.hero .meta b{color:#e0e6f0;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 12px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:40px}
+  nav.toc li{margin:4px 0;break-inside:avoid}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--rust);border-bottom-color:var(--rust)}
+  section{margin:0 0 44px}
+  h2{font-size:23px;margin:44px 0 14px;padding-top:14px;border-top:3px solid var(--rust);display:inline-block}
+  h2 .n{color:var(--rust);font-weight:800;margin-right:10px}
+  h3{font-size:17px;margin:26px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:9px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.5px;letter-spacing:.3px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.drop{background:var(--drop-bg);color:var(--drop)}
+  .pill.move{background:var(--move-bg);color:var(--move)}
+  .pill.add{background:#eaf1ff;color:var(--accent)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.dec{background:#fff8f2;border-color:#f0d3b8}
+  .callout.dec .h{color:var(--rust)}
+  .callout.warn{background:#fff9f0;border-color:#f0dcb0}
+  .callout.warn .h{color:#a5761f}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}
+  .callout.note .h{color:var(--accent)}
+  .rec{display:inline-block;background:var(--keep);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:4px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.5px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--rust);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .kbd{font-size:11.5px;color:var(--muted)}
+  .legend{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .legend .pill{margin-right:6px}
+  a.anchor{color:var(--rust);text-decoration:none}
+  .modtag{display:inline-block;font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:700;
+       padding:2px 9px;border-radius:6px;color:#fff;margin-right:6px}
+  .m-flow{background:#7c5cff}.m-rpt{background:#2f6fed}.m-doc{background:#1f8a56}.m-dct{background:#c65d21}.m-meta{background:#8a6d1f}
+  .num-badge{display:inline-block;min-width:20px;text-align:center;font-family:"SF Mono",ui-monospace,monospace;font-weight:700;color:var(--rust)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <div class="tag">设计方案 · DRAFT · 先方案后编码</div>
+    <h1>cmx 业务模块独立化方案</h1>
+    <p class="lead">把 <code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-flow</code>（流程）、<code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-rpt</code>（报表）、<code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-doc</code>（单据）、<code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-dct</code>（字典）、<code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-model/meta</code>（元数据）——像 <b>cmx-rust-sheet / cmx-sheetwright</b> 那样——从庞大的 <code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-container</code> 单体里抽出来，成为<strong>独立、可单独部署、只吃公共 crate、不依赖庞大框架</strong>的组件 / 服务。</p>
+    <div class="meta">
+      对标样板：<b>cmx-rust-sheet</b>（独立 workspace）+ <b>cmx-sheetwright</b>（薄传输壳）+ <b>cmx-home-site</b>（组件站）&nbsp;·&nbsp;
+      抽离对象：<b>cmx-container/crates/libs/{cmx-flow,cmx-rpt,cmx-doc,cmx-dct}</b> + <b>cmx-model/cmx-metadata</b>&nbsp;·&nbsp;
+      本文档：<b>仅方案，不含实现代码</b>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录</h4>
+  <ol>
+    <li><a href="#s1">背景与目标</a></li>
+    <li><a href="#s2">对标样板：sheet 三件套怎么独立的</a></li>
+    <li><a href="#s3">框架耦合解剖：“细腰”在哪</a></li>
+    <li><a href="#s4">范围界定：每层保留 vs 替换</a></li>
+    <li><a href="#s5">关键决策（含推荐）</a></li>
+    <li><a href="#s6">目标形态 + 公共 crate 治理 + 每域取用清单</a></li>
+    <li><a href="#s7">逐模块拆解（flow/rpt/doc/dct/meta）</a></li>
+    <li><a href="#s8">域贡献 Router + 两种宿主</a></li>
+    <li><a href="#s9">前端工作台随行</a></li>
+    <li><a href="#s10">数据库与配置（独立自举）</a></li>
+    <li><a href="#s11">不变式</a></li>
+    <li><a href="#s12">里程碑路线图</a></li>
+    <li><a href="#s13">测试与验收</a></li>
+    <li><a href="#s14">部署（Docker / 编排）</a></li>
+    <li><a href="#s15">最终目录结构</a></li>
+    <li><a href="#s16">风险与开放问题</a></li>
+    <li><a href="#s17">附录：规模普查 / 依赖足迹</a></li>
+  </ol>
+</nav>
+
+<!-- ───────────────────────────── 1 ───────────────────────────── -->
+<section id="s1">
+  <h2><span class="n">01</span>背景与目标</h2>
+  <p><b>cmx-container</b> 是一个庞大的 Rust workspace：<code>Cargo.lock</code> 里 <strong>861 个 crate 版本</strong>，一次全量构建牵动整棵依赖树。业务能力（流程引擎、报表平台、单据、字典、元数据建模）都以 <code>crates/libs/cmx-*</code> 的形式住在里面，最终由一个统一的 <code>web-server</code> 把它们 <code>merge</code> 成一个巨型进程。</p>
+  <p>而在同一个 <code>presentation/</code> 根目录下，已经有两套<strong>示范如何“独立活着”</strong>的项目：</p>
+  <ul class="tight">
+    <li><b>cmx-rust-sheet</b>：独立 Cargo workspace，只引十来个成熟 crate，不继承 cmx-container 的百级依赖树，纯库形态。</li>
+    <li><b>cmx-sheetwright</b>：在 rust-sheet 外套一层薄壳（<code>path</code> 依赖引入），加协议层 + CLI + HTTP，变成一个“无头 Excel”服务。</li>
+    <li><b>cmx-home-site / cmx-mega-sheet</b>：组件展示站，双语双主题、纯静态，把一个组件“讲清楚 + 可运行演示”。</li>
+  </ul>
+  <p><b>本方案的目标</b>：把 <code>cmx-flow / cmx-rpt / cmx-doc / cmx-dct / cmx-model(meta)</code> 也做成这个样子——每个业务域一个<strong>独立 workspace</strong>，可单独 <code>cargo build</code>、单独部署、只吃公共 crate、不背 cmx-container 的框架包袱；需要时再以 <code>path</code>/registry 依赖被别人引入，而不是反过来被大 workspace 绑架。</p>
+
+  <div class="callout note">
+    <div class="h">◆ 一句话范围</div>
+    每个业务域的 <em>model / engine / formula / store-pg</em> 层<strong>原样带走</strong>（它们只依赖一条浅而自洽的“数据库脊柱”）；唯一强耦合框架的 <em>-api</em> 层（<code>Router&lt;CmxAppState&gt;</code>）<strong>替换成</strong>一个薄薄的 <em>-service</em> 壳（自带 axum server + 自建 DB 池 + 自己的配置），做法与 <code>cmx-sheetwright</code> 包 <code>cmx-rust-sheet</code> 一模一样。
+  </div>
+
+  <h3>为什么值得做</h3>
+  <ul class="tight">
+    <li><b>可独立部署</b>：报表挂了不拖垮流程；每个域自己的进程、自己的端口、自己的发版节奏。</li>
+    <li><b>构建/依赖瘦身</b>：单体 861 crate 版本 → 一个独立流程服务实测 <strong>12 内部 + ~15 三方</strong> crate（见 §17-B）。编译、CI、镜像体积全线下降。</li>
+    <li><b>可复用、可移植</b>：任何一个 Rust 后端都能 <code>path</code> 引一个 <code>cmx-flow-engine</code> 当“流程算核”，不必吞下整个 cmx-container。</li>
+    <li><b>已有活体证据</b>：<code>cmx-flow-demo</code> 早就是一个<strong>自包含的 axum 服务</strong>（端口 8090，自己的 <code>Router::new()</code>、自建 DB 池、<code>include_str!</code> 前端），完全不碰 <code>cmx-api / CmxAppState / web-server</code>——它就是本方案的“可行性样机”。</li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────── 2 ───────────────────────────── -->
+<section id="s2">
+  <h2><span class="n">02</span>对标样板：sheet 三件套怎么独立的</h2>
+  <p>先把可复制的“姿态”拆清楚——本方案对每个业务域，就是把这三件套复制一遍。</p>
+  <div class="grid3">
+    <div class="box">
+      <h4>① 内核 workspace<br><code>cmx-rust-sheet</code></h4>
+      <p style="font-size:13px">独立 <code>Cargo.toml [workspace]</code>，crate 分层（<code>sheet-core → sheet-formula → sheet-io</code> → 门面），<strong>只在门面/IO 层引三方 crate</strong>，core/formula 保持轻。纯库，零框架。</p>
+    </div>
+    <div class="box">
+      <h4>② 薄传输壳<br><code>cmx-sheetwright</code></h4>
+      <p style="font-size:13px">以 <code>path</code> 依赖引内核，<strong>只加“对外的嘴”</strong>：协议层 + CLI + HTTP。<code>spawn_blocking</code> 隔离 <code>!Send</code>。内核零改，壳单独演进。</p>
+    </div>
+    <div class="box">
+      <h4>③ 组件站<br><code>cmx-home-site</code></h4>
+      <p style="font-size:13px">纯静态双语双主题站：首页 / 方案 / 使用 / 演示，运行时原样拷自 demo。把“一个组件”讲清楚并可现场跑。</p>
+    </div>
+  </div>
+  <div class="callout dec">
+    <div class="h">▶ 映射到本方案</div>
+    <b>①内核</b> = 各业务域已经切好的 <code>model / engine / formula / store-pg</code> 分层 crate（<strong>已存在，几乎不用动</strong>）。&nbsp;
+    <b>②薄壳</b> = 新写的 <code>*-routes</code> 库（替 <code>-api</code>）+ 宿主（共用 <code>cmx-web-server</code> 或各域 <code>-service</code>，见 <a class="anchor" href="#s8">§8</a>）。&nbsp;
+    <b>③组件站</b> = 各域现成的 native-pages 工作台前端，从 cmx-container 抽出随服务发布。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 3 ───────────────────────────── -->
+<section id="s3">
+  <h2><span class="n">03</span>框架耦合解剖：“细腰”在哪</h2>
+  <p>能不能独立，取决于耦合有多深。实测结论：<strong>耦合是一条很窄的“腰”——只有 <code>-api</code> 层碰框架</strong>，下面几层只依赖一条浅的数据库脊柱。</p>
+
+  <h3>3.1 框架侧被用到的全部符号（这就是“腰”的全宽）</h3>
+  <p>各业务域的 <code>-api</code> crate 对 <code>cmx-api</code> 的使用，收敛为这几个：</p>
+  <pre><code><span class="cmt">// 这是 -api 层 use cmx-api 的全部足迹——非常窄</span>
+<span class="kw">use</span> cmx_api::{ <span class="ty">CmxAppState</span>, <span class="ty">Error</span>, <span class="ty">Result</span>, <span class="ty">ApiResp</span> };
+<span class="kw">use</span> cmx_api::routes::traits::<span class="ty">ModuleRoutes</span>;        <span class="cmt">// fn routes(self)-&gt;Router&lt;CmxAppState&gt;</span>
+<span class="kw">use</span> cmx_api::middleware::<span class="ty">CmxSvrContext</span>;             <span class="cmt">// 请求上下文（db_id / 租户）</span>
+<span class="kw">use</span> cmx_api::rest::header_parse::<span class="fn">get_db_id_from_header</span>; <span class="cmt">// 从 header 取数据源 id</span></code></pre>
+  <p>没有别的了。<code>CmxAppState</code> 是共享状态、<code>ModuleRoutes</code> 是“交出一个 <code>Router</code>”的约定、<code>CmxSvrContext</code>/<code>get_db_id_from_header</code> 是“这次请求打哪个库”。这四样<strong>全都可以在 <code>-service</code> 壳里用几十行自造等价物顶掉</strong>（见 §8）。</p>
+
+  <h3>3.2 web-server 的接线（要替换的就是这段）</h3>
+  <pre><code><span class="cmt">// crates/web/web-server/src/routes.rs —— 单体把所有域 merge 进一个 Router</span>
+<span class="kw">pub fn</span> <span class="fn">routes</span>() -&gt; <span class="ty">Router</span>&lt;<span class="ty">CmxAppState</span>&gt; {
+    <span class="fn">api_routes</span>()
+        .<span class="fn">merge</span>(<span class="ty">ReportModule</span>.<span class="fn">routes</span>()).<span class="fn">merge</span>(<span class="ty">FlowModule</span>.<span class="fn">routes</span>())
+        .<span class="fn">merge</span>(<span class="ty">DocModule</span>.<span class="fn">routes</span>()).<span class="fn">merge</span>(<span class="ty">DctModule</span>.<span class="fn">routes</span>())
+        .<span class="fn">merge</span>(<span class="ty">JobModule</span>.<span class="fn">routes</span>()).<span class="fn">merge</span>(<span class="ty">ModelModule</span>.<span class="fn">routes</span>())
+}
+<span class="cmt">// main.rs：全局 .nest("/api", api_routes) + 各前端 nest_service(prefix, serve)</span></code></pre>
+  <p>独立化后，每个 <code>Module.routes()</code> 不再被这里 merge，而是各自的 <code>-service</code> 进程<strong>自己 <code>Router::new()</code> 挂载</strong>。</p>
+
+  <h3>3.3 下面几层依赖什么（脊柱，而非框架）</h3>
+  <p>model / engine / formula / store-pg 的依赖，全落在一条<strong>浅而自洽</strong>的基础设施脊柱上：</p>
+  <div class="dag">数据库脊柱（可整体带走，不含 cmx-api / web-server）
+  cmx-database-pg   ← tokio-postgres + deadpool 池；register_datasource / get_default_pg_db_manager
+                       DbConfig · DbType · ZmcDataSet（零拷贝读）· PgResultConverter · QueryBuilder
+  cmx-core          ← 基础类型 / 错误
+  cmx-utils         ← 工具
+  cmx-rowsource     ← ZmcDataSet 零拷贝行源 trait
+  cmx-traits · cmx-buffer  ← 叶子
+  cmx-model-meta    ← 定义/元数据 resolve（metaKind DCT/DOC/FLX/RPT），只依赖 2 个叶子
+  cmx-biz「薄片」    ← 仅 validation(838行) + errcode(360行) + error.rs ≈ 1.2k / 7.3k 行</div>
+  <div class="callout note">
+    <div class="h">◆ 关键洞察</div>
+    <strong>耦合是“腰”不是“网”。</strong> 越过 <code>-api</code> 这一薄层，剩下的全是纯逻辑 + 一条浅数据库脊柱。所以独立化不是“大重构”，而是“<strong>换掉腰、把脊柱打包带走</strong>”。这也是 <code>cmx-flow-demo</code> 能在完全不碰框架的情况下跑起来的原因。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 4 ───────────────────────────── -->
+<section id="s4">
+  <h2><span class="n">04</span>范围界定：每层保留 vs 替换</h2>
+  <p><span class="legend"><span class="pill keep">保留</span>原样带走（可能仅去掉对 cmx-api 的引用）&nbsp;<span class="pill move">下沉/切片</span>只带走需要的一部分&nbsp;<span class="pill drop">替换</span>框架专属，换独立等价物&nbsp;<span class="pill add">新增</span>独立化新写的壳</span></p>
+  <table>
+    <tr><th style="width:22%">层</th><th style="width:12%">去向</th><th>说明</th></tr>
+    <tr><td><code>*-model</code>（IR / 类型）</td><td><span class="pill keep">保留</span></td><td>纯数据结构，零框架依赖（个别依赖 cmx-core/biz 也在脊柱内）。直接带走。</td></tr>
+    <tr><td><code>*-engine / *-bpmn / *-formula</code></td><td><span class="pill keep">保留</span></td><td>流程执行、BPMN 解析、公式求值——纯逻辑，只依赖同域 model。核心竞争力，原样带走。</td></tr>
+    <tr><td><code>*-store-pg</code>（PG 持久化）</td><td><span class="pill keep">保留</span></td><td>依赖 <code>cmx-database-pg + cmx-core</code>（+少量 biz/utils/meta），全在脊柱内。带走。</td></tr>
+    <tr><td><code>cmx-database-pg</code> 等脊柱 crate</td><td><span class="pill move">下沉</span></td><td>作为共享脊柱，<strong>一份</strong>被所有独立服务以 <code>path</code> 复用（见 §6）。</td></tr>
+    <tr><td><code>cmx-biz</code>（7.3k 行）</td><td><span class="pill move">切片</span></td><td>只需 <code>validation + errcode + error</code>（≈1.2k 行；符号 <code>BizError::from_db_error / validate_insert_row / Violation</code>）。抽成 <code>cmx-biz-kernel</code> 薄 crate，别把整包 7.3k 拖来。</td></tr>
+    <tr><td><code>cmx-model-meta</code></td><td><span class="pill keep">保留</span></td><td>DOC/DCT 解析定义要用；依赖极浅，带走。</td></tr>
+    <tr><td><code>*-api</code>（<code>Router&lt;CmxAppState&gt;</code>）</td><td><span class="pill drop">替换</span></td><td><strong>唯一强耦合框架的层</strong>。删掉对 cmx-api 的 4 个符号依赖，降级为 <code>*-routes</code> 库（无 state 的 <code>Router</code>）。</td></tr>
+    <tr><td><code>*-routes</code>（无 state 路由库）</td><td><span class="pill add">新增</span></td><td>域只“交出一段 <code>Router&lt;()&gt;</code>”+ 前端目录 + 数据源注册。<strong>可被任意宿主 merge</strong>。见 <a class="anchor" href="#s8">§8.1</a>。</td></tr>
+    <tr><td>宿主 A <code>cmx-web-server</code> / 宿主 B <code>*-service</code></td><td><span class="pill add">新增</span></td><td>A：一个二进制按 <code>config.modules</code> 装载多域（共用）；B：每域一个瘦二进制（强隔离）。两者复用同一份 <code>*-routes</code>。见 <a class="anchor" href="#s8">§8.3-8.4</a>。</td></tr>
+    <tr><td>native-pages 前端（工作台）</td><td><span class="pill move">随行</span></td><td>各域现成四区工作台，从 cmx-container 抽出，随对应服务发布（见 §9）。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 5 ───────────────────────────── -->
+<section id="s5">
+  <h2><span class="n">05</span>关键决策（含推荐）</h2>
+
+  <h3 id="s5-1">5.1&nbsp; 依赖策略：吃公共 crate，甩掉框架 <span class="rec">已定</span></h3>
+  <p>用户明确：<strong>不依赖庞大框架、可借助公共 crate</strong>。落地为两条纪律：</p>
+  <ul class="tight">
+    <li><b>甩掉的</b>：<code>cmx-api</code>（<code>CmxAppState/ModuleRoutes/CmxSvrContext</code>）、<code>web-server</code>、以及只为大 workspace 服务的重依赖。</li>
+    <li><b>带走的“公共 crate”</b>：数据库脊柱（<code>cmx-database-pg</code> + 叶子）、<code>cmx-model-meta</code>、<code>cmx-biz-kernel</code> 薄片，以及三方生态（<code>axum · tower-http · tokio · serde · tracing · async-trait</code>）——正是 <code>cmx-flow-demo</code> 已在用的那一小撮。</li>
+  </ul>
+
+  <h3 id="s5-2">5.2&nbsp; 每域一个独立 workspace，还是一个大 monorepo？</h3>
+  <table>
+    <tr><th style="width:34%">选项</th><th>取舍</th></tr>
+    <tr><td><b>每业务域一个独立 workspace</b>，与 cmx-rust-sheet 平级放在 <code>presentation/</code> 根<span class="rec">推荐</span></td>
+        <td>完全镜像 sheet 三件套的独立姿态：<code>cmx-flow/ · cmx-rpt/ · cmx-doc/ · cmx-dct/ · cmx-meta/</code> 各自 <code>Cargo.toml [workspace]</code>、各自发版、各自 CI、各自 Docker。真正“可独立部署”。</td></tr>
+    <tr><td>一个 <code>cmx-modules/</code> 大 workspace 容纳全部</td>
+        <td>共享 <code>workspace.dependencies</code> 省心，但又滑回“大 workspace 构建耦合”，与“独立可部署”初衷相悖。</td></tr>
+    <tr><td>脊柱怎么共享？</td>
+        <td>把 <code>cmx-database-pg</code> 等脊柱 crate 抽到 <code>presentation/cmx-shared/</code>（或发到内网 registry），各域 workspace 以 <strong>path 依赖</strong>共引一份。见 §6。</td></tr>
+  </table>
+
+  <h3 id="s5-3">5.3&nbsp; 库优先 + 可选服务/CLI 壳 <span class="rec">已定</span></h3>
+  <p>沿用 sheet 的“库优先”哲学：内核层永远是可嵌入的库；<code>-service</code>（axum daemon）与可选 <code>-cli</code> 只是“对外的嘴”，是后置里程碑。任何人都能只引内核 crate 当算核，不必起服务。</p>
+
+  <h3 id="s5-4">5.4&nbsp; cmx-biz 只切片，不整包搬 <span class="rec">已定</span></h3>
+  <p><code>cmx-biz</code> 7.3k 行里，独立服务真正需要的只有<strong>落库前校验 + 统一错误码</strong>（≈1.2k 行）。抽 <code>cmx-biz-kernel</code> 薄 crate，避免把整个业务库的其它耦合一起拖进独立世界。<strong>铁证</strong>：整包 <code>cmx-biz</code> 的依赖里赫然有 <code>cmx-service</code> + <code>cmx-portal-base</code>（服务框架 + 门户框架）——不切片就等于把要甩掉的框架又偷渡回来。全部公共 crate 的治理分类见 <a class="anchor" href="#s6-gov">§6.1</a>。</p>
+
+  <h3 id="s5-7">5.7&nbsp; 共用宿主 web-server，按配置装载不同域 <span class="rec">已定·强化</span></h3>
+  <p><strong>这是对交付形态的关键强化，采纳用户提议。</strong>不把“每域一个独立二进制”与“共用一个 web-server”对立起来——它们是<strong>同一套域库之上的两种宿主</strong>。做法：让每个域只<strong>贡献一个不带 state 的 <code>Router</code></strong>（<code>fn routes() -&gt; Router</code>），谁来 <code>merge</code>、绑哪个端口、装哪几个域，全交给<strong>宿主</strong>决定。</p>
+  <div class="grid2">
+    <div class="box">
+      <h4>宿主 A · 共用 <code>cmx-web-server</code>（新）</h4>
+      <p style="font-size:13px">一个二进制，读配置文件 <code>modules = ["rpt","flow","doc","dct"]</code> 决定装载哪些域的 <code>routes()</code>，全 <code>merge</code> 进一个 <code>Router</code>、一个端口。<strong>正是今天 cmx-container 的 web-server 做的事——只是模块集由配置驱动、且不再背框架。</strong></p>
+    </div>
+    <div class="box">
+      <h4>宿主 B · 各域自带 <code>-service</code>（原案）</h4>
+      <p style="font-size:13px">每域一个瘦二进制，只 <code>merge</code> 自己那一个 <code>routes()</code>，独立端口/镜像/发版。适合“报表挂了不拖垮流程”的强隔离部署。</p>
+    </div>
+  </div>
+  <p>两种宿主<strong>共享同一份域库</strong>（<code>*-routes</code> crate），零重复代码。开发期用宿主 A 一个进程全装、方便；生产期按隔离需求选 A（省资源）或 B（强隔离），<strong>甚至混用</strong>（rpt 单独一个 B，其余挤在一个 A）。为什么几乎免费——见 <a class="anchor" href="#s8">§8</a>：demo 里 DB 池是全局单例、引擎是 OnceCell，<strong>域的 Router 本就不带 state</strong>，天然可被任意宿主 merge。</p>
+
+  <h3 id="s5-6">5.6&nbsp; 脊柱是「货架」不是「全集」 <span class="rec">已定</span></h3>
+  <p>脊柱 <code>cmx-shared</code> 分两层：<b>必备层</b>（database-pg/core/utils/modql/api-types/biz-kernel/model-meta——人人 path 引）与<b>可选货架层</b>（<code>cmx-iam · audit · auth · storage · ai · job-core · plugin-sdk</code>——按需 path 引）。各业务 <code>-service</code> 只取自己要的那几格，不背全集。判据与逐 crate 归类见 <a class="anchor" href="#s6-gov">§6.1</a>。</p>
+
+  <h3 id="s5-5">5.5&nbsp; 分阶段：先垂直打通一个域，再横向复制</h3>
+  <p><strong>不</strong>五个域齐头并进。先拿 <code>cmx-flow</code>（已有 demo 样机，风险最低）打通“抽脊柱 → 写 -service → 前端随行 → Docker 部署”整条链，形成可复制的模板，再套用到 rpt/doc/dct/meta。</p>
+
+  <div class="callout dec">
+    <div class="h">▶ 落地前需用户拍板</div>
+    <b>①</b> 独立粒度：五域<strong>各一个</strong> workspace（推荐），还是先只做 flow 一个试点？&nbsp;&nbsp;
+    <b>②</b> 脊柱共享方式：<code>presentation/cmx-shared/</code> 用 path（推荐，简单），还是发内网 registry？&nbsp;&nbsp;
+    <b>③</b> 交付形态：纯库、库+HTTP 服务（推荐）、还是再加 CLI？&nbsp;&nbsp;
+    <b>④</b> 宿主策略：共用 <code>cmx-web-server</code>（配置装载，推荐开发/中小部署）、各域 <code>-service</code>（强隔离）、还是两者都产出按需选（推荐，见 §5.7）？
+  </div>
+</section>
+
+<!-- ───────────────────────────── 6 ───────────────────────────── -->
+<section id="s6">
+  <h2><span class="n">06</span>目标形态 + 公共 crate 治理</h2>
+  <div class="dag">presentation/
+│
+├─ cmx-shared/                      ← 【共享脊柱】一份，各域 path 复用
+│    ├─ cmx-database-pg   (tokio-postgres/deadpool · ZmcDataSet 零拷贝)
+│    ├─ cmx-database      (DB 抽象层 · doc/iam/biz/storage 用)
+│    ├─ cmx-core · cmx-utils · cmx-rowsource · cmx-traits · cmx-buffer
+│    ├─ modql (+ modql-macros)      (SQL DSL · 11 crate 在用 → 必进)
+│    ├─ cmx-api-types               (跨层 DTO · rpt/dct/storage/job 用)
+│    ├─ cmx-model-meta              (metaKind 解析 DCT/DOC/FLX/RPT)
+│    ├─ cmx-biz-kernel              (validation + errcode + error 薄片 ≈1.2k 行)
+│    ├─ cmx-web-kernel              (替 cmx-api 的 4 等价物 · 两宿主共用 · 见 §8.2)
+│    ├─ cmx-job-core · cmx-job-store-pg   (长任务框架 · rpt 复用)
+│    └─ [可选] cmx-audit · cmx-auth · cmx-iam   (身份/审计 · 按需)
+│
+├─ cmx-flow/   (workspace) ─┐
+│    crates/{flow-model, flow-bpmn, flow-engine, flow-store-pg, flow-def}
+│    + flow-service (axum, 替 flow-api) + web/(工作台前端)  端口 :8181
+│                            │
+├─ cmx-rpt/    (workspace) ─┤   每个 workspace：
+│    crates/{rpt-model, rpt-formula, rpt-store-pg}              · 自己的 Cargo.toml [workspace]
+│    + rpt-service (替 rpt-api) + web/                          · path = "../cmx-shared/..."
+│    端口 :8182                                                 · 自建 DB 池 / 配置 / 端口
+│                            │                                  · 自己的 Dockerfile
+├─ cmx-doc/    (workspace) ─┤   · 独立 cargo build / test / 发版
+│    crates/{doc-model, doc-store-pg} + doc-service + web/  :8183
+│                            │
+├─ cmx-dct/    (workspace) ─┤
+│    crates/{dct-model, dct-store-pg} + dct-service + web/  :8184
+│                            │
+└─ cmx-meta/   (workspace) ─┘
+     crates/{model, metadata} + meta-service + web/         :8185
+                            ▲
+              （可选）一个 api-gateway 反代 /flow /rpt /doc /dct /meta 到各服务</div>
+  <div class="callout note">
+    <div class="h">◆ 依赖方向恒单向</div>
+    <code>cmx-shared/*</code> 不认识任何业务域；每个业务 workspace 只<strong>向下</strong>依赖 <code>cmx-shared</code> 与三方 crate，域与域之间<strong>零横向依赖</strong>。这正是 sheetwright→rust-sheet 的单向姿态，放大到五个域。
+  </div>
+  <div class="callout warn">
+    <div class="h">⚠ 复用 cmx-container 的镜像源配置</div>
+    各 workspace 复制一份 <code>.cargo/config.toml</code>（aliyun 镜像、<code>registry="nora"</code>），沿用 <code>edition 2024</code>。脊柱里绝大多数三方 crate 已在该镜像拉过，独立化不引入新的“拉不到包”风险。
+  </div>
+
+  <h3 id="s6-gov">6.1&nbsp; 全部公共 crate 的治理分类</h3>
+  <p>把 <code>cmx-container/crates/libs</code> 下<strong>每一个</strong> crate 按“独立世界里怎么办”归类。判据：<span class="legend"><span class="pill keep">脊柱</span>进 cmx-shared，多域共用&nbsp;<span class="pill add">可选脊柱</span>按需进，非必带&nbsp;<span class="pill move">切片</span>只取一部分&nbsp;<span class="pill drop">留在单体</span>是框架/门面/示例，独立世界不需要</span></p>
+
+  <h4>基础设施叶子（全进脊柱——被 ≥2 域用、依赖极浅）</h4>
+  <table>
+    <tr><th style="width:24%">crate</th><th style="width:12%">归类</th><th>依赖 / 被谁用 / 理由</th></tr>
+    <tr><td><code>cmx-core · cmx-utils</code></td><td><span class="pill keep">脊柱</span></td><td>零/浅依赖的地基，人人都用。</td></tr>
+    <tr><td><code>cmx-traits · cmx-buffer · cmx-rowsource</code></td><td><span class="pill keep">脊柱</span></td><td>trait / 缓冲 / 零拷贝行源，database 与各 store 的底座。</td></tr>
+    <tr><td><code>cmx-database</code>（抽象层）</td><td><span class="pill keep">脊柱</span></td><td>deps: buffer/core/rowsource/utils/traits/modql。doc/iam/biz/storage/metadata 都要。</td></tr>
+    <tr><td><code>cmx-database-pg</code></td><td><span class="pill keep">脊柱</span></td><td>PG 实现 + 全局池 + ZmcDataSet。所有 store-pg 的命脉。</td></tr>
+    <tr><td><code>modql</code> (+ <code>modql-macros</code>)</td><td><span class="pill keep">脊柱</span></td><td><strong>11 个 crate 在用</strong>的 SQL DSL；database/api-types/biz/iam/auth… 全靠它。必进。</td></tr>
+    <tr><td><code>cmx-api-types</code></td><td><span class="pill keep">脊柱</span></td><td>deps: modql/core/database。跨层 DTO，rpt-store/dct-store/storage/job-store/ai 都引。</td></tr>
+    <tr><td><code>cmx-model-meta</code></td><td><span class="pill keep">脊柱</span></td><td>定义/元数据 resolve；doc/dct 解析 metaKind 用。</td></tr>
+    <tr><td><code>cmx-web-kernel</code> <span class="pill add">新建</span></td><td><span class="pill keep">脊柱</span></td><td>替 <code>cmx-api</code> 的 4 个等价物（<code>DbId</code> extractor / <code>ServiceError</code> / 响应）；两种宿主 + 各域 <code>*-routes</code> 共用。约 100 行。见 <a class="anchor" href="#s8">§8.2</a>。</td></tr>
+  </table>
+
+  <h4>用户点名的 4 个 crate + 关联件</h4>
+  <table>
+    <tr><th style="width:24%">crate</th><th style="width:12%">归类</th><th>依赖 / 判断</th></tr>
+    <tr><td><code>cmx-job-core</code></td><td><span class="pill keep">脊柱</span></td><td>deps 仅 <code>cmx-utils</code>！长任务内核（SSE 进度/暂停/停止/HA）。<b>rpt-store-pg 已直接依赖它</b> → 必须随 rpt 走，索性进脊柱。</td></tr>
+    <tr><td><code>cmx-job-store-pg</code></td><td><span class="pill keep">脊柱</span></td><td>deps: job-core/core/database-pg/api-types/utils——全在脊柱。PG 持久化 + 崩溃恢复 + SKIP LOCKED 抢占。</td></tr>
+    <tr><td><code>cmx-job-api</code></td><td><span class="pill drop">留在单体</span></td><td>deps: job-core + <b>cmx-api</b>。只有它碰框架——独立世界里由各 <code>-service</code> 自己挂 SSE 端点（母版同 flow）。<b>job 中心=core+store 进脊柱，api 壳各服务自造。</b></td></tr>
+    <tr><td><code>cmx-iam</code></td><td><span class="pill add">可选脊柱</span></td><td>deps: core/api-types/traits/database/audit/auth/utils/buffer/modql——<b>全在脊柱，零框架依赖，可干净抽出</b>。但当前 flow 只<em>按表名读 cmx_org</em>、不 crate 依赖 iam。<b>判断</b>：谁真需要“身份/权限 API”才引 iam（+audit+auth）；只读组织树的域不必。</td></tr>
+    <tr><td><code>cmx-plugin</code></td><td><span class="pill drop">留在单体</span></td><td>deps: metadata/buffer/database/rpc/registry-config/<b>service</b>/<b>storage</b>/audit/biz/…——<b>牵出 service 框架 + rpc + 存储一大片</b>，不是干净可抽件。插件体系是<strong>宿主平台能力</strong>，随 web-server 留在单体；独立服务不背它。</td></tr>
+    <tr><td><code>cmx-plugin-sdk</code></td><td><span class="pill add">可选脊柱</span></td><td>deps 仅 <code>cmx-core</code>。若某独立服务要“被插件扩展”，可单引 SDK；否则不带。</td></tr>
+    <tr><td><code>cmx-plugin-demo</code></td><td><span class="pill drop">留在单体</span></td><td>示例，不进任何独立世界。</td></tr>
+    <tr><td><code>cmx-dev</code></td><td>—</td><td><b>不是 crate</b>！只是 <code>cmx-dev/templates/wasm-plugin-template.zip</code>——插件脚手架素材。属 plugin 生态，随 plugin 留在单体，<strong>无 crate 需治理</strong>。</td></tr>
+  </table>
+
+  <h4>身份/存储/RPC 一带（多为 plugin/iam 的支撑，按需进）</h4>
+  <table>
+    <tr><th style="width:24%">crate</th><th style="width:12%">归类</th><th>依赖 / 判断</th></tr>
+    <tr><td><code>cmx-audit</code></td><td><span class="pill add">可选脊柱</span></td><td>deps: core/database/utils。被 iam/auth/plugin 用。引 iam 就一起带。</td></tr>
+    <tr><td><code>cmx-auth</code></td><td><span class="pill add">可选脊柱</span></td><td>deps: core/traits/buffer/audit/database/utils/modql。同 iam 命运。</td></tr>
+    <tr><td><code>cmx-storage</code></td><td><span class="pill add">可选脊柱</span></td><td>deps: utils/api-types/core/database/modql。文件/对象存储；被 api/plugin 用。哪个域要存附件才引。</td></tr>
+    <tr><td><code>cmx-rpc · cmx-rpc-gen · cmx-registry-config · cmx-nacos</code></td><td><span class="pill drop">留在单体</span></td><td>服务注册/发现/远程调用/配置中心——<strong>是“大框架”的分布式基建</strong>，恰是本方案要甩掉的那类。独立服务用简单 env + 反代即可，不需要它们。</td></tr>
+  </table>
+
+  <h4>框架 / 门面 / 运行时（留在单体，独立世界不需要）</h4>
+  <table>
+    <tr><th style="width:24%">crate</th><th style="width:12%">归类</th><th>判断</th></tr>
+    <tr><td><code>cmx-api</code></td><td><span class="pill drop">留在单体</span></td><td>本方案要替换的“腰”本身（<code>CmxAppState/ModuleRoutes</code>）。</td></tr>
+    <tr><td><code>cmx-service · cmx-runtime</code></td><td><span class="pill drop">留在单体</span></td><td>服务生命周期/运行时框架——独立服务用裸 axum + tokio 代替。</td></tr>
+    <tr><td><code>cmx-portal · cmx-portal-base</code></td><td><span class="pill drop">留在单体</span></td><td>门户框架。⚠ <b>cmx-biz 竟依赖 portal-base</b>——这正是必须切 <code>biz-kernel</code> 的铁证（见下）。</td></tr>
+    <tr><td><code>cmx-biz</code>（整包 7.3k 行）</td><td><span class="pill move">切片</span></td><td>整包 deps 含 <b>cmx-service + cmx-portal-base</b>（框架！）。<strong>只抽 validation+errcode+error → <code>cmx-biz-kernel</code></strong>，斩断对 service/portal 的传递依赖。这是全方案最关键的一刀。</td></tr>
+    <tr><td><code>cmx-ai</code></td><td><span class="pill add">可选脊柱</span></td><td>deps 仅 api-types/utils，很干净。若某服务要 AI 能力可引；否则不带。</td></tr>
+    <tr><td><code>cmx-form</code></td><td><span class="pill drop">留在单体</span></td><td>deps: portal-base（门户表单）。属门户层。</td></tr>
+    <tr><td><code>cmx-macros · cmx-debug</code></td><td><span class="pill add">可选脊柱</span></td><td>过程宏 / 调试辅助。谁用谁引（当前 libs 内无人直接依赖 cmx-macros，多半 web-server 侧用）。</td></tr>
+    <tr><td><code>cmx-wasmdemo</code></td><td><span class="pill drop">留在单体</span></td><td>wasm 演示，示例件。</td></tr>
+  </table>
+
+  <div class="callout dec">
+    <div class="h">▶ 三条治理定律（从上表提炼）</div>
+    <b>①「core+store 进脊柱，api 壳自造」</b>——凡是 <code>X-core / X-store-pg / X-api</code> 三段式（job 就是），前两段共享、第三段各服务重写。&nbsp;
+    <b>②「牵出 service/portal/rpc 的一律留单体」</b>——plugin/form/rpc/nacos 是<em>宿主平台</em>能力，不是<em>业务算核</em>。&nbsp;
+    <b>③「biz 必须切片」</b>——整包 biz 会把 service+portal 框架偷渡进独立世界，只带 <code>biz-kernel</code>。
+  </div>
+  <div class="callout note">
+    <div class="h">◆ “可选脊柱”怎么落地</div>
+    脊柱 workspace 里，把 <code>iam/audit/auth/storage/ai/plugin-sdk/macros</code> 做成<strong>独立 crate 但默认不被任何域引用</strong>——各业务 <code>-service</code> 的 <code>Cargo.toml</code> 按需 <code>path</code> 引。这样脊柱是“<strong>可取用的货架</strong>”，而非“人人背的全集”：flow 只取 database-pg 一线（连 biz-kernel 都不用），rpt 多取 job-core，需要登录的服务才取 iam 一带。
+  </div>
+
+  <h3 id="s6-pick">6.2&nbsp; 每域的脊柱取用清单（实测 use 用量，非声明）</h3>
+  <p>逐行核查各域<strong>保留层</strong>（model/store-pg，删掉 -api 后）对脊柱符号的真实 <code>use</code>，得出精确取用表——这就是“按需取货架”的落地依据。<span class="legend"><span class="pill keep">必带</span><span class="pill add">取货架</span><span class="pill drop">不需要</span></span></p>
+  <table>
+    <tr><th style="width:14%">域</th><th style="width:18%">DB 脊柱</th><th style="width:26%">biz-kernel</th><th style="width:20%">model-meta</th><th>job / 其它货架</th></tr>
+    <tr><td><span class="modtag m-flow">flow</span></td><td><span class="pill keep">必带</span> database-pg 全线</td><td><span class="pill drop">不需要</span><br><span class="kbd">biz 仅在 -api 作错误桥</span></td><td><span class="pill drop">不需要</span></td><td><span class="pill drop">无</span></td></tr>
+    <tr><td><span class="modtag m-rpt">rpt</span></td><td><span class="pill keep">必带</span> database-pg</td><td><span class="pill add">仅错误半</span><br><code>from_db_error·errcode·BizError</code></td><td><span class="pill drop">不需要</span></td><td><span class="pill add">api-types::Error</span>；job-core 轻/可缓</td></tr>
+    <tr><td><span class="modtag m-doc">doc</span></td><td><span class="pill keep">必带</span> database + database-pg + rowsource</td><td><span class="pill keep">全带</span><br><span class="kbd">validation 用 20+ 次</span></td><td><span class="pill drop">不需要</span><br><span class="kbd">仅 -api 引</span></td><td><span class="pill drop">无</span></td></tr>
+    <tr><td><span class="modtag m-dct">dct</span></td><td><span class="pill keep">必带</span> database-pg</td><td><span class="pill keep">全带</span><br><code>validate_insert_row·TableSpec·ValidateOptions</code></td><td><span class="pill add">取</span><br><code>get_definition·DefRef·resolve_dict_file</code></td><td><span class="pill drop">无</span></td></tr>
+  </table>
+  <div class="callout dec">
+    <div class="h">▶ 由实测导出的两条落地结论</div>
+    <b>①&nbsp;biz-kernel 拆两半更精。</b> 校验半（<code>validate_*·TableSpec·Violation·ValidateOptions</code>）与 错误半（<code>BizError·from_db_error·errcode</code>）可拆成 <code>cmx-biz-validate</code> + <code>cmx-biz-error</code> 两 feature/子 crate：flow 两半都不用、rpt 只用错误半、doc/dct 两半全用。<strong>建议先合成一个 biz-kernel 带 <code>features=["validate"]</code> 开关，rpt 关掉校验半即可。</strong>&nbsp;
+    <b>②&nbsp;model-meta 只有 dct 真需要。</b> doc 虽在 <code>-api</code> 声明了 model-meta，保留层零用量——独立后 <strong>doc-service 可不引 model-meta</strong>，只 dct 引。货架命中面比声明表更窄。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 7 ───────────────────────────── -->
+<section id="s7">
+  <h2><span class="n">07</span>逐模块拆解</h2>
+
+  <!-- FLOW -->
+  <h3><span class="modtag m-flow">cmx-flow</span>流程引擎 · 试点首选</h3>
+  <p>规模 ~10.4k 行 / ~98 测试（另 cmx-flow-tests 62）。表 <code>cmx_flow_*</code>；<strong>只按表名读</strong> <code>cmx_org</code> 做 IAM（无 cmx-iam crate 依赖，天然可断）。已有 <code>cmx-flow-demo</code> 独立 axum 样机。</p>
+  <table>
+    <tr><th style="width:26%">crate</th><th style="width:12%">去向</th><th>内部依赖</th></tr>
+    <tr><td><code>cmx-flow-model</code></td><td><span class="pill keep">保留</span></td><td>（无）</td></tr>
+    <tr><td><code>cmx-flow-bpmn</code></td><td><span class="pill keep">保留</span></td><td>flow-model</td></tr>
+    <tr><td><code>cmx-flow-engine</code></td><td><span class="pill keep">保留</span></td><td>flow-model, flow-bpmn</td></tr>
+    <tr><td><code>cmx-flow-store-pg</code></td><td><span class="pill keep">保留</span></td><td>flow-model, <b>cmx-database-pg, cmx-core</b></td></tr>
+    <tr><td><code>cmx-flow-def</code></td><td><span class="pill keep">保留</span></td><td>flow-bpmn, flow-model, <b>cmx-database-pg, cmx-core</b></td></tr>
+    <tr><td><code>cmx-flow-api</code></td><td><span class="pill drop">替换</span></td><td>flow-{全部}, <b>cmx-api, cmx-biz</b>, cmx-database-pg, cmx-core → 换 <code>flow-service</code></td></tr>
+  </table>
+  <p class="kbd">端点（现挂在全局 <code>/api</code> 下，独立后挂在服务根）：<code>/flow/{definitions, instances/:id, instances/:id/children, tasks/:id/{complete,claim,transfer,delegate,addsign}, users, cc, cc/:id/read, timers/trigger, orgs}</code>。功能覆盖 M1 多实例 / M2.5 定时器 / M4 抄送转签角色 / M5 子流程与组织路由 / 设计器 Phase0-1。</p>
+  <div class="callout dec">
+    <div class="h">▶ 实测：flow 连 biz-kernel 都不用</div>
+    逐行核查——flow 对 <code>cmx-biz</code> 的<strong>全部</strong>用量只有 <code>BizError::business(msg)</code> 一处错误桥接，且<strong>只出现在 <code>flow-api</code></strong>（handlers.rs/engine.rs）——正是要删的那层。model/engine/bpmn/store-pg/def <strong>零 biz</strong>。独立后这句话变成 <code>flow-service</code> 本地的 <code>ServiceError::business()</code>。<br>
+    ⇒ <b>flow 的真实内部足迹 = 5 个 flow crate + 7 个脊柱叶子</b>（database-pg→buffer/core/utils/traits/rowsource/modql），<strong>不取任何可选货架</strong>。这是“货架而非全集”最干净的样板。
+  </div>
+
+  <!-- RPT -->
+  <h3><span class="modtag m-rpt">cmx-rpt</span>报表平台</h3>
+  <p>规模 ~8.2k 行 / ~99 测试。表 <code>cr_*</code>（三表 + 单元格数据 + 台账 + 操作日志）。已是 cmx-rpt 三 crate 群，且换过 cmx-megasheet 内核。</p>
+  <table>
+    <tr><th style="width:26%">crate</th><th style="width:12%">去向</th><th>内部依赖</th></tr>
+    <tr><td><code>cmx-rpt-model</code></td><td><span class="pill keep">保留</span></td><td>（无）</td></tr>
+    <tr><td><code>cmx-rpt-formula</code></td><td><span class="pill keep">保留</span></td><td>（无）· QM/QC/JE/FS/REF 引擎 + 三色环检测</td></tr>
+    <tr><td><code>cmx-rpt-store-pg</code></td><td><span class="pill keep">保留</span></td><td>rpt-model, rpt-formula, <b>cmx-database-pg, cmx-core, cmx-utils, cmx-biz, cmx-api-types, cmx-job-core</b></td></tr>
+    <tr><td><code>cmx-rpt-api</code></td><td><span class="pill drop">替换</span></td><td>rpt-model, rpt-store-pg, rpt-formula, <b>cmx-api</b> → 换 <code>rpt-service</code></td></tr>
+  </table>
+  <div class="callout warn">
+    <div class="h">⚠ rpt 的两处额外耦合</div>
+    <b>①</b> <code>cmx-api-types</code>：保留层 <code>rpt-store-pg</code> 实测只用到 <code>cmx_api_types::Error</code>（2 处）——并入脊柱即可。&nbsp;
+    <b>②</b> <code>cmx-job-core</code>（异步任务中心）：报表的 compute/verify 走长任务框架。job-core 仅依赖 utils、且已进脊柱货架；rpt-service 首版可先<strong>同步执行</strong>（不接 SSE），M-后置再引 job-core+job-store。<br>
+    <b>③</b> biz：保留层只用<strong>错误半</strong>（<code>from_db_error/errcode/business</code>），<strong>不用校验半</strong> → 引 biz-kernel 时关掉 <code>validate</code> feature（见 §6.2）。
+  </div>
+
+  <!-- DOC -->
+  <h3><span class="modtag m-doc">cmx-doc</span>业务单据</h3>
+  <p>规模 ~8.5k 行 / ~158 测试。表 <code>cv_*</code>。已机械 git mv 成 cmx-doc 三 crate。</p>
+  <table>
+    <tr><th style="width:26%">crate</th><th style="width:12%">去向</th><th>内部依赖</th></tr>
+    <tr><td><code>cmx-doc-model</code></td><td><span class="pill keep">保留</span></td><td><b>cmx-core, cmx-biz</b></td></tr>
+    <tr><td><code>cmx-doc-store-pg</code></td><td><span class="pill keep">保留</span></td><td>doc-model, <b>cmx-core, cmx-database, cmx-database-pg, cmx-rowsource, cmx-utils, cmx-biz</b></td></tr>
+    <tr><td><code>cmx-doc-api</code></td><td><span class="pill drop">替换</span></td><td>doc-model, doc-store-pg, <b>cmx-api, cmx-model-meta, cmx-biz, cmx-core, cmx-database, cmx-database-pg</b> → 换 <code>doc-service</code></td></tr>
+  </table>
+  <p class="kbd">注意 doc 依赖 <code>cmx-database</code>（抽象层，区别于 <code>cmx-database-pg</code>）——脊柱需一并纳入 <code>cmx-database</code>。<strong>实测</strong>：doc 的 <code>cmx-model-meta</code> 只在被删的 <code>-api</code> 层引用，保留层零用量 → <code>doc-service</code> 可不引 model-meta（见 §6.2）。</p>
+
+  <!-- DCT -->
+  <h3><span class="modtag m-dct">cmx-dct</span>数据字典</h3>
+  <p>规模 ~4.4k 行 / ~93 测试。表 <code>cf_*</code>。单体切三层时，定义文件解析已抽到 <code>cmx-model::definitions::resolve</code>（破环）。</p>
+  <table>
+    <tr><th style="width:26%">crate</th><th style="width:12%">去向</th><th>内部依赖</th></tr>
+    <tr><td><code>cmx-dct-model</code></td><td><span class="pill keep">保留</span></td><td><b>cmx-core, cmx-utils, cmx-biz</b></td></tr>
+    <tr><td><code>cmx-dct-store-pg</code></td><td><span class="pill keep">保留</span></td><td>dct-model, <b>cmx-database-pg, cmx-core, cmx-biz, cmx-api-types, cmx-model-meta</b></td></tr>
+    <tr><td><code>cmx-dct-api</code></td><td><span class="pill drop">替换</span></td><td>dct-model, dct-store-pg, <b>cmx-api, cmx-biz</b> → 换 <code>dct-service</code></td></tr>
+  </table>
+
+  <!-- META -->
+  <h3><span class="modtag m-meta">cmx-meta</span>元数据 / 模型中心</h3>
+  <p><code>cmx-metadata</code> ~5.7k 行 / ~135 测试；<code>cmx-model</code> ~14.3k 行 / ~116 测试。是 DCT/DOC/FLX/RPT 三元 + 报表定义的<strong>公共底座</strong>。</p>
+  <div class="callout note">
+    <div class="h">◆ meta 的双重身份</div>
+    <code>cmx-model-meta</code> 已在<strong>脊柱</strong>里（被 doc/dct 复用）。此处的 <code>cmx-meta</code> workspace 指的是把<strong>模型中心的建模/部署能力</strong>（<code>ModelModule</code> 那套）也独立成服务。若只求“各业务域独立”，meta 可暂不独立服务化，仅作为脊柱库被引用；<strong>它是否需要独立 -service，取决于是否要独立的“建模工作台”。列为可选。</strong>
+  </div>
+  <p class="kbd">另据记忆：<code>cmx-api::model_center</code> 是最后的手写 SQL 据点，实测 52 处 <code>format!</code> 仅 2 处拼 SQL 且全是编译期字面量、零请求输入 → 非注入风险；抽 crate 是整洁而非安全考量，不紧急。</p>
+</section>
+
+<!-- ───────────────────────────── 8 ───────────────────────────── -->
+<section id="s8">
+  <h2><span class="n">08</span>域贡献 Router + 两种宿主（替掉 <code>-api</code>）</h2>
+  <p>这是全方案<strong>唯一需要新写代码</strong>的地方，且已有 <code>cmx-flow-demo</code> 逐行可抄。核心是<strong>把“路由代码”和“运行它的进程”解耦</strong>：每个域产出一个<code>*-routes</code> 库（不带 state 的 <code>Router</code>），宿主负责 merge + 绑端口 + 上池。于是<strong>共用 web-server（宿主 A）与各域独立 -service（宿主 B）复用同一份路由代码</strong>。</p>
+
+  <h3>8.1 域侧：每域一个 <code>*-routes</code> 库（无 state，可被任意宿主 merge）</h3>
+  <p>这就是原 <code>-api</code> 的 handler，删掉对 <code>cmx-api</code> 的 4 个符号后剩下的纯路由。关键前提（demo 已验证）：<strong>DB 池是全局单例、引擎是 OnceCell</strong>，都不塞进 <code>CmxAppState</code>——所以域的 <code>Router</code> 是 <code>Router&lt;()&gt;</code>，天生可 merge。</p>
+  <pre><code><span class="cmt">// crates/flow-routes/src/lib.rs —— 域只负责“交出一段路由”，不关心谁来跑</span>
+<span class="kw">pub fn</span> <span class="fn">routes</span>() -&gt; <span class="ty">Router</span> {                    <span class="cmt">// ← Router&lt;()&gt;，无 state</span>
+    <span class="ty">Router</span>::<span class="fn">new</span>()
+        .<span class="fn">route</span>(<span class="str">"/flow/definitions"</span>, <span class="fn">get</span>(list_defs).<span class="fn">post</span>(create_def))
+        .<span class="fn">route</span>(<span class="str">"/flow/instances/:id"</span>, <span class="fn">get</span>(get_instance))
+        .<span class="fn">route</span>(<span class="str">"/flow/tasks/:id/complete"</span>, <span class="fn">post</span>(complete_task))
+        <span class="cmt">// … 20 条端点，handler 主体从 flow-api 原样搬</span>
+}
+<span class="kw">pub fn</span> <span class="fn">web_assets_dir</span>() -&gt; &<span class="ty">str</span> { <span class="str">"web/portal/flow"</span> }  <span class="cmt">// 该域的前端工作台目录</span>
+<span class="kw">pub async fn</span> <span class="fn">ensure_datasources</span>() { <span class="cmt">/* 注册本域要的库；见 8.2 */</span> }</code></pre>
+
+  <h3>8.2 自造 4 个框架等价物（顶掉 cmx-api 的“腰”）——放在 <code>cmx-web-kernel</code>（宿主共享）</h3>
+  <p>这 4 样是所有域和两种宿主<strong>共用</strong>的，抽到一个薄 crate <code>cmx-web-kernel</code>（进脊柱货架），域库和宿主都 path 引：</p>
+  <table>
+    <tr><th style="width:34%">原 cmx-api 符号</th><th>cmx-web-kernel 里的独立等价物</th></tr>
+    <tr><td><code>CmxAppState</code></td><td>不再需要 state——域 <code>Router&lt;()&gt;</code>，池/引擎走全局单例。宿主 <code>Router::new()</code> 直接 merge。</td></tr>
+    <tr><td><code>ModuleRoutes::routes()</code></td><td>退化成一个普通约定：域库导出 <code>fn routes() -&gt; Router</code>。宿主按配置收集并 merge（见 8.3）。</td></tr>
+    <tr><td><code>CmxSvrContext</code> / <code>get_db_id_from_header</code></td><td>薄 extractor <code>DbId</code>：从 header（<code>X-Db-Id</code>）取库名，缺省回落默认数据源。十几行，两种宿主共用。</td></tr>
+    <tr><td><code>ApiResp / Error / Result</code></td><td><code>enum ServiceError</code> + <code>impl IntoResponse</code>；沿用各域 store-pg 的 <code>from_db_error</code> 优雅翻译。</td></tr>
+  </table>
+
+  <h3>8.3 宿主 A：共用 <code>cmx-web-server</code>，配置装载不同域</h3>
+  <p>一个二进制，用编译期 feature + 运行期配置<strong>双重</strong>控制装哪些域：</p>
+  <pre><code><span class="cmt"># config.toml —— 运行期决定这台进程跑哪几个域</span>
+<span class="fn">[server]</span> port = <span class="nu">8080</span>
+<span class="fn">modules</span> = [<span class="str">"rpt"</span>, <span class="str">"flow"</span>, <span class="str">"doc"</span>, <span class="str">"dct"</span>]     <span class="cmt"># ← 改这行就换服务组合</span>
+<span class="fn">[db]</span> fico = <span class="str">"postgres://…/fico"</span>
+      cmx  = <span class="str">"postgres://…/cmx"</span></code></pre>
+  <pre><code><span class="cmt">// cmx-web-server/src/main.rs —— 配置驱动的装载器（对标今天 web-server 的 routes.rs，但不硬编码）</span>
+<span class="attr">#[tokio::main]</span>
+<span class="kw">async fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> cfg = <span class="ty">Config</span>::<span class="fn">load</span>();  <span class="fn">init_tracing</span>();
+    <span class="kw">for</span> (id,url) <span class="kw">in</span> cfg.db { <span class="fn">register_datasource</span>(&id,&url, id==cfg.default_db).<span class="kw">await</span>; }
+    <span class="kw">let mut</span> app = <span class="ty">Router</span>::<span class="fn">new</span>();
+    <span class="kw">for</span> m <span class="kw">in</span> &cfg.modules {                       <span class="cmt">// ← 按配置 merge</span>
+        app = <span class="kw">match</span> m.as_str() {
+            <span class="str">"flow"</span> =&gt; app.<span class="fn">merge</span>(flow_routes::<span class="fn">routes</span>()).<span class="fn">nest_service</span>(<span class="str">"/flow/ui"</span>, <span class="fn">serve</span>(flow_routes::<span class="fn">web_assets_dir</span>())),
+            <span class="str">"rpt"</span>  =&gt; app.<span class="fn">merge</span>(rpt_routes::<span class="fn">routes</span>()).<span class="fn">nest_service</span>(<span class="str">"/rpt/ui"</span>,  <span class="fn">serve</span>(rpt_routes::<span class="fn">web_assets_dir</span>())),
+            <span class="str">"doc"</span>  =&gt; app.<span class="fn">merge</span>(doc_routes::<span class="fn">routes</span>()),
+            <span class="str">"dct"</span>  =&gt; app.<span class="fn">merge</span>(dct_routes::<span class="fn">routes</span>()),
+            _ =&gt; { <span class="fn">warn!</span>(<span class="str">"unknown module {m}"</span>); app }
+        };
+    }
+    <span class="fn">serve</span>(<span class="ty">TcpListener</span>::<span class="fn">bind</span>((<span class="str">"0.0.0.0"</span>, cfg.server.port)).<span class="kw">await</span>, app.<span class="fn">layer</span>(<span class="ty">CorsLayer</span>::<span class="fn">permissive</span>())).<span class="kw">await</span>;
+}</code></pre>
+  <div class="callout note">
+    <div class="h">◆ 编译期也能裁剪（可选，进一步瘦身）</div>
+    在 <code>cmx-web-server/Cargo.toml</code> 用 feature gate：<code>features = ["flow","rpt","doc","dct"]</code>，<code>#[cfg(feature="flow")]</code> 才把 <code>flow-routes</code> 编进来。这样“只跑报表”的镜像连流程引擎的代码都不编入——<strong>运行期配置管‘装不装’，编译期 feature 管‘编不编’</strong>，两级都可裁。默认全开，按部署需要关。
+  </div>
+
+  <h3>8.4 宿主 B：各域独立 <code>-service</code>（强隔离，原案保留）</h3>
+  <pre><code><span class="attr">#[tokio::main]</span>
+<span class="kw">async fn</span> <span class="fn">main</span>() {
+    <span class="fn">init_tracing</span>();  flow_routes::<span class="fn">ensure_datasources</span>().<span class="kw">await</span>;
+    <span class="kw">let</span> app = <span class="ty">Router</span>::<span class="fn">new</span>()
+        .<span class="fn">merge</span>(flow_routes::<span class="fn">routes</span>())                <span class="cmt">// ← 同一个 routes()，只 merge 自己</span>
+        .<span class="fn">nest_service</span>(<span class="str">"/"</span>, <span class="fn">serve</span>(flow_routes::<span class="fn">web_assets_dir</span>()));
+    <span class="fn">serve</span>(<span class="ty">TcpListener</span>::<span class="fn">bind</span>((<span class="str">"0.0.0.0"</span>, <span class="fn">env</span>(<span class="str">"PORT"</span>).<span class="fn">unwrap_or</span>(<span class="str">"8181"</span>))).<span class="kw">await</span>, app).<span class="kw">await</span>;
+}
+<span class="cmt">// ← 与宿主 A 调的是同一个 flow_routes::routes()。零重复代码。</span></code></pre>
+
+  <h3>8.5 全局 DB 池（两种宿主共用；抄 demo 的 register_datasource）</h3>
+  <pre><code><span class="cmt">// 与 cmx-flow-demo 完全一致：进程启动时注册数据源到全局池管理器（不进 state）</span>
+<span class="kw">async fn</span> <span class="fn">register_datasource</span>(db_id:&<span class="ty">str</span>, url:&<span class="ty">str</span>, default:<span class="ty">bool</span>) {
+    <span class="kw">let</span> cfg = <span class="ty">DbConfig</span>{ db_type:<span class="ty">DbType</span>::<span class="fn">Postgres</span>, db_url:url.<span class="fn">into</span>(),
+        db_id:db_id.<span class="fn">into</span>(), db_schema:<span class="ty">Some</span>(<span class="str">"public"</span>.<span class="fn">into</span>()), default,
+        pool_config:<span class="ty">Default</span>::<span class="fn">default</span>(), health_check_interval:<span class="nu">60</span>, health_check_timeout:<span class="nu">5</span>,
+        source_type:<span class="ty">Some</span>(<span class="str">"default"</span>.<span class="fn">into</span>()), ..<span class="ty">Default</span>::<span class="fn">default</span>() };
+    <span class="fn">get_default_pg_db_manager</span>().<span class="fn">register_data_source</span>(cfg).<span class="kw">await</span>.<span class="fn">unwrap_or_else</span>(..);
+}
+<span class="cmt">// 宿主 A 从 config.toml 的 [db] 段循环注册；宿主 B 从 env 注册。池是全局的，域 handler 直接取。</span></code></pre>
+
+  <h3>8.6 handler 几乎零改</h3>
+  <p><code>-api</code> 里每个 handler 主体（取 db_id → 调 store-pg / engine → 包 <code>ApiResp</code>）逻辑不变，只把 <code>State&lt;CmxAppState&gt;</code>/<code>CmxSvrContext</code> 换成 <code>DbId</code> extractor，把 <code>ApiResp</code> 换成 <code>ServiceError</code>。<strong>业务代码一行不动，且两种宿主下完全一致。</strong></p>
+  <div class="callout dec">
+    <div class="h">▶ 一句话：为什么“共用 web-server”几乎免费</div>
+    因为域早已<strong>不依赖 <code>CmxAppState</code></strong>（池/引擎是全局单例，demo 实证）。既然域的 <code>Router</code> 无 state，“谁来 merge 它”就无关紧要——今天硬编码在 web-server 的 <code>routes.rs</code>，明天由 <code>config.toml</code> 的 <code>modules=[…]</code> 驱动，改动只在<strong>宿主一侧</strong>，域库零感知。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 9 ───────────────────────────── -->
+<section id="s9">
+  <h2><span class="n">09</span>前端工作台随行</h2>
+  <p>各域在 cmx-container 里都有成熟的 native-pages 四区工作台，独立化时随对应服务打包（对标 home-site 把运行时原样拷自 demo）：</p>
+  <table>
+    <tr><th style="width:22%">域</th><th style="width:16%">源</th><th>规模 / 内容</th></tr>
+    <tr><td><span class="modtag m-flow">flow</span></td><td>native-pages/sources/portal/flow</td><td>~1.3k 行 · bpmn-js 流程设计器四区（进 shadow-DOM）</td></tr>
+    <tr><td><span class="modtag m-rpt">rpt</span></td><td>native-pages/sources/portal/rpt</td><td>~9.2k 行 · 含 designer.js(293.7K) + report-applier.js(104.2K)；SpreadJS/megasheet 设计器 + 应用器</td></tr>
+    <tr><td><span class="modtag m-doc">doc</span></td><td>native-pages/sources/portal/doc</td><td>~753 行 · 单据工作台</td></tr>
+    <tr><td><span class="modtag m-dct">dct</span></td><td>native-pages/sources/portal/dct</td><td>~1.3k 行 · 字典维护工作台</td></tr>
+  </table>
+  <div class="callout warn">
+    <div class="h">⚠ 前端构建的既有坑（记忆已记）</div>
+    <b>①</b> <code>cross-env: command not found</code>（死私有 registry 幻影包）→ 去掉 cross-env，改给 vite 传 <code>--base=/portal/</code>。&nbsp;
+    <b>②</b> vite <code>--base</code> 要对齐独立服务的挂载前缀（独立后可能是 <code>/</code> 或 <code>/flow/</code>）。&nbsp;
+    <b>③</b> designer.js 等源改即生效（native-pages 实时读盘），但 megasheet 内核改动要同步 demo IIFE + vendor ESM + portal dist 三产物。
+  </div>
+  <p>菜单沿用 <code>cmx_menu.definition</code> JSONB + menu-pages 源（防 regen 漂移）；独立后每个服务只带自己那部分菜单。</p>
+</section>
+
+<!-- ───────────────────────────── 10 ───────────────────────────── -->
+<section id="s10">
+  <h2><span class="n">10</span>数据库与配置（独立自举）</h2>
+  <ul class="tight">
+    <li><b>连库</b>：每服务启动 <code>register_datasource</code> 注册自己需要的库。flow/rpt 主要 <code>fico</code> 库（<code>cr_*/cmx_flow_*</code>），可能附 <code>cmx</code> 库（IAM/org）。url 全走 env（<code>FICO_PG_URL / IAM_PG_URL / PORT / X-Db-Id header</code>）。</li>
+    <li><b>建表</b>：各 store-pg 已有 <code>ensure_schema</code> 幂等建表/补列（记忆里多处“幂等补列坑”已趟平），独立服务首启自建缺表。<span class="pill add">注意</span>并发建表竞争用 <code>ensure_schema</code> 容错。</li>
+    <li><b>dev-local.toml 陷阱</b>（记忆）：<code>[portal]</code> 段的 <code>web_*_dist/data_root</code> 必须在 <code>[portal]</code> 段下，错并到别的段会导致 <code>/portal/*</code> 全 404。独立服务用自己的极简 config，绕开该坑。</li>
+    <li><b>bigint 主键铸号</b>（记忆）：DCT/DOC 的 id 在后端首次存储铸号（52 位 JS 安全算法 + 配置注入 node）。独立服务要把该配置注入保留，导入免改号契约不变。</li>
+  </ul>
+  <div class="callout note">
+    <div class="h">◆ 库是共享的，进程是独立的</div>
+    独立化<strong>拆的是进程与代码依赖，不是数据库</strong>。flow/rpt/doc/dct 仍可连同一个 PG 实例的同一批库（表前缀天然隔离 <code>cmx_flow_*/cr_*/cv_*/cf_*</code>），只是各自持有独立连接池。是否进一步拆库是后续运维选择，不在本方案强制。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 11 ───────────────────────────── -->
+<section id="s11">
+  <h2><span class="n">11</span>不变式</h2>
+  <table>
+    <tr><th style="width:44%">不变式</th><th>说明</th></tr>
+    <tr><td>① 依赖恒单向、无环</td><td><code>cmx-shared → 业务 workspace → -service</code>；域间零横向依赖。</td></tr>
+    <tr><td>② -api 层是唯一被替换项</td><td>model/engine/formula/store-pg <strong>字节不改</strong>（仅删 use cmx-api）。业务逻辑零回归。</td></tr>
+    <tr><td>③ 数据格式 / 表结构不变</td><td><code>cmx_flow_*/cr_*/cv_*/cf_*</code> DDL 与单体一致；同一份库单体版与独立版可互读。</td></tr>
+    <tr><td>④ URL 语义可迁移</td><td>端点路径从 <code>/api/flow/*</code> → <code>/flow/*</code>（或反代还原 <code>/api</code>），前端 base 随之调。</td></tr>
+    <tr><td>⑤ 每域 cargo test 全绿</td><td>抽出后各 workspace 独立 <code>cargo test</code> 保持原测试数全绿（flow 98 / rpt 99 / doc 158 / dct 93）。</td></tr>
+    <tr><td>⑥ 与单体行为对拍</td><td>同库同请求，独立服务与 cmx-container 返回<strong>语义等价</strong>（对标 sheet 的 parity 关）。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 12 ───────────────────────────── -->
+<section id="s12">
+  <h2><span class="n">12</span>里程碑路线图</h2>
+  <p>先垂直打通 flow，再横向复制。每步以 <b>cargo test 全绿 + 与单体对拍 + 真机 curl/E2E</b> 收口。</p>
+  <table class="mile">
+    <tr><th style="width:12%">里程碑</th><th style="width:32%">交付</th><th>说明</th></tr>
+    <tr><td>IM-0</td><td>抽 <code>cmx-shared</code> 脊柱</td><td>database-pg + 叶子 + model-meta + biz-kernel 薄片，独立可 <code>cargo build</code>；<code>cargo test</code> 绿。</td></tr>
+    <tr><td>IM-1</td><td>flow 内核 workspace 成立</td><td>flow-{model,bpmn,engine,store-pg,def} path 引 shared；不含 -api 也能编译 + 原测试全绿。</td></tr>
+    <tr><td>IM-2</td><td><code>flow-routes</code> 库 + <code>cmx-web-kernel</code></td><td>删 cmx-api 4 符号 → 无 state <code>routes()</code>；4 等价物抽到 web-kernel。</td></tr>
+    <tr><td>IM-2b</td><td>宿主 B <code>flow-service</code>（抄 demo）</td><td>merge 自己的 routes + register_datasource + axum；20 端点真机 curl 通。</td></tr>
+    <tr><td>IM-3</td><td>flow 前端随行 + Docker</td><td>native-pages 工作台打包进镜像；<code>docker run</code> 起单进程流程服务，CDP 四区实测。</td></tr>
+    <tr><td>IM-4</td><td>模板固化</td><td>把 IM-0…3 沉成“独立化脚手架模板”（脚本 + Dockerfile 模板 + routes/service 骨架）。</td></tr>
+    <tr><td>IM-5</td><td><span class="modtag m-rpt">rpt</span> 复制模板</td><td>套模板；处理 job-core（先同步）与 api-types 归并；compute 端点对拍。</td></tr>
+    <tr><td>IM-6</td><td><span class="modtag m-doc">doc</span> 复制模板</td><td>纳入 <code>cmx-database</code> 抽象层；单据 CRUD + 落库校验对拍。</td></tr>
+    <tr><td>IM-7</td><td><span class="modtag m-dct">dct</span> 复制模板</td><td>字典三形态工作台随行；CRUD 往返对拍。</td></tr>
+    <tr><td>IM-7b</td><td>宿主 A <code>cmx-web-server</code>（配置装载）</td><td>四域 routes 就绪后，一个二进制按 <code>config.modules=[…]</code> merge 多域 + feature 编译裁剪；同库多域一进程实测。<em>本条即用户提议的落地点。</em></td></tr>
+    <tr><td>IM-8</td><td>（可选）<span class="modtag m-meta">meta</span> 服务化</td><td>仅当需要独立建模工作台时；否则 meta 只作脊柱库。</td></tr>
+    <tr><td>IM-9</td><td>（可选）api-gateway + 编排</td><td>反代统一 <code>/api/*</code>；docker-compose / k8s 编排（宿主 A 单进程 或 宿主 B 多服务）+ PG。</td></tr>
+    <tr><td style="color:#8a6d1f">IM-10+</td><td>（可选）回接 job 中心 / registry 发布</td><td>rpt 接回 cmx-job-core 异步长任务；脊柱发内网 registry 供外部复用。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 13 ───────────────────────────── -->
+<section id="s13">
+  <h2><span class="n">13</span>测试与验收</h2>
+  <div class="grid2">
+    <div class="box">
+      <h4>每 workspace 三关</h4>
+      <ul class="tight" style="font-size:13.5px">
+        <li><code>cargo test --workspace</code> 全绿（原测试数不掉）</li>
+        <li><code>cargo clippy --workspace -- -D warnings</code></li>
+        <li><code>cargo build --release</code> + 独立 Docker 镜像可起</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>与单体对拍（最强保障）</h4>
+      <ul class="tight" style="font-size:13.5px">
+        <li><b>同库同请求</b>：独立服务 vs cmx-container 同一端点，返回 JSON <strong>语义等价</strong>（沿用各域已有的真机 curl / Playwright / CDP 套件）。</li>
+        <li><b>数据互读</b>：单体写的数据独立服务能读、反之亦然（同表结构）。</li>
+        <li>flow 的 demo 端到端（fico 库双流程）、rpt compute E2E、doc/dct CRUD 往返——都已有绿档，抽出后重跑。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────── 14 ───────────────────────────── -->
+<section id="s14">
+  <h2><span class="n">14</span>部署（Docker / 编排）</h2>
+  <p>两种宿主 → 两种编排姿态，<strong>共享同一份域库</strong>，按部署规模选，甚至混用。</p>
+
+  <h4>姿态 A · 共用宿主：一个 <code>cmx-web-server</code> 装多域（省资源，开发/中小生产）</h4>
+  <pre><code><span class="cmt"># docker-compose：一个进程按配置装 4 个域 + 一个 PG</span>
+<span class="ty">services</span>:
+  <span class="fn">postgres</span>: { image: postgres:16, environment: { POSTGRES_PASSWORD: postgres } }
+  <span class="fn">cmx</span>: { build: ./cmx-web-server, ports: [<span class="str">"8080:8080"</span>],
+        volumes: [<span class="str">"./config.toml:/app/config.toml"</span>] }   <span class="cmt"># modules=["rpt","flow","doc","dct"]</span>
+  <span class="cmt"># 换服务组合 = 改 config.toml 的 modules 一行，重启即可；无需重新编排</span></code></pre>
+
+  <h4>姿态 B · 独立宿主：每域一个 <code>-service</code>（强隔离，报表挂了不拖垮流程）</h4>
+  <pre><code><span class="ty">services</span>:
+  <span class="fn">postgres</span>: { image: postgres:16, environment: { POSTGRES_PASSWORD: postgres } }
+  <span class="fn">flow</span>: { build: ./cmx-flow, ports: [<span class="str">"8181:8181"</span>], environment: { FICO_PG_URL: <span class="str">"postgres://…@postgres:5432/fico"</span>, PORT: <span class="str">"8181"</span> } }
+  <span class="fn">rpt</span>:  { build: ./cmx-rpt,  ports: [<span class="str">"8182:8182"</span>], environment: { FICO_PG_URL: <span class="str">"…fico"</span>, PORT: <span class="str">"8182"</span> } }
+  <span class="fn">doc</span>:  { build: ./cmx-doc,  ports: [<span class="str">"8183:8183"</span>], ... }
+  <span class="fn">dct</span>:  { build: ./cmx-dct,  ports: [<span class="str">"8184:8184"</span>], ... }
+  <span class="fn">gateway</span>: { image: nginx, ports: [<span class="str">"8080:80"</span>] }   <span class="cmt"># 反代 /flow /rpt /doc /dct → 各服务</span></code></pre>
+
+  <h4>姿态 C · 混用（推荐生产）</h4>
+  <p>把高负载/需独立扩缩的域（如 rpt 批量算表）单独起姿态 B，其余低频域挤进一个姿态 A 进程。因两者复用同一 <code>*-routes</code>，混用<strong>零额外代码</strong>——只是编排文件的选择。</p>
+
+  <p>共同要点：① 各宿主无状态（状态在 PG），可横向扩副本（rpt 若接 job-core 已有 SKIP LOCKED 抢占式 HA）；② 姿态 B 独立发版（报表升级不重启流程），姿态 A 改 <code>config.toml</code> 换组合；③ 健康检查 <code>/health</code>（新增约 30 行，两宿主共用）。</p>
+</section>
+
+<!-- ───────────────────────────── 15 ───────────────────────────── -->
+<section id="s15">
+  <h2><span class="n">15</span>最终目录结构（以 flow 为样板）</h2>
+  <div class="dag">presentation/cmx-flow/                 # 一个独立 workspace（rpt/doc/dct/meta 同构）
+├─ Cargo.toml                        # [workspace] resolver=2 · edition 2024
+├─ .cargo/config.toml                # 复用 cmx-container 的 aliyun 镜像源
+├─ Dockerfile                        # 多阶段：build → 运行镜像 + web/
+├─ README.md
+├─ docs/方案.html                    # 本域细化方案（可派生自本总方案）
+├─ crates/
+│   ├─ flow-model/       # deps: (无)
+│   ├─ flow-bpmn/        # deps: flow-model
+│   ├─ flow-engine/      # deps: flow-model, flow-bpmn
+│   ├─ flow-store-pg/    # deps: flow-model + ../cmx-shared/{database-pg,core}
+│   ├─ flow-def/         # deps: flow-bpmn, flow-model + shared
+│   ├─ flow-routes/      # ← 域贡献的无 state Router（替 flow-api）
+│   │     deps: flow-{全部} + shared + cmx-web-kernel + axum
+│   │     src: {lib(routes/web_assets_dir/ensure_datasources), handlers}.rs
+│   └─ flow-service/     # ← 宿主 B：只 merge 自己的 routes（强隔离）
+│         src/main.rs    # deps: flow-routes + cmx-web-kernel + tokio
+├─ web/portal/flow/…                 # native-pages 工作台（含 dist）
+└─ tests/                            # 集成 + 与单体对拍
+
+presentation/cmx-web-server/         # ← 宿主 A：共用，配置装载多域
+├─ Cargo.toml   # features=["flow","rpt","doc","dct"]；deps: 各域 *-routes + cmx-web-kernel
+├─ config.toml  # [server]port  modules=[…]  [db]…
+└─ src/main.rs  # 按 config.modules 循环 merge（见 §8.3）
+
+presentation/cmx-shared/             # 共享脊柱（一份，各域 + 两宿主 path 引）
+├─ Cargo.toml [workspace]
+└─ crates/{cmx-database, cmx-database-pg, cmx-core, cmx-utils, cmx-rowsource,
+           cmx-traits, cmx-buffer, cmx-model-meta, cmx-biz-kernel, cmx-api-types,
+           cmx-web-kernel,           # ← 4 个框架等价物(DbId/ServiceError…)，两宿主共用
+           [货架] cmx-iam·audit·auth·storage·ai·job-core·job-store-pg·plugin-sdk}</div>
+  <p class="kbd">要点：<code>flow-routes</code> 是替 <code>-api</code> 的唯一新写域库；<code>flow-service</code>（宿主 B）与 <code>cmx-web-server</code>（宿主 A）都只是薄壳，复用同一 <code>flow-routes::routes()</code>。</p>
+</section>
+
+<!-- ───────────────────────────── 16 ───────────────────────────── -->
+<section id="s16">
+  <h2><span class="n">16</span>风险与开放问题</h2>
+  <table>
+    <tr><th style="width:26%">议题</th><th style="width:12%">程度</th><th>应对</th></tr>
+    <tr><td>脊柱切分边界（哪些 crate 进 cmx-shared）</td><td><b>中</b></td><td>以“被≥2 个域引用”为纳入判据；<code>cmx-database / -pg / core / utils / rowsource / model-meta / biz-kernel / api-types</code> 明确进。IM-0 一次落定。</td></tr>
+    <tr><td>cmx-biz 切片（validation/errcode 是否自洽）</td><td><b>中</b></td><td>切 <code>cmx-biz-kernel</code> 时验证 <code>from_db_error/validate_insert_row/Violation</code> 的传递闭包是否只落在脊柱内；若牵出更多依赖，扩薄片或整包纳入。</td></tr>
+    <tr><td>rpt 的 cmx-job-core 耦合</td><td><b>中</b></td><td>试点先同步执行 compute/verify；确需长任务再把 job-core/store-pg 纳入脊柱（其 HA/持久化已实测）。</td></tr>
+    <tr><td>doc 依赖 <code>cmx-database</code> 抽象层</td><td><b>低</b></td><td>连同 <code>cmx-database</code> 一起纳入脊柱即可，非新代码。</td></tr>
+    <tr><td>前端 base / 菜单前缀随挂载点变</td><td><b>低</b></td><td>vite <code>--base</code> + <code>cmx_menu.definition</code> 各服务只带自身菜单；已有 cross-env 坑的成方。</td></tr>
+    <tr><td>IAM/org 跨域（flow 读 cmx_org、doc 铸号 node 配置）</td><td><b>低</b></td><td>按表名读、无 crate 依赖，天然可断；node 配置注入随 env 带走。</td></tr>
+    <tr><td>独立粒度（五域各一 / 先试点一个）</td><td><b>待定</b></td><td>见 §5.5 与决策 <b>①</b>——<strong>需用户确认</strong>。</td></tr>
+    <tr><td>脊柱共享方式（path / 内网 registry）</td><td><b>待定</b></td><td>默认 path（简单）；发 registry 后置。见决策 <b>②</b>。</td></tr>
+    <tr><td>宿主策略（共用 A / 独立 B / 混用）</td><td><b>待定</b></td><td>两宿主复用同一 <code>*-routes</code>，可都产出、按部署选。默认<strong>两者都做</strong>（A 便于开发+中小生产，B 供强隔离）。见决策 <b>④</b> / §5.7 / §8。</td></tr>
+    <tr><td>meta 是否需独立服务</td><td><b>待定</b></td><td>取决于是否要独立建模工作台；否则仅作脊柱库。见 §7-meta。</td></tr>
+    <tr><td>iam/身份是否进脊柱货架</td><td><b>待定</b></td><td>iam 可干净抽出（零框架依赖），但当前各域只按表名读 cmx_org、不 crate 依赖它。默认放「可选货架」，谁要登录/权限 API 才引。见 §6.1。</td></tr>
+    <tr><td>job 中心：先同步 or 直接接 core</td><td><b>低</b></td><td>job-core 仅依赖 utils、且 rpt-store 已引 → 直接进脊柱最省事；rpt-service 首版可先不接 SSE 端点（同步 compute），M-后置补 job-api 壳。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 17 ───────────────────────────── -->
+<section id="s17">
+  <h2><span class="n">17</span>附录</h2>
+  <h3>A. 规模普查（抽离对象）</h3>
+  <table>
+    <tr><th>域</th><th>crate 群</th><th>LOC</th><th>测试</th><th>表前缀</th><th>-api 耦合符号</th></tr>
+    <tr><td><span class="modtag m-flow">flow</span></td><td>model/bpmn/engine/store-pg/def/api</td><td>~10.4k (+tests 62)</td><td>~98</td><td><code>cmx_flow_*</code></td><td>cmx-api, cmx-biz</td></tr>
+    <tr><td><span class="modtag m-rpt">rpt</span></td><td>model/formula/store-pg/api</td><td>~8.2k</td><td>~99</td><td><code>cr_*</code></td><td>cmx-api (+job-core,api-types 在 store)</td></tr>
+    <tr><td><span class="modtag m-doc">doc</span></td><td>model/store-pg/api</td><td>~8.5k</td><td>~158</td><td><code>cv_*</code></td><td>cmx-api (+cmx-database,model-meta)</td></tr>
+    <tr><td><span class="modtag m-dct">dct</span></td><td>model/store-pg/api</td><td>~4.4k</td><td>~93</td><td><code>cf_*</code></td><td>cmx-api (+api-types,model-meta)</td></tr>
+    <tr><td><span class="modtag m-meta">meta</span></td><td>cmx-metadata / cmx-model</td><td>~5.7k / ~14.3k</td><td>~135 / ~116</td><td>—（定义/建模）</td><td>脊柱库，可选服务化</td></tr>
+  </table>
+
+  <h3>B. 依赖足迹对比</h3>
+  <table>
+    <tr><th>形态</th><th>crate 版本数</th><th>说明</th></tr>
+    <tr><td>cmx-container 单体</td><td><b>861</b>（Cargo.lock）</td><td>一次全量构建牵动整棵树。</td></tr>
+    <tr><td>独立 flow 服务（实测）</td><td><b>12 内部 + ~15 三方</b></td><td>5 flow crate（model/bpmn/engine/store-pg/def）+ 7 脊柱叶子（database-pg/buffer/core/utils/traits/rowsource/modql）。<strong>不取任何可选货架，连 biz-kernel 都不用</strong>（见 §7-flow）。三方即 demo 现用集。</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted)">三方足迹几乎就是 <code>cmx-flow-demo</code> 现用集合：axum · tower-http · tokio · serde · serde_json · tracing · async-trait —— 全是“公共 crate”，无框架。</p>
+
+  <h3>B2. 公共 crate 治理速查（全 libs 归类）</h3>
+  <table>
+    <tr><th style="width:16%">归类</th><th style="width:6%">数</th><th>crate</th></tr>
+    <tr><td><span class="pill keep">脊柱·必备</span></td><td>14</td><td>cmx-core · cmx-utils · cmx-traits · cmx-buffer · cmx-rowsource · cmx-database · cmx-database-pg · modql(+macros) · cmx-api-types · cmx-model-meta · cmx-biz-kernel<span class="kbd">（切片）</span> · cmx-web-kernel<span class="kbd">（新建）</span> · cmx-job-core · cmx-job-store-pg</td></tr>
+    <tr><td><span class="pill add">脊柱·可选货架</span></td><td>8</td><td>cmx-iam · cmx-audit · cmx-auth · cmx-storage · cmx-ai · cmx-plugin-sdk · cmx-macros · cmx-debug</td></tr>
+    <tr><td><span class="pill move">切片</span></td><td>1</td><td>cmx-biz →（只取 validation/errcode/error 成 cmx-biz-kernel）</td></tr>
+    <tr><td><span class="pill drop">留在单体</span></td><td>13</td><td>cmx-api · cmx-service · cmx-runtime · cmx-portal · cmx-portal-base · cmx-form · cmx-rpc · cmx-rpc-gen · cmx-registry-config · cmx-nacos · cmx-plugin · cmx-plugin-demo · cmx-job-api · cmx-wasmdemo</td></tr>
+    <tr><td>非 crate</td><td>1</td><td>cmx-dev（仅 templates/*.zip 插件脚手架素材）</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted)">口径：<code>crates/libs</code> 下所有 crate（含 cmx-infra/*）。业务域 crate（flow/rpt/doc/dct/model/metadata）不计在此表，见 §7 / §17-A。</p>
+
+  <h3>C. 与 sheet 三件套的姿态对照</h3>
+  <table>
+    <tr><th>维度</th><th>cmx-rust-sheet / sheetwright</th><th>本方案（每业务域）</th></tr>
+    <tr><td>内核</td><td>sheet-core/formula/io（新写）</td><td>*-model/engine/formula/store-pg（<strong>已存在</strong>）</td></tr>
+    <tr><td>薄壳</td><td>cmx-sheetwright（协议+CLI+HTTP）</td><td>*-service（axum，替 -api）</td></tr>
+    <tr><td>依赖姿态</td><td>只引十来个成熟 crate，不进大 workspace</td><td>只引脊柱 + 十来个三方，不进 cmx-container</td></tr>
+    <tr><td>引入方式</td><td>path 依赖单向引入</td><td>path 依赖引 cmx-shared，域间零横向</td></tr>
+    <tr><td>展示</td><td>cmx-home-site 组件站</td><td>native-pages 工作台随服务发布</td></tr>
+    <tr><td>可行性证据</td><td>sheetwright 已跑通</td><td><strong>cmx-flow-demo 已跑通</strong></td></tr>
+  </table>
+</section>
+
+<div class="foot">
+  cmx 业务模块独立化 · 设计方案（DRAFT v2）· 对标 cmx-rust-sheet / cmx-sheetwright 独立姿态 · 域贡献 Router + 两种宿主（共用 web-server / 独立 service）· 本文档不含实现代码<br>
+  下一步：用户就 §5 决策「四点拍板」+ §16「待定项」确认后，进入 IM-0（抽 cmx-shared 脊柱）。
+</div>
+
+</div>
+</body>
+</html>

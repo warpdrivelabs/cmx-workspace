@@ -1,0 +1,74 @@
+<svg viewBox="0 0 820 540" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <filter id="g1" x="-3%" y="-3%" width="106%" height="112%">
+    <feDropShadow dx="0" dy="1" stdDeviation="1.6" flood-color="#0f172a" flood-opacity="0.08"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="540" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">数据权限缺口全景　28 项 · 五优先级 × 三类型</text>
+<text x="470" y="34" font-size="11" fill="#64748b">图例：<tspan fill="#b91c1c" font-weight="700">红</tspan>=隐患/与设计不符　<tspan fill="#b45309" font-weight="700">琥珀</tspan>=加固　<tspan fill="#475569" font-weight="700">灰</tspan>=非目标（已知路线）</text>
+
+<!-- legend removed: color key folded into subtitle above -->
+
+
+<!-- ============ P0 ============ -->
+<g filter="url(#g1)"><rect x="30" y="50" width="760" height="58" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<rect x="30" y="50" width="6" height="58" rx="3" fill="#ef4444"/>
+<text x="48" y="76" font-size="17" font-weight="800" fill="#b91c1c">P0</text>
+<text x="48" y="94" font-size="9.5" fill="#64748b">阻断级 · 安全正确</text>
+<rect x="120" y="63" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="128" y="83" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">1</tspan> 管理面无鉴权</text>
+<rect x="282" y="63" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="290" y="83" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">2</tspan> JWT 不校验过期</text>
+<rect x="444" y="63" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="452" y="83" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">3</tspan> inherit 失效</text>
+<rect x="606" y="63" width="170" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="614" y="83" font-size="10.5" fill="#92400e"><tspan font-weight="700">4</tspan> 写/删/导出无接缝</text>
+
+<!-- ============ P1 ============ -->
+<g filter="url(#g1)"><rect x="30" y="116" width="760" height="92" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<rect x="30" y="116" width="6" height="92" rx="3" fill="#f97316"/>
+<text x="48" y="150" font-size="17" font-weight="800" fill="#c2410c">P1</text>
+<text x="48" y="168" font-size="9.5" fill="#64748b">核心能力</text>
+<rect x="120" y="128" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="128" y="148" font-size="10.5" fill="#475569"><tspan font-weight="700">5</tspan> 报表/流程注入</text>
+<rect x="282" y="128" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="290" y="148" font-size="10.5" fill="#475569"><tspan font-weight="700">6</tspan> ReBAC 多跳</text>
+<rect x="444" y="128" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="452" y="148" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">7</tspan> 条件 Deny</text>
+<rect x="606" y="128" width="170" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="614" y="148" font-size="10.5" fill="#92400e"><tspan font-weight="700">8</tspan> 列隐藏(非脱敏)</text>
+<rect x="120" y="166" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="128" y="186" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">9</tspan> ORG/POST 主体</text>
+<rect x="282" y="166" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="290" y="186" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">10</tspan> priority 无效</text>
+<rect x="444" y="166" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="452" y="186" font-size="10.5" fill="#475569"><tspan font-weight="700">11</tspan> PG RLS 兜底</text>
+
+<!-- ============ P2 ============ -->
+<g filter="url(#g1)"><rect x="30" y="216" width="760" height="58" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<rect x="30" y="216" width="6" height="58" rx="3" fill="#f59e0b"/>
+<text x="48" y="242" font-size="17" font-weight="800" fill="#b45309">P2</text>
+<text x="48" y="260" font-size="9.5" fill="#64748b">性能规模</text>
+<rect x="120" y="229" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="128" y="249" font-size="10.5" fill="#475569"><tspan font-weight="700">12</tspan> decide 缓存</text>
+<rect x="282" y="229" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="290" y="249" font-size="10.5" fill="#92400e"><tspan font-weight="700">13</tspan> 审计异步/TTL</text>
+<rect x="444" y="229" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="452" y="249" font-size="10.5" fill="#92400e"><tspan font-weight="700">14</tspan> 列表分页</text>
+<rect x="606" y="229" width="170" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="614" y="249" font-size="10.5" fill="#92400e"><tspan font-weight="700">15</tspan> 展开跨请求记忆</text>
+
+<!-- ============ P3 ============ -->
+<g filter="url(#g1)"><rect x="30" y="282" width="760" height="92" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<rect x="30" y="282" width="6" height="92" rx="3" fill="#0ea5e9"/>
+<text x="48" y="316" font-size="17" font-weight="800" fill="#0369a1">P3</text>
+<text x="48" y="334" font-size="9.5" fill="#64748b">运维治理</text>
+<rect x="120" y="294" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="128" y="314" font-size="10.5" fill="#475569"><tspan font-weight="700">16</tspan> 门户接入</text>
+<rect x="282" y="294" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="290" y="314" font-size="10.5" fill="#475569"><tspan font-weight="700">17</tspan> 管理工作台</text>
+<rect x="444" y="294" width="150" height="32" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/><text x="452" y="314" font-size="10.5" fill="#475569"><tspan font-weight="700">18</tspan> OpenAPI</text>
+<rect x="606" y="294" width="170" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="614" y="314" font-size="10.5" fill="#92400e"><tspan font-weight="700">19</tspan> explain/overlap</text>
+<rect x="120" y="332" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="128" y="352" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">20</tspan> 审计上下文</text>
+<rect x="282" y="332" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="290" y="352" font-size="10.5" fill="#92400e"><tspan font-weight="700">21</tspan> 变更审计/生效期</text>
+
+<!-- ============ P4 ============ -->
+<g filter="url(#g1)"><rect x="30" y="382" width="760" height="92" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<rect x="30" y="382" width="6" height="92" rx="3" fill="#94a3b8"/>
+<text x="48" y="416" font-size="17" font-weight="800" fill="#475569">P4</text>
+<text x="48" y="434" font-size="9.5" fill="#64748b">健壮收尾</text>
+<rect x="120" y="394" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="128" y="414" font-size="10.5" fill="#92400e"><tspan font-weight="700">22</tspan> 测试覆盖</text>
+<rect x="282" y="394" width="150" height="32" rx="7" fill="#fef2f2" stroke="#fca5a5"/><text x="290" y="414" font-size="10.5" fill="#b91c1c"><tspan font-weight="700">23</tspan> HASH 非加密</text>
+<rect x="444" y="394" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="452" y="414" font-size="10.5" fill="#92400e"><tspan font-weight="700">24</tspan> SQL 侧脱敏</text>
+<rect x="606" y="394" width="170" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="614" y="414" font-size="10.5" fill="#92400e"><tspan font-weight="700">25</tspan> 结构化错误码</text>
+<rect x="120" y="432" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="128" y="452" font-size="10.5" fill="#92400e"><tspan font-weight="700">26</tspan> grant 双重语义</text>
+<rect x="282" y="432" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="290" y="452" font-size="10.5" fill="#92400e"><tspan font-weight="700">27</tspan> Relation 约定</text>
+<rect x="444" y="432" width="150" height="32" rx="7" fill="#fffbeb" stroke="#fcd34d"/><text x="452" y="452" font-size="10.5" fill="#92400e"><tspan font-weight="700">28</tspan> Between 覆盖</text>
+
+<text x="40" y="500" font-size="10.5" fill="#334155">红=8 项隐患（多在 P0/P1，须先修）· 琥珀=14 项加固 · 灰=6 项非目标（已知路线）。热度自上而下递减：P0 阻断上线，P4 打磨。</text>
+<text x="40" y="520" font-size="10.5" fill="#64748b">下文按 P0→P4 逐项展开：证据（文件:行）· 影响 · 补齐方向。P0 四项先行。</text>
+</svg>

@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业主数据管理平台（MDM）设计方案 · 业务 / 应用 / 详细设计 / cmx 落地</title>
+<style>
+  :root{
+    --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fb; --card:#ffffff;
+    --code-bg:#0f1524; --code-ink:#d6def0;
+    --mdm:#4338ca; --mdm-soft:#eef0fe; --mdm-line:#c7ccf6;
+    --gold:#a9781a; --gold-bg:#faf3df;
+    --fin:#2f6fed; --party:#1f8a56; --mat:#c65d21; --org:#7c5cff; --ref:#0e8a8a;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --gap:#b4433a; --gap-bg:#fbecea;
+    --add:#8a6d1f; --add-bg:#faf3df; --accent:#4338ca;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.72;font-size:15px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#141a33 0%,#25235c 45%,#3a1f52 100%);color:#fff;padding:62px 24px 50px}
+  header.hero .inner{max-width:1160px;margin:0 auto}
+  header.hero h1{margin:0 0 14px;font-size:34px;letter-spacing:.3px;line-height:1.24}
+  header.hero .tag{display:inline-block;background:rgba(124,110,255,.2);color:#c9c2ff;
+       border:1px solid rgba(124,110,255,.42);padding:3px 13px;border-radius:999px;font-size:12.5px;margin-bottom:18px}
+  header.hero p.lead{font-size:16.5px;color:#c7cbdd;max-width:900px;margin:8px 0}
+  header.hero .meta{margin-top:22px;font-size:13px;color:#96a0bc;line-height:1.9}
+  header.hero .meta b{color:#e2e5f2;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 14px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc .part{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--mdm);margin:14px 0 6px;text-transform:uppercase}
+  nav.toc .part:first-of-type{margin-top:0}
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:44px}
+  nav.toc li{margin:5px 0;break-inside:avoid;font-size:13.6px}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--mdm);border-bottom-color:var(--mdm)}
+  nav.toc .nn{display:inline-block;min-width:26px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+  section{margin:0 0 46px}
+  h2{font-size:23px;margin:50px 0 14px;padding-top:14px;border-top:3px solid var(--mdm);display:inline-block}
+  h2 .n{color:var(--mdm);font-weight:800;margin-right:10px}
+  h3{font-size:17.5px;margin:28px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:10px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.pk{color:#e57ab0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.2px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.3px;letter-spacing:.2px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.2px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.gap{background:var(--gap-bg);color:var(--gap)}
+  .pill.add{background:var(--add-bg);color:var(--add)}
+  .pill.mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.verdict{background:var(--mdm-soft);border-color:var(--mdm-line)}.callout.verdict .h{color:var(--mdm)}
+  .callout.gap{background:#fbecea;border-color:#f0c3bd}.callout.gap .h{color:var(--gap)}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}.callout.note .h{color:var(--fin)}
+  .callout.win{background:#e8f6ee;border-color:#bfe3cd}.callout.win .h{color:var(--keep)}
+  .callout.gold{background:var(--gold-bg);border-color:#e8d9a8}.callout.gold .h{color:var(--gold)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  .box.tint{background:var(--mdm-soft);border-color:var(--mdm-line)}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  ol.tight{margin:8px 0;padding-left:22px}ol.tight li{margin:5px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.2px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--mdm);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .lede{font-size:16px;color:var(--muted)}
+  .lead2{font-size:15.5px;color:#3a4451;margin:6px 0 4px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:4px}
+  .b-fin{background:#e7efff;color:var(--fin)}.b-party{background:#e4f4ea;color:var(--party)}
+  .b-mat{background:#fbeadd;color:var(--mat)}.b-org{background:#efeaff;color:var(--org)}
+  .b-ref{background:#dcf1f1;color:var(--ref)}.b-mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .en{color:var(--muted);font-style:italic;font-size:13.3px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:800;color:var(--mdm);line-height:1.1}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .chain{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .chain .st{background:var(--card);border:1px solid var(--mdm-line);color:var(--mdm);border-radius:8px;padding:7px 13px;font-size:12.8px;font-weight:700}
+  .chain .ar{color:var(--muted);font-weight:700}
+  .num-h{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+       background:var(--mdm);color:#fff;font-size:12px;font-weight:800;margin-right:8px;vertical-align:middle}
+  .partband{margin:56px 0 8px;padding:14px 20px;border-radius:12px;background:linear-gradient(100deg,#25235c,#3a1f52);color:#fff}
+  .partband .pt{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#c9c2ff;font-weight:700}
+  .partband .pn{font-size:20px;font-weight:800;margin-top:2px}
+  .partband .pd{font-size:13px;color:#c7cbdd;margin-top:4px}
+  a.ref{color:var(--mdm);text-decoration:none;border-bottom:1px dashed var(--mdm-line)}
+  @media(max-width:860px){.grid2,.grid3,.grid4,.kpis{grid-template-columns:1fr}nav.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="inner">
+    <span class="tag">业务方案 · 应用方案 · 详细设计 · cmx 落地映射</span>
+    <h1>企业主数据管理平台（MDM）设计方案<br><span style="font-size:20px;font-weight:500;color:#c9c2ff">对标 SAP MDG / Oracle / 用友 / 金蝶，一份可落地的完整蓝图</span></h1>
+    <p class="lead">
+      主数据（<b>Master Data</b>）是企业跨系统共享的「人、财、物、客」等核心业务对象的<b>权威、一致、唯一</b>数据资产。
+      本方案系统参考 <b>SAP MDG</b>、<b>Oracle EDM / Product Hub / Customer Hub</b>、<b>用友 iUAP&nbsp;MDM</b>、<b>金蝶苍穹&nbsp;AMDM</b>
+      以及 Informatica / Stibo / Reltio 等主流主数据平台，产出<b>业务蓝图 → 应用架构 → 字段级详细设计</b>三段一体的落地方案，
+      并给出在既有 <b>cmx 统一建模平台</b>（metaKind / DCT 三层 / cmx-flow / cmx-agg）上的实现映射。
+    </p>
+    <p class="meta">
+      <b>对标厂商</b>　SAP · Oracle · 用友 · 金蝶 · Informatica · Stibo · Reltio &nbsp;|&nbsp;
+      <b>覆盖域</b>　财务（主）＋客商＋物料＋组织人员＋全域通用建模<br>
+      <b>设计深度</b>　数据模型 / 表结构 / REST API / 字段级 &nbsp;|&nbsp;
+      <b>落地目标</b>　cmx 元数据统一建模平台 &nbsp;|&nbsp; <b>性质</b>　只出方案，不落地代码
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录 · Contents</h4>
+
+  <div class="part">导言</div>
+  <ol>
+    <li><span class="nn">00</span><a href="#exec">执行摘要 · 一页总览</a></li>
+  </ol>
+
+  <div class="part">第一部分 · 业务方案 Business Blueprint</div>
+  <ol>
+    <li><span class="nn">01</span><a href="#concept">主数据认知与边界</a></li>
+    <li><span class="nn">02</span><a href="#pain">现状痛点与建设价值</a></li>
+    <li><span class="nn">03</span><a href="#domains">主数据域全景（财务·客商·物料·组织人员）</a></li>
+    <li><span class="nn">04</span><a href="#governance">数据治理体系（两体系一工具·四定）</a></li>
+    <li><span class="nn">05</span><a href="#standard">标准与编码规则体系</a></li>
+    <li><span class="nn">06</span><a href="#lifecycle">主数据全生命周期</a></li>
+  </ol>
+
+  <div class="part">第二部分 · 应用方案 Application Blueprint</div>
+  <ol>
+    <li><span class="nn">07</span><a href="#capmap">能力全景与应用架构</a></li>
+    <li><span class="nn">08</span><a href="#styles">实现风格选型（四种风格）</a></li>
+    <li><span class="nn">09</span><a href="#quality">数据质量 · 匹配 · 合并 · 黄金记录</a></li>
+    <li><span class="nn">10</span><a href="#hierarchy">层次 · 分类 · 参考数据管理</a></li>
+    <li><span class="nn">11</span><a href="#integration">集成 · 分发 · 映射</a></li>
+    <li><span class="nn">12</span><a href="#benchmark">主流厂商对标与借鉴</a></li>
+  </ol>
+
+  <div class="part">第三部分 · 详细设计 Detailed Design</div>
+  <ol>
+    <li><span class="nn">13</span><a href="#model">元数据驱动数据模型与总体 ER</a></li>
+    <li><span class="nn">14</span><a href="#schema">核心表结构（字段级）</a></li>
+    <li><span class="nn">15</span><a href="#codeengine">编码规则引擎设计</a></li>
+    <li><span class="nn">16</span><a href="#matchmerge">匹配合并与存活规则设计</a></li>
+    <li><span class="nn">17</span><a href="#statemachine">治理流程状态机与工作流</a></li>
+    <li><span class="nn">18</span><a href="#api">REST API 契约</a></li>
+    <li><span class="nn">19</span><a href="#distribute">分发订阅与事件设计</a></li>
+  </ol>
+
+  <div class="part">第四部分 · cmx 平台落地 Realization</div>
+  <ol>
+    <li><span class="nn">20</span><a href="#realize">落地总纲与能力对照</a></li>
+    <li><span class="nn">21</span><a href="#mapping">数据底座 · 治理流 · 分发质量映射</a></li>
+    <li><span class="nn">22</span><a href="#roadmap">分期路线图与风险</a></li>
+  </ol>
+</nav>
+
+<!-- ============ PART 0 ============ -->
+<section id="exec">
+  <h2><span class="n">00</span>执行摘要 · 一页总览</h2>
+  <p class="lede">一句话：主数据管理（MDM）不是「再建一个库」，而是为「人、财、物、客」等核心对象建立<b>唯一权威来源（System of Record）</b>，用治理流程保证其质量，用集成分发让全企业系统消费同一份「黄金记录」。</p>
+
+  <div class="callout verdict">
+    <div class="h">🎯 本方案要回答的三个问题</div>
+    <b>① 业务上</b>——建什么、谁负责、按什么标准、走什么流程（第一部分）；
+    <b>② 应用上</b>——需要哪些能力、用哪种实现风格、如何保证质量与分发（第二部分）；
+    <b>③ 技术上</b>——数据模型、表结构、编码/匹配/合并/状态机/API 到可开发的字段级（第三部分）；
+    最后<b>④ 落到 cmx 平台</b>——不重造轮子，把 MDM 作为 <code>metaKind</code> 新一元长在既有统一建模平台上（第四部分）。
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">4</div><div class="l">主数据域<br>财务 / 客商 / 物料 / 组织人员</div></div>
+    <div class="kpi"><div class="v">4</div><div class="l">实现风格<br>注册/整合/共存/集中</div></div>
+    <div class="kpi"><div class="v">7</div><div class="l">生命周期状态<br>申请→…→归档</div></div>
+    <div class="kpi"><div class="v">1</div><div class="l">黄金记录<br>Single Source of Truth</div></div>
+  </div>
+
+  <h3>方案全景一图</h3>
+  <div class="dag">┌──────────────────────────── 企业主数据管理平台（MDM）────────────────────────────┐
+│                                                                                  │
+│  业务方案   主数据认知 · 域全景 · 治理体系(两体系一工具·四定) · 标准/编码 · 生命周期  │
+│  ────────────────────────────────────────────────────────────────────────────  │
+│  应用方案   能力全景 ┆ 实现风格选型 ┆ 质量/匹配/合并/黄金记录 ┆ 层次分类RDM ┆ 集成分发 │
+│  ────────────────────────────────────────────────────────────────────────────  │
+│  详细设计   元模型/ER · 表结构(字段级) · 编码引擎 · 匹配存活 · 状态机 · API · 分发   │
+│  ────────────────────────────────────────────────────────────────────────────  │
+│  cmx 落地   metaKind:MDM · 复用 DCT 三层 + cmx-flow 治理流 + cmx-agg 汇总 + 两模式   │
+│                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+      对标：SAP MDG · Oracle EDM/Product&Customer Hub · 用友 iUAP MDM · 金蝶苍穹 AMDM</div>
+
+  <h3>与主流厂商的对标一句话</h3>
+  <table>
+    <thead><tr><th style="width:16%">厂商 / 产品</th><th style="width:40%">最值得借鉴的一点</th><th>本方案如何吸收</th></tr></thead>
+    <tbody>
+      <tr><td><b>SAP MDG</b></td><td>变更请求（Change Request）驱动的<b>治理式主数据</b>：改动先进「暂存区（Staging）」走审批，通过才写「激活区（Active）」</td><td>治理流程状态机（§17）+ 暂存/激活双区（§14）</td></tr>
+      <tr><td><b>Oracle EDM</b></td><td><b>层次/维度</b>作为一等公民、变更可视化比对、维护多个可选视点（viewpoint）</td><td>层次分类管理（§10）+ 版本/视图（§13）</td></tr>
+      <tr><td><b>Informatica MDM</b></td><td><b>匹配-合并-存活（Match/Merge/Survivorship）</b>与信任框架（Trust）生成黄金记录</td><td>匹配合并存活设计（§16）</td></tr>
+      <tr><td><b>用友 iUAP MDM</b></td><td>装载即清洗、<b>四定方法论</b>、按分发策略以服务分发、异常主动通知</td><td>治理体系（§04）+ 集成分发（§11）</td></tr>
+      <tr><td><b>金蝶苍穹 AMDM</b></td><td>编码规则<b>按受控组织生效</b>、总部+下级<b>分级维护</b>、低代码集成分发</td><td>编码引擎（§15）+ 生命周期分级（§06）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout gold">
+    <div class="h">🏅 贯穿全案的核心概念：黄金记录（Golden Record）</div>
+    来自各源系统的同一实物的多条记录，经<b>匹配（Match）</b>识别为同一对象、<b>合并（Merge）</b>成一条、由<b>存活规则（Survivorship）</b>逐字段选出最可信取值，形成一条<b>企业唯一权威记录</b>——它才是对外分发、被所有系统消费的「真相」。本方案的一切设计（模型、治理、质量、分发）都服务于「稳定地生产并守护黄金记录」这一目标。
+  </div>
+</section>
+
+<!-- ============ PART I BAND ============ -->
+<div class="partband">
+  <div class="pt">Part I</div>
+  <div class="pn">第一部分 · 业务方案</div>
+  <div class="pd">建什么、谁负责、按什么标准、走什么流程 —— 面向业务与治理的顶层设计</div>
+</div>
+
+<!-- ============ 01 ============ -->
+<section id="concept">
+  <h2><span class="n">01</span>主数据认知与边界 <span class="en">what master data is — and is not</span></h2>
+  <p>做主数据的第一步不是建库，而是<b>把「主数据」从其它数据里精确地切出来</b>。切错了边界，后面的治理、质量、分发全部落空。</p>
+
+  <h3>1.1 三类数据的界分</h3>
+  <table>
+    <thead><tr><th style="width:16%">数据类别</th><th style="width:26%">定义</th><th style="width:28%">典型例子</th><th>特征</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据</b><br><span class="en">Master Data</span></td><td>跨系统、跨流程共享的核心业务对象，描述「业务实体是谁/是什么」</td><td>客户、供应商、物料、会计科目、成本中心、组织、员工、银行</td><td>相对稳定、被反复引用、跨系统一致性要求最高</td></tr>
+      <tr><td><b>交易数据</b><br><span class="en">Transaction Data</span></td><td>描述某一时刻发生的业务活动，<b>引用</b>主数据</td><td>销售订单、采购单、会计凭证、发货单、付款单</td><td>量大、时效强、一次性发生，大量外键指向主数据</td></tr>
+      <tr><td><b>参考数据</b><br><span class="en">Reference Data</span></td><td>用于分类/取值约束的小型受控码表，主数据的「取值域」</td><td>国家、币种、计量单位、行业分类、税码、状态码</td><td>极稳定、枚举有限、常由外部标准定义（RDM 专管，§10）</td></tr>
+    </tbody>
+  </table>
+  <div class="callout note">
+    <div class="h">💡 一条实用判据</div>
+    问三个问题：①它是否被<b>两个以上系统/流程</b>引用？②它是否描述一个<b>持续存在的实体</b>（而非一次性事件）？③它一旦错，是否会<b>连累一片交易</b>？三个都「是」——它就是主数据，值得进 MDM 治理。只被单系统内部使用、或纯枚举码表，不必强纳（码表归 RDM）。
+  </div>
+
+  <h3>1.2 主数据的六个本质特征</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 唯一权威</h4>全企业对同一实体只有一条黄金记录，MDM 是它的 System of Record，其它系统是消费者。</div>
+    <div class="box"><h4>② 跨域共享</h4>被财务、供应链、销售、HR 多域反复引用，是各系统间的「连接键」。</div>
+    <div class="box"><h4>③ 相对稳定</h4>变化频率远低于交易数据，但一旦变（如客户改名/合并）影响面极大，须留痕。</div>
+    <div class="box"><h4>④ 结构复杂</h4>属性多、分组多、常带层次（组织树、科目表、物料分类），且多语言/多视图。</div>
+    <div class="box"><h4>⑤ 多源汇入</h4>常同时存在于 ERP、CRM、SRM、旧系统，天然产生重复与冲突，需匹配合并。</div>
+    <div class="box"><h4>⑥ 需要治理</h4>其价值来自「被信任」，因此必须有 Owner、有标准、有审批、有质量闭环。</div>
+  </div>
+
+  <h3>1.3 主数据的分层视图</h3>
+  <p>一条主数据在 MDM 内不是「一张扁平表」，而是分层组织的——这与既有厂商（SAP 的 Reuse/Attribute、Oracle 的实体+层次）一致，也天然契合 cmx 的分层建模：</p>
+  <div class="dag">主数据对象（如：供应商 Supplier）
+  ├─ 标识层  唯一 ID（MDM 内码）+ 各源系统外码（Key Mapping）+ 状态
+  ├─ 通用属性 名称/简称/多语言名/税号/信用代码/统一社会信用…（全局唯一口径）
+  ├─ 分组属性 财务视图(付款条件/税务) · 采购视图(采购组织/评级) · 物流视图(收货地址)
+  ├─ 层次归属 所属分类(供应商类别树) · 所属集团/组织(组织树) · 集团-成员关系
+  └─ 关系     一供多址 · 集团母子公司 · 客商合一(同一法人既是客户又是供应商)</div>
+  <p class="en">分组属性 = 「按业务视图分片」，正是 SAP MDG 的 reuse-area 与 cmx 分层单据「每层不同数据属性」的同构点（§20 详述）。</p>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="pain">
+  <h2><span class="n">02</span>现状痛点与建设价值 <span class="en">why it always hurts</span></h2>
+  <p>几乎所有企业的主数据问题都能归到下面六条。方案的价值主张就是逐条对治它们。</p>
+
+  <h3>2.1 六大典型痛点</h3>
+  <table>
+    <thead><tr><th style="width:20%">痛点</th><th style="width:44%">表现与根因</th><th>后果</th></tr></thead>
+    <tbody>
+      <tr><td><b>一物多码</b><br><span class="en">duplicate codes</span></td><td>同一物料/供应商在不同系统、工厂、环节有多个编码；编码位数与分类口径不一（有的 10 位有的 12 位）</td><td>无法集中议价、成本虚高、库存失真（冗余与缺货并存）、协同要大量人工转码</td></tr>
+      <tr><td><b>一码多物</b><br><span class="en">code reuse</span></td><td>编码复用、废弃码回收再用，同一编码在不同时间指向不同实物</td><td>历史数据错乱、审计追溯失败，比一物多码更隐蔽危险</td></tr>
+      <tr><td><b>标准不一致</b></td><td>部门间分类/属性/命名口径各行其是，缺统一标准</td><td>协同壁垒，合规与财务数据割裂，报表口径打架</td></tr>
+      <tr><td><b>质量回潮</b></td><td>做完主数据用一两年质量又退回原状——缺质量闭环：<b>发现不了、发现了不知找谁、改了不知对没对</b></td><td>投入打水漂，业务重新绕过主数据自建小表</td></tr>
+      <tr><td><b>重系统轻数据</b></td><td>先上系统后才发现底层基础数据未统筹设计</td><td>系统越多，数据裂缝越大，集成成本指数上升</td></tr>
+      <tr><td><b>责任真空</b></td><td>数据「谁都在用、没人负责」，没有 Owner 与认责机制</td><td>问题无人整改，标准无人维护</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 价值主张（对治关系）</h3>
+  <div class="grid2">
+    <div class="box tint"><h4>🎯 对业务的价值</h4><ul class="tight">
+      <li><b>降本</b>：消灭一物多码→采购集中议价、库存去冗余</li>
+      <li><b>提效</b>：一次维护多系统复用，免除跨系统人工转码</li>
+      <li><b>合规</b>：客商/科目口径统一，满足审计与监管报送</li>
+      <li><b>决策</b>：全域单一视图，报表口径一致可比</li>
+    </ul></div>
+    <div class="box tint"><h4>🛠 对 IT 的价值</h4><ul class="tight">
+      <li><b>解耦</b>：源系统只管消费，主数据集中生产</li>
+      <li><b>可控</b>：变更走审批留痕，可回溯可回滚</li>
+      <li><b>可扩</b>：新系统接入即订阅，边际成本递减</li>
+      <li><b>提质</b>：质量规则前置，脏数据进不来</li>
+    </ul></div>
+  </div>
+
+  <div class="callout gap">
+    <div class="h">⚠ 必须专门防范：一码多物（编码回收再用）</div>
+    多数方案只盯「一物多码」，却忽略反向的「一码多物」。它源于<b>废弃编码被回收重用</b>。铁律：<b>主数据编码一经启用永不回收、永不复用</b>，废弃走「冻结/归档」而非「删除后让号段可再分配」。本方案的编码引擎（§15）与生命周期（§06）把这条钉死为不可违反的约束。
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="domains">
+  <h2><span class="n">03</span>主数据域全景 <span class="en">the domains</span></h2>
+  <p>本方案覆盖四大域，以<b>财务域为主</b>，兼顾客商、物料、组织人员，并保留「全域通用建模」能力（任意新域可配置落地）。每个域给出关键实体、层次形态与责任主体。</p>
+
+  <div class="grid2">
+    <div class="box"><h4><span class="badge b-fin">财务域</span>（主）</h4>
+      <b>关键实体</b>：会计科目、成本中心、利润中心、往来单位（客商财务视图）、币种、财务组织、现金流量项目、核算维度（辅助核算）。<br>
+      <b>层次</b>：科目表（多级树）、成本中心层级、利润中心层级、组织树。<br>
+      <b>责任主体</b>：财务共享中心 / 集团财务部。<br>
+      <span class="en">对齐既有 fico / GL 场景，科目·成本中心·往来单位是财务共享与合并报表的底座。</span>
+    </div>
+    <div class="box"><h4><span class="badge b-party">客商域</span></h4>
+      <b>关键实体</b>：客户、供应商、（客商合一的）业务伙伴 Business Partner、联系人、银行账户、收发货地址。<br>
+      <b>层次</b>：客户/供应商分类树、集团客户母子层级、一客多址。<br>
+      <b>责任主体</b>：销售管理部（客户）/ 采购管理部（供应商）。<br>
+      <span class="en">最需要匹配合并——同一法人既是客户又是供应商、集团客户合并授信。</span>
+    </div>
+    <div class="box"><h4><span class="badge b-mat">物料域</span></h4>
+      <b>关键实体</b>：物料/产品、物料分类、计量单位与换算、规格型号、品牌、条码。<br>
+      <b>层次</b>：物料分类树（多级）、产品目录、BOM 相关引用。<br>
+      <b>责任主体</b>：供应链 / 技术部（分类与规格）。<br>
+      <span class="en">分类模型行业化最深（用友物料精细化分类的借鉴点），与 PIM 边界相邻。</span>
+    </div>
+    <div class="box"><h4><span class="badge b-org">组织人员域</span></h4>
+      <b>关键实体</b>：法人/公司、组织架构单元、部门、岗位、员工、角色。<br>
+      <b>层次</b>：法人层级、行政组织树、汇报线、成本中心-部门映射。<br>
+      <b>责任主体</b>：集团管控部 / HR。<br>
+      <span class="en">与既有 IAM（cmx 库人与组织）打通，MDM 侧管「主数据口径」，IAM 管「登录鉴权」。</span>
+    </div>
+  </div>
+
+  <h3>3.1 域-实体-层次总表</h3>
+  <table>
+    <thead><tr><th style="width:12%">域</th><th style="width:30%">核心实体</th><th style="width:20%">层次/分类形态</th><th>跨域关系</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-fin">财务</span></td><td>科目 / 成本中心 / 利润中心 / 币种 / 财务组织 / 核算维度</td><td>科目表树、CC/PC 层级</td><td>科目↔组织；核算维度↔客商/物料</td></tr>
+      <tr><td><span class="badge b-party">客商</span></td><td>客户 / 供应商 / 业务伙伴 / 银行账户 / 地址 / 联系人</td><td>客商分类树、集团母子层级</td><td>客商↔往来单位（财务）；客商↔组织（授信主体）</td></tr>
+      <tr><td><span class="badge b-mat">物料</span></td><td>物料 / 产品 / 计量单位 / 规格 / 品牌 / 条码</td><td>物料分类多级树</td><td>物料↔科目（存货科目）；物料↔核算维度</td></tr>
+      <tr><td><span class="badge b-org">组织人员</span></td><td>法人 / 组织单元 / 部门 / 岗位 / 员工</td><td>法人层级、行政组织树、汇报线</td><td>组织↔成本中心；员工↔岗位；组织贯穿所有域的「受控组织」</td></tr>
+      <tr><td><span class="badge b-ref">参考数据</span></td><td>国家 / 地区 / 计量单位 / 税码 / 状态码 / 行业分类</td><td>受控码表（RDM）</td><td>作为各域属性的取值域被引用（§10）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="h">🔗 关键跨域关系：客商合一 与 组织贯穿</div>
+    ① <b>客商合一（Business Partner 模型）</b>：借鉴 SAP BP——同一法人可同时扮演客户、供应商、往来单位多个「角色（Role）」，共享一份标识与通用属性，各角色挂各自视图属性。避免「同一公司在客户表和供应商表各存一份、改名只改一边」。<br>
+    ② <b>组织贯穿</b>：组织既是一个域，又是所有域的「受控维度」——编码规则按组织生效、数据按组织分级维护、分发按组织授权（§05/§06/§15）。
+  </div>
+</section>
+<!-- ============ 04 ============ -->
+<section id="governance">
+  <h2><span class="n">04</span>数据治理体系 <span class="en">two systems + one tool · the "four-definitions"</span></h2>
+  <p>主数据的价值来自「被信任」，而信任来自治理。业界一句共识：<b>制度/治理必须先于工具</b>（TIBCO EBX、DAMA-DMBOK 均强调），黄金记录非一劳永逸，无持续治理必然随时间劣化。本节给出治理的组织、制度与方法论骨架。</p>
+
+  <h3>4.1 治理总框架：两体系一工具</h3>
+  <p>参考国内主流实践（用友/金蝶及主数据管理办法通行做法），一份完整的主数据治理由「<b>标准体系 + 保障体系 + 管理工具</b>」三支柱构成，分别回答三个问题：</p>
+  <div class="grid3">
+    <div class="box tint"><h4>① 标准体系 <span class="en">依据什么</span></h4>
+      分三类标准：<b>管理标准</b>（定义/分类/责任）、<b>应用标准</b>（分类标准·编码规则·属性描述规则·提报指南）、<b>集成服务标准</b>（分发接口与服务口径）。每条标准附「责任部门、审批流程、启停用日期」等管理属性。→ 详见 §05。
+    </div>
+    <div class="box tint"><h4>② 保障体系 <span class="en">谁负责</span></h4>
+      组织与制度：<b>数据 Owner / 数据管家（Steward）/ 认责人</b>三级角色 + MDM 委员会 + 考核指标（KPI）。核心是「<b>发现—分析—整改—验证</b>」质量闭环，Owner 是整改第一责任人。→ 详见 4.3/4.4。
+    </div>
+    <div class="box tint"><h4>③ 管理工具 <span class="en">用什么</span></h4>
+      即本 MDM 平台：建模、编码、申请审批、清洗查重、质量监控、分发集成。工具是标准与保障体系的<b>技术承载</b>，不能反过来替代制度。→ 详见第二/三部分。
+    </div>
+  </div>
+
+  <h3>4.2 实施方法论：四定 + 四阶段</h3>
+  <p>方案落地推荐「<b>四定</b>」方法论作为主线（国内集团主数据项目通行）：</p>
+  <div class="chain">
+    <span class="st">定岗责</span><span class="ar">·</span>
+    <span class="st">定标准</span><span class="ar">·</span>
+    <span class="st">定流程</span><span class="ar">·</span>
+    <span class="st">定平台</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:16%">阶段</th><th style="width:30%">工作</th><th>产出 / 验收</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 现状调研</b></td><td>各系统数据摸底、梳理属性字段、识别质量问题（一物多码/一码多物量化）</td><td>现状评估报告、问题清单（需业务深度配合）</td></tr>
+      <tr><td><b>② 方案设计</b></td><td>四定：定岗责、定标准、定流程、定平台</td><td>主数据管理体系设计文档（含本方案四部分）</td></tr>
+      <tr><td><b>③ 系统实现</b></td><td>数据模型建设、期初数据清洗、接口开发联调、内部测试</td><td>可运行平台、清洗后的黄金记录、联调通过</td></tr>
+      <tr><td><b>④ 上线运营</b></td><td>用户测试、培训宣贯、上线试运行 → 长期定期质量审核、线上新增审批</td><td>验收标准示例：能否<b>自动识别一物多码</b>、<b>数据错误率是否下降</b></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 治理组织与角色（对齐 DAMA-DMBOK）</h3>
+  <div class="dag">                    ┌─────────────────────────┐
+                    │   MDM 数据治理委员会      │  决策/仲裁/资源
+                    │   (Data Governance Council)│
+                    └────────────┬────────────┘
+                 ┌───────────────┼───────────────┐
+        ┌────────┴───────┐ ┌─────┴──────┐ ┌──────┴────────┐
+        │  数据 Owner     │ │ 数据管家    │ │ 数据保管者     │
+        │  (所有者)       │ │ (Steward)  │ │ (Custodian/IT)│
+        │  质量整改第一   │ │ 业务↔IT桥梁 │ │ 技术环境保障   │
+        │  责任人·授权决策 │ │ 审核/认责   │ │ 平台运维      │
+        └────────────────┘ └─────┬──────┘ └───────────────┘
+                        ┌─────────┼─────────┐
+                   域管家     系统管家     操作管家
+                (某域SME)  (技术口径)  (日常维护/提报)</div>
+  <table>
+    <thead><tr><th style="width:18%">角色</th><th style="width:32%">职责</th><th>对应厂商概念</th></tr></thead>
+    <tbody>
+      <tr><td><b>数据 Owner</b><br>所有者</td><td>高层决策（使用/访问权）；质量问题<b>整改第一责任人</b>；与认责人共同确定评价指标</td><td>SAP Business Owner；用友「数据 Owner」</td></tr>
+      <tr><td><b>数据管家</b><br>Steward</td><td>落地执行、连接业务与 IT；审阅整合数据与待处理匹配队列；接受/拒绝数据更新、审批命名标准</td><td>SAP Steward-Approver；Oracle Product Data Steward；Informatica Steward Workbench</td></tr>
+      <tr><td><b>域/系统/操作管家</b></td><td>域管家=某域 SME；系统管家=技术口径；操作管家=日常维护、需求收集、提报、审核</td><td>用友/金蝶「专职/兼职主数据管理员」</td></tr>
+      <tr><td><b>数据保管者</b><br>Custodian</td><td>保障技术环境支撑落地（平台运维、备份、权限）</td><td>IT 运维</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 质量闭环与认责机制</h3>
+  <div class="callout win">
+    <div class="h">🔁 「发现—分析—整改—验证」闭环</div>
+    质量回潮的根因是<b>缺闭环</b>——问题发现不了、发现了不知找谁、改了不知对没对。对治：① <b>发现</b>=质量规则前置+监控仪表盘（§09）；② <b>分析</b>=按源归因评分卡，异常回溯到源系统；③ <b>整改</b>=派单到数据 Owner/管家（fix-in-place / 深链委派 / 批量整改）；④ <b>验证</b>=整改后重跑规则，计入 KPI 考核。每个主数据项在标准里明确<b>管理级次</b>与<b>认责人</b>，责任到人。
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="standard">
+  <h2><span class="n">05</span>标准与编码规则体系 <span class="en">standards &amp; coding</span></h2>
+  <p>编码规则是主数据方案最具体、最能体现管控力的技术资产。本节先立标准分层，再深入编码规则——它在 §15 有完整的引擎级设计。</p>
+
+  <h3>5.1 主数据标准三层</h3>
+  <table>
+    <thead><tr><th style="width:16%">标准类别</th><th style="width:40%">内容</th><th>管理属性</th></tr></thead>
+    <tbody>
+      <tr><td><b>管理标准</b></td><td>主数据定义、分类原则、责任归属、密级</td><td rowspan="3">每条标准均声明：<b>责任部门、审批流程、启用日期、停用日期</b></td></tr>
+      <tr><td><b>应用标准</b></td><td><b>分类标准 · 编码规则 · 属性描述规则 · 数据提报指南</b>（业务人员直接用）</td></tr>
+      <tr><td><b>集成服务标准</b></td><td>分发接口口径、服务契约、Key/Value 映射规则（§11/§19）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 编码规则的六种构件</h3>
+  <p>一条编码规则由若干「段（Segment）」拼接而成。参考 SAP 编号范围、金蝶苍穹编码规则、用友编码管理，段的类型收敛为六种：</p>
+  <div class="grid3">
+    <div class="box"><h4>① 常量段</h4>固定前缀/后缀，如物料码首位 <code>M</code>、供应商 <code>V</code>。</div>
+    <div class="box"><h4>② 属性取值段</h4>取主数据某属性值或其映射，如「分类码=电子→<code>EL</code>」「组织码」。</div>
+    <div class="box"><h4>③ 流水号段</h4>自增序列，可按范围/按分组重置（<code>0001</code>…）。核心防重构件。</div>
+    <div class="box"><h4>④ 日期段</h4>年月日，如 <code>2026</code>/<code>2608</code>，用于批次类。</div>
+    <div class="box"><h4>⑤ 校验位段</h4>Luhn/模 11 等校验码，防止手工录入错码。</div>
+    <div class="box"><h4>⑥ 分隔符段</h4>可选 <code>-</code>/<code>.</code>，仅显示用，不参与唯一性。</div>
+  </div>
+
+  <h3>5.3 借鉴金蝶：编码规则的适用条件</h3>
+  <div class="callout gold">
+    <div class="h">🏅 按受控组织生效 + 按属性设适用条件</div>
+    金蝶苍穹的关键机制值得直接吸收：① <b>按受控组织生效</b>——同一主数据在不同组织可用不同编码规则，当前登录组织落在规则的「受控组织」范围内时规则才生效；② <b>按单据/对象属性设适用条件</b>——如「物料分类=原材料」走规则 A、「=成品」走规则 B。<b>易错点</b>（金蝶实测）：对象未设主业务组织时，不能使用设了受控组织的编码规则——方案的编码引擎须显式处理「无组织上下文」的兜底规则。
+  </div>
+
+  <h3>5.4 编码治理的三条铁律</h3>
+  <ol class="tight">
+    <li><b>编码即身份，永不回收</b>：主数据编码一经启用，即便对象作废也永不复用（防「一码多物」，§02）。作废走冻结/归档，号段不释放。</li>
+    <li><b>内码 ≠ 外码</b>：MDM 内部用稳定的<b>系统内码（surrogate ID）</b>作主键与关系锚点；对业务展示的「编码」是可读外码。改编码规则不动内码，关系不断裂（对齐 SAP Key Mapping、§16）。</li>
+    <li><b>规则可版本化</b>：编码规则本身是受管对象，改规则留版本、标启停日期，旧对象保留旧码、新对象用新规则。</li>
+  </ol>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="lifecycle">
+  <h2><span class="n">06</span>主数据全生命周期 <span class="en">the lifecycle</span></h2>
+  <p>主数据从「被申请」到「被归档」有确定的状态流转。这是业务视角的生命周期；其技术实现（状态机+工作流）在 §17。</p>
+
+  <h3>6.1 七状态生命周期</h3>
+  <div class="chain">
+    <span class="st">申请 Apply</span><span class="ar">→</span>
+    <span class="st">校验 Validate</span><span class="ar">→</span>
+    <span class="st">审核 Approve</span><span class="ar">→</span>
+    <span class="st">发布 Publish</span><span class="ar">→</span>
+    <span class="st">变更 Change</span><span class="ar">→</span>
+    <span class="st">冻结 Freeze</span><span class="ar">→</span>
+    <span class="st">归档 Archive</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:12%">状态</th><th style="width:34%">含义</th><th>关键规则</th></tr></thead>
+    <tbody>
+      <tr><td><b>申请</b></td><td>业务发起新建/变更请求（对齐 SAP Change Request、Oracle NIR）</td><td>进暂存区，不影响现有黄金记录</td></tr>
+      <tr><td><b>校验</b></td><td>规则校验（唯一性/完整性/格式/业务规则）+ 查重匹配</td><td>不通过挡回；疑似重复进人工评审队列</td></tr>
+      <tr><td><b>审核</b></td><td>按数据分级走单级/多级/并行审批（BRF+ 式决策表路由）</td><td>财务视图与采购视图可分部门并行审批</td></tr>
+      <tr><td><b>发布</b></td><td>审核通过 → 写激活区 → 事件驱动分发给订阅系统</td><td>此刻才成为「黄金记录」被全企业消费</td></tr>
+      <tr><td><b>变更</b></td><td>已发布对象的属性修改（走 Change Order 式带标记留痕，版本+1）</td><td>变更同样走申请→校验→审核，留红线对比</td></tr>
+      <tr><td><b>冻结</b></td><td>停用但保留（Block/Unblock）；不可再被新交易引用</td><td>历史交易仍可追溯，编码不释放</td></tr>
+      <tr><td><b>归档</b></td><td>标记删除（Flag for Deletion）/ 长期封存</td><td>永不物理删主键，永不回收编码</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 集团分级维护</h3>
+  <div class="callout note">
+    <div class="h">🏢 「管理层—执行层」分级（中国式集团管控核心）</div>
+    借鉴用友「人财物客」四对象集团管控、金蝶 AMDM「总部+多下级分管」：<b>集团总部定标准、控关键主数据</b>（如统一科目表、集团客户），<b>成员单位在授权范围维护本地主数据</b>（如本地供应商、本地成本中心）。每个数据项在标准中明确<b>管理级次</b>；编码规则按组织生效（§05）、数据按组织授权分发（§11）。对应 SAP 的 <b>Core Data Owner（核心数据所有者）vs Application Data Owner（应用数据所有者）</b>联邦式所有权模型。
+  </div>
+
+  <h3>6.3 定义态 vs 变更态：两类治理动作</h3>
+  <div class="grid2">
+    <div class="box"><h4>定义态：新建主数据</h4>
+      对齐 <b>Oracle New Item Request（NIR）</b>：请求→定义（挂属性组）→审批→计划生效。<b>无红线标记</b>，产出一条全新对象；未批准前仅 MDM 内可见，状态 Pending。
+    </div>
+    <div class="box"><h4>变更态：修改已有主数据</h4>
+      对齐 <b>Oracle Change Order</b>：对已发布对象<b>带红线/markup 标记</b>修改属性/结构/关系，审批通过<b>自动版本+1（Revision）</b>，全程留痕可对比可回滚。
+    </div>
+  </div>
+  <p class="en">这一「定义态 vs 变更态」二分是 Oracle 与 SAP 共同的设计智慧——新建与变更是不同的工作流、不同的 UI、不同的审批口径，不可混为一谈（§17 状态机分别建模）。</p>
+</section>
+
+<!-- ============ PART II BAND ============ -->
+<div class="partband">
+  <div class="pt">Part II</div>
+  <div class="pn">第二部分 · 应用方案</div>
+  <div class="pd">需要哪些能力、用哪种实现风格、如何保证质量与分发 —— 面向系统的能力与架构设计</div>
+</div>
+
+<!-- ============ 07 ============ -->
+<section id="capmap">
+  <h2><span class="n">07</span>能力全景与应用架构 <span class="en">the capability map</span></h2>
+  <p>综合 SAP MDG、Oracle、Informatica、Stibo、Reltio、TIBCO EBX 与 Gartner MDM 能力评估维度，一个完整的 MDM 平台收敛为<b>八大能力域</b>。这也是本方案第二/三部分的组织骨架。</p>
+
+  <h3>7.1 八大能力域</h3>
+  <div class="dag">┌───────────────────────────── MDM 能力全景（8 域）──────────────────────────────┐
+│                                                                               │
+│  ① 多域建模        元数据/模型驱动 · 多域统一 · 实体·属性·关系·层次 · 可扩展      │
+│  ② 匹配合并        标准化→匹配→合并→存活→校验→发布 · 精确/模糊/AI · 黄金记录     │
+│  ③ 存活与信任      源优先级 · 最新/最全/质量分 · 字段级信任 · 与DQ联动           │
+│  ④ 数据质量        画像 · 校验 · 清洗 · 去重 · 标准化 · 评分卡 · 监控           │
+│  ⑤ 治理与管家      Owner/Steward/委员会 · 变更请求 · 审批工作流 · 认责          │
+│  ⑥ 参考数据/层次   RDM码表 · 分类taxonomy · 层次版本化 · 编码规则               │
+│  ⑦ 集成与分发      REST/事件/批量/ESB · Key/Value映射 · 发布订阅 · 联合发布      │
+│  ⑧ 安全审计/AI     RBAC · 脱敏 · 血缘 · 持久ID · AI实体解析/NL管家              │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+         横切：多租户 · 多组织 · 多语言 · 版本 · 审计留痕</div>
+
+  <h3>7.2 应用分层架构</h3>
+  <p>平台按五层组织，每层职责单一、可独立演进：</p>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:34%">职责</th><th>关键构件（对应能力域/详细设计章节）</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 接入层</b></td><td>多渠道数据进出：UI 录入、批量导入、API、事件订阅</td><td>REST/SOAP API（§18）、批量导入器、事件网关（§19）</td></tr>
+      <tr><td><b>② 治理层</b></td><td>变更请求、审批工作流、数据管家工作台、认责</td><td>状态机（§17）、Steward 工作台、CR 引擎（§05/§06）</td></tr>
+      <tr><td><b>③ 质量层</b></td><td>校验/清洗/标准化/匹配/合并/存活，生产黄金记录</td><td>编码引擎（§15）、匹配合并存活（§16）、质量评分卡（§09）</td></tr>
+      <tr><td><b>④ 建模层</b></td><td>元数据驱动定义实体/属性/关系/层次；黄金记录持久化</td><td>元模型+ER（§13）、核心表结构（§14）、层次分类（§10）</td></tr>
+      <tr><td><b>⑤ 存储层</b></td><td>暂存区/激活区双区、内码主键、交叉引用、历史版本</td><td>Staging/Active（§14）、Key Mapping（§16）、审计表</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="h">🧩 一条主线：数据从「进」到「被信任」再到「被消费」</div>
+    接入层收进多源数据 → 质量层标准化+匹配+合并+存活生产黄金记录 → 治理层审批放行 → 建模层持久化 → 接入层再分发给消费系统。<b>八大能力域不是并列清单，而是这条流水线上的工位</b>。
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="styles">
+  <h2><span class="n">08</span>实现风格选型 <span class="en">the four implementation styles</span></h2>
+  <p>MDM 有四种业界公认的实现风格，本质是一条「控制力/侵入性由弱到强」的谱系。选型是应用架构的首要决策，SAP、Oracle、IBM、Informatica、Gartner 都用这套分类。</p>
+
+  <h3>8.1 四种风格对照</h3>
+  <table>
+    <thead><tr><th style="width:12%">维度</th><th style="width:20%">注册型<br><span class="en">Registry</span></th><th style="width:20%">整合型<br><span class="en">Consolidation</span></th><th style="width:20%">共存型<br><span class="en">Coexistence</span></th><th>集中型<br><span class="en">Transaction</span></th></tr></thead>
+    <tbody>
+      <tr><td><b>机制</b></td><td>只存交叉引用索引，数据留在源系统，运行时组装虚拟视图</td><td>源汇入中央库，匹配整合成持久黄金记录（单向）</td><td>中央 hub 黄金副本 + 与源双向同步</td><td>MDM 亲自编纂，向所有系统分发，事务即时清洗匹配</td></tr>
+      <tr><td><b>SOR 归属</b></td><td>源系统</td><td>源系统</td><td>无单一 SOR（权威源）</td><td><b>MDM hub</b></td></tr>
+      <tr><td><b>黄金记录</b></td><td>不持久化（虚拟）</td><td>持久化</td><td>持久化+回写</td><td>持久化+分发</td></tr>
+      <tr><td><b>侵入/改造</b></td><td><span class="pill keep">最低</span></td><td><span class="pill keep">低</span></td><td><span class="pill add">中</span></td><td><span class="pill gap">最高</span></td></tr>
+      <tr><td><b>典型场景</b></td><td>去重识别</td><td>分析型/BI/数仓</td><td>治理回灌/过渡</td><td>操作型实时管控</td></tr>
+      <tr><td><b>实时性</b></td><td>按需虚拟</td><td>批量为主</td><td>近实时同步</td><td>实时事务</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 演进路径与厂商映射</h3>
+  <div class="chain">
+    <span class="st">Registry 注册</span><span class="ar">→</span>
+    <span class="st">Consolidation 整合</span><span class="ar">→</span>
+    <span class="st">Coexistence 共存</span><span class="ar">→</span>
+    <span class="st">Transaction 集中</span>
+  </div>
+  <p>四种风格常混合使用（按域/按用例选不同风格）。产品映射：<b>IBM InfoSphere</b> 虚拟=Registry、混合=Coexistence、物理=Centralized；<b>Oracle OCH/CDM</b> 以 Registry（交叉引用+运行时视图）起，经 hub-and-spoke 发布订阅走向 Coexistence/Transaction；<b>SAP MDG</b> Central Governance=Transaction（治理式编纂）、Consolidation=Consolidation 风格。</p>
+
+  <div class="callout verdict">
+    <div class="h">🎯 本方案选型建议：整合/共存起步，关键域上集中</div>
+    多数中国集团企业主数据落地宜<b>从 Consolidation/Coexistence 起步</b>——先把多源数据汇聚、匹配、清洗成黄金记录并回灌，风险可控、见效快；<b>财务科目/组织等强管控域再上 Centralized（集中型）</b>，由 MDM 亲自编纂、审批后分发。整体采<b>混合式</b>：分析类消费走整合，操作类关键主数据走集中，通过统一的黄金记录层对上层透明。这与既有 cmx 平台「定义集中、数据按作用域」的两模式天然契合（§20）。
+  </div>
+
+  <h3>8.3 Gartner「合格 MDM」五项必备能力（选型校验清单）</h3>
+  <ol class="tight">
+    <li><b>黄金记录</b>——连接多源成单一可信视图；</li>
+    <li>同时支撑<b>操作型与分析型</b>用例；</li>
+    <li>支持四种实现风格中的<b>至少两种</b>并能随需求演进；</li>
+    <li><b>多域支持</b>——管理客户/供应商/产品/地点等实体及其关系；</li>
+    <li><b>核心数据能力</b>——匹配、链接、清洗、增强、跨系统同步。</li>
+  </ol>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="quality">
+  <h2><span class="n">09</span>数据质量 · 匹配 · 合并 · 黄金记录 <span class="en">the golden-record pipeline</span></h2>
+  <p>这是 MDM 的心脏。黄金记录不是「存出来的」，而是「算出来的」——由一条固定的流水线从多源脏数据里提炼。SAP Consolidation、Oracle EDQ、Informatica 三家的流水线高度一致。</p>
+
+  <h3>9.1 黄金记录七步流水线</h3>
+  <div class="dag">数据载入 → 初检 → 标准化 → 匹配 → 存活(最佳记录) → 校验 → 激活/发布
+  Load      Check   Standardize  Match   Survivorship    Validate  Activate
+   │         │         │           │          │             │         │
+ 多源汇入   规则初筛  归一化/清洗  查重识别   逐字段选真值   业务校验  写激活区+分发
+           BRF+式    地址/名称    精确+模糊  完整/最新/    唯一性/   事件驱动
+           初检规则  统一格式     +AI置信度  来源/质量分   平衡校验  推送订阅方</div>
+
+  <h3>9.2 数据质量六维度（评分卡骨架）</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 准确性 Accuracy</h4>值与真实世界一致（地址真实存在、税号有效）。</div>
+    <div class="box"><h4>② 完整性 Completeness</h4>必填属性有值、关键字段不缺（缺失率）。</div>
+    <div class="box"><h4>③ 一致性 Consistency</h4>跨系统同一对象口径一致（值/格式/结构/时间一致）。</div>
+    <div class="box"><h4>④ 唯一性 Uniqueness</h4>无重复主数据（一物多码率、去重率）。</div>
+    <div class="box"><h4>⑤ 及时性 Timeliness</h4>变更能及时反映、分发不滞后。</div>
+    <div class="box"><h4>⑥ 有效性 Validity</h4>值落在允许域内（枚举/正则/范围）。</div>
+  </div>
+  <div class="callout note">
+    <div class="h">📊 监控 vs 评分卡（两类度量联动）</div>
+    <b>监控（Monitor）</b>=实时检测违规、触发即时纠正；<b>评分卡（Scorecard）</b>=某时点质量快照。二者联动：监控结果计入评分卡。关键做法（Informatica/Oracle 均有）：<b>按源归因</b>——把质量异常回溯到源系统，形成「按源质量评分卡」，驱动上游整改对话。<b>Oracle 完整性评分公式</b>示例：组织完整度 = 100 − (缺邮箱+缺电话+缺URL+地址不全)/4。<b>警示</b>：指标不宜过多（20+ KPI 致「数据疲劳」），聚焦核心、对齐业务 KPI。
+  </div>
+
+  <h3>9.3 匹配：三种技术 + 分块</h3>
+  <table>
+    <thead><tr><th style="width:16%">匹配类型</th><th style="width:40%">机制</th><th>适用</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确匹配</b><br>deterministic</td><td>匹配列取值完全一致（税号/统一社会信用代码相等）</td><td>有强标识符时，最快最准</td></tr>
+      <tr><td><b>模糊匹配</b><br>probabilistic</td><td>容忍拼写错误/换位/合并拆分/遗漏/音近；返回置信度分数</td><td>名称/地址等自由文本</td></tr>
+      <tr><td><b>AI/ML 匹配</b></td><td>监督/主动学习推断规则，深度学习处理脏/残缺文本（Reltio FERN / Informatica）</td><td>大规模、高噪声</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gap">
+    <div class="h">⚠ 必须分块（Clustering/Blocking），绝不做 N×N</div>
+    500 条记录两两比较 = 500×499 ≈ 25 万次，全量不可行。<b>分块</b>先用「操纵后的标识值」生成<b>簇键（cluster key）</b>，只比较同簇记录（Oracle EDQ 核心设计）。簇键用<b>音近（Soundex/Metaphone）+ 分词（Make Array）+ 子串</b>变换，让「Oracle」与「Oracle Ltd」落同簇。生成<b>多个簇键、各带优先级</b>。防坑：大量 NULL 值会形成一个巨型 NULL 簇；设<b>簇大小上限（EDQ 默认 500）</b>+ 比较次数上限 + 子簇拆分并行。比较阶段是 CPU 密集，按此扩容。
+  </div>
+
+  <h3>9.4 合并 vs 存活（务必区分）</h3>
+  <div class="grid2">
+    <div class="box"><h4>合并 Merge = 结构</h4>把识别为同一实体的多条记录<b>并成一个容器</b>；子实体（联系人/地址/交叉引用）<b>重新挂到存活记录（re-parent）</b>；victim 置「已合并」状态，<b>不硬删</b>，可 unmerge 还原（合规要求）。</div>
+    <div class="box"><h4>存活 Survivorship = 取值</h4>决定<b>每个属性</b>的最终真值。策略：源优先级 / 最新胜出 / 最全胜出 / 质量分驱动。<b>字段级（cell-level）信任优于整记录排序</b>——把多源各自最强字段组合成一条黄金记录。</div>
+  </div>
+  <div class="callout win">
+    <div class="h">✅ 存活规则的四种策略 + 三条实务</div>
+    <b>策略</b>：① 源系统优先（如财务字段 SAP 恒胜）② 最新胜出（按最后更新时间）③ 最全胜出（空值更少者胜）④ 质量分/信任分驱动。<b>实务</b>：① <b>空值保护</b>——高优先级源为 NULL 时用次优先级有效值，别让空值覆盖好数据；② <b>与 DQ 联动</b>——通不过校验的字段自动降信任（Informatica 差异化）；③ <b>平局用 tie-breaker</b>（最新/最高源）。⚠ 存活规则「听起来简单，企业级规模下极难」——数十源×数百属性时是 MDM 最耗时的设计阶段。
+  </div>
+
+  <h3>9.5 双阈值自动/人工分流（借鉴 Oracle CDM）</h3>
+  <div class="dag">匹配得分 score
+   │
+   ├─ score < 匹配阈值(Match Threshold) ────────→ 保留为新记录（非重复）
+   ├─ 匹配阈值 ≤ score < 自动合并阈值 ──────────→ 生成合并请求 → 数据管家人工评审
+   └─ score ≥ 自动合并阈值(Automerge) ──────────→ 自动合并（无需人工）
+
+   护栏：① 整组每条都须过自动合并阈值，否则整组转人工
+        ② 重复组大小上限（Oracle 默认 10）③ 多候选时对最高分记录匹配</div>
+  <p class="en">高置信度自动合并、低置信度进人工队列——这是「自动化 + 人工兜底」的黄金分流，也是数据管家工作台（Case Management）的入口。</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="hierarchy">
+  <h2><span class="n">10</span>层次 · 分类 · 参考数据管理 <span class="en">hierarchy · taxonomy · RDM</span></h2>
+  <p>主数据几乎都带层次（组织树、科目表、物料分类）。层次与参考数据（RDM）是 MDM 里独立且高价值的能力，TIBCO EBX、Oracle EDM 在此最强。</p>
+
+  <h3>10.1 层次管理的三个要点</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 多重/替代层次</h4>同一批节点可挂多棵树服务不同视角（成本中心「按地理」vs「按业务线」）。Oracle GL 账户可属多棵 tree。</div>
+    <div class="box"><h4>② 层次版本化</h4>层次是<b>日期有效</b>的快照（Oracle Tree Version）：2025 版与 2026 版组织树不同，历史可查、可恢复。</div>
+    <div class="box"><h4>③ 时间标签/未来生效</h4>Oracle EDM Time Labels：历史（固定/滚动）+ 未来（到期才提交）——支持「未来生效的组织调整」提前审批。</div>
+  </div>
+
+  <h3>10.2 参考数据（RDM）与主数据的界分</h3>
+  <table>
+    <thead><tr><th style="width:22%">对比</th><th style="width:39%">主数据 Master Data</th><th>参考数据 Reference Data</th></tr></thead>
+    <tbody>
+      <tr><td>本质</td><td>核心业务实体（客户/产品/供应商）</td><td>分类/编码的「规则手册」（国家/币种/状态码）</td></tr>
+      <tr><td>易变性</td><td>较易变、范围广</td><td>极稳定、慢变、范围窄</td></tr>
+      <tr><td>来源</td><td>业务流程中维护</td><td>常由外部标准/法规定义（ISO 国家/币种码）</td></tr>
+      <tr><td>变更影响</td><td>在既有流程内完成</td><td><b>值变更常需配套业务流程变更</b>（新增「受限销售品」分类会改流程）</td></tr>
+    </tbody>
+  </table>
+  <p class="en">参考数据可视为主数据的一个「非易变子集」，是跨系统强制一致编码/分类的主要载体。RDM 集中管控并分发，确保一致与合规。</p>
+
+  <div class="callout note">
+    <div class="h">🌲 分类（Taxonomy）作为「单一脊柱」（借鉴 Oracle item class）</div>
+    Oracle Product Hub 的 <b>item class 层次</b>同时驱动四件事：① 分类、② 属性继承（子类继承父类属性组）、③ 流程/治理范围（按类启用 NIR）、④ 安全（按类授权）。<b>值得直接吸收</b>：让「实体类/分类树」成为一切挂载的锚点。护栏：层次深度≤15（多数≤5 级）、绑审批规则时类数<300、属性组沿树继承并在叶子特化。
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="integration">
+  <h2><span class="n">11</span>集成 · 分发 · 映射 <span class="en">distribution &amp; mapping</span></h2>
+  <p>黄金记录的价值在于「被消费」。MDM 是一个<b>平台</b>，不同消费者按各自延迟/访问模式取数——没有一刀切的路径。SAP DRF/MDI、Oracle publish/syndicate 给出了成熟范式。</p>
+
+  <h3>11.1 五种分发模式</h3>
+  <table>
+    <thead><tr><th style="width:20%">模式</th><th style="width:14%">延迟</th><th>最佳场景</th></tr></thead>
+    <tbody>
+      <tr><td><b>实时 API</b>（REST/GraphQL）</td><td>亚秒/秒</td><td>事务系统按需取黄金记录（CRUD、findDuplicates）</td></tr>
+      <tr><td><b>发布/订阅·事件驱动</b></td><td>实时推送</td><td>向多订阅者传播；松耦合；治理事件触发下游自动响应</td></tr>
+      <tr><td><b>批量/ETL·联合发布</b></td><td>小时级</td><td>分析负载、遗留系统、批量导出（syndication）</td></tr>
+      <tr><td><b>ESB/中间件</b>（iPaaS）</td><td>视情况</td><td>编排、转换、多协议混合（OIC/ICS）</td></tr>
+      <tr><td><b>Hub-and-Spoke</b></td><td>实时/批量</td><td>集中治理、hub→系统单向流</td></tr>
+    </tbody>
+  </table>
+  <div class="callout note">
+    <div class="h">🔀 落地建议：混合/共存模型</div>
+    同步用 API、实时操作传播用事件、分析与遗留目标用批量/联合发布。<b>发布订阅的解耦三重性</b>：空间解耦（收发方互不知）、时间解耦、异步。<b>权衡</b>：引入消息代理（单点/依赖）、最终一致性、消息顺序与去重需谨慎设计。事件驱动是 API-led 的<b>补充而非替代</b>。
+  </div>
+
+  <h3>11.2 发布 vs 联合发布（借鉴 Oracle）</h3>
+  <div class="grid2">
+    <div class="box"><h4>发布 Publish</h4><b>内部、增量、事件驱动</b>推送黄金记录到 spoke/消费系统；经 spoke 配置 + <b>发布映射（publication map）</b>裁剪重映射负载；只发「自上次发布以来的增量」；支持「一源属性→多目标列」。</div>
+    <div class="box"><h4>联合发布 Syndicate</h4><b>外部、按渠道/目标市场格式化</b>导出（常经 GDSN 数据池）；curated、本地化子集；发布工作流（通知/权限/状态迁移）自动化。</div>
+  </div>
+
+  <h3>11.3 两大不可或缺的映射原语（借鉴 SAP DRF）</h3>
+  <table>
+    <thead><tr><th style="width:16%">映射</th><th style="width:34%">Key Mapping 键映射</th><th>Value Mapping 值映射</th></tr></thead>
+    <tbody>
+      <tr><td>映射对象</td><td><b>对象标识</b>（整条记录）跨系统</td><td><b>属性值/代码</b>跨系统</td></tr>
+      <tr><td>示例</td><td>BP 1234(ERP)=A100(CRM)=C600(SRM)</td><td>物料组 01(ERP)=01-200(S/4)</td></tr>
+      <tr><td>用途</td><td>同一对象不同系统 ID → 防重复，hub 知所有系统 ID</td><td>调和跨系统不同配置/属性值</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold">
+    <div class="h">🏅 尽早建「跨系统 ID 注册表」（Cross-Reference / OSR→Registry ID）</div>
+    这是注册型 MDM 与「运行时组装视图」的地基，也是 unmerge/回灌的前提。做法（Oracle SSM + SAP UKMS 一致）：<b>(源系统, 源系统引用 OSR) → 内部 Registry ID</b>，带 Active/Inactive 状态、一个内码可对多源引用。它防止重复、支撑往返同步。<b>本方案的内码主键（§14）+ 交叉引用表（§16）正是此原语。</b>
+  </div>
+
+  <h3>11.4 事件驱动 + 过滤分发（借鉴 SAP DRF/MDI）</h3>
+  <p>把「发什么」与「怎么发」分离：<b>复制模型（Replication Model）</b>= 对象 × 目标系统 × 出站实现（IDoc/WebService/OData）× 过滤条件。治理完成（审批/激活）<b>触发事件</b> → 检查复制模型 → 按过滤逻辑决定目标系统 → 近实时推送。SAP MDI 更进一步：<b>规范模型（ODM）+ hub-and-spoke + 本地副本 + 事件日志 + delta token（按 消费者×实体×版本×实例 精确定界）+ 28 天初始装载兜底</b>——这套「规范模型 + 中央事件日志 + 各系统本地同步副本」是消除点对点集成蔓延的参考范式。</p>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="benchmark">
+  <h2><span class="n">12</span>主流厂商对标与借鉴 <span class="en">vendor benchmark</span></h2>
+  <p>把六家标杆的差异化能力与「值得借鉴的设计点」汇成一表，作为本方案详细设计（第三部分）的来源索引。</p>
+
+  <table>
+    <thead><tr><th style="width:13%">厂商/产品</th><th style="width:20%">差异化标签</th><th style="width:38%">最值得借鉴的设计点</th><th>本案落点</th></tr></thead>
+    <tbody>
+      <tr><td><b>SAP MDG</b></td><td>治理式主数据、暂存/激活、决策表工作流</td><td>CR 原子治理单元；<b>Staging/Active 双区</b>；BRF+ 决策表外置流程（一个黑盒模板，步骤/审批人全数据驱动）；一份规则三处复用（治理+整合+批处理）；Key/Value Mapping；<b>数据所有权</b>（Core vs Application Data Owner）联邦</td><td>§14/§17/§18</td></tr>
+      <tr><td><b>Oracle</b><br>EDM/Product/Customer Hub</td><td>层次/维度一等公民、TCA 党派模型、EDQ 匹配</td><td><b>Party≠Account 分离</b>（人/组织存一次，角色为关系）；内码 UUID 永不复用；<b>交叉引用表</b>；双阈值匹配 + 字段级存活 + 源信任；NIR vs Change Order 二分；层次 Time Label；发布 vs 联合发布</td><td>§13/§16/§10</td></tr>
+      <tr><td><b>Informatica</b><br>MDM SaaS</td><td>匹配合并/信任框架标杆</td><td><b>单元格级存活</b>（BVT）；<b>存活分绑定 DQ 校验</b>（校验失败字段降信任）；声明式配置匹配合并规则；持续/主动/监督式 ML</td><td>§16/§09</td></tr>
+      <tr><td><b>Stibo STEP</b></td><td>多域与建模灵活性</td><td>超灵活数据模型；买/卖方黄金记录；版本+多语言维度；关系分析；<b>GraphQL API</b></td><td>§13</td></tr>
+      <tr><td><b>Reltio</b></td><td>云原生、图、实时 API</td><td><b>图数据模型</b>（实体+属性+交互）；FERN rule-free 匹配；动态存活（按上下文给最佳真值）；API-first 毫秒响应</td><td>§13/§16</td></tr>
+      <tr><td><b>TIBCO EBX</b></td><td>治理、RDM、模型驱动</td><td>一体化 RDM+多域+分类+层次+治理；<b>模型驱动「所见即所建」</b>；治理仓库；版本+工作流驱动管家；<b>制度先于工具</b></td><td>§10/§17</td></tr>
+      <tr><td><b>用友 iUAP MDM</b></td><td>装载即清洗、四定、服务分发</td><td>多角度建模（业务/物理/界面）；装载时唯一性检查+归一化+查重合并；按分发策略以服务分发；<b>异常主动通知</b>（邮件/短信）；四定方法论</td><td>§04/§11</td></tr>
+      <tr><td><b>金蝶苍穹 AMDM</b></td><td>集团分级、编码按组织生效</td><td><b>编码规则按受控组织生效 + 按属性设适用条件</b>；总部+多下级分级维护；元数据模型驱动低代码集成（JDBC/API/MQ）</td><td>§15/§06</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🧭 五个跨厂商反复出现的「必抄」原语</div>
+    ① <b>数据所有权</b>（谁拥有哪片主数据，核心 vs 应用）；② <b>规范模型/canonical</b>（一份versioned规范 schema）；③ <b>暂存/激活分离</b>（未批准不碰实表）；④ <b>决策表外置规则</b>（流程/校验/存活皆数据驱动，非代码）；⑤ <b>Key/Value 映射</b>（身份 + 值两把钥匙）。这五条在 SAP/Oracle 每一层都复现——恰好也都能映射到既有 cmx 平台的定义层、BRF+ 式规则表、flow 引擎（§20）。
+  </div>
+</section>
+
+<!-- ============ PART III BAND ============ -->
+<div class="partband">
+  <div class="pt">Part III</div>
+  <div class="pn">第三部分 · 详细设计</div>
+  <div class="pd">数据模型、表结构、编码/匹配/合并/状态机/API 到可开发的字段级 —— 面向工程实现</div>
+</div>
+
+<!-- ============ 13 ============ -->
+<section id="model">
+  <h2><span class="n">13</span>元数据驱动数据模型与总体 ER <span class="en">metadata-driven model</span></h2>
+  <p>核心设计决策：<b>MDM 不为每个主数据域硬编码表，而是元数据驱动</b>——用一套元模型描述「实体/属性/关系/层次」，任意主数据域（客户、供应商、物料、科目）都是这套元模型的实例。这与 SAP MDG 的 Data Model、Oracle EDM 的 data chain、以及既有 cmx 的 DCT 定义完全同构。</p>
+
+  <h3>13.1 元模型五要素</h3>
+  <table>
+    <thead><tr><th style="width:16%">要素</th><th style="width:30%">职责</th><th>对标</th></tr></thead>
+    <tbody>
+      <tr><td><b>实体类型</b><br>Entity Type</td><td>一类主数据对象（供应商/科目）；分「治理根/值列表/外部/从属节点」四种用途类型</td><td>SAP Storage &amp; Use Type 1-4；Oracle Node Type</td></tr>
+      <tr><td><b>属性</b><br>Attribute</td><td>实体的字段；分通用属性 + 分组视图属性；带类型/长度/精度/必填/取值域</td><td>SAP Attribute；Oracle EFF 段</td></tr>
+      <tr><td><b>关系</b><br>Relationship</td><td>实体间连接：主导（层次）/限定（增强键）/引用（非键外键）</td><td>SAP Leading/Qualifying/Referencing；Oracle typed edge</td></tr>
+      <tr><td><b>层次</b><br>Hierarchy</td><td>同实体自引用树 or 跨实体分类树；日期有效版本；多重/替代层次</td><td>Oracle Hierarchy Set；SAP Hierarchy</td></tr>
+      <tr><td><b>作用域</b><br>Scope</td><td>数据的多维定界：组织/期间/源系统；定义与数据两模式分离的锚</td><td>SAP Edition；cmx 两模式 org+period</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.2 实体的四种用途类型（借鉴 SAP Storage &amp; Use Type）</h3>
+  <table>
+    <thead><tr><th style="width:14%">用途类型</th><th style="width:20%">可治理</th><th style="width:30%">存储</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 治理根</b></td><td>是（根对象）</td><td>暂存区 + 激活区（双区）</td><td>主数据主体（供应商、科目）；变更请求首先处理它</td></tr>
+      <tr><td><b>② 值列表</b></td><td>否</td><td>校验表 + 文本表</td><td>取值域/描述（RDM 码表）；可上传；增强根对象的键</td></tr>
+      <tr><td><b>③ 外部</b></td><td>否</td><td>不由 MDM 存（外部系统）</td><td>外部实体引用；增强键</td></tr>
+      <tr><td><b>④ 从属节点</b></td><td>是（须随根一起）</td><td>暂存区 + 激活区</td><td>根对象的子层（供应商的多地址、多银行账户）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.3 总体 ER（黄金记录为中心）</h3>
+  <div class="dag">                         ┌──────────────────────┐
+                         │   md_entity_type      │ 实体类型（元数据）
+                         │   (定义：域/层/属性组) │
+                         └───────────┬──────────┘
+                                     │ 实例化
+        ┌────────────────────────────┼────────────────────────────┐
+        │                            │                            │
+┌───────┴────────┐         ┌─────────┴────────┐         ┌─────────┴────────┐
+│  md_golden      │ 1     * │  md_attr_value    │         │  md_hierarchy     │
+│  (黄金记录主表) │─────────│  (属性值·EAV可选) │         │  (层次/父子关系)  │
+│  内码PK/编码/状态│         └──────────────────┘         └──────────────────┘
+└───┬────────┬───┘
+    │        │ 1                            ┌──────────────────────┐
+    │        └─────────────────────────────│  md_xref (交叉引用)    │ 源系统ID↔内码
+    │ 1                                  *  │  (源系统,源ID)→内码    │
+    │                                       └──────────────────────┘
+    │ *                          ┌──────────────────────┐
+┌───┴────────────┐               │  md_change_request    │ 变更请求（治理单元）
+│ md_source_rec  │ 多源原始记录  │  + md_cr_item (行项)  │
+│ (staging暂存)  │               └──────────────────────┘
+└────────────────┘               ┌──────────────────────┐
+                                  │  md_merge_record       │ 匹配组/存活裁决
+                                  └──────────────────────┘</div>
+  <p class="en">黄金记录 md_golden 用稳定内码主键；多源原始记录进 staging；匹配成组后由存活规则算出黄金值；交叉引用表记 (源系统,源ID)→内码，是分发与回灌的地基。</p>
+
+  <div class="callout note">
+    <div class="h">🧬 借鉴 Oracle：Party ≠ Account 分离（客商域关键建模）</div>
+    人/组织<b>只存一次</b>（md_golden 的 party），每个业务角色（客户、供应商、往来单位）是挂在其上的<b>关系/账户</b>。「张三作为供应商联系人」本身是一个 Relationship 类型的 party。这一条是客商域最高杠杆的 schema 决策，避免「同一公司在客户表与供应商表各存一份、改名只改一边」。属性建模支持 <b>EAV（属性值表）或宽表</b>两种落地——本方案默认「通用属性宽表 + 扩展属性 EAV/JSONB」混合，兼顾查询性能与灵活扩展。
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="schema">
+  <h2><span class="n">14</span>核心表结构（字段级）<span class="en">table schemas, field-level</span></h2>
+  <p>下列表结构以 PostgreSQL 为目标（对齐既有 cmx 技术栈），命名前缀 <code>md_</code>（master data）。所有主键用后端生成的 bigint 内码（对齐既有 bigint 主键铸号方案）。</p>
+
+  <h3>14.1 <code>md_golden</code> — 黄金记录主表</h3>
+<pre><code><span class="kw">CREATE TABLE</span> md_golden (
+  <span class="pk">id</span>            <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,        <span class="cmt">-- 内码：后端铸号，永不复用</span>
+  entity_type   <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- 实体类型：supplier/customer/gl_account…</span>
+  code          <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- 业务编码：外码，编码引擎生成(§15)</span>
+  name          <span class="ty">VARCHAR(255)</span> <span class="kw">NOT NULL</span>,
+  name_en       <span class="ty">VARCHAR(255)</span>,                        <span class="cmt">-- 多语言名（可扩 md_golden_i18n 表）</span>
+  short_name    <span class="ty">VARCHAR(64)</span>,
+  status        <span class="ty">VARCHAR(16)</span>  <span class="kw">NOT NULL DEFAULT</span> <span class="str">'draft'</span>,<span class="cmt">-- 生命周期状态(§06/§17)</span>
+  attrs         <span class="ty">JSONB</span>        <span class="kw">NOT NULL DEFAULT</span> <span class="str">'{}'</span>,   <span class="cmt">-- 扩展属性（元数据驱动，随域而变）</span>
+  org_scope     <span class="ty">VARCHAR(64)</span>,                         <span class="cmt">-- 数据所有权：受控组织（分级维护§06）</span>
+  trust_score   <span class="ty">SMALLINT</span>     <span class="kw">DEFAULT</span> <span class="nu">0</span>,          <span class="cmt">-- 质量/信任评分(§09)</span>
+  version       <span class="ty">INT</span>          <span class="kw">NOT NULL DEFAULT</span> <span class="nu">1</span>,     <span class="cmt">-- 变更版本，Change Order 自增</span>
+  is_active     <span class="ty">BOOLEAN</span>      <span class="kw">NOT NULL DEFAULT</span> <span class="kw">false</span>, <span class="cmt">-- 激活区标志：false=暂存,true=已激活</span>
+  created_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now(),
+  updated_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now(),
+  <span class="kw">UNIQUE</span>(entity_type, code)                     <span class="cmt">-- 同类型编码唯一（防一物多码）</span>
+);
+<span class="kw">CREATE INDEX</span> ix_golden_type_status <span class="kw">ON</span> md_golden(entity_type, status);
+<span class="kw">CREATE INDEX</span> ix_golden_attrs_gin    <span class="kw">ON</span> md_golden <span class="kw">USING GIN</span>(attrs);</code></pre>
+
+  <div class="callout note">
+    <div class="h">🗄 暂存区 vs 激活区（借鉴 SAP Flex/Reuse 双区）</div>
+    本表用 <code>is_active</code> 标志实现 <b>Flex 式单表双区</b>（激活+暂存共表，标志区分）——变更请求处理期间数据留在 <code>is_active=false</code> 的暂存态，审批激活才置 <code>true</code>，绝不让未批准编辑碰到「活」记录。若某域要写回既有业务表（Reuse 模式），则由一个 <b>访问类（Access Class）抽象层</b>在激活时写入目标表——同一治理流可指向两种存储，这是 SAP 最值得抄的接缝设计。
+  </div>
+
+  <h3>14.2 <code>md_xref</code> — 跨系统交叉引用（Key Mapping 地基）</h3>
+<pre><code><span class="kw">CREATE TABLE</span> md_xref (
+  <span class="pk">id</span>            <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,
+  golden_id     <span class="ty">BIGINT</span>       <span class="kw">NOT NULL REFERENCES</span> md_golden(id),
+  source_system <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- 源系统码：ERP/CRM/SRM/legacy…</span>
+  source_ref    <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>,           <span class="cmt">-- 源系统内的原始ID（OSR）</span>
+  xref_status   <span class="ty">VARCHAR(16)</span>  <span class="kw">NOT NULL DEFAULT</span> <span class="str">'active'</span>,<span class="cmt">-- active/inactive（合并后失效标记）</span>
+  confidence    <span class="ty">SMALLINT</span>     <span class="kw">DEFAULT</span> <span class="nu">50</span>,         <span class="cmt">-- 源系统信任分（存活输入§16）</span>
+  created_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now(),
+  <span class="kw">UNIQUE</span>(source_system, source_ref)              <span class="cmt">-- 一个源ID只映射一个内码</span>
+);
+<span class="cmt">-- (源系统,源ID) → 内码。一个内码可对多源引用（多系统同一实体）。</span>
+<span class="cmt">-- 这是注册型MDM「运行时组装视图」+ 合并回灌 + unmerge 的地基。</span></code></pre>
+
+  <h3>14.3 <code>md_change_request</code> + <code>md_cr_item</code> — 变更请求（治理原子单元）</h3>
+<pre><code><span class="kw">CREATE TABLE</span> md_change_request (
+  <span class="pk">id</span>            <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,
+  cr_type       <span class="ty">VARCHAR(32)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- create/update/extend/block/merge/flag_delete</span>
+  entity_type   <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,
+  status        <span class="ty">VARCHAR(32)</span>  <span class="kw">NOT NULL DEFAULT</span> <span class="str">'apply'</span>, <span class="cmt">-- 状态机(§17)</span>
+  priority      <span class="ty">VARCHAR(16)</span>  <span class="kw">DEFAULT</span> <span class="str">'normal'</span>,     <span class="cmt">-- 分类码：驱动路由+分析(SAP classification)</span>
+  reason_code   <span class="ty">VARCHAR(32)</span>,                         <span class="cmt">-- 原因码/驳回码</span>
+  effective_date <span class="ty">DATE</span>,                              <span class="cmt">-- 未来生效日（Edition，期间边界批量生效）</span>
+  requested_by  <span class="ty">BIGINT</span>       <span class="kw">NOT NULL</span>,           <span class="cmt">-- 发起人（四眼原则：≠审批人）</span>
+  org_scope     <span class="ty">VARCHAR(64)</span>,                         <span class="cmt">-- 受控组织（分级审批路由）</span>
+  payload       <span class="ty">JSONB</span>        <span class="kw">NOT NULL</span>,           <span class="cmt">-- 变更内容（新值/红线markup）</span>
+  created_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now()
+);
+<span class="kw">CREATE TABLE</span> md_cr_item (               <span class="cmt">-- 一个CR含多行项（多对象/多视图并行审批）</span>
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  cr_id       <span class="ty">BIGINT</span> <span class="kw">NOT NULL REFERENCES</span> md_change_request(id),
+  golden_id   <span class="ty">BIGINT</span>,                            <span class="cmt">-- 目标对象（新建时为空，铸号后回填）</span>
+  view_group  <span class="ty">VARCHAR(32)</span>,                       <span class="cmt">-- 视图分组：finance/purchasing/logistics</span>
+  field_deltas <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,               <span class="cmt">-- 字段级变更 {field:{old,new}}（红线对比）</span>
+  approve_status <span class="ty">VARCHAR(16)</span> <span class="kw">DEFAULT</span> <span class="str">'pending'</span> <span class="cmt">-- 行项级审批（不同视图不同部门批）</span>
+);</code></pre>
+
+  <h3>14.4 表清单总览</h3>
+  <table>
+    <thead><tr><th style="width:22%">表</th><th style="width:32%">职责</th><th>关键字段</th></tr></thead>
+    <tbody>
+      <tr><td><code>md_entity_type</code></td><td>实体类型元数据（域/层/用途类型）</td><td>code, domain, use_type, parent_type</td></tr>
+      <tr><td><code>md_attr_def</code></td><td>属性定义（类型/长度/精度/必填/取值域/主控级别）</td><td>entity_type, field, data_type, controlled_at</td></tr>
+      <tr><td><code>md_golden</code></td><td>黄金记录主表（暂存/激活双区）</td><td>id, code, status, attrs, is_active</td></tr>
+      <tr><td><code>md_hierarchy</code></td><td>层次父子关系（自引用/跨实体，日期有效）</td><td>hierarchy_set, node_id, parent_id, valid_from</td></tr>
+      <tr><td><code>md_xref</code></td><td>跨系统交叉引用（Key Mapping）</td><td>golden_id, source_system, source_ref</td></tr>
+      <tr><td><code>md_value_map</code></td><td>值映射（跨系统代码调和 Value Mapping）</td><td>field, src_sys, src_val, tgt_sys, tgt_val</td></tr>
+      <tr><td><code>md_change_request</code></td><td>变更请求（治理原子单元）</td><td>cr_type, status, payload, effective_date</td></tr>
+      <tr><td><code>md_cr_item</code></td><td>变更请求行项（多视图并行审批）</td><td>cr_id, view_group, field_deltas</td></tr>
+      <tr><td><code>md_source_rec</code></td><td>多源原始记录（匹配前 staging）</td><td>source_system, raw_payload, batch_id</td></tr>
+      <tr><td><code>md_merge_record</code></td><td>匹配组 + 存活裁决</td><td>group_key, member_ids, master_id, score</td></tr>
+      <tr><td><code>md_code_rule</code></td><td>编码规则（段定义，按组织生效）</td><td>entity_type, org_scope, segments, condition</td></tr>
+      <tr><td><code>md_audit</code></td><td>审计留痕（提交时记录，可查可下载）</td><td>golden_id, action, field, old, new, by, at</td></tr>
+      <tr><td><code>md_subscription</code></td><td>分发订阅（目标系统 × 过滤 × 出站方式）</td><td>target_sys, entity_type, filter, channel</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="codeengine">
+  <h2><span class="n">15</span>编码规则引擎设计 <span class="en">the coding engine</span></h2>
+  <p>编码引擎把 §05 的业务规则变成可执行的字段级设计。核心：<b>规则由段（segment）序列组成，按受控组织+条件选规则，服务端原子铸号防重</b>。</p>
+
+  <h3>15.1 规则声明（JSON，进 <code>md_code_rule.segments</code>）</h3>
+<pre><code>{
+  <span class="str">"entityType"</span>: <span class="str">"supplier"</span>,
+  <span class="str">"orgScope"</span>: <span class="str">"HQ"</span>,                     <span class="cmt">// 受控组织：此组织登录时生效(金蝶机制)</span>
+  <span class="str">"condition"</span>: <span class="str">"attrs.category == 'raw_material'"</span>, <span class="cmt">// 适用条件：按属性分流</span>
+  <span class="str">"segments"</span>: [
+    { <span class="str">"type"</span>: <span class="str">"const"</span>,    <span class="str">"value"</span>: <span class="str">"V"</span> },                    <span class="cmt">// ① 常量段</span>
+    { <span class="str">"type"</span>: <span class="str">"attr"</span>,     <span class="str">"field"</span>: <span class="str">"category"</span>, <span class="str">"map"</span>: {<span class="str">"raw_material"</span>:<span class="str">"RM"</span>} }, <span class="cmt">// ② 属性取值段</span>
+    { <span class="str">"type"</span>: <span class="str">"date"</span>,     <span class="str">"format"</span>: <span class="str">"YYMM"</span> },              <span class="cmt">// ④ 日期段</span>
+    { <span class="str">"type"</span>: <span class="str">"serial"</span>,   <span class="str">"width"</span>: <span class="nu">4</span>, <span class="str">"resetBy"</span>: <span class="str">"category+YYMM"</span> }, <span class="cmt">// ③ 流水号(按分组重置)</span>
+    { <span class="str">"type"</span>: <span class="str">"check"</span>,    <span class="str">"algo"</span>: <span class="str">"mod11"</span> }              <span class="cmt">// ⑤ 校验位段</span>
+  ]
+  <span class="cmt">// 生成示例：V·RM·2608·0001·7  →  VRM260800017</span>
+}</code></pre>
+
+  <h3>15.2 铸号流程（服务端原子，防并发重号）</h3>
+  <div class="dag">申请编码(entityType, attrs, orgCtx)
+   │
+   ├─1. 选规则：按 orgScope 命中受控组织 + condition 求值 → 唯一规则
+   │        └ 无组织上下文 → 兜底规则（金蝶易错点：显式处理）
+   ├─2. 逐段求值：const/attr/date 直接算；serial 段进下一步
+   ├─3. 流水号原子分配：
+   │      INSERT INTO md_serial(rule_id, reset_key, next_val)
+   │      ON CONFLICT DO UPDATE SET next_val = md_serial.next_val + 1
+   │      RETURNING next_val;                    ← 行锁，并发安全
+   ├─4. 拼接 + 校验位：segments.join() + mod11(...)
+   ├─5. 唯一性终检：UNIQUE(entity_type, code) 兜底
+   └─6. 返回 code（永不复用；作废走冻结不释放号段）</div>
+
+  <div class="callout gold">
+    <div class="h">🏅 三条编码铁律落到字段（呼应 §05）</div>
+    ① <b>永不回收</b>：无「删除释放号段」逻辑，作废只置 <code>status='frozen'</code>，<code>md_serial.next_val</code> 只增不减；② <b>内码≠外码</b>：关系全锚在 <code>md_golden.id</code>（bigint 内码），<code>code</code> 改规则可重生成而关系不断；③ <b>规则版本化</b>：<code>md_code_rule</code> 带 <code>valid_from/valid_to</code>，旧对象留旧码。</div>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="matchmerge">
+  <h2><span class="n">16</span>匹配合并与存活规则设计 <span class="en">match · merge · survivorship</span></h2>
+  <p>把 §09 的流水线落到可实现的算法与数据结构。四阶段：<b>分块 → 比较 → 裁决 → 合并存活</b>，语义对齐 Oracle EDQ 与 Informatica。</p>
+
+  <h3>16.1 分块（Clustering）—— 生成多簇键</h3>
+<pre><code><span class="cmt">// 每条记录生成 N 个带优先级的簇键，只比较同簇（绝不 N×N）</span>
+<span class="kw">fn</span> <span class="fn">cluster_keys</span>(rec: &Record) -> Vec&lt;(<span class="ty">String</span>, <span class="ty">u8</span>)&gt; {   <span class="cmt">// (key, priority)</span>
+  vec![
+    (soundex(&rec.name), <span class="nu">1</span>),                  <span class="cmt">// 音近：Oracle≈Oracle Ltd 同簇</span>
+    (metaphone(&rec.name), <span class="nu">2</span>),
+    (first_n(&normalize(&rec.name), <span class="nu">5</span>), <span class="nu">3</span>),      <span class="cmt">// 前5字符</span>
+    (rec.tax_id.clone().unwrap_or_default(), <span class="nu">0</span>),  <span class="cmt">// 税号：强标识优先级最高</span>
+  ].into_iter().filter(|(k,_)| !k.is_empty())     <span class="cmt">// 防 NULL 巨簇</span>
+   .collect()
+}
+<span class="cmt">// 护栏：簇大小上限 500（超则告警+子簇拆分并行）；比较次数上限</span></code></pre>
+
+  <h3>16.2 比较（Comparison）—— 分级结果非布尔</h3>
+  <table>
+    <thead><tr><th style="width:24%">比较器</th><th style="width:36%">机制</th><th>返回</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确匹配</b> Exact</td><td>税号/统一社会信用代码全等</td><td>true/false</td></tr>
+      <tr><td><b>编辑距离</b> Edit Distance</td><td>最小增删改次数（Matthews→Mathews=1）</td><td>0-100% + 结果带</td></tr>
+      <tr><td><b>字符换位</b> Transposition</td><td>Michael/Micheal 换位识别</td><td>0-100%</td></tr>
+      <tr><td><b>音近</b> Soundex/Metaphone</td><td>发音相同判匹配</td><td>true/false</td></tr>
+    </tbody>
+  </table>
+  <p class="en">比较器可插拔、返回分级结果（非布尔），支持结果带（band）。对齐 EDQ 的 Comparison 设计。</p>
+
+  <h3>16.3 裁决（三向决策 + 双阈值）</h3>
+<pre><code><span class="cmt">// 有序规则表逐条求值，产出三向决策之一（对齐 Oracle CDM 双阈值）</span>
+<span class="kw">enum</span> <span class="ty">MatchDecision</span> { AutoMerge, Review, NoMatch }
+
+<span class="kw">fn</span> <span class="fn">decide</span>(score: <span class="ty">u8</span>, cfg: &MatchCfg) -> <span class="ty">MatchDecision</span> {
+  <span class="kw">if</span> score &gt;= cfg.automerge_threshold { <span class="ty">AutoMerge</span> }        <span class="cmt">// 如 ≥95 自动合并</span>
+  <span class="kw">else if</span> score &gt;= cfg.match_threshold { <span class="ty">Review</span> }         <span class="cmt">// 如 80-94 进人工队列</span>
+  <span class="kw">else</span> { <span class="ty">NoMatch</span> }                                       <span class="cmt">// &lt;80 保留为新记录</span>
+}
+<span class="cmt">// 护栏：① 组内每条都须过 automerge，否则整组转 Review</span>
+<span class="cmt">//      ② 组大小上限（默认10）③ 多候选时对最高分匹配</span>
+<span class="cmt">// 调优靠规则/分数（可预测、可审计），非黑盒算法旋钮</span></code></pre>
+
+  <h3>16.4 合并 + 存活（结构 + 取值分离）</h3>
+<pre><code><span class="cmt">// 合并=结构：子实体 re-parent 到存活记录，victim 置'merged'不硬删</span>
+<span class="kw">fn</span> <span class="fn">merge</span>(group: &MatchGroup, rules: &[SurvivorRule]) -> <span class="ty">GoldenRecord</span> {
+  <span class="kw">let</span> master = pick_master(group, rules);          <span class="cmt">// 选存活主：源优先/最新/最全/最老</span>
+  <span class="kw">for</span> field <span class="kw">in</span> all_fields() {
+    golden[field] = survivorship(field, group, rules); <span class="cmt">// 逐字段选真值(cell-level)</span>
+  }
+  reparent_children(group, master.id);            <span class="cmt">// 联系人/地址/xref 移到 master</span>
+  mark_victims_merged(group, master.id);          <span class="cmt">// victim status='merged'，可 unmerge</span>
+  golden
+}
+<span class="cmt">// 存活策略（逐字段）：</span>
+<span class="cmt">//   source_precedence — 源系统信任分最高胜（md_xref.confidence）</span>
+<span class="cmt">//   most_recent       — updated_at 最新胜</span>
+<span class="cmt">//   most_complete     — 非空胜（空值保护：别让NULL覆盖好数据）</span>
+<span class="cmt">//   quality_score     — 通不过DQ校验的字段降信任(Informatica差异化)</span></code></pre>
+
+  <div class="callout win">
+    <div class="h">✅ 字段级存活（cell-level）—— 把多源各自最强字段拼成黄金记录</div>
+    存活不是「整条记录二选一」，而是<b>逐字段</b>选真值：名称取 CRM 的、税号取 ERP 的、地址取最新的——组合成一条谁都比不过的黄金记录。<code>md_merge_record</code> 记录每字段的取值来源与理由，形成可审计的存活裁决轨迹（对齐 Informatica BVT、Oracle Set Attribute Value）。
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="statemachine">
+  <h2><span class="n">17</span>治理流程状态机与工作流 <span class="en">state machine &amp; workflow</span></h2>
+  <p>把 §06 生命周期落成可执行状态机。核心借鉴 SAP：<b>一个通用工作流模板 + 决策表外置路由</b>——步骤/审批人/状态迁移全数据驱动，加减步骤零改代码。</p>
+
+  <h3>17.1 变更请求状态机</h3>
+  <div class="dag">        ┌─────────┐  提交   ┌──────────┐  校验通过  ┌──────────┐
+   ●───→│  apply  │────────→│ validate │──────────→│ approving │
+        │  申请   │         │  校验    │  校验失败  │  审批中   │
+        └─────────┘         └────┬─────┘◀────┐     └────┬─────┘
+                                 │ 挡回      │驳回rebase   │ 审批
+              ┌──────────────────┘           │      ┌─────┴─────┐
+              ▼                                │      │通过       │驳回
+        ┌──────────┐  疑似重复            ┌────┴─────┐│    ┌──────┴───┐
+        │  匹配队列 │─────人工评审────────│ rejected ││    │published │◀ 激活+分发
+        │  (review) │                     └──────────┘│    └────┬─────┘
+        └──────────┘                                  │         │ 变更
+                                                       │    ┌────┴─────┐
+                            ┌──────────┐   冻结         │    │ changing │(Change Order)
+                            │ archived │◀──────┐       │    └────┬─────┘
+                            │  归档    │       │  ┌────┴────┐    │
+                            └──────────┘       └──│ frozen  │◀───┘ 停用
+                                                  │  冻结   │
+                                                  └─────────┘</div>
+
+  <h3>17.2 决策表驱动路由（借鉴 SAP BRF+ Rule-Based Workflow）</h3>
+<pre><code><span class="cmt">// 一张决策表：从「当前步+动作」推导「下一步+状态+审批人」</span>
+<span class="cmt">// 加减步骤、改审批人 = 改这张表的数据，零改工作流模板代码</span>
+[
+  { <span class="str">"curStep"</span>:<span class="str">"validate"</span>, <span class="str">"cond"</span>:<span class="str">"amount &lt; 500000"</span>,
+    <span class="str">"nextStep"</span>:<span class="str">"approve_l1"</span>, <span class="str">"approver"</span>:<span class="str">"role:steward"</span> },
+  { <span class="str">"curStep"</span>:<span class="str">"validate"</span>, <span class="str">"cond"</span>:<span class="str">"amount &gt;= 500000"</span>,     <span class="cmt">// 高额升级</span>
+    <span class="str">"nextStep"</span>:<span class="str">"approve_director"</span>, <span class="str">"approver"</span>:<span class="str">"role:fin_director"</span> },
+  { <span class="str">"curStep"</span>:<span class="str">"validate"</span>, <span class="str">"cond"</span>:<span class="str">"org.country == 'DE'"</span>,      <span class="cmt">// 属地加签</span>
+    <span class="str">"nextStep"</span>:<span class="str">"approve_eu_steward"</span>, <span class="str">"approver"</span>:<span class="str">"role:eu_steward"</span> }
+]
+<span class="cmt">// 支持：单级/多级/并行；按 role/user/org 定位审批人</span>
+<span class="cmt">// 分类码(priority/reason)既是分析维度，又是路由输入</span></code></pre>
+
+  <div class="callout note">
+    <div class="h">⚙️ 三条工作流设计原则（SAP + Oracle EDM 共识）</div>
+    ① <b>四眼原则默认</b>：审批人策略默认排除提交人（发起≠审批）；② <b>行项原子提交</b>：一个 CR 内的多行项一起校验/审批/提交（Oracle Request 语义）；③ <b>分层级联审批策略</b>：策略挂在 应用/域/层次/节点类型 四级，向下级联、独立求值（如应用级「财务3审批人」+ 域级「4审批人」= 7 人去重）。多视图并行：财务视图→财务部、采购视图→采购部，各批各的（SAP Field Groups + per-step UI）。
+  </div>
+
+  <h3>17.3 定义态 vs 变更态（两套子状态机）</h3>
+  <table>
+    <thead><tr><th style="width:16%">维度</th><th style="width:38%">定义态（新建 NIR）</th><th>变更态（Change Order）</th></tr></thead>
+    <tbody>
+      <tr><td>触发</td><td>申请新主数据对象</td><td>修改已发布对象</td></tr>
+      <tr><td>标记</td><td>无红线，产出全新对象</td><td>带红线/markup，字段级 old→new</td></tr>
+      <tr><td>可见性</td><td>未批准仅 MDM 内可见（Pending）</td><td>原对象仍生效，变更并行审</td></tr>
+      <tr><td>结果</td><td>审批通过 → 计划生效 → 发布</td><td>审批通过 → <b>版本+1</b> → 重新发布</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 18 ============ -->
+<section id="api">
+  <h2><span class="n">18</span>REST API 契约 <span class="en">the API contract</span></h2>
+  <p>API 分四组：<b>建模、主数据 CRUD、治理、分发</b>。设计对齐既有 cmx 的 <code>/api/*</code> 风格与 DataSet 返回约定；业务错误走响应体 code 非 HTTP 码。</p>
+
+  <h3>18.1 端点清单</h3>
+  <table>
+    <thead><tr><th style="width:8%">组</th><th style="width:30%">端点</th><th style="width:10%">方法</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><b>建模</b></td><td><code>/api/mdm/entity-types</code></td><td>GET/POST</td><td>实体类型元数据 CRUD</td></tr>
+      <tr><td><code>/api/mdm/entity-types/{t}/attrs</code></td><td>GET/PUT</td><td>属性定义（类型/长度/取值域）</td></tr>
+      <tr><td><code>/api/mdm/hierarchies/{set}</code></td><td>GET/POST</td><td>层次树（懒下钻/整棵）</td></tr>
+      <tr><td rowspan="4"><b>主数据</b></td><td><code>/api/mdm/records</code></td><td>GET</td><td>查询黄金记录（按类型/状态/属性，DataSet 返回）</td></tr>
+      <tr><td><code>/api/mdm/records/{id}</code></td><td>GET/PATCH</td><td>单条读取/更新（走 CR，不直改）</td></tr>
+      <tr><td><code>/api/mdm/records/find-duplicates</code></td><td>POST</td><td>实时查重（录入时防重，返回候选+分数）</td></tr>
+      <tr><td><code>/api/mdm/code/generate</code></td><td>POST</td><td>编码铸号（§15）</td></tr>
+      <tr><td rowspan="4"><b>治理</b></td><td><code>/api/mdm/change-requests</code></td><td>GET/POST</td><td>变更请求提交/列表</td></tr>
+      <tr><td><code>/api/mdm/change-requests/{id}/submit</code></td><td>POST</td><td>提交进工作流</td></tr>
+      <tr><td><code>/api/mdm/change-requests/{id}/approve</code></td><td>POST</td><td>审批（通过/驳回/退回，带意见）</td></tr>
+      <tr><td><code>/api/mdm/merge-requests</code></td><td>GET/POST</td><td>合并/链接请求（数据管家评审）</td></tr>
+      <tr><td rowspan="3"><b>分发</b></td><td><code>/api/mdm/subscriptions</code></td><td>GET/POST</td><td>订阅配置（目标×过滤×通道）</td></tr>
+      <tr><td><code>/api/mdm/publish/{entityType}</code></td><td>POST</td><td>发布（增量/全量，按 spoke 裁剪）</td></tr>
+      <tr><td><code>/api/mdm/events</code></td><td>GET</td><td>变更事件查询（delta，供消费者拉取）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>18.2 关键契约示例</h3>
+<pre><code><span class="cmt">// POST /api/mdm/records/find-duplicates —— 录入时实时防重</span>
+<span class="cmt">// Request</span>
+{ <span class="str">"entityType"</span>: <span class="str">"supplier"</span>,
+  <span class="str">"candidate"</span>: { <span class="str">"name"</span>:<span class="str">"甲骨文(中国)"</span>, <span class="str">"taxId"</span>:<span class="str">"91310000..."</span> } }
+<span class="cmt">// Response（对齐 cmx DataSet：业务码在 code，非 HTTP 码）</span>
+{ <span class="str">"code"</span>: <span class="nu">0</span>, <span class="str">"data"</span>: { <span class="str">"matches"</span>: [
+    { <span class="str">"id"</span>:<span class="str">"7484...900"</span>, <span class="str">"name"</span>:<span class="str">"甲骨文(中国)软件"</span>, <span class="str">"score"</span>:<span class="nu">93</span>,
+      <span class="str">"decision"</span>:<span class="str">"review"</span> },        <span class="cmt">// 80-94 → 建议人工评审</span>
+    { <span class="str">"id"</span>:<span class="str">"7484...881"</span>, <span class="str">"name"</span>:<span class="str">"Oracle China"</span>, <span class="str">"score"</span>:<span class="nu">71</span>,
+      <span class="str">"decision"</span>:<span class="str">"no_match"</span> } ] } }
+
+<span class="cmt">// POST /api/mdm/change-requests —— 提交变更请求</span>
+{ <span class="str">"crType"</span>: <span class="str">"update"</span>, <span class="str">"entityType"</span>: <span class="str">"supplier"</span>,
+  <span class="str">"items"</span>: [ { <span class="str">"goldenId"</span>:<span class="str">"7484...900"</span>, <span class="str">"viewGroup"</span>:<span class="str">"finance"</span>,
+    <span class="str">"fieldDeltas"</span>: { <span class="str">"payment_term"</span>: {<span class="str">"old"</span>:<span class="str">"30D"</span>,<span class="str">"new"</span>:<span class="str">"60D"</span>} } } ],
+  <span class="str">"effectiveDate"</span>: <span class="str">"2026-09-01"</span> }             <span class="cmt">// 未来生效（Edition）</span>
+<span class="cmt">// → 返回 CR id，状态 apply；后续 /submit 进工作流</span></code></pre>
+</section>
+
+<!-- ============ 19 ============ -->
+<section id="distribute">
+  <h2><span class="n">19</span>分发订阅与事件设计 <span class="en">distribution &amp; events</span></h2>
+  <p>把 §11 落到可实现的事件契约。核心：<b>规范模型 + 中央事件日志 + 各系统本地同步副本 + delta token</b>（借鉴 SAP MDI/ODM）。</p>
+
+  <h3>19.1 分发订阅表 + 事件日志</h3>
+<pre><code><span class="kw">CREATE TABLE</span> md_subscription (
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  target_sys  <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,        <span class="cmt">-- 订阅方系统码</span>
+  entity_type <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,
+  filter      <span class="ty">JSONB</span>,                          <span class="cmt">-- 过滤：按org/分类/属性条件裁剪</span>
+  field_map   <span class="ty">JSONB</span>,                          <span class="cmt">-- 发布映射：一源属性→多目标列</span>
+  channel     <span class="ty">VARCHAR(16)</span>  <span class="kw">NOT NULL</span>,        <span class="cmt">-- rest/event/batch/file</span>
+  active      <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">true</span>
+);
+<span class="kw">CREATE TABLE</span> md_event_log (           <span class="cmt">-- 中央事件日志（消费者按 delta 拉取）</span>
+  <span class="pk">seq</span>         <span class="ty">BIGSERIAL</span> <span class="kw">PRIMARY KEY</span>,     <span class="cmt">-- 单调递增序号 = delta 游标</span>
+  golden_id   <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,
+  entity_type <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  event_type  <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,        <span class="cmt">-- created/updated/merged/frozen</span>
+  payload     <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,               <span class="cmt">-- 变更后的规范模型快照</span>
+  emitted_at  <span class="ty">TIMESTAMPTZ</span> <span class="kw">NOT NULL DEFAULT</span> now()
+);</code></pre>
+
+  <h3>19.2 事件驱动分发流程</h3>
+  <div class="dag">CR 审批激活 → 写 md_golden(is_active=true) → 追加 md_event_log(seq++)
+                                                    │
+                              ┌─────────────────────┼─────────────────────┐
+                        实时事件推送            REST 拉取              批量联合发布
+                        (event mesh)          GET /events?since=       (nightly ETL)
+                              │                &delta_token=…               │
+                        订阅方按 filter          消费者持游标              裁剪+格式化
+                        接收 + 落本地副本        增量拉取(28天兜底           GDSN/文件
+                                                 →全量初装)</div>
+
+  <div class="callout win">
+    <div class="h">✅ delta token 契约（借鉴 SAP MDI）</div>
+    消费者持 <code>md_event_log.seq</code> 作游标增量拉取；token 按 <b>(消费者 × 实体 × 版本)</b> 精确定界；超期（如 28 天未同步）失效 → 回退全量初装。<b>规范模型（canonical）</b>作交换格式，versioned + namespaced；发布=内部增量事件驱动，联合发布=外部按渠道格式化。这套「一个规范模型 + 中央事件日志 + 本地副本」消除点对点集成蔓延。
+  </div>
+
+  <div class="callout note">
+    <div class="h">📨 借鉴用友：分发异常主动通知</div>
+    分发失败不静默——按用友 iUAP MDM 做法，<b>分发异常自动以邮件/短信通知主数据管理员</b>，并在监控页可视化分发成功/失败数量与百分比。这可直接复用既有<b>异步任务中心</b>的 SSE 进度 + 失败告警能力（§21）。
+  </div>
+</section>
+
+<!-- ============ PART IV BAND ============ -->
+<div class="partband">
+  <div class="pt">Part IV</div>
+  <div class="pn">第四部分 · cmx 平台落地</div>
+  <div class="pd">不重造轮子 —— 把 MDM 作为 metaKind 新一元长在既有统一建模平台上</div>
+</div>
+
+<!-- ============ 20 ============ -->
+<section id="realize">
+  <h2><span class="n">20</span>落地总纲与能力对照 <span class="en">realize on cmx</span></h2>
+  <p class="lede">关键结论先行：上述通用 MDM 方案<b>不需要从零造平台</b>——它的每一层几乎都能映射到既有 cmx 统一建模平台的现成能力。MDM 是继 DCT/DOC/FLX/RPT 之后的又一个 <code>metaKind</code>，复用同一条「定义→模型→装载→四区工作台」全链路。</p>
+
+  <div class="callout verdict">
+    <div class="h">🎯 一句话落地策略</div>
+    <b>MDM = 新增 <code>metaKind:MDM</code> + 复用 DCT 三层数据底座 + 复用 cmx-flow 作治理工作流 + 复用 cmx-agg 作层次汇总 + 复用 CmxMasterSlave 作分层主从 + 复用两模式存储作「定义/数据」分离 + 复用 native-pages 四区作工作台。真正要新造的只有三块领域件：编码引擎、匹配合并存活引擎、交叉引用/分发。</b>
+  </div>
+
+  <h3>20.1 通用 MDM 能力 → cmx 现成能力对照</h3>
+  <table>
+    <thead><tr><th style="width:24%">MDM 能力（本方案章节）</th><th style="width:14%">cmx 现状</th><th>落点 / 复用</th></tr></thead>
+    <tbody>
+      <tr><td>元数据驱动建模（§13）</td><td><span class="pill keep">已有</span></td><td><code>moduleMeta.metaKind</code> 加 MDM；复用 <code>resolve.rs</code> 定义解析、<code>md_entity_type</code> 对标 DCT <code>dictMeta</code></td></tr>
+      <tr><td>实体四种用途类型（§13.2）</td><td><span class="pill keep">已有</span></td><td>DCT 的 BUSINESS/CLASSIFY/RELATION dictKind + DOC 分层 = 治理根/值列表/从属节点</td></tr>
+      <tr><td>分层主从 + 层次（§10/§13）</td><td><span class="pill keep">已有</span></td><td><code>CmxMasterSlave</code> N 层递归树；DCT 自分级 <code>parent_id</code>+<code>full_path</code>；<code>hierarchy.rs</code> 递归 CTE</td></tr>
+      <tr><td>层间汇总（§10 小计上卷）</td><td><span class="pill add">规划中</span></td><td>复用 <code>cmx-agg</code>（层间汇总权威引擎，见统一建模方案）</td></tr>
+      <tr><td>两模式：定义/数据分离（§14）</td><td><span class="pill keep">已有</span></td><td>RPT 两模式范式：定义按 (code,version)、数据按作用域(org+期间)；MDM 数据作用域=org_scope</td></tr>
+      <tr><td>暂存区/激活区（§14.1）</td><td><span class="pill add">小增</span></td><td><code>is_active</code> 标志双区；对标 DOC 落库前列级校验 + N 元幂等 UPSERT</td></tr>
+      <tr><td>治理工作流/状态机（§17）</td><td><span class="pill keep">已有</span></td><td><b><code>cmx-flow</code> 引擎</b>：变更请求=流程实例，审批=用户任务，决策表路由=网关+条件；候选人(role/position/org)、会签或签、抄送转签全就绪</td></tr>
+      <tr><td>数据质量校验（§09）</td><td><span class="pill keep">已有</span></td><td>DOC/DCT 落库前列级校验(type/length/precision/nullable) + CmxErrCode 错误码库</td></tr>
+      <tr><td>编码引擎（§15）</td><td><span class="pill gap">新造</span></td><td>新领域件 <code>md_code_rule</code> + 原子铸号（复用 bigint 内码铸号经验）</td></tr>
+      <tr><td>匹配合并存活（§16）</td><td><span class="pill gap">新造</span></td><td>新领域件（clean-room；可参考 cmx-rust 生态自研分块/比较/存活）</td></tr>
+      <tr><td>分发订阅/事件（§19）</td><td><span class="pill add">半有</span></td><td>事件日志新造；分发执行复用<b>异步任务中心</b>(SSE进度+失败告警+崩溃恢复+HA抢占)</td></tr>
+      <tr><td>四区工作台 UI（§18 消费）</td><td><span class="pill keep">已有</span></td><td><code>native-pages</code> 四区(explorer/content/property/model)；对标 RPT designer/applier 双工作台</td></tr>
+      <tr><td>API 契约（§18）</td><td><span class="pill keep">已有</span></td><td>镜像 <code>cmx-rpt-api</code>/<code>cmx-flow-api</code> 抽新 crate <code>cmx-mdm-api</code>；<code>/api/mdm/*</code> 前缀 + DataSet 零拷贝读</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout win">
+    <div class="h">🎁 直接后果：约 70% 能力是「复用+对齐」，非新造</div>
+    建模、分层、两模式、治理流、质量校验、工作台、API 骨架——全部已在 DCT/DOC/RPT/cmx-flow 里跑通。MDM 落地的新代码集中在<b>三个领域引擎</b>（编码、匹配合并、分发事件），其余是「新增一个 metaKind + 接线」。这与「RPT 范式推广到 DOC/DCT」结论同构——统一建模平台的价值正在于此。
+  </div>
+</section>
+
+<!-- ============ 21 ============ -->
+<section id="mapping">
+  <h2><span class="n">21</span>数据底座 · 治理流 · 分发质量映射 <span class="en">the three pillars on cmx</span></h2>
+  <p>把落地拆成三根支柱，逐一给出在 cmx 上的具体接法。</p>
+
+  <h3>21.1 支柱一：数据底座 = metaKind:MDM + DCT 三层</h3>
+  <div class="dag">既有 DCT 三层（定义/部署/数据）  ────→  MDM 复用同一三层
+─────────────────────────────────────────────────────────
+A 定义期：*_mdm_meta_v1.json + base_mdm_meta   ← 新增 metaKind:MDM 的 base
+         moduleMeta.metaKind = "MDM"           （infer_base_file 加分流）
+B 部署期：compile_mdm(doc,base) → 建 md_* 表    ← 镜像 compile_dct/compile_rpt
+         台账 cmx_model_module.mdm_version
+C 数据期：/api/mdm/* 读写 md_golden/md_xref…    ← 镜像 DCT 的 C2 DB 数据服务
+         ZmcDataSet 零拷贝装载 + 强类型写</div>
+  <p>MDM 实体定义就是一份 <code>metaKind:MDM</code> 的 JSON——顶层 <code>moduleMeta</code>（<b>注意</b>：不是 <code>dctMeta</code>/<code>mdmMeta</code> 顶层 key，既有代码已证顶层恒为 <code>moduleMeta</code>），内含实体类型、属性定义、层次声明、编码规则引用、汇总关系。后端 <code>infer_base_file</code> 加一条 <code>MDM→baseMdmMetaRef</code> 分流即可，与 DCT/DOC 完全同构。</p>
+
+  <h3>21.2 支柱二：治理流 = cmx-flow 引擎</h3>
+  <div class="callout note">
+    <div class="h">🔄 变更请求（CR）→ cmx-flow 流程实例（几乎零新造）</div>
+    §17 的整套治理状态机<b>不用新写工作流引擎</b>——cmx-flow 已具备：① 变更请求=<code>start_process</code> 发起的流程实例，<code>md_change_request</code> 作业务数据；② 决策表路由(§17.2)=BPMN 排他/并行网关 + 条件表达式；③ 多级/并行审批=串行任务/会签(multiInstance)；④ 审批人按 role/position/org 定位=cmx-flow M4 候选人机制；⑤ 四眼原则=候选人排除发起人；⑥ 高额升级/属地加签=网关条件；⑦ 抄送/转签=M4 已就绪；⑧ 未来生效(Edition)=cmx-flow M2.5 边界定时器。<b>设计器</b>用既有 bpmn-js 四区工作台画 MDM 审批流，发布即生效。
+  </div>
+  <table>
+    <thead><tr><th style="width:30%">MDM 治理需求（§17）</th><th>cmx-flow 现成机制</th></tr></thead>
+    <tbody>
+      <tr><td>变更请求原子单元</td><td>流程实例 + 业务数据绑定</td></tr>
+      <tr><td>决策表驱动路由</td><td>排他/并行网关 + 条件表达式（BPMN）</td></tr>
+      <tr><td>单级/多级/并行审批</td><td>串行用户任务 / 会签或签（multiInstance）</td></tr>
+      <tr><td>按 role/position/org 定审批人</td><td>M4 候选人（role/position/org·claim 认领）</td></tr>
+      <tr><td>抄送只读旁路 / 转签加签</td><td>M4.2 抄送 / M4.3 转办委派加签</td></tr>
+      <tr><td>未来生效日</td><td>M2.5 边界定时器（可注入时钟）</td></tr>
+      <tr><td>集团分级审批（总部/成员）</td><td>M5.2 子流程组织路由（沿 org.path 继承）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>21.3 支柱三：质量与分发 = 校验复用 + 异步任务中心</h3>
+  <div class="grid2">
+    <div class="box"><h4>质量校验（已有大半）</h4>
+      落库前列级校验（type/length/precision/nullable，定义 JSON 为规范源 + 进程内缓存）+ 结构化 violations + CmxErrCode 统一错误码 + PG 错误优雅翻译 + 前端专业对话框——<b>DOC/DCT 已共用，MDM 承接字段天然纳入</b>。<b>新造</b>：匹配合并存活引擎（§16 三领域件之一）。
+    </div>
+    <div class="box"><h4>分发执行（复用异步任务中心）</h4>
+      §19 的批量分发/联合发布/失败重试<b>直接接异步任务中心</b>：SSE 实时进度 + 暂停/停止/重启协作式控制 + PG 持久化崩溃恢复 + 多实例抢占 HA（SKIP LOCKED 不重跑）。用友式「分发异常邮件/短信通知」= 任务中心失败告警。<b>新造</b>：事件日志 + delta token 契约。
+    </div>
+  </div>
+
+  <div class="callout gold">
+    <div class="h">🏅 五个「必抄原语」在 cmx 的现成对应（呼应 §12）</div>
+    ① <b>数据所有权</b> → <code>md_golden.org_scope</code> + cmx-flow 组织路由；② <b>规范模型 canonical</b> → metaKind 定义 JSON（versioned）；③ <b>暂存/激活分离</b> → <code>is_active</code> 双区 + 落库前校验；④ <b>决策表外置规则</b> → cmx-flow 网关条件 + 定义驱动；⑤ <b>Key/Value 映射</b> → <code>md_xref</code>/<code>md_value_map</code>。五条 SAP/Oracle 反复出现的原语，cmx 已就位四条半。
+  </div>
+</section>
+
+<!-- ============ 22 ============ -->
+<section id="roadmap">
+  <h2><span class="n">22</span>分期路线图与风险 <span class="en">roadmap &amp; risks</span></h2>
+  <p>沿用既有「小步过三关（test + clippy + fmt）+ 真机 E2E」节奏。每期独立可用、独立验收。前期全是低风险复用对齐，新造件集中在中段。</p>
+
+  <table class="mile">
+    <thead><tr><th style="width:8%">阶段</th><th style="width:30%">交付</th><th style="width:18%">性质</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td>M0</td><td>metaKind:MDM 定义层：base_mdm_meta + infer_base_file 分流 + 一个样例域（供应商）定义 JSON</td><td><span class="pill keep">复用DCT</span></td><td>/api/definitions 支持 metaKind:MDM；定义管理器可编辑</td></tr>
+      <tr><td>M1</td><td>数据底座：<code>cmx-mdm</code> 三段 crate（model/store-pg/api）+ compile_mdm 建 md_* 表 + ZmcDataSet 装载 + 列级校验</td><td><span class="pill keep">镜像rpt/dct</span></td><td>供应商 CRUD 落库回读一致；暂存/激活双区；curl 全通</td></tr>
+      <tr><td>M2</td><td><b>编码引擎</b>：md_code_rule 段声明 + 原子铸号 + 按组织生效 + 三铁律</td><td><span class="pill add">新造①</span></td><td>并发铸号无重号；作废不释放号段；按组织/条件选规则</td></tr>
+      <tr><td>M3</td><td>治理流：CR 接 cmx-flow（发起/审批/激活）+ 决策表路由 + 四眼 + 未来生效</td><td><span class="pill keep">接cmx-flow</span></td><td>提交→多级审批→激活→写激活区 E2E；bpmn 设计器画 MDM 流</td></tr>
+      <tr><td>M4</td><td><b>匹配合并存活</b>：分块 + 比较器 + 双阈值裁决 + 字段级存活 + 交叉引用</td><td><span class="pill gap">新造②</span></td><td>去重识别一物多码；自动/人工分流；unmerge 可还原；单测覆盖</td></tr>
+      <tr><td>M5</td><td>数据管家工作台：匹配评审队列 + 合并/链接请求 + 四区 native-pages</td><td><span class="pill keep">复用四区</span></td><td>Steward 评审疑似重复、批量整改；Playwright 真机</td></tr>
+      <tr><td>M6</td><td><b>分发订阅</b>：事件日志 + delta token + 订阅配置 + 接异步任务中心 + 失败告警</td><td><span class="pill add">新造③+复用</span></td><td>增量拉取；28天全量兜底；分发失败通知；监控页可视化</td></tr>
+      <tr><td>M7</td><td>多域扩展：客户/物料/科目/组织域定义 + 层次汇总接 cmx-agg + RDM 码表</td><td><span class="pill keep">配置化</span></td><td>四域零改引擎落地；分级字典小计上卷；客商合一 party 模型</td></tr>
+    </tbody>
+  </table>
+  <p class="en">关键顺序：M0/M1 数据底座先行 → M2 编码 + M3 治理流可并行 → M4 匹配是难点核心 → M5-M7 收敛。三个新造件（编码/匹配/分发事件）是全部工程重心，其余皆复用。</p>
+
+  <h3>22.1 风险与取舍</h3>
+  <ul class="tight">
+    <li><b>引擎绝不认识具体域（底线，不能破）</b>：域数、实体、属性、层次、编码规则、汇总关系全部只存在于<b>定义 JSON</b>；<code>cmx-mdm</code> 引擎逐条按定义驱动，绝不为「供应商」「科目」写 if 分支——这是 DOC 引擎已验证的通用性铁律，MDM 必须坚守。</li>
+    <li><b>匹配合并是真正的难点</b>：存活规则「企业级规模下极难」（数十源×数百属性）。建议 M4 从<b>精确匹配 + 单一存活策略</b>起步，逐步加模糊/AI；分块的 NULL 巨簇、簇大小上限务必设护栏。</li>
+    <li><b>不要过度统一</b>：MDM 是结构化主数据，<b>不要</b>套用 RPT 的 SpreadJS 自由画布 BLOB。共享的是「元模型+两模式+治理流+三段后端+四区外壳」，不是渲染内核（同 DOC/DCT 教训）。</li>
+    <li><b>服务端计算为权威</b>：编码铸号、匹配存活、层次汇总全部服务端为准，绝不信任前端值直接落库（防篡改、防浏览器缺陷）。</li>
+    <li><b>内码永不复用是不可违反约束</b>：<code>md_golden.id</code> bigint 内码 + <code>code</code> 外码分离，作废走冻结/归档，号段不回收——防「一码多物」的架构级保证。</li>
+    <li><b>制度先于工具</b>：MDM 成败七分治理三分工具。平台就绪≠数据变好，必须先落「两体系一工具 + 四定 + Owner 认责」（§04），否则黄金记录随时间劣化。</li>
+    <li><b>与既有 IAM 边界清晰</b>：组织人员域的 MDM 管「主数据口径」，cmx 库 IAM 管「登录鉴权」；复用不重造，通过 org.path 打通分级。</li>
+    <li><b>点对点集成蔓延</b>：坚持「规范模型 + 中央事件日志 + 本地副本」，避免退化成 N×N 点对点接口（SAP MDI 的核心教训）。</li>
+  </ul>
+
+  <div class="callout verdict">
+    <div class="h">🧭 一页纸总结</div>
+    这份主数据方案<b>业务上</b>以「两体系一工具 + 四定 + 七状态生命周期」立治理骨架，对标 SAP MDG/Oracle/用友/金蝶；<b>应用上</b>以「八大能力域 + 四种实现风格 + 黄金记录七步流水线」立能力全景；<b>技术上</b>到「md_* 字段级表结构 + 编码引擎 + 双阈值匹配 + 字段级存活 + 决策表状态机 + REST 契约 + delta 事件」可开发深度；<b>落地上</b>把 MDM 作为 <code>metaKind</code> 新一元长在既有 cmx 统一建模平台上——<b>约 70% 复用 DCT 数据底座/cmx-flow 治理流/cmx-agg 汇总/异步任务中心分发/native-pages 四区，真正新造仅编码、匹配合并、分发事件三个领域引擎</b>。既通用可对标，又能在自有平台低风险落地。
+  </div>
+</section>
+
+<div class="foot">
+  企业主数据管理平台（MDM）设计方案 · 业务 / 应用 / 详细设计 / cmx 落地 · 对标 SAP MDG · Oracle EDM/Product/Customer Hub · 用友 iUAP MDM · 金蝶苍穹 AMDM · 只出方案不落地代码 · Apache-2.0 · 2026
+</div>
+
+</div>
+</body>
+</html>

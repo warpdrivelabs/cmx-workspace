@@ -1,0 +1,39 @@
+<svg viewBox="0 0 820 360" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <marker id="ab5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+  <filter id="s5" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="360" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">W4 · cmx:http 出站能力：受控 egress（第五道运行期资源约束）</text>
+<g filter="url(#s5)"><rect x="40" y="70" width="150" height="60" rx="9" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="115" y="94" font-size="11.5" font-weight="700" fill="#065f46" text-anchor="middle">访客 WASM</text>
+<text x="115" y="112" font-size="9.5" fill="#047857" text-anchor="middle">host_calls: http_fetch</text>
+<g filter="url(#s5)"><rect x="250" y="70" width="170" height="60" rx="9" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="335" y="94" font-size="11.5" font-weight="700" fill="#3730a3" text-anchor="middle">cmx:http provider</text>
+<text x="335" y="112" font-size="9.5" fill="#4338ca" text-anchor="middle">HostFunctionProvider 实现</text>
+<g filter="url(#s5)"><rect x="480" y="60" width="180" height="120" rx="10" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="570" y="82" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">egress 策略闸</text>
+<text x="496" y="104" font-size="10" fill="#b45309">· 域名/端口白名单</text>
+<text x="496" y="122" font-size="10" fill="#b45309">· 方法/大小限制</text>
+<text x="496" y="140" font-size="10" fill="#b45309">· 超时 + 每插件配额</text>
+<text x="496" y="158" font-size="10" fill="#b45309">· SSRF 防护(禁内网)</text>
+<text x="496" y="174" font-size="10" fill="#b45309">· 审计留痕</text>
+<g filter="url(#s5)"><rect x="700" y="60" width="80" height="52" rx="9" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="740" y="82" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">允许</text>
+<text x="740" y="99" font-size="9" fill="#047857" text-anchor="middle">外部 API</text>
+<g filter="url(#s5)"><rect x="700" y="128" width="80" height="52" rx="9" fill="#fef2f2" stroke="#ef4444"/></g>
+<text x="740" y="150" font-size="10.5" font-weight="700" fill="#991b1b" text-anchor="middle">拒绝</text>
+<text x="740" y="167" font-size="9" fill="#b91c1c" text-anchor="middle">返错+审计</text>
+<line x1="190" y1="100" x2="250" y2="100" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="420" y1="100" x2="480" y2="100" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="660" y1="92" x2="700" y2="86" stroke="#10b981" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="660" y1="150" x2="700" y2="152" stroke="#ef4444" stroke-width="1.4" marker-end="url(#ar5)"/>
+<g filter="url(#s5)"><rect x="40" y="210" width="740" height="120" rx="11" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="56" y="234" font-size="12" font-weight="700" fill="#334155">落地要点</text>
+<text x="56" y="256" font-size="11" fill="#475569">· 新 provider 注入点：cmx-service-base::init_wasm(extra_providers) / cmx-platform-app 运行时装配（与 iam/plugin 同法）</text>
+<text x="56" y="277" font-size="11" fill="#475569">· 策略配置表 cmx_plugin_http_policy（per plugin：allow_hosts / max_qps / timeout_ms / max_body），加载期绑定</text>
+<text x="56" y="298" font-size="11" fill="#475569">· Guest SDK 增 host_calls::http_fetch；能力仍受"仅声明命名空间可 import"约束——未申请 cmx:http 的插件无法出站</text>
+<text x="56" y="319" font-size="11" fill="#991b1b">· 安全红线：默认拒绝内网/元数据地址（169.254/127/10/172.16/192.168），防 SSRF；出站走独立连接池不复用平台会话</text>
+</svg>

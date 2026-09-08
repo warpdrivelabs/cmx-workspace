@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审批入口与轨迹统一 · 原型（方案 A · 右侧轨迹统一）</title>
+<style>
+  :root {
+    --brand: #0a6ed1; --ok: #107e3e; --warn: #e9730c; --rej: #bb0000;
+    --ink: #1d232a; --muted: #6a6d70; --line: #d9d9d9;
+    --bg: #f5f6f7; --card: #ffffff; --head: #f5f6f7;
+    --neo-cyan: #00b4d8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sapFontFamily, '72', 'Segoe UI', Arial, sans-serif); background: var(--bg); color: var(--ink); font-size: 13px; }
+
+  .proto-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; background: #1d232a; color: #fff; }
+  .proto-bar .t { font-weight: 700; font-size: 14px; margin-right: 12px; }
+  .proto-tab { border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 12.5px; }
+  .proto-tab.on { background: var(--neo-cyan); border-color: var(--neo-cyan); color: #04121a; font-weight: 700; }
+  .proto-note { margin-left: auto; font-size: 11.5px; opacity: .75; }
+
+  .screen { display: none; }
+  .screen.on { display: block; }
+
+  .shell { height: 44px; background: #fff; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px; padding: 0 16px; }
+  .logo { font-weight: 800; color: var(--brand); font-size: 15px; letter-spacing: .5px; }
+  .searchbox { flex: 0 1 320px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted);
+    padding: 4px 10px; font-size: 12px; }
+  .avatar { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; }
+
+  .wtabs { display: flex; gap: 2px; background: #fff; border-bottom: 1px solid var(--line); padding: 0 12px; }
+  .wtab { padding: 8px 16px; font-size: 12.5px; color: var(--muted); border-bottom: 2px solid transparent; cursor: default; }
+  .wtab.on { color: var(--brand); font-weight: 700; border-bottom-color: var(--brand); }
+  .wtab .x { margin-left: 8px; color: var(--muted); font-weight: 400; }
+
+  .main { display: flex; height: calc(100vh - 92px); min-height: 560px; }
+  .explorer { flex: 0 0 208px; background: #fff; border-right: 1px solid var(--line); padding: 12px 10px; }
+  .ex-title { font-weight: 700; font-size: 13px; padding: 4px 8px 10px; }
+  .ex-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; font-weight: 400; }
+  .cat { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 6px; margin-bottom: 2px; font-size: 12.5px; }
+  .cat small { color: var(--muted); font-size: 10px; }
+  .cat .n { margin-left: auto; background: var(--brand); color: #fff; border-radius: 9px; font-size: 10px; padding: 1px 7px; }
+  .cat.on { background: color-mix(in srgb, var(--brand) 12%, #fff); color: var(--brand); font-weight: 700; }
+
+  .content { flex: 1 1 auto; padding: 14px 18px; overflow: auto; }
+  .prop { flex: 0 0 340px; background: #fff; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+
+  .pg-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .pg-title { font-size: 16px; font-weight: 700; }
+  .sec { background: var(--card); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .sec-hd { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--head); }
+  .sec-hd b { font-size: 13px; }
+  .sec-bd { padding: 12px 14px; }
+  .fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; }
+  .fitem span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .fitem b { font-weight: 600; font-size: 12.5px; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .tbl th { text-align: left; padding: 7px 10px; font-size: 11.5px; color: var(--muted);
+    border-bottom: 1px solid var(--line); background: var(--head); }
+  .tbl td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .btn { border: 1px solid var(--line); background: #fff; border-radius: 4px; padding: 6px 14px; font-size: 12.5px; cursor: pointer; }
+  .btn.em { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
+  .btn.neg { background: var(--rej); border-color: var(--rej); color: #fff; }
+  .opinion { width: 100%; min-height: 56px; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px;
+    font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  /* 右侧轨迹（task-form property 视觉） */
+  .only-badge { font-size: 10px; font-weight: 700; color: #fff; background: var(--ok); border-radius: 999px; padding: 2px 9px; }
+  .prop-hd { padding: 10px 14px 8px; border-bottom: 1px solid var(--line); }
+  .prop-hd b { font-size: 13px; display: block; }
+  .prop-hd small { color: var(--muted); font-size: 11px; }
+  .ptabs { display: flex; border-bottom: 1px solid var(--line); }
+  .ptab { flex: 1; text-align: center; padding: 7px 0; font-size: 12px; color: var(--muted); border-bottom: 2px solid transparent; }
+  .ptab.on { color: var(--brand); font-weight: 700; border-bottom-color: var(--brand); }
+  .prop-body { padding: 14px; overflow: auto; flex: 1; }
+  .psum { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .psum div { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; background: var(--head); }
+  .psum span { display: block; font-size: 10.5px; color: var(--muted); }
+  .psum b { font-size: 12.5px; }
+  .psec { font-size: 11.5px; font-weight: 700; color: var(--muted); margin: 4px 0 10px; }
+
+  .flow { list-style: none; }
+  .fnode { display: flex; gap: 10px; position: relative; padding-bottom: 14px; }
+  .fnode:not(:last-child) .rail::after { content: ''; position: absolute; left: 11px; top: 26px; bottom: 2px;
+    width: 2px; background: var(--line); }
+  .fnode.done:not(:last-child) .rail::after { background: color-mix(in srgb, var(--ok) 45%, #fff); }
+  .rail { flex: 0 0 auto; position: relative; }
+  .dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); background: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); font-weight: 700; }
+  .fnode.done .dot { border-color: var(--ok); background: var(--ok); color: #fff; }
+  .fnode.current .dot { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, #fff); color: var(--brand); }
+  .fbody { flex: 1; min-width: 0; padding-top: 1px; }
+  .ftitle { display: flex; align-items: center; gap: 8px; }
+  .ftitle b { font-size: 12.5px; font-weight: 600; }
+  .fnode.pending .ftitle b { color: var(--muted); }
+  .fstate { margin-left: auto; font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .fnode.done .fstate { color: var(--ok); }
+  .fnode.current .fstate { color: var(--brand); }
+  .fkind { font-size: 10px; font-weight: 600; color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent);
+    border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+  .fmeta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 10.5px; color: var(--muted); }
+  .fcmt { margin-top: 7px; border: 1px solid var(--line); border-left: 3px solid var(--ok); border-radius: 6px;
+    padding: 6px 9px; background: var(--head); font-size: 11.5px; }
+  .fcmt .h { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
+  .dec { font-size: 10px; font-weight: 700; color: var(--ok); border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+    border-radius: 999px; padding: 0 6px; }
+  .dec.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+  .fcmt em { font-style: normal; color: var(--muted); font-size: 10px; margin-left: auto; }
+
+  /* 现状页 */
+  .watermark { position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+    font-size: 64px; font-weight: 900; color: rgba(187, 0, 0, .13); letter-spacing: 10px; z-index: 40; pointer-events: none; white-space: nowrap; }
+  .bflag { background: var(--rej); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 4px; margin-bottom: 10px; display: inline-block; }
+  .anno::before { content: attr(data-note); position: absolute; top: -4px; right: 6px; z-index: 5;
+    background: var(--rej); color: #fff; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 4px; white-space: nowrap; }
+  .ghost { border: 1.5px dashed var(--rej); border-radius: 8px; padding: 10px 14px; color: var(--rej);
+    font-size: 12px; background: color-mix(in srgb, var(--rej) 5%, #fff); }
+  .oknote { border: 1.5px dashed var(--ok); border-radius: 8px; padding: 8px 14px; color: var(--ok);
+    font-size: 12px; background: color-mix(in srgb, var(--ok) 5%, #fff); margin-bottom: 12px; }
+  .stamp { display: inline-flex; align-items: center; gap: 5px; }
+  .stamp i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <span class="t">审批入口与轨迹统一 · 原型（方案 A）</span>
+  <button class="proto-tab" data-s="s0">① 现状 · 改造前（有问题）</button>
+  <button class="proto-tab" data-s="s1">② 改造后 · 待办进入（办理人）</button>
+  <button class="proto-tab on" data-s="s2">③ 改造后 · 变更申请单进入 ★</button>
+  <span class="proto-note">轨迹只在右侧 · 表单内不再画 · 两个入口同一条轨迹</span>
+</div>
+
+<!-- ════════ 屏幕①：现状（改造前） ════════ -->
+<div class="screen" id="s0">
+  <div class="watermark">改 造 前 · 现 状</div>
+  <div class="shell"><span class="logo">CMX</span><span class="searchbox">搜索字段…</span><span class="avatar">A</span></div>
+  <div class="wtabs"><span class="wtab">待办中心</span><span class="wtab on">单据·bz20260819000001 · 主数据审批 <span class="x">✕</span></span></div>
+  <div class="main">
+    <div class="explorer">
+      <div class="ex-title">待办中心<div class="ex-sub">cmx-flow / my tasks</div></div>
+      <div class="cat on">▤ 我的待办 <span class="n">3</span></div>
+      <div class="cat">✉ 待我认领</div><div class="cat">＋ 发起流程</div>
+      <div class="cat">↩ 我发起的</div><div class="cat">✉ 抄送我的</div><div class="cat">✔ 我已办</div>
+    </div>
+    <div class="content">
+      <div class="bflag">以下为当前线上效果 —— 仅供对照，非方案</div>
+      <div class="pg-head"><span class="pg-title">查看币种 · bz20260819000001</span><span class="stamp" style="color:var(--warn)"><i style="background:var(--warn)"></i>审批中</span></div>
+      <div class="sec anno" data-note="重复 ①：表单内审批历史" style="position:relative">
+        <div class="sec-hd"><b>审批历史</b></div>
+        <div class="sec-bd">
+          <table class="tbl">
+            <tr><th>节点</th><th>办理人</th><th>时间</th><th>意见</th></tr>
+            <tr><td>单据提交</td><td>Super Admin</td><td>2026-08-19 13:56</td><td>制单提交</td></tr>
+            <tr><td>审批退回</td><td>Super Admin</td><td>2026-09-02 14:26</td><td>名称与税号请核对</td></tr>
+            <tr><td>发起人确认</td><td>Super Admin</td><td>2026-09-02 15:12</td><td>已修改重报</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-hd"><b>单据头</b></div>
+        <div class="sec-bd"><div class="fgrid">
+          <div class="fitem"><span>单据号</span><b>bz20260819000001</b></div>
+          <div class="fitem"><span>类型</span><b>币种（bz）</b></div>
+          <div class="fitem"><span>主体名称</span><b>人民币 CNY</b></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="prop">
+      <div class="prop-hd"><b>bz20260819000001</b><small>主数据变更审批 · 进行中</small></div>
+      <div class="ptabs"><span class="ptab on">流程轨迹</span></div>
+      <div class="prop-body">
+        <div class="ghost">重复 ②：右侧又画了一遍同一份轨迹<br><br>且从「变更申请单」进入时连这一栏都没有</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 屏幕②：改造后 · 待办进入（办理人） ════════ -->
+<div class="screen" id="s1">
+  <div class="shell"><span class="logo">CMX</span><span class="searchbox">搜索字段…</span><span class="avatar">A</span></div>
+  <div class="wtabs"><span class="wtab">待办中心</span><span class="wtab on">单据·bz20260819000001 · 主数据审批 <span class="x">✕</span></span></div>
+  <div class="main">
+    <div class="explorer">
+      <div class="ex-title">待办中心<div class="ex-sub">cmx-flow / my tasks</div></div>
+      <div class="cat on">▤ 我的待办 <span class="n">3</span></div>
+      <div class="cat">✉ 待我认领</div><div class="cat">＋ 发起流程</div>
+      <div class="cat">↩ 我发起的</div><div class="cat">✉ 抄送我的</div><div class="cat">✔ 我已办</div>
+    </div>
+    <div class="content">
+      <div class="oknote">表单内「审批历史」卡已删除 —— 轨迹只在右侧一份</div>
+      <div class="pg-head"><span class="pg-title">查看币种 · bz20260819000001</span><span class="stamp" style="color:var(--warn)"><i style="background:var(--warn)"></i>审批中</span></div>
+      <div class="sec">
+        <div class="sec-hd"><b>单据头</b></div>
+        <div class="sec-bd"><div class="fgrid">
+          <div class="fitem"><span>单据号</span><b>bz20260819000001</b></div>
+          <div class="fitem"><span>类型</span><b>币种（bz）</b></div>
+          <div class="fitem"><span>主体名称</span><b>人民币 CNY</b></div>
+          <div class="fitem"><span>单据日期</span><b>2026-08-19</b></div>
+          <div class="fitem"><span>申请类型</span><b>新增</b></div>
+          <div class="fitem"><span>状态</span><b>审批中</b></div>
+        </div></div>
+      </div>
+      <div class="sec">
+        <div class="sec-hd"><b>明细（币种档案）</b></div>
+        <div class="sec-bd">
+          <table class="tbl">
+            <tr><th>编码</th><th>名称</th><th>符号</th><th>小数位</th></tr>
+            <tr><td>CNY</td><td>人民币</td><td>¥</td><td>2</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-hd"><b>操作</b></div>
+        <div class="sec-bd">
+          <div class="opinion">审批意见（同意/驳回/退回均可附言）…</div>
+          <div class="btnrow"><button class="btn em">✓ 通过</button><button class="btn neg">✕ 驳回</button><button class="btn">↩ 退回发起人</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="prop">
+      <div class="prop-hd"><b>bz20260819000001</b><small>主数据变更审批 · 进行中</small></div>
+      <div class="ptabs"><span class="ptab on">流程轨迹 <span class="only-badge">唯一</span></span></div>
+      <div class="prop-body">
+        <div class="psum"><div><span>当前节点</span><b>主数据审批</b></div><div><span>单据状态</span><b>进行中</b></div></div>
+        <div class="psec">流程进度（全节点）</div>
+        <ol class="flow">
+          <li class="fnode done"><div class="rail"><div class="dot">✓</div></div><div class="fbody">
+            <div class="ftitle"><b>发起</b><span class="fkind">发起</span><span class="fstate">已发起</span></div>
+            <div class="fmeta"><span>🕘 2026-08-19 13:56</span><span>办理人：Super Admin</span></div></div></li>
+          <li class="fnode done"><div class="rail"><div class="dot">✓</div></div><div class="fbody">
+            <div class="ftitle"><b>发起人确认</b><span class="fstate">已完成</span></div>
+            <div class="fmeta"><span>🕘 2026-09-02 14:26</span></div>
+            <div class="fcmt"><div class="h"><b>Super Admin</b><span class="dec warn">退回</span><em>09-02 14:26</em></div>名称与税号请核对后重新提交</div>
+            <div class="fcmt"><div class="h"><b>Super Admin</b><span class="dec">重报</span><em>09-02 15:12</em></div>已按意见修改并重新提交</div></div></li>
+          <li class="fnode current"><div class="rail"><div class="dot">3</div></div><div class="fbody">
+            <div class="ftitle"><b>主数据审批</b><span class="fstate">当前</span></div>
+            <div class="fmeta"><span>🕘 09-02 15:12</span><span>办理人：mdm_approver（你）</span></div></div></li>
+          <li class="fnode pending"><div class="rail"><div class="dot">4</div></div><div class="fbody">
+            <div class="ftitle"><b>已通过</b><span class="fkind">结束</span><span class="fstate">待处理</span></div></div></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 屏幕③：改造后 · 变更申请单进入（★ 本次诉求） ════════ -->
+<div class="screen on" id="s2">
+  <div class="shell"><span class="logo">CMX</span><span class="searchbox">搜索字段…</span><span class="avatar">A</span></div>
+  <div class="wtabs"><span class="wtab">变更申请单</span><span class="wtab on">单据·bz20260819000001 · 详情 <span class="x">✕</span></span></div>
+  <div class="main">
+    <div class="explorer">
+      <div class="ex-title">变更申请单<div class="ex-sub">mdm / change requests</div></div>
+      <div class="cat on">▤ 全部申请 <span class="n">35</span></div>
+      <div class="cat">✎ 我创建的</div><div class="cat">✔ 已激活</div><div class="cat">◔ 草稿</div>
+    </div>
+    <div class="content">
+      <div class="oknote">列表「详情」改开三栏工作台 —— 右侧就是同一条「流程轨迹」；表单内依旧无审批历史，动作按权限出</div>
+      <div class="pg-head"><span class="pg-title">查看币种 · bz20260819000001</span><span class="stamp" style="color:var(--warn)"><i style="background:var(--warn)"></i>审批中</span></div>
+      <div class="sec">
+        <div class="sec-hd"><b>单据头</b></div>
+        <div class="sec-bd"><div class="fgrid">
+          <div class="fitem"><span>单据号</span><b>bz20260819000001</b></div>
+          <div class="fitem"><span>类型</span><b>币种（bz）</b></div>
+          <div class="fitem"><span>主体名称</span><b>人民币 CNY</b></div>
+          <div class="fitem"><span>单据日期</span><b>2026-08-19</b></div>
+          <div class="fitem"><span>申请类型</span><b>新增</b></div>
+          <div class="fitem"><span>状态</span><b>审批中</b></div>
+        </div></div>
+      </div>
+      <div class="sec">
+        <div class="sec-hd"><b>明细（币种档案）</b></div>
+        <div class="sec-bd">
+          <table class="tbl">
+            <tr><th>编码</th><th>名称</th><th>符号</th><th>小数位</th></tr>
+            <tr><td>CNY</td><td>人民币</td><td>¥</td><td>2</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-hd"><b>操作</b></div>
+        <div class="sec-bd">
+          <div class="btnrow"><button class="btn">↩ 撤回</button></div>
+          <div class="hint" style="margin-top:8px">当前用户 = 发起人 → 只有「撤回」；若你恰是本环节审批人，这里直接出现「通过/驳回/退回」，与待办进入完全一致</div>
+        </div>
+      </div>
+    </div>
+    <div class="prop">
+      <div class="prop-hd"><b>bz20260819000001</b><small>主数据变更审批 · 进行中</small></div>
+      <div class="ptabs"><span class="ptab on">流程轨迹 <span class="only-badge">唯一</span></span></div>
+      <div class="prop-body">
+        <div class="psum"><div><span>当前节点</span><b>主数据审批</b></div><div><span>单据状态</span><b>进行中</b></div></div>
+        <div class="psec">流程进度（全节点）</div>
+        <ol class="flow">
+          <li class="fnode done"><div class="rail"><div class="dot">✓</div></div><div class="fbody">
+            <div class="ftitle"><b>发起</b><span class="fkind">发起</span><span class="fstate">已发起</span></div>
+            <div class="fmeta"><span>🕘 2026-08-19 13:56</span><span>办理人：Super Admin</span></div></div></li>
+          <li class="fnode done"><div class="rail"><div class="dot">✓</div></div><div class="fbody">
+            <div class="ftitle"><b>发起人确认</b><span class="fstate">已完成</span></div>
+            <div class="fmeta"><span>🕘 2026-09-02 14:26</span></div>
+            <div class="fcmt"><div class="h"><b>Super Admin</b><span class="dec warn">退回</span><em>09-02 14:26</em></div>名称与税号请核对后重新提交</div></div></li>
+          <li class="fnode current"><div class="rail"><div class="dot">3</div></div><div class="fbody">
+            <div class="ftitle"><b>主数据审批</b><span class="fstate">当前</span></div>
+            <div class="fmeta"><span>🕘 09-02 15:12</span><span>办理人：mdm_approver</span></div></div></li>
+          <li class="fnode pending"><div class="rail"><div class="dot">4</div></div><div class="fbody">
+            <div class="ftitle"><b>已通过</b><span class="fkind">结束</span><span class="fstate">待处理</span></div></div></li>
+        </ol>
+        <div class="oknote" style="margin-top:8px">↑ 与待办进入右侧完全同一条轨迹（同一组件、同一数据源）</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.proto-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.proto-tab').forEach(function (x) { x.classList.remove('on') })
+      document.querySelectorAll('.screen').forEach(function (x) { x.classList.remove('on') })
+      b.classList.add('on')
+      document.getElementById(b.dataset.s).classList.add('on')
+    })
+  })
+</script>
+</body>
+</html>

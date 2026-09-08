@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: cmx_mega_sheet
+title: cmx-mega-sheet 自研电子表格引擎
+scope:
+    - cmx-mega-sheet/
+source_files: []
+depends_on: []
+related_to:
+    - path: cmx_html_designer

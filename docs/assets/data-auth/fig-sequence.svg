@@ -1,0 +1,74 @@
+<svg viewBox="0 0 820 464" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <filter id="s8" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="464" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="30" y="30" font-size="15" font-weight="700" fill="#0f172a">请求链路时序 · 决策 → 约束 → 执行 → 脱敏</text>
+
+<!-- lanes -->
+<rect x="0" y="46" width="820" height="68" fill="#eef2ff" fill-opacity="0.5" stroke="#c7d2fe" stroke-width="0.6"/>
+<rect x="0" y="114" width="820" height="68" fill="#f5f3ff" fill-opacity="0.5" stroke="#ddd6fe" stroke-width="0.6"/>
+<rect x="0" y="182" width="820" height="68" fill="#ecfeff" fill-opacity="0.5" stroke="#a5f3fc" stroke-width="0.6"/>
+<rect x="0" y="250" width="820" height="68" fill="#ecfdf5" fill-opacity="0.5" stroke="#a7f3d0" stroke-width="0.6"/>
+<rect x="0" y="318" width="820" height="68" fill="#fdf4ff" fill-opacity="0.5" stroke="#e9d5ff" stroke-width="0.6"/>
+
+<text x="8" y="86" font-size="10" fill="#3730a3" font-weight="700">应用层</text>
+<text x="8" y="154" font-size="10" fill="#5b21b6" font-weight="700">PDP</text>
+<text x="8" y="222" font-size="10" fill="#155e75" font-weight="700">PEP</text>
+<text x="8" y="290" font-size="10" fill="#065f46" font-weight="700">数据层</text>
+<text x="8" y="358" font-size="10" fill="#86198f" font-weight="700">脱敏层</text>
+
+<!-- step boxes -->
+<g filter="url(#s8)"><rect x="44" y="54" width="96" height="48" rx="8" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="92" y="74" font-size="11" font-weight="700" fill="#3730a3" text-anchor="middle">①  API 请求</text><text x="92" y="91" font-size="9.5" fill="#3730a3" text-anchor="middle" opacity="0.8">subject+resource</text>
+<g filter="url(#s8)"><rect x="160" y="54" width="112" height="48" rx="8" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="216" y="74" font-size="11" font-weight="700" fill="#3730a3" text-anchor="middle">② 缓存查询</text><text x="216" y="91" font-size="9.5" fill="#3730a3" text-anchor="middle" opacity="0.8">(subj,res) key</text>
+<g filter="url(#s8)"><rect x="292" y="122" width="120" height="48" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="352" y="142" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">③ 加载策略</text><text x="352" y="159" font-size="9.5" fill="#5b21b6" text-anchor="middle" opacity="0.8">da_policy+grant</text>
+<g filter="url(#s8)"><rect x="432" y="122" width="124" height="48" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="494" y="142" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">④ 维度展开</text><text x="494" y="159" font-size="9.5" fill="#5b21b6" text-anchor="middle" opacity="0.8">层级 → 值集</text>
+<g filter="url(#s8)"><rect x="576" y="122" width="120" height="48" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="636" y="142" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">⑤ 部分求值</text><text x="636" y="159" font-size="9.5" fill="#5b21b6" text-anchor="middle" opacity="0.8">→ 约束 AST</text>
+<g filter="url(#s8)"><rect x="292" y="190" width="120" height="48" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="352" y="210" font-size="11" font-weight="700" fill="#155e75" text-anchor="middle">⑥ 选后端</text><text x="352" y="227" font-size="9.5" fill="#155e75" text-anchor="middle" opacity="0.8">SQL/Mem/ES</text>
+<g filter="url(#s8)"><rect x="432" y="190" width="124" height="48" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="494" y="210" font-size="11" font-weight="700" fill="#155e75" text-anchor="middle">⑦ 编译 AST</text><text x="494" y="227" font-size="9.5" fill="#155e75" text-anchor="middle" opacity="0.8">→ WHERE</text>
+<g filter="url(#s8)"><rect x="576" y="190" width="120" height="48" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="636" y="210" font-size="11" font-weight="700" fill="#155e75" text-anchor="middle">⑧ 写缓存</text><text x="636" y="227" font-size="9.5" fill="#155e75" text-anchor="middle" opacity="0.8">compiled tpl</text>
+<g filter="url(#s8)"><rect x="292" y="258" width="120" height="48" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="352" y="278" font-size="11" font-weight="700" fill="#065f46" text-anchor="middle">⑨ 执行查询</text><text x="352" y="295" font-size="9.5" fill="#065f46" text-anchor="middle" opacity="0.8">带参数 WHERE</text>
+<g filter="url(#s8)"><rect x="432" y="258" width="124" height="48" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="494" y="278" font-size="11" font-weight="700" fill="#065f46" text-anchor="middle">⑩ RLS 兜底</text><text x="494" y="295" font-size="9.5" fill="#065f46" text-anchor="middle" opacity="0.8">PG policy</text>
+<g filter="url(#s8)"><rect x="292" y="326" width="120" height="48" rx="8" fill="#fdf4ff" stroke="#d946ef"/></g>
+<text x="352" y="346" font-size="11" font-weight="700" fill="#86198f" text-anchor="middle">⑪ 列脱敏</text><text x="352" y="363" font-size="9.5" fill="#86198f" text-anchor="middle" opacity="0.8">mask_rule 过滤</text>
+<g filter="url(#s8)"><rect x="432" y="326" width="124" height="48" rx="8" fill="#fdf4ff" stroke="#d946ef"/></g>
+<text x="494" y="346" font-size="11" font-weight="700" fill="#86198f" text-anchor="middle">⑫ 响应</text><text x="494" y="363" font-size="9.5" fill="#86198f" text-anchor="middle" opacity="0.8">已过滤+脱敏</text>
+
+<!-- arrows -->
+<line x1="140" y1="78" x2="160" y2="78" stroke="#64748b" stroke-width="1.5" marker-end="url(#a8)"/>
+<!-- cache hit -->
+<line x1="272" y1="78" x2="432" y2="208" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#a8)"/>
+<text x="356" y="160" font-size="9.5" fill="#64748b" font-style="italic">cache hit</text>
+<!-- cache miss → PDP -->
+<line x1="272" y1="62" x2="292" y2="138" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#a8)"/>
+<text x="244" y="114" font-size="9.5" fill="#5b21b6" font-style="italic">miss</text>
+<line x1="412" y1="146" x2="432" y2="146" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<line x1="556" y1="146" x2="576" y2="146" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<!-- PDP → PEP -->
+<line x1="636" y1="170" x2="352" y2="190" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<line x1="412" y1="214" x2="432" y2="214" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<line x1="556" y1="214" x2="576" y2="214" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<!-- PEP → DB -->
+<line x1="352" y1="238" x2="352" y2="258" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<line x1="412" y1="282" x2="432" y2="282" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<!-- DB → mask -->
+<line x1="352" y1="306" x2="352" y2="326" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+<line x1="412" y1="350" x2="432" y2="350" stroke="#64748b" stroke-width="1.4" marker-end="url(#a8)"/>
+
+<text x="30" y="440" font-size="11" fill="#64748b">步骤⑤决策结果写 Redis；步骤⑦编译后 SQL 模板同样缓存；步骤⑩ PG RLS 兜底对任何绕过 PEP 的直连查询强制生效（高敏场景）。</text>
+</svg>

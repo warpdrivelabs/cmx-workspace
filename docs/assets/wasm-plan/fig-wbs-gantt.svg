@@ -1,0 +1,40 @@
+<svg viewBox="0 0 820 430" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <marker id="ab1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+  <filter id="s1" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="430" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">工作包依赖与排期 · W0 为闸，其后大多并行（约 14 周，团队 3–4 人）</text>
+<!-- 周轴 -->
+<line x1="92" y1="58" x2="92" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="92" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w0</text><line x1="135" y1="58" x2="135" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="135" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w2</text><line x1="178" y1="58" x2="178" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="178" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w4</text><line x1="221" y1="58" x2="221" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="221" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w6</text><line x1="264" y1="58" x2="264" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="264" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w8</text><line x1="307" y1="58" x2="307" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="307" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w10</text><line x1="350" y1="58" x2="350" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="350" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w12</text><line x1="393" y1="58" x2="393" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="393" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w14</text><line x1="436" y1="58" x2="436" y2="392" stroke="#eef2f6" stroke-width="1"/><text x="436" y="72" font-size="9" fill="#94a3b8" text-anchor="middle">w16</text>
+<g filter="url(#s1)"><rect x="92" y="84" width="43" height="34" rx="8" fill="#f8fafc" stroke="#94a3b8"/></g>
+<text x="104" y="100" font-size="11.5" font-weight="700" fill="#334155">W0 地基核实</text>
+<text x="104" y="113" font-size="9.5" fill="#334155" opacity="0.85">核实孤儿端点·dev镜像冒烟</text>
+<g filter="url(#s1)"><rect x="135" y="126" width="107.5" height="34" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="147" y="142" font-size="11.5" font-weight="700" fill="#5b21b6">W1 Build Service</text>
+<text x="147" y="155" font-size="9.5" fill="#5b21b6" opacity="0.85">服务端编译·签名·注册一体</text>
+<g filter="url(#s1)"><rect x="135" y="168" width="86" height="34" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="147" y="184" font-size="11.5" font-weight="700" fill="#155e75">W2 调试自持</text>
+<text x="147" y="197" font-size="9.5" fill="#155e75" opacity="0.85">自建 DAP 桥·脱扩展依赖</text>
+<g filter="url(#s1)"><rect x="156.5" y="210" width="107.5" height="34" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="168.5" y="226" font-size="11.5" font-weight="700" fill="#065f46">W3 触发面泛化</text>
+<text x="168.5" y="239" font-size="9.5" fill="#065f46" opacity="0.85">事件/定时/业务钩子</text>
+<g filter="url(#s1)"><rect x="135" y="252" width="43" height="34" rx="8" fill="#eff6ff" stroke="#60a5fa"/></g>
+<text x="147" y="268" font-size="11.5" font-weight="700" fill="#1e40af">W4 http 出站</text>
+<text x="147" y="281" font-size="9.5" fill="#1e40af" opacity="0.85">cmx:http provider·egress</text>
+<g filter="url(#s1)"><rect x="178" y="294" width="107.5" height="34" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="190" y="310" font-size="11.5" font-weight="700" fill="#92400e">W5 开发者隔离</text>
+<text x="190" y="323" font-size="9.5" fill="#92400e" opacity="0.85">Dev Sandbox·worktree→容器</text>
+<g filter="url(#s1)"><rect x="285.5" y="336" width="107.5" height="34" rx="8" fill="#fdf4ff" stroke="#d946ef" stroke-dasharray="5 3"/></g>
+<text x="297.5" y="352" font-size="11.5" font-weight="700" fill="#86198f">W6 体验打磨(选配)</text>
+<text x="297.5" y="365" font-size="9.5" fill="#86198f" opacity="0.85">AI助手·WIT·市场UX</text>
+<!-- W0 闸线 -->
+<line x1="135" y1="80" x2="135" y2="380" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="141" y="378" font-size="9" fill="#b91c1c">W0 完成为闸</text>
+<!-- 依赖箭头 -->
+<line x1="135" y1="101" x2="135" y2="126" stroke="#64748b" stroke-width="1.2" marker-end="url(#a1)"/>
+<line x1="242.5" y1="143" x2="285.5" y2="311" stroke="#64748b" stroke-width="1.1" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+<text x="40" y="410" font-size="11" fill="#64748b">W1/W2/W4 于 W0 后并行启动；W3 业务钩子部分需 flow/rules 团队协同（跨 workspace）；W6 待前六项稳态后选配。</text>
+</svg>

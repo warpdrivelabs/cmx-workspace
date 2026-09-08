@@ -1,0 +1,55 @@
+<svg viewBox="0 0 820 348" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/>
+  </marker>
+  <filter id="s1" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="348" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+
+<text x="40" y="40" font-size="15" font-weight="700" fill="#0f172a">数据权限的根本区分：决策（谁能看什么） vs 执行（在哪里过滤）</text>
+
+<!-- 传统 -->
+<text x="40" y="74" font-size="13" font-weight="700" fill="#b91c1c">传统方案 · 两件事被绑死在同一段 WHERE</text>
+<rect x="40" y="84" width="556" height="70" rx="10" fill="#fef2f2" stroke="#fecaca" filter="url(#s1)"/>
+<rect x="52" y="96" width="120" height="20" rx="10" fill="#fee2e2" stroke="#f87171"/>
+<text x="112" y="110" font-size="11" fill="#991b1b" text-anchor="middle">决策逻辑</text>
+<rect x="182" y="96" width="120" height="20" rx="10" fill="#fee2e2" stroke="#f87171"/>
+<text x="242" y="110" font-size="11" fill="#991b1b" text-anchor="middle">执行过滤</text>
+<text x="316" y="110" font-size="11" fill="#b91c1c">揉进一处，无法单测</text>
+<text x="52" y="140" font-size="12" fill="#9f1239" font-family="ui-monospace,Menlo,Consolas,monospace">WHERE dept_id IN (…) AND (owner=:me OR status='public')</text>
+<line x1="596" y1="119" x2="642" y2="119" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar1)"/>
+<g filter="url(#s1)">
+  <ellipse cx="712" cy="98" rx="42" ry="11" fill="#fee2e2" stroke="#ef4444"/>
+  <path d="M670,98 V140 a42,11 0 0 0 84,0 V98" fill="#fef2f2" stroke="#ef4444"/>
+  <ellipse cx="712" cy="98" rx="42" ry="11" fill="#fee2e2" stroke="#ef4444"/>
+</g>
+<text x="712" y="126" font-size="11" fill="#991b1b" text-anchor="middle">DB</text>
+<text x="712" y="139" font-size="9.5" fill="#b91c1c" text-anchor="middle">策略也在这</text>
+
+<line x1="40" y1="176" x2="780" y2="176" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="5 4"/>
+
+<!-- 本方案 -->
+<text x="40" y="204" font-size="13" font-weight="700" fill="#4f46e5">本方案 · 决策 → 约束(IR) → 执行，三段解耦，各自可换可测</text>
+<g filter="url(#s1)">
+<rect x="40" y="218" width="204" height="94" rx="10" fill="#eef2ff" stroke="#6366f1"/>
+<rect x="308" y="218" width="204" height="94" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/>
+<rect x="576" y="218" width="204" height="94" rx="10" fill="#ecfeff" stroke="#06b6d4"/>
+</g>
+<text x="142" y="246" font-size="13" font-weight="700" fill="#3730a3" text-anchor="middle">① 决策 · PDP</text>
+<text x="142" y="270" font-size="11.5" fill="#4338ca" text-anchor="middle">策略引擎求值</text>
+<text x="142" y="290" font-size="11.5" fill="#4338ca" text-anchor="middle">与任何 DB 无关</text>
+<text x="410" y="246" font-size="13" font-weight="700" fill="#5b21b6" text-anchor="middle">② 约束 · AST</text>
+<text x="410" y="270" font-size="11.5" fill="#6d28d9" text-anchor="middle">残差谓词（IR）</text>
+<text x="410" y="290" font-size="11.5" fill="#6d28d9" text-anchor="middle">语义中立·可序列化</text>
+<text x="678" y="246" font-size="13" font-weight="700" fill="#155e75" text-anchor="middle">③ 执行 · PEP</text>
+<text x="678" y="270" font-size="11.5" fill="#0e7490" text-anchor="middle">SQL / 内存 / ES</text>
+<text x="678" y="290" font-size="11.5" fill="#0e7490" text-anchor="middle">多后端编译</text>
+<line x1="244" y1="265" x2="308" y2="265" stroke="#64748b" stroke-width="1.6" marker-end="url(#a1)"/>
+<line x1="512" y1="265" x2="576" y2="265" stroke="#64748b" stroke-width="1.6" marker-end="url(#a1)"/>
+</svg>

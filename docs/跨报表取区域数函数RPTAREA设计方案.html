@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>跨报表取区域数自定义函数 · RPTAREA 设计方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;max-width:1480px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:22px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:32px;padding-bottom:26px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:28px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 44px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .mono-block .g{color:#86efac}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--ink-dim)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:6px}
+  .tag.new{background:#0e1a30;color:#9ec1ff;border-color:#274a86}
+  .tag.reuse{background:#0e2417;color:#86efac;border-color:#1f6f3f}
+  .tag.mod{background:#241a08;color:#fcd57a;border-color:#7a5a14}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:13px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .ms{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+  .ms .m{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--panel);border-left:3px solid var(--accent)}
+  .ms .m .mh{font-weight:700;color:#fff;font-size:14.5px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .ms .m .mv{color:#86efac;font-size:12.5px;font-family:var(--mono)}
+  .ms .m.opt{border-left-color:var(--ink-dim);opacity:.85}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .foot{color:var(--ink-dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line)}
+  .kbd{font-family:var(--mono);font-size:12px;background:#0b0d14;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#c9d4ee}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#s0"><span class="n">§0</span>结论速览</a>
+  <a href="#s1"><span class="n">§1</span>需求与核心难点</a>
+  <a href="#s2"><span class="n">§2</span>三个改变设计的发现</a>
+  <a href="#s3"><span class="n">§3</span>命名区域模型</a>
+  <a class="sub" href="#s3-1">3.1 复用 blocks</a>
+  <a class="sub" href="#s3-2">3.2 坐标自动跟随</a>
+  <a href="#s4"><span class="n">§4</span>函数语法与语义</a>
+  <a class="sub" href="#s4-1">4.1 RPTAREA 签名</a>
+  <a class="sub" href="#s4-2">4.2 LIST 罗列的取舍</a>
+  <a href="#s5"><span class="n">§5</span>落库 cr_cell_value</a>
+  <a href="#s6"><span class="n">§6</span>后端引擎接线</a>
+  <a href="#s7"><span class="n">§7</span>前端接线（向导/正则/UDF）</a>
+  <a href="#s8"><span class="n">§8</span>设计器区域管理 UI</a>
+  <a href="#s9"><span class="n">§9</span>三大难点取舍</a>
+  <a href="#s10"><span class="n">§10</span>分阶段里程碑</a>
+  <a href="#s11"><span class="n">§11</span>改动清单</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX 财务报表平台 · 设计方案</div>
+  <h1>跨报表取区域数自定义函数 · <code style="font-size:22px">RPTAREA</code></h1>
+  <div class="sub">取<b>另一张报表</b>某 <b>sheet</b> 某<b>命名区域</b>的数，按参数聚合（汇总/平均/极值/罗列）。核心诉求：被引用报表<b>插行/列导致坐标变化时，函数自动跟随，参数无需调整</b>。</div>
+  <div class="meta">
+    <span class="chip b">函数 RPTAREA(报表, sheet, 区域, 模式)</span>
+    <span class="chip g">锚定 = 命名区域（坐标无关）</span>
+    <span class="chip p">取数 = 读已落库 cr_cell_value</span>
+    <span class="chip w">状态：设计（不动代码）</span>
+  </div>
+</header>
+
+<!-- §0 -->
+<section id="s0">
+<h2 class="sec"><span class="num">§0</span>结论速览</h2>
+<p class="lead">"自动跟随"的本质：把跨报表引用从<b>裸坐标</b>改为<b>命名锚点</b>。报表 A 永远按<b>区域名字</b>读数，报表 B 内部插行导致坐标从 <code>C3:C12</code> 变成 <code>C5:C14</code>，只要区域名 <code>area_assets</code> 不变，A 的公式 <code>=RPTAREA('BS','s1','area_assets','SUM')</code> 就永不改动。<b>坐标只是报表 B 自己的内部事务，A 全程看不到坐标、天然免疫。</b></p>
+
+<div class="card">
+<div class="legend">
+  <span class="status"><span class="dot have"></span>复用既有（零改 / 配置级）</span>
+  <span class="status"><span class="dot partial"></span>小改（既有模块加分支）</span>
+  <span class="status"><span class="dot new"></span>新增</span>
+</div>
+<table>
+<thead><tr><th>能力</th><th>落点</th><th>做法</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td>命名区域（锚点）</td><td><code>grid.blocks[]</code></td><td>复用既有 blocks，加 <code>kind:'named'</code> 约定，<code>id</code> 即区域名</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td>坐标自动跟随（读取侧）</td><td>按 <code>block_id</code> 读</td><td>A 读 <code>WHERE block_id='area_assets'</code>，不碰坐标</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>取数来源</td><td><code>cr_cell_value</code></td><td>读目标报表已落库实例；落库写入+读取 API 均新建</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>聚合模式</td><td>SQL 聚合 / 引擎</td><td>SUM/AVG/MAX/MIN/COUNT（标量）+ LIST（罗列）</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>公式解析</td><td><code>formula.rs</code></td><td>parser 已支持函数+字符串参数，零改</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td>前端 UDF + 预置值表</td><td><code>fetches</code> + Ignite UDF</td><td>键格式 <code>fn:arg:arg</code> 前后端对称，加函数名即可</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td>区域管理 / 取数向导 UI</td><td>设计器 prop 页</td><td>复用 addBlock/框选，新增区域段 + 跨表向导</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout key">
+<div class="t">一句话架构</div>
+<b>RPTAREA = 命名区域锚点（报表 B 内部维护）+ 落库单元格值（cr_cell_value 按 block_id 稀疏存）+ 读取聚合（按名字 JOIN 查值）。</b> 报表 A 与报表 B 的耦合只有一个稳定字符串——区域名。这把"自动跟随"的全部负担收敛到报表 B 的编辑侧，A 侧零负担。
+</div>
+</section>
+
+<!-- §1 -->
+<section id="s1">
+<h2 class="sec"><span class="num">§1</span>需求与核心难点</h2>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#86efac">✓ 需求（已确认）</h4>
+<ul>
+<li>取<b>另一张报表</b>某 <b>sheet</b> 某<b>区域</b>的数。</li>
+<li>参数控制聚合：<b>汇总 SUM / 平均 AVG / 最大最小计数 / 罗列 LIST</b>。</li>
+<li><b>坐标自动跟随</b>：目标报表插行列，函数参数不改。</li>
+<li>取数来源：<b>读已落库实例 cr_cell_value</b>。</li>
+<li>函数需指定：<b>目标报表 + sheet + 区域 + 模式</b>。</li>
+</ul>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#9ec1ff">核心难点</h4>
+<ul>
+<li><b>锚定什么</b>才能让坐标变化自动跟随？→ 命名区域。</li>
+<li><b>取哪份数据</b>？→ 已落库实例（但落库链路当前为零）。</li>
+<li><b>LIST 罗列</b>返回多值，与引擎"单格单值"模型冲突。</li>
+<li>目标报表<b>未落库</b>怎么办？</li>
+<li>命名区域<b>自动平移</b>在哪一层实现？</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- §2 -->
+<section id="s2">
+<h2 class="sec"><span class="num">§2</span>三个改变设计的发现</h2>
+<p class="lead">探查现有代码后，三个事实直接重塑了方案——两个大幅简化，一个必须先补齐。</p>
+
+<div class="callout key">
+<div class="t">发现 1 · 命名区域不用新建模型 —— blocks 已经就是"按范围锚定的区域"</div>
+每个 sheet 的 <code>grid.blocks[]</code> 结构为 <code>{id, range:"A14:F14", role}</code>，model 页已有 <code>addBlock/setBlock/removeBlock</code>，prop 页已有区块管理 UI + 命中测试逻辑。<b>命名区域 = 一种 <code>role/kind:'named'</code> 的 block，<code>id</code> 即区域名。</b>而且 <code>cr_cell_value</code> 已有 <code>block_id</code>（"所属区块"）列——落库时每格写 block_id，读取时 <code>WHERE block_id='area_assets'</code>，<b>天然免范围解析</b>。全程复用，这是最大简化。
+</div>
+
+<div class="callout warn">
+<div class="t">发现 2 · "插行/列"操作本身当前不存在</div>
+全仓 grep：设计器与 Ignite 组件<b>没有任何 insertRow/insertColumn/deleteRow 逻辑</b>（只有 sheet 增删、列宽行高、合并）。所以"<code>C3:C12 → C5:C14</code>"这个结构编辑目前<b>还无法发生</b>。这决定了"自动跟随"分两层实现（见 §3.2、§9c），真正的"插行自动平移"要到最后里程碑 M6。<b>但读取侧的坐标免疫（按名字读）从 M2 就成立</b>——这才是用户诉求的本质。
+</div>
+
+<div class="callout danger">
+<div class="t">发现 3 · cr_cell_value 唯一键缺 sheet 维度，必须先补</div>
+<code>cr_cell_value</code> 唯一键是 <code>(instance_id, cell_addr)</code>——多 sheet 报表里两个 sheet 都有 <code>C3</code> 会撞键。用户又明确要求"函数指定 sheet"。<b>必须加 <code>sheet_id</code> 列，唯一键扩为 <code>(instance_id, sheet_id, cell_addr)</code>。</b>DDL 由 base_rpt_meta 的 storageTables 生成且幂等升级，可安全加列。
+</div>
+</section>
+
+<!-- §3 -->
+<section id="s3">
+<h2 class="sec"><span class="num">§3</span>命名区域模型</h2>
+
+<h3 id="s3-1">3.1 复用 blocks，不新建 names 段</h3>
+<p>结论：<b>命名区域 = <code>kind:'named'</code> 的 block</b>。不复用 <code>cell.name</code>（那是"单格审计名"，1 格 1 名，表达不了多格区域；两者并存互不干扰）。</p>
+<div class="mono-block"><span class="c">// 模板 sheet.grid.blocks —— 命名区域与角色块共用一个数组，kind 区分</span>
+<span class="a">"grid"</span>: {
+  <span class="a">"blocks"</span>: [
+    { <span class="a">"id"</span>:<span class="s">"area_assets"</span>, <span class="a">"kind"</span>:<span class="s">"named"</span>, <span class="a">"range"</span>:<span class="s">"C3:C12"</span>, <span class="a">"caption"</span>:<span class="s">"资产明细区"</span> },
+    { <span class="a">"id"</span>:<span class="s">"blk_body"</span>,    <span class="a">"range"</span>:<span class="s">"A14:F14"</span>, <span class="a">"role"</span>:<span class="s">"body"</span> }
+  ]
+}</div>
+<p style="margin-bottom:0"><code>id</code> 是被 <code>RPTAREA</code> 引用的稳定区域名（报表内唯一）。落库时区域成员靠 <code>cr_cell_value.block_id</code> 记，不靠 cell_name。blocks 已随模板 <code>save()</code> 持久化，<b>零新增存储逻辑</b>。</p>
+
+<h3 id="s3-2">3.2 坐标自动跟随 —— 分两层</h3>
+<div class="grid2">
+<div class="callout key" style="margin:8px 0">
+<div class="t">读取层（A 读 B）· M2 即成立</div>
+永远按 <code>block_id</code> 读。B 重新出表落库后，落库的格地址已是新地址（<code>C5:C14</code>），但 <code>block_id</code> 仍是 <code>area_assets</code>。A 读 <code>WHERE block_id='area_assets'</code>，<b>不碰坐标，报表 A 全程免疫、无需 B 的模板</b>。这是"自动跟随"用户真正要的效果。
+</div>
+<div class="callout" style="margin:8px 0">
+<div class="t">维护层（B 的 range 平移）· 分两步</div>
+<b>M3（先做）</b>：不在编辑期维护范围，落库时用命中测试为每格算所属 block_id；范围由用户在区域管理 UI 手工设（当前无插行，范围本手工）。<br>
+<b>M6（后做，真自动）</b>：model 页实现最小 insertRow/insertColumn —— 位移单元格 + 平移所有 <code>block.range</code> + 调整本 sheet 公式地址。这才让"插行→范围自动平移"成真。
+</div>
+</div>
+</section>
+
+<!-- §4 -->
+<section id="s4">
+<h2 class="sec"><span class="num">§4</span>函数语法与语义</h2>
+
+<h3 id="s4-1">4.1 RPTAREA 签名</h3>
+<div class="mono-block"><span class="f">RPTAREA</span>(<span class="a">reportCode</span>, <span class="a">sheetId</span>, <span class="a">regionName</span>, <span class="a">mode</span>)
+
+<span class="c">reportCode</span>  目标报表 moduleMeta.moduleCode（= cr_report_instance.tpl_code），如 <span class="s">'BS'</span>
+<span class="c">sheetId</span>     目标 sheet id，如 <span class="s">'s1'</span>
+<span class="c">regionName</span>  命名区域 id（block_id），如 <span class="s">'area_assets'</span>
+<span class="c">mode</span>        <span class="s">'SUM'|'AVG'|'MAX'|'MIN'|'COUNT'|'LIST'</span>
+
+<span class="c">// 示例</span>
+=<span class="f">RPTAREA</span>(<span class="s">'BS'</span>,<span class="s">'s1'</span>,<span class="s">'area_assets'</span>,<span class="s">'SUM'</span>)
+
+<span class="c">// 前端 UDF 键 / 引擎 func_key（现有逻辑直接可用，字面量参数冒号连接）</span>
+RPTAREA:BS:s1:area_assets:SUM</div>
+<p><b>org / period 继承报表 A 的出表上下文</b>（同实体、同期间读 B），<code>scope</code> 阶段 1 固定 <code>'single'</code>。这是合理默认，后续可加可选第 5/6 参覆盖。parser 已统一 <code>to_uppercase()</code>，函数名大小写不敏感。</p>
+
+<h3 id="s4-2">4.2 LIST 罗列 vs 单值模型的冲突（难点 a）</h3>
+<div class="callout warn">
+<div class="t">冲突</div>
+引擎全链路是标量：<code>CellValues = HashMap&lt;addr, f64&gt;</code>，eval 返回 <code>f64</code>，<code>ComputeOutput.fetches: HashMap&lt;String, f64&gt;</code>，Ignite UDF 返回单个 <code>ExcelCalcValue</code>——<b>无 spill（溢出多格）机制</b>。LIST 想返回 N 值铺 N 格，与之根本冲突。
+</div>
+<table>
+<thead><tr><th>模式</th><th>返回</th><th>落地方案</th><th>阶段</th></tr></thead>
+<tbody>
+<tr><td>SUM / AVG / MAX / MIN / COUNT</td><td>标量</td><td>走现有数值通道，SQL 聚合直出，无冲突</td><td><span class="tag new">M2</span></td></tr>
+<tr><td>LIST</td><td>多值</td><td><b>单格分隔串</b>：区域各值按 <code>row_no,col_no</code> 排序拼成字符串，走 <code>str_value</code> / 独立字符串 fetch 通道，一个格里显示，明确标注"单格罗列"</td><td><span class="tag mod">M5</span></td></tr>
+<tr><td>LIST 真·多格铺开</td><td>N 格</td><td><b>拒绝</b>：Ignite 无 spill、引擎无多值格。真正有用的"把 B 的行项目作为行导入"是另一种特性（设计器行展开），列为后期独立里程碑</td><td><span class="tag">后期</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- §5 -->
+<section id="s5">
+<h2 class="sec"><span class="num">§5</span>落库 cr_cell_value（当前零写入零读取，全新建）</h2>
+
+<h3>5.1 DDL 改动</h3>
+<p>在 <code>base_rpt_meta_v1.json</code> 的 <code>cr_cell_value</code> 段加字段 + 改唯一键，<code>compile_rpt</code> 幂等升级补列：</p>
+<div class="mono-block"><span class="c">// cr_cell_value 新增字段</span>
+{ <span class="a">"dataType"</span>:<span class="s">"VARCHAR"</span>, <span class="a">"fieldLength"</span>:64, <span class="a">"nullable"</span>:<span class="k">false</span>,
+  <span class="a">"id"</span>:<span class="s">"sheet_id"</span>, <span class="a">"name"</span>:<span class="s">"sheet_id"</span>, <span class="a">"caption"</span>:{<span class="a">"zh_CN"</span>:<span class="s">"所属Sheet"</span>} }
+
+<span class="c">// 唯一键：(instance_id, cell_addr) → (instance_id, sheet_id, cell_addr)</span>
+<span class="a">"uniqueKeys"</span>: [ [<span class="s">"instance_id"</span>, <span class="s">"sheet_id"</span>, <span class="s">"cell_addr"</span>] ]</div>
+
+<h3>5.2 落库写入路径（新端点 <span class="pill post">POST</span> <code>/api/rpt/land</code>）</h3>
+<p>让 <code>/rpt/compute</code> 保持无副作用；落库单独端点。流程：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><code>compute()</code> 得到各 sheet 值（复用现有引擎）</div></div>
+  <div class="step"><div class="badge">2</div><div class="body">解析实例键：<code>tpl_code=meta.report_code</code>、<code>org_id=ctx.org</code>(i64)、<code>period_code=ctx.period</code>、<code>scope='single'</code></div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>Upsert 头表</b> <code>cr_report_instance</code>（ON CONFLICT 唯一键更新 calc_at）→ 得 <code>instance_id</code></div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><code>DELETE FROM cr_cell_value WHERE instance_id=$1</code> → 批量插每个有值格</div></div>
+</div>
+<div class="mono-block"><span class="k">INSERT INTO</span> cr_cell_value
+  (id, instance_id, <span class="g">sheet_id</span>, cell_addr, row_no, col_no, <span class="g">block_id</span>, cell_name,
+   num_value, str_value, formula_snapshot)
+<span class="k">VALUES</span> (...);
+<span class="c">-- row_no/col_no: 由 addr 拆解（col_to_index + 行号）</span>
+<span class="c">-- block_id:      对每格做命中测试，落 kind:'named' 的 block id</span>
+<span class="c">-- cell_name:     来自 cell.name（单格审计名）</span>
+<span class="c">-- id:            snowflake_id_str()（现有铸号）</span></div>
+
+<h3>5.3 读取路径（RPTAREA 求值 SQL）</h3>
+<div class="mono-block"><span class="c">-- 标量聚合（AVG/MAX/MIN/COUNT 换聚合函数）</span>
+<span class="k">SELECT</span> <span class="f">COALESCE(SUM(</span>cv.num_value<span class="f">),0)</span> <span class="k">AS</span> v
+<span class="k">FROM</span> cr_report_instance ri
+<span class="k">JOIN</span> cr_cell_value cv <span class="k">ON</span> cv.instance_id = ri.id
+<span class="k">WHERE</span> ri.tpl_code=$1 <span class="k">AND</span> ri.org_id=$2 <span class="k">AND</span> ri.period_code=$3 <span class="k">AND</span> ri.scope=$4
+  <span class="k">AND</span> cv.sheet_id=$5 <span class="k">AND</span> cv.block_id=$6;
+
+<span class="c">-- LIST：取明细按坐标排序</span>
+<span class="k">SELECT</span> cv.num_value, cv.str_value <span class="k">FROM</span> ... <span class="k">ORDER BY</span> cv.row_no, cv.col_no;</div>
+<div class="callout key">
+<div class="t">坐标免疫在这一句 SQL 里兑现</div>
+<code>WHERE ... block_id=$6</code>——<b>整条查询不含任何单元格坐标</b>。报表 B 插行导致区域成员从 C3:C12 变 C5:C14，只要落库时这些格的 block_id 仍是 <code>area_assets</code>，本查询原样命中，报表 A 的公式一字不改。唯一键保证实例唯一、无歧义。执行器复用 <code>mm.query_sql_with_datavalues</code>（读）/ <code>execute_sql_with_datavalues</code>（写），<b>db_id 取自请求头（cr_* 与报表同库）</b>。
+</div>
+</section>
+
+<!-- §6 -->
+<section id="s6">
+<h2 class="sec"><span class="num">§6</span>后端引擎接线</h2>
+<p class="lead">RPTAREA 是"读另一实例的值"，不是 SQL 聚合取数，<b>独立于 <code>is_fetch_fn</code> 的新第三类分支</b>——与 QM/QC（本报表取数）、SUM/AVG（内存算术）三足并立。</p>
+<table>
+<thead><tr><th>改动点</th><th>位置</th><th>做法</th></tr></thead>
+<tbody>
+<tr><td>新谓词 <code>is_report_ref_fn</code></td><td><code>engine.rs:428</code> 旁</td><td><code>matches!(name, "RPTAREA")</code>，与 is_fetch_fn 并列</td></tr>
+<tr><td>prefetch 收集</td><td><code>engine.rs:116-157</code></td><td>Call 且 is_report_ref → 构 <code>RptRefSig{target_code,sheet_id,region,mode,org,period,scope}</code> → 独立缓存 map 按 cache_key 去重 → <code>run_report_ref(sig)</code> 执行 JOIN SQL → 同时写 <code>pubm</code>（func_key）</td></tr>
+<tr><td>eval 分支</td><td><code>engine.rs:217-225</code></td><td>is_report_ref → 从 ref 缓存按 cache_key 取值（标量模式）</td></tr>
+<tr><td>ComputeCtx</td><td><code>engine.rs:19-22</code></td><td>加 <code>scope: Option&lt;String&gt;</code></td></tr>
+<tr><td>ComputeOutput</td><td><code>engine.rs:47-54</code></td><td>加 <code>fetches_str: HashMap&lt;String,String&gt;</code>（LIST 通道）+ <code>warnings: Vec&lt;String&gt;</code>（未落库诊断）</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<div class="t">跨报表零模板依赖 · 无环风险</div>
+引擎读 A 时<b>不需要加载 B 的模板</b>（按 block_id 读落库值即可）。跨报表引用不进 A 的单元格 DAG，<b>无跨报表递归、无环风险</b>——这正是"读已落库快照"相对"实时重算"的架构优势。
+</div>
+</section>
+
+<!-- §7 -->
+<section id="s7">
+<h2 class="sec"><span class="num">§7</span>前端接线（三处硬编码清单 + 一个向导）</h2>
+<table>
+<thead><tr><th>#</th><th>文件</th><th>改动</th></tr></thead>
+<tbody>
+<tr><td>①</td><td><code>rpt-designer-prop.html</code></td><td>新增<b>跨报表取数向导</b> <code>renderRptRefWizard</code>：报表下拉(<code>listTemplates</code>)→选中加载 B 模板→sheet 下拉(<code>B.sheets</code>)→区域下拉(<code>B.sheets[i].grid.blocks</code> 中 <code>kind==='named'</code>)→模式下拉→生成 <code>=RPTAREA(...)</code> patchCell</td></tr>
+<tr><td>②</td><td><code>rpt-designer-content.html</code></td><td>分类正则加函数名：<code>/\b(QM|QC|JE|LJ|FS|CFITEM|DGET|SUMQTY|RPTAREA)\s*\(/i</code> → 归 fetch（否则手打被误判 calc）</td></tr>
+<tr><td>③</td><td><code>cmx-spreadsheet.js:1028</code></td><td>UDF <code>FNS</code> 数组加 <code>'RPTAREA'</code>；:1032-1041 回调对 LIST 值返回字符串 <code>ExcelCalcValue</code>（现仅 Number）。键 <code>RPTAREA:BS:s1:area_assets:SUM</code> 从 fetches 命中</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<div class="t">前端与引擎的模板依赖不对称（合理）</div>
+<b>前端向导需要 B 的定义</b>（列出可选区域给用户选）；<b>引擎求值不需要 B 的模板</b>（按 block_id 读落库值）。这个不对称正是分工的体现——设计期靠模板辅助配置，运行期靠落库数据取值。
+</div>
+</section>
+
+<!-- §8 -->
+<section id="s8">
+<h2 class="sec"><span class="num">§8</span>设计器区域管理 UI</h2>
+<p>扩展 prop 页既有"区块"段，新增"命名区域"子列表（仅 <code>kind:'named'</code> 的 block）。交互全部复用既有能力：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body">中间表格<b>框选</b>一块区域（复用 content 页 <code>sheet.readSelection()</code>，calc 向导的"取选区"同款）</div></div>
+  <div class="step"><div class="badge">2</div><div class="body">点<b>"命名为区域"</b> → prompt 区域名 → <code>m.addBlock({id:name, kind:'named', range:selRange})</code></div></div>
+  <div class="step"><div class="badge">3</div><div class="body">列表项带<b>改名 / 删除</b>（复用 <code>setBlock</code> / <code>removeBlock</code>）</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>落盘</b>：blocks 随模板 <code>save()</code> 存整 doc，零新增存储逻辑</div></div>
+</div>
+</section>
+
+<!-- §9 -->
+<section id="s9">
+<h2 class="sec"><span class="num">§9</span>三大难点取舍结论</h2>
+<div class="callout warn">
+<div class="t">(a) LIST 罗列 vs 单值模型</div>
+引擎/UDF 全标量、无 spill。→ <b>标量五模式先行</b>；LIST 阶段 1 用"单格分隔串"（str_value 通道）妥协交付并明确标注；真正多格 spill / 行导入列为后期独立特性。
+</div>
+<div class="callout warn">
+<div class="t">(b) 目标报表未落库</div>
+默认<b>报错 / 诊断降级</b>：返回 0 / 空 + <code>warnings</code> 里"报表 BS 期间 2026-06 未出表落库"，透传到 compute 响应。<b>不默认实时重算</b>（违背"读已落库"决策，且引入跨报表递归/环风险）；实时降级仅作后续可选开关。
+</div>
+<div class="callout warn">
+<div class="t">(c) 自动跟随实现位置</div>
+读取侧永远按 <code>block_id</code> 读 → <b>报表 A 天然免疫（M2 即成立）</b>。范围维护：阶段 1 用落库期命中测试 + 手工区域 UI（M3）；后期加 model 页 insertRow/Col 结构编辑（M6）平移 <code>block.range</code> + 单元格 + 公式，才让"插行自动"成真。
+</div>
+</section>
+
+<!-- §10 -->
+<section id="s10">
+<h2 class="sec"><span class="num">§10</span>分阶段里程碑（每阶段可独立验证）</h2>
+<div class="ms">
+<div class="m"><div class="mh"><span>M1</span> 落库地基（后端）<span class="tag new">新增</span></div>
+加 <code>cr_cell_value.sheet_id</code> + 唯一键；新 <code>POST /api/rpt/land</code>（compute→upsert 头表→重写单元格行，含 row_no/col_no/block_id/cell_name/num_value/formula_snapshot）。
+<div class="mv">验证：出表 BS 后 SELECT cr_cell_value 有行；重复 land 幂等（唯一键）</div></div>
+
+<div class="m"><div class="mh"><span>M2</span> 跨报表读函数（标量）<span class="tag new">新增</span></div>
+engine 加 <code>is_report_ref_fn</code> / <code>RptRefSig</code> / <code>run_report_ref</code>（JOIN SQL）+ prefetch/eval 分支 + ref 缓存 + <code>ComputeCtx.scope</code>。
+<div class="mv">验证：报表 A =RPTAREA('BS','s1','area_assets','SUM') 算出 BS 落库区域之和；单测 + 集成 compute</div></div>
+
+<div class="m"><div class="mh"><span>M3</span> 命名区域模型 + 区域管理 UI（前端）<span class="tag mod">小改</span></div>
+blocks 加 <code>kind:'named'</code> 约定（复用 addBlock）；prop 页命名区域子段（框选→命名）。
+<div class="mv">验证：设计器建区域→save→grid.blocks 持久化；land→区域格 block_id 落值</div></div>
+
+<div class="m"><div class="mh"><span>M4</span> 向导 + 分类 + UDF（前端）<span class="tag mod">小改</span></div>
+prop 页 RPTAREA 向导（报表/sheet/区域/模式下拉，读 B 模板列区域）；content 正则 +RPTAREA；组件 FNS +RPTAREA。
+<div class="mv">验证：向导选目标→写公式→预览→格显示落库值，公式栏见 =RPTAREA(...)</div></div>
+
+<div class="m"><div class="mh"><span>M5</span> LIST + 未落库硬化<span class="tag mod">小改</span></div>
+LIST 单格串（str_value / 字符串 fetch）；未落库 → warnings 诊断。
+<div class="mv">验证：LIST 格显示拼接值；引用未落库报表给明确告警而非静默 0</div></div>
+
+<div class="m opt"><div class="mh"><span>M6</span> 真正结构自动跟随（可选 / 后期）<span class="tag">后期</span></div>
+model 页 insertRow/insertColumn（位移格 + 平移 block.range + 调公式）；LIST 行展开。
+<div class="mv">验证：目标报表插行→区域 range 自动平移→重新 land→A 侧数值随之更新，参数不变</div></div>
+</div>
+<div class="callout key">
+<div class="t">价值早现</div>
+<b>M1–M2 结束即有"能跨报表取汇总数"的最小闭环</b>；M3–M4 让会计能在设计器可视化配置；M5 补齐 LIST 与健壮性；M6 才是"插行物理自动平移"。而<b>用户诉求的"坐标变化函数自动跟随"从 M2 就已成立</b>（按名字读，坐标无关）——M6 只是让 B 的编辑体验更顺，不是前置依赖。
+</div>
+</section>
+
+<!-- §11 -->
+<section id="s11">
+<h2 class="sec"><span class="num">§11</span>新增 / 改动清单（文件 : 行）</h2>
+<h3>后端</h3>
+<table>
+<thead><tr><th>文件</th><th>位置</th><th>动作</th></tr></thead>
+<tbody>
+<tr><td><code>data/meta/definitions/base/base_rpt_meta_v1.json</code></td><td>cr_cell_value 段 :135-181 / 唯一键 :132-134</td><td><span class="tag mod">改</span> 加 sheet_id + 扩唯一键</td></tr>
+<tr><td><code>cmx-biz/src/rpt/engine.rs</code></td><td>:428 旁 / :116-157 / :217-225 / :47-54 / :19-22 / :478 旁</td><td><span class="tag new">改</span> is_report_ref_fn + RptRefSig + run_report_ref + prefetch/eval 分支 + ComputeCtx.scope + ComputeOutput.fetches_str/warnings</td></tr>
+<tr><td><code>cmx-api/src/handlers/portal/rpt.rs</code></td><td>:26-40 / :96-104 / 新 rpt_land</td><td><span class="tag new">增</span> Req 加 scope/persist；响应加 warnings；新 land handler</td></tr>
+<tr><td><code>cmx-api/src/handlers/portal/mod.rs</code></td><td>:203</td><td><span class="tag mod">改</span> 加 <code>/rpt/land</code> 路由</td></tr>
+<tr><td><code>cmx-biz/src/rpt/meta.rs</code></td><td>report_code 已有</td><td><span class="tag reuse">复用</span> landing 取 tpl_code</td></tr>
+</tbody>
+</table>
+<h3>前端</h3>
+<table>
+<thead><tr><th>文件</th><th>动作</th></tr></thead>
+<tbody>
+<tr><td><code>html-pages/.../rpt-designer-prop.html</code></td><td><span class="tag new">改</span> REPORT_REF_FNS + renderRptRefWizard + 命名区域管理段</td></tr>
+<tr><td><code>html-pages/.../rpt-designer-content.html</code></td><td><span class="tag mod">改</span> cmx-cell-edited 分类正则 +RPTAREA</td></tr>
+<tr><td><code>html-pages/.../rpt-designer-model.html</code></td><td><span class="tag mod">可选</span> getNamedRegions 助手（blocks 已随 save 落盘）</td></tr>
+<tr><td><code>packages/cmx-data-comp/src/components/ignite/cmx-spreadsheet.js</code></td><td><span class="tag mod">改</span> :1028 FNS +RPTAREA；:1032-1041 LIST 字符串返回</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">复用账</div>
+命名区域 = <b>0 新模型</b>（复用 blocks + cr_cell_value.block_id 列）。公式解析 = <b>0 改动</b>（parser 已支持）。前端 UDF 预置值机制 = <b>0 架构改动</b>（键格式对称，只加函数名）。真正的新代码集中在两处：<b>落库读写路径</b>（cr_cell_value 当前零使用）与 <b>引擎跨报表求值分支</b>。这与"坐标免疫靠命名锚点"的核心洞察一脉相承。
+</div>
+</section>
+
+<div class="foot">
+  CMX 财务报表平台 · 跨报表取区域数自定义函数 RPTAREA 设计方案 · 2026-07-15 · 不动代码，仅设计文档。<br>
+  相关方案：<a style="color:#4f8cff;text-decoration:none" href="财务报表平台设计方案.html">财务报表平台设计方案</a>（§5 取数公式引擎 · §7.3 表间取数 RPTREF · §8 多组织汇总合并）
+</div>
+</main>
+</div>
+</body>
+</html>

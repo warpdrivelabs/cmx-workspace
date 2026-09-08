@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAP FB50 — 明细 标签页</title>
+<style>
+  :root{--sapline:#c6c6c6;--sapfield:#fff;--sapfieldb:#8c8c8c;--reqbg:#fffdf0;--reqborder:#e0b400;--red:#bb0000;--green:#107e3e}
+  *{box-sizing:border-box}
+  body{margin:0;background:#cdd3da;font-family:"Segoe UI","Microsoft YaHei",Tahoma,sans-serif;font-size:12px;color:#1d2d3e;padding:18px}
+  .win{max-width:980px;margin:0 auto;border:1px solid #5a6b7d;border-radius:4px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.25);background:#f0f0f0}
+  .titlebar{background:linear-gradient(#5a7a9c,#3f5b78);color:#fff;display:flex;align-items:center;gap:8px;padding:5px 10px;font-weight:600}
+  .titlebar .logo{background:#fff;color:#0a6ed1;font-weight:800;border-radius:3px;padding:1px 6px;font-size:11px}
+  .titlebar .sp{flex:1}
+  .titlebar .winbtn{width:16px;height:14px;border:1px solid #cdd6e0;border-radius:2px;text-align:center;line-height:12px;font-size:10px;background:#dfe6ee;color:#33425a}
+  .menubar{background:#dfe3e8;border-bottom:1px solid var(--sapline);padding:3px 8px;display:flex;gap:16px;color:#33425a}
+  .toolbar{background:#eef1f4;border-bottom:1px solid var(--sapline);padding:4px 8px;display:flex;align-items:center;gap:5px}
+  .okfield{height:22px;border:1px solid var(--sapfieldb);width:120px;border-radius:2px;background:#fff;margin-right:6px}
+  .ibtn{width:22px;height:22px;border:1px solid #bcc4cd;border-radius:3px;background:linear-gradient(#fff,#eef1f4);display:inline-flex;align-items:center;justify-content:center;color:#33597a}
+  .tcmd{background:#0a6ed1;color:#fff;border:0;border-radius:3px;padding:3px 8px;font-size:11px}
+  .toolbar .sp{flex:1}
+  .screenttl{background:#cfd8e0;border-bottom:1px solid var(--sapline);padding:6px 12px;font-weight:700;font-size:13px;color:#22344a;display:flex;align-items:center}
+  .screenttl .light{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-weight:600;font-size:12px}
+  .dot{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#5fdc8a,#107e3e);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+  .body{padding:12px 14px;background:#f4f6f8}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--sapline);margin-bottom:12px}
+  .tab{padding:5px 16px;background:#dfe3e8;border:1px solid var(--sapline);border-bottom:0;border-radius:4px 4px 0 0;color:#33425a}
+  .tab.active{background:#fff;font-weight:700;color:#0a6ed1}
+  .panel{background:#fff;border:1px solid var(--sapline);border-radius:4px;padding:6px 0 12px;margin-bottom:12px}
+  .grp{padding:10px 16px}
+  .grp h4{margin:0 0 10px;font-size:12.5px;color:#0a6ed1;border-bottom:1px solid #e3e9f0;padding-bottom:5px}
+  .hgrid{display:grid;grid-template-columns:auto 200px auto 200px;gap:8px 14px;align-items:center}
+  .lbl{color:#333;text-align:right;white-space:nowrap}
+  .lbl.req::after{content:" *";color:var(--red);font-weight:700}
+  .fld{height:22px;border:1px solid var(--sapfieldb);border-radius:2px;background:var(--sapfield);display:flex;align-items:center;padding:0 6px}
+  .fld.req{background:var(--reqbg);border-color:var(--reqborder)}
+  .fld.ro{background:#eef1f4;color:#555}
+  .fld .ph{color:#aaa}
+  .fld.wide{grid-column:span 3}
+  .fld.drop::after{content:"▾";margin-left:auto;color:#7a8aa0}
+  .chk{display:inline-flex;align-items:center;gap:6px}
+  .box{width:14px;height:14px;border:1px solid #8c8c8c;border-radius:2px;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#0a6ed1}
+  .box.on{background:#eef4fb}
+  .statusbar{background:#dfe3e8;border-top:1px solid var(--sapline);padding:4px 10px;display:flex;align-items:center;color:#33425a;font-size:11.5px}
+  .legend{max-width:980px;margin:12px auto 0;color:#3a4a5d;font-size:11.5px;line-height:1.6;background:#fff;border:1px solid var(--sapline);border-radius:6px;padding:10px 14px}
+  .legend code{background:#eef1f4;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Consolas,monospace;color:#084a8f}
+  .legend b{color:#0a6ed1}
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="titlebar"><span class="logo">SAP</span><span>录入总账凭证：公司代码 1000</span><span class="sp"></span><span class="winbtn">—</span><span class="winbtn">▢</span><span class="winbtn">✕</span></div>
+  <div class="menubar"><span>凭证(D)</span><span>编辑(E)</span><span>转到(G)</span><span>其他(A)</span><span>设置(S)</span><span>环境(N)</span><span>系统(Y)</span><span>帮助(H)</span></div>
+  <div class="toolbar"><input class="okfield" value="/nFB50" readonly><span class="ibtn">✓</span><span class="ibtn">💾</span><span class="ibtn">⮌</span><span class="sp"></span><button class="tcmd">暂存</button><button class="tcmd">模拟</button><button class="tcmd">过账</button></div>
+  <div class="screenttl">录入总账凭证：公司代码 1000（中国石油股份）<span class="light"><span class="dot"></span>借贷平衡</span></div>
+
+  <div class="body">
+    <div class="tabs"><div class="tab">基本数据</div><div class="tab active">明细</div><div class="tab">货币</div></div>
+
+    <div class="panel">
+      <div class="grp">
+        <h4>抬头扩展（凭证级附加信息）</h4>
+        <div class="hgrid">
+          <span class="lbl">参考凭证号</span><div class="fld">FP2026060015</div>
+          <span class="lbl">凭证抬头文本</span><div class="fld">江苏销售-6月成品油批发收入</div>
+
+          <span class="lbl">分类账组</span><div class="fld drop">　（全部分类账）</div>
+          <span class="lbl">凭证类型</span><div class="fld ro">DR　客户发票</div>
+
+          <span class="lbl">参考程序</span><div class="fld ro">BKPFF</div>
+          <span class="lbl">业务处理</span><div class="fld ro">RFBU</div>
+
+          <span class="lbl">凭证状态</span><div class="fld ro">正常（已校验）</div>
+          <span class="lbl">原始凭证号</span><div class="fld"><span class="ph">　</span></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h4>跨公司代码 / 冲销</h4>
+        <div class="hgrid">
+          <span class="lbl">交叉公司代码号</span><div class="fld"><span class="ph">　</span></div>
+          <span class="lbl">冲销原因</span><div class="fld drop"><span class="ph">（非冲销）</span></div>
+
+          <span class="lbl">冲销凭证号</span><div class="fld ro"><span class="ph">　</span></div>
+          <span class="lbl">冲销年度</span><div class="fld ro"><span class="ph">　</span></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h4>控制 / 操作员</h4>
+        <div class="hgrid">
+          <span class="lbl">录入人</span><div class="fld ro">ZHANGSAN</div>
+          <span class="lbl">录入日期</span><div class="fld ro">2026.06.15</div>
+
+          <span class="lbl">事务码</span><div class="fld ro">FB50</div>
+          <span class="lbl">公司代码货币</span><div class="fld ro">CNY　人民币</div>
+
+          <span class="lbl">附件数</span><div class="fld">1</div>
+          <span class="lbl chk-cell"><span class="chk"><span class="box on">✓</span>计算税额</span></span><div class="fld ro" style="border:0;background:transparent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar"><span>明细页：凭证抬头扩展信息（BKPF 级）</span><span style="margin-left:auto">FB50 ▸ 1000 ▸ ZHANGSAN ▸ INS</span></div>
+</div>
+
+<div class="legend">
+  <b>「明细」标签页</b>：FB50 抬头级的<b>扩展信息</b>页（不是行项目）。放凭证类型/参考、分类账组、跨公司代码号、<b>冲销信息</b>、录入人/事务码、附件数、是否计算税额等控制字段。<br>
+  对应 <code>BKPF</code> 表：参考 <code>XBLNR</code>、抬头文本 <code>BKTXT</code>、分类账组 <code>LDGRP</code>、冲销 <code>STBLG</code>/<code>STJAH</code>/<code>STGRD</code>、录入人 <code>USNAM</code>、事务码 <code>TCODE</code>、交叉公司代码号 <code>BVORG</code>。
+</div>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDM 分发订阅方案C原型 · 目标端点 + 订阅两级模型</title>
+<style>
+  /* 主题：全部走 CSS 变量 + fallback（UI5 令牌风格），暗色主题可整体适配 */
+  :root {
+    --bg: var(--sapBackgroundColor, #f5f6f7);
+    --card: var(--sapList_Background, #fff);
+    --border: var(--sapList_BorderColor, #e5e5e5);
+    --text: var(--sapTextColor, #1d2d3e);
+    --label: var(--sapContent_LabelColor, #6a6d70);
+    --title: var(--sapTitleColor, #1d2d3e);
+    --brand: var(--cmx-brand, #0a6ed1);
+    --brand-weak: color-mix(in srgb, var(--brand) 8%, transparent);
+    --ok: #107e3e; --warn: #e9730c; --err: #bb0000;
+    --ok-bg: color-mix(in srgb, var(--ok) 10%, transparent);
+    --warn-bg: color-mix(in srgb, var(--warn) 10%, transparent);
+    --radius: 8px;
+    --font: var(--sapFontFamily, '72', 'Segoe UI', Arial, sans-serif);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  .pg-head { padding: 14px 22px 10px; }
+  .pg-title { font-size: 20px; font-weight: 600; color: var(--title); }
+  .pg-sub { font-size: 12px; color: var(--label); margin-top: 3px; }
+  .pg-tag { display: inline-block; font-size: 11px; color: var(--brand); background: var(--brand-weak); border-radius: 10px; padding: 1px 9px; margin-left: 8px; vertical-align: 3px; }
+  .layout { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 0 20px 16px; }
+
+  /* ── 左栏：端点 ── */
+  .ep-pane { width: 230px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; gap: 8px; }
+  .ep-pane-hd { font-size: 13px; font-weight: 600; color: var(--title); padding: 2px 4px; display: flex; justify-content: space-between; align-items: center; }
+  .ep-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .ep-card { border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; cursor: pointer; transition: border-color .12s, background .12s; }
+  .ep-card:hover { border-color: var(--brand); }
+  .ep-card.sel { border-color: var(--brand); background: var(--brand-weak); }
+  .ep-name { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .ep-name b:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+  .ep-name .ep-sys { font-weight: 400; font-size: 11px; color: var(--label); flex-shrink: 0; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ep-meta { font-size: 11px; color: var(--label); margin-top: 3px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chip { border-radius: 8px; padding: 0 7px; font-size: 11px; line-height: 17px; display: inline-block; }
+  .chip.ch { background: var(--brand-weak); color: var(--brand); }
+  .chip.on { background: var(--ok-bg); color: var(--ok); }
+  .chip.off { background: color-mix(in srgb, var(--label) 12%, transparent); color: var(--label); }
+  .chip.backlog { background: var(--warn-bg); color: var(--warn); }
+
+  /* ── 右栏：订阅 ── */
+  .sub-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .sub-hd { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .sub-hd-title { font-size: 15px; font-weight: 600; color: var(--title); }
+  .sub-hd-title small { font-weight: 400; color: var(--label); margin-left: 6px; }
+  .toolbar { display: flex; gap: 8px; }
+  .filter-bar { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .grid-wrap { flex: 1; min-height: 0; overflow: auto; margin-top: 10px; border: 1px solid var(--border); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { position: sticky; top: 0; background: var(--brand-weak); color: var(--title); text-align: left; padding: 7px 10px; font-weight: 600; white-space: nowrap; }
+  td { padding: 7px 10px; border-top: 1px solid var(--border); white-space: nowrap; }
+  tr:hover td { background: var(--brand-weak); }
+  .act { color: var(--brand); cursor: pointer; margin-right: 10px; }
+  .act.neg { color: var(--err); }
+  .pager { display: flex; justify-content: flex-end; gap: 8px; align-items: center; padding-top: 8px; font-size: 12px; color: var(--label); }
+
+  /* ── 控件 ── */
+  button { font-family: inherit; font-size: 12.5px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 5px 12px; cursor: pointer; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  button.ghost { border-color: transparent; color: var(--brand); }
+  button.ghost:hover { text-decoration: underline; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  input, select { font-family: inherit; font-size: 12.5px; border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; background: var(--card); color: var(--text); min-width: 120px; }
+  .f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .f > label { font-size: 12px; color: var(--label); }
+  .hint { font-size: 11.5px; color: var(--label); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 14px; }
+
+  /* ── 弹框 ── */
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 40; }
+  .mask.open { display: flex; }
+  .dlg { background: var(--card); border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.25); width: 720px; max-width: 94vw; max-height: 88vh; display: flex; flex-direction: column; }
+  .dlg.narrow { width: 520px; }
+  .dlg-hd { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px 10px; }
+  .dlg-hd b { font-size: 15px; color: var(--title); }
+  .dlg-x { border: none; font-size: 16px; color: var(--label); padding: 2px 6px; }
+  .dlg-bd { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 18px 12px; }
+  .dlg-ft { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 18px 14px; border-top: 1px solid var(--border); }
+  .sec-title { font-size: 13px; font-weight: 600; color: var(--title); margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+
+  /* 向导步骤条 */
+  .steps { display: flex; gap: 0; margin: 2px 0 12px; }
+  .step { flex: 1; text-align: center; font-size: 12px; color: var(--label); padding: 6px 0; border-bottom: 2px solid var(--border); }
+  .step.cur { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+  .step.done { color: var(--ok); border-bottom-color: var(--ok); }
+
+  /* 字典复选卡片 */
+  .dict-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .dict-card { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .dict-card.sel { border-color: var(--brand); background: var(--brand-weak); }
+  .dict-card.dis { opacity: .45; cursor: not-allowed; }
+  .dict-card b { font-size: 12.5px; }
+  .dict-card small { display: block; color: var(--label); font-size: 11px; }
+
+  /* 逐字典折叠卡 */
+  .cfg-item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+  .cfg-hd { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; cursor: pointer; background: var(--brand-weak); border-radius: 6px 6px 0 0; }
+  .cfg-hd b { font-size: 12.5px; }
+  .cfg-bd { padding: 10px; border-top: 1px solid var(--border); display: none; flex-direction: column; gap: 8px; }
+  .cfg-item.open .cfg-bd { display: flex; }
+  .chk-row { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .chk-row label { display: flex; gap: 5px; align-items: center; font-size: 12.5px; cursor: pointer; }
+  .rule-row { display: flex; gap: 6px; align-items: center; padding: 5px 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--border); }
+
+  .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--title); color: #fff; border-radius: 6px; padding: 8px 18px; font-size: 12.5px; z-index: 60; display: none; }
+  .legend { font-size: 11px; color: var(--label); padding: 0 22px 8px; }
+  .legend code { background: var(--brand-weak); color: var(--brand); border-radius: 3px; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<div class="pg-head">
+  <div class="pg-title">分发订阅管理 <span class="pg-tag">方案C原型 · 端点+订阅两级</span></div>
+  <div class="pg-sub">目标端点承载凭证与投递策略（一份）；订阅 = 端点 × 字典（事件/过滤/字段映射）；支持多字典批量订阅</div>
+</div>
+<div class="legend">原型说明：mock 数据，交互可点——左栏切端点、<code>新建订阅</code>三步向导（多选字典）、<code>新建/编辑端点</code>、行操作按钮有 toast 反馈。</div>
+
+<div class="layout">
+  <!-- 左栏：目标端点 -->
+  <div class="ep-pane">
+    <div class="ep-pane-hd">目标端点 <button class="primary" id="btnNewEp">+ 新建</button></div>
+    <div class="ep-list" id="epList"></div>
+  </div>
+
+  <!-- 右栏：该端点下的订阅 -->
+  <div class="sub-pane">
+    <div class="sub-hd">
+      <div class="sub-hd-title" id="subTitle">—<small id="subMeta"></small></div>
+      <div class="toolbar">
+        <button class="primary" id="btnNewSub">新建订阅（多字典）</button>
+        <button id="btnEditEp">编辑端点</button>
+        <button id="btnTestEp">测试端点</button>
+        <button id="btnToggleEp">停用端点</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="f"><label>字典</label><input id="fDict" placeholder="如 supplier"></div>
+      <div class="f"><label>状态</label>
+        <select id="fActive"><option value="">全部</option><option value="1">启用</option><option value="0">停用</option></select></div>
+      <button id="btnSearch" style="align-self:flex-end;">查询</button>
+      <button class="ghost" id="btnReset" style="align-self:flex-end;">重置</button>
+      <span class="hint" style="align-self:flex-end; margin-left:auto;">行内「测试」已上移至端点级（通道连通性属于端点凭证）</span>
+    </div>
+    <div class="grid-wrap"><table><thead><tr>
+      <th>名称</th><th>字典</th><th>事件类型</th><th>状态</th><th>近24h成功率</th><th>积压</th><th>操作</th>
+    </tr></thead><tbody id="subBody"></tbody></table></div>
+    <div class="pager" id="pager">第 1 页 / 共 1 页 · 20 条/页</div>
+  </div>
+</div>
+
+<!-- ══ 弹框1：新建订阅向导 ══ -->
+<div class="mask" id="wizMask">
+  <div class="dlg">
+    <div class="dlg-hd"><b id="wizTitle">新建订阅</b><button class="dlg-x" data-close="wizMask">✕</button></div>
+    <div class="dlg-bd">
+      <div class="steps">
+        <div class="step" data-s="1">① 选择端点</div>
+        <div class="step" data-s="2">② 多选字典</div>
+        <div class="step" data-s="3">③ 逐字典配置</div>
+      </div>
+
+      <!-- step1 -->
+      <div id="wiz1">
+        <div class="hint" style="margin-bottom:8px;">凭证与投递策略在端点上只配一次；没有合适端点可在此新建。</div>
+        <div class="dict-grid" id="wizEpGrid"></div>
+        <div class="sec-title">或新建端点</div>
+        <div class="grid2">
+          <div class="f"><label>目标系统 *</label><input id="wEpSys" placeholder="如 erp-prod"></div>
+          <div class="f"><label>通道</label><select id="wEpCh"><option>webhook</option><option>rest_pull</option></select></div>
+          <div class="f"><label>URL *</label><input id="wEpUrl" placeholder="https://erp.example.com/api/cmx"></div>
+          <div class="f"><label>签名秘钥 *</label><input id="wEpSecret" placeholder="留空自动生成"></div>
+        </div>
+      </div>
+
+      <!-- step2 -->
+      <div id="wiz2" style="display:none">
+        <div class="hint" style="margin-bottom:8px;">来源：激活映射的 target_dict 去重；<b>该端点已订阅的字典自动排除</b>。</div>
+        <div style="margin-bottom:8px;"><button class="ghost" id="wizSelAll">全选</button> <span class="hint" id="wizSelCnt">已选 0 个</span></div>
+        <div class="dict-grid" id="wizDictGrid"></div>
+      </div>
+
+      <!-- step3 -->
+      <div id="wiz3" style="display:none">
+        <div class="hint" style="margin-bottom:8px;">每张卡独立配置事件/过滤/字段映射；默认全事件、无过滤、全字段——点击卡头展开细化。</div>
+        <div id="wizCfgList"></div>
+      </div>
+    </div>
+    <div class="dlg-ft">
+      <button data-close="wizMask">取消</button>
+      <button id="wizPrev">上一步</button>
+      <button class="primary" id="wizNext">下一步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 弹框2：端点编辑 ══ -->
+<div class="mask" id="epMask">
+  <div class="dlg narrow">
+    <div class="dlg-hd"><b id="epDlgTitle">新建端点</b><button class="dlg-x" data-close="epMask">✕</button></div>
+    <div class="dlg-bd">
+      <div class="sec-title" style="margin-top:0">基本信息</div>
+      <div class="grid2">
+        <div class="f"><label>名称</label><input id="eName" placeholder="如：ERP 生产端点"></div>
+        <div class="f"><label>目标系统 *</label><input id="eSys" placeholder="如 erp-prod"></div>
+        <div class="f"><label>通道</label><select id="eCh"><option>webhook</option><option>rest_pull</option></select></div>
+        <div class="f"><label>启用</label><select id="eActive"><option value="1">启用</option><option value="0">停用</option></select></div>
+      </div>
+      <div class="sec-title">通道配置（该端点全部订阅共用，密钥轮换只改这里）</div>
+      <div class="grid2">
+        <div class="f"><label>URL *</label><input id="eUrl" placeholder="https://erp.example.com/api/cmx"></div>
+        <div class="f"><label>签名秘钥 *</label>
+          <div style="display:flex;gap:6px;"><input id="eSecret" style="flex:1" placeholder="编辑时 *** = 未变更"><button class="ghost" id="eGen" title="随机生成32位hex">生成</button></div>
+          <span class="hint">轮换一次即对其下全部订阅生效</span></div>
+      </div>
+      <div class="sec-title">投递策略</div>
+      <div class="grid3">
+        <div class="f"><label>最大重试</label><input id="eRetry" value="8"></div>
+        <div class="f"><label>批量大小</label><input id="eBatch" value="50"></div>
+        <div class="f"><label>超时(ms)</label><input id="eTimeout" value="10000"></div>
+      </div>
+    </div>
+    <div class="dlg-ft"><button data-close="epMask">取消</button><button id="eSaveTest">保存并测试</button><button class="primary" id="eSave">保存</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── mock 数据 ── */
+const ENDPOINTS = [
+  { id: 901, sys: 'erp-test',  ch: 'webhook',   active: true,  name: 'ERP 测试', subs: [
+    { id: 11, name: '供应商同步', dict: 'supplier', evts: ['created','updated'],  active: true,  ok: 98, total: 156, backlog: 0 },
+    { id: 12, name: '客户同步',   dict: 'customer', evts: ['created','updated'],  active: true,  ok: 42, total: 42, backlog: 0 },
+    { id: 13, name: '科目同步',   dict: 'subject',  evts: ['created','updated','merged'], active: false, ok: 0, total: 0, backlog: 0 },
+  ]},
+  { id: 902, sys: 'wms-test',  ch: 'webhook',   active: true,  name: 'WMS 测试', subs: [
+    { id: 21, name: '供应商同步', dict: 'supplier', evts: ['created','updated','merged'], active: true, ok: 92, total: 210, backlog: 7 },
+  ]},
+  { id: 903, sys: 'crm-test',  ch: 'webhook',   active: false, name: 'CRM 测试', subs: [
+    { id: 31, name: '供应商同步', dict: 'supplier', evts: [], active: true, ok: 0, total: 12, backlog: 12 },
+  ]},
+  { id: 904, sys: 'bi-pull',   ch: 'rest_pull', active: true,  name: 'BI 拉取', subs: [
+    { id: 41, name: '物料拉取', dict: 'material', evts: ['updated'], active: true, ok: 100, total: 88, backlog: 0 },
+  ]},
+  { id: 905, sys: 'srm-partner-prod', ch: 'webhook', active: true, name: 'SRM供应商协同平台生产环境端点（超长名称演示）', subs: [
+    { id: 51, name: '供应商同步', dict: 'supplier', evts: ['updated'], active: true, ok: 99, total: 300, backlog: 0 },
+  ]},
+]
+const ALL_DICTS = [
+  { code: 'supplier', label: '供应商' }, { code: 'customer', label: '客户' },
+  { code: 'material', label: '物料' }, { code: 'subject', label: '科目' },
+  { code: 'org', label: '组织' }, { code: 'bank', label: '银行账户' },
+]
+
+const $ = (id) => document.getElementById(id)
+let curEp = ENDPOINTS[0]
+const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2600) }
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $(b.dataset.close).classList.remove('open'))
+
+/* ── 左栏渲染 ── */
+function renderEps() {
+  $('epList').innerHTML = ENDPOINTS.map(e => {
+    const backlog = e.subs.reduce((a, s) => a + s.backlog, 0)
+    return `<div class="ep-card ${e === curEp ? 'sel' : ''}" data-ep="${e.id}" title="${e.sys}${e.name ? ' · ' + e.name : ''}">
+      <div class="ep-name"><b>${e.name || e.sys}</b>${e.name ? `<span class="ep-sys">${e.sys}</span>` : ''}</div>
+      <div class="ep-meta">
+        <span class="chip ch">${e.ch}</span>
+        <span class="chip ${e.active ? 'on' : 'off'}">${e.active ? '● 启用' : '○ 停用'}</span>
+        <span>${e.subs.length} 订阅</span>
+        ${backlog ? `<span class="chip backlog">积压 ${backlog}</span>` : ''}
+      </div></div>`
+  }).join('')
+  document.querySelectorAll('.ep-card').forEach(c => c.onclick = () => {
+    curEp = ENDPOINTS.find(e => e.id === Number(c.dataset.ep)); renderEps(); renderSubs()
+  })
+}
+
+/* ── 右栏渲染 ── */
+function renderSubs() {
+  $('subTitle').innerHTML = `${curEp.name || curEp.sys} <small>· ${curEp.sys} · ${curEp.ch}${curEp.active ? '' : ' · 已停用（全部投递暂停）'}</small>`
+  $('btnToggleEp').textContent = curEp.active ? '停用端点' : '启用端点'
+  const fd = $('fDict').value.trim().toLowerCase(), fa = $('fActive').value
+  const rows = curEp.subs.filter(s =>
+    (!fd || s.dict.includes(fd) || s.name.includes(fd)) && (fa === '' || String(+s.active) === fa))
+  $('subBody').innerHTML = rows.length ? rows.map(s => `<tr>
+    <td>${s.name}</td><td>${s.dict}</td>
+    <td>${s.evts.length ? s.evts.join(' / ') : '全部'}</td>
+    <td>${s.active ? '<span style="color:var(--ok)">● 启用</span>' : '<span style="color:var(--label)">○ 停用</span>'}</td>
+    <td>${s.total ? Math.round(s.ok / s.total * 100) + '%（' + s.ok + '/' + s.total + '）' : '-'}</td>
+    <td>${s.backlog || 0}</td>
+    <td><span class="act" onclick="toast('编辑订阅（瘦身后只剩：事件/过滤/字段映射/启停）')">编辑</span><span class="act" onclick="toast('打开分发监控（subscriptionId 入参不变）')">投递</span><span class="act" onclick="toast('补发对话框（自动预设当前订阅）')">补发</span><span class="act neg" onclick="toast('${s.active ? '停用' : '删除'}确认…')">${s.active ? '停用' : '删除'}</span></td>
+  </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--label);padding:26px">暂无订阅——点右上「新建订阅（多字典）」一次接入多种主数据</td></tr>'
+  $('pager').textContent = `第 1 页 / 共 1 页 · ${rows.length} 条`
+}
+$('btnSearch').onclick = renderSubs
+$('btnReset').onclick = () => { $('fDict').value = ''; $('fActive').value = ''; renderSubs() }
+$('btnTestEp').onclick = () => toast(`测试端点 ${curEp.sys}（${curEp.ch}）连通性… 通过（126 ms）`)
+$('btnToggleEp').onclick = () => { curEp.active = !curEp.active; toast(curEp.active ? '端点已启用（各订阅恢复自身启停状态）' : '端点已停用：其下全部订阅投递暂停，级联即时生效'); renderEps(); renderSubs() }
+$('btnEditEp').onclick = () => openEpDlg(curEp)
+$('btnNewEp').onclick = () => openEpDlg(null)
+
+/* ── 端点弹框 ── */
+function openEpDlg(ep) {
+  $('epDlgTitle').textContent = ep ? `编辑端点 · ${ep.sys}` : '新建端点'
+  $('eName').value = ep?.name || ''; $('eSys').value = ep?.sys || ''
+  $('eCh').value = ep?.ch || 'webhook'; $('eActive').value = ep ? String(+ep.active) : '1'
+  $('eUrl').value = ep ? `https://${ep.sys}.example.com/api/cmx` : ''
+  $('eSecret').value = ep ? '***' : ''; $('eRetry').value = 8; $('eBatch').value = 50; $('eTimeout').value = 10000
+  $('epMask').classList.add('open')
+}
+$('eGen').onclick = () => { $('eSecret').value = Array.from({length:16}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join('') }
+$('eSave').onclick = () => { $('epMask').classList.remove('open'); toast('端点已保存（凭证对其下全部订阅即时生效）') }
+$('eSaveTest').onclick = () => { $('epMask').classList.remove('open'); toast('端点已保存，测试通过（98 ms）') }
+
+/* ── 新建订阅向导 ── */
+let wizStep = 1, wizEpSel = null, wizDicts = new Set()
+$('btnNewSub').onclick = () => { wizStep = 1; wizEpSel = curEp; wizDicts = new Set(); renderWiz(); $('wizMask').classList.add('open') }
+$('wizPrev').onclick = () => { if (wizStep > 1) { wizStep--; renderWiz() } }
+$('wizNext').onclick = () => {
+  if (wizStep === 1) {
+    const sys = $('wEpSys').value.trim()
+    if (!wizEpSel && sys) { wizEpSel = { id: Date.now(), sys, ch: $('wEpCh').value, active: true, name: '', subs: [], isNew: true }; }
+    if (!wizEpSel) return toast('请选择端点，或填写新端点的目标系统')
+    wizStep = 2
+  } else if (wizStep === 2) {
+    if (!wizDicts.size) return toast('请至少勾选一个字典')
+    wizStep = 3
+  } else {
+    const created = [...wizDicts].map((d, i) => ({ id: Date.now() + i, name: d + '同步', dict: d, evts: [], active: true, ok: 0, total: 0, backlog: 0 }))
+    if (wizEpSel.isNew) { delete wizEpSel.isNew; ENDPOINTS.push(wizEpSel); } else { wizEpSel.subs.push(...created) }
+    if (!ENDPOINTS.includes(wizEpSel)) ENDPOINTS.push(wizEpSel)
+    curEp = wizEpSel
+    $('wizMask').classList.remove('open'); renderEps(); renderSubs()
+    return toast(`批量创建完成：created=${created.length}，skipped=0（POST /mdm/subscriptions/batch）`)
+  }
+  renderWiz()
+}
+$('wizSelAll').onclick = () => {
+  availDicts().forEach(d => wizDicts.add(d.code)); renderWiz()
+}
+function availDicts() {
+  const had = new Set((wizEpSel?.subs || []).map(s => s.dict))
+  return ALL_DICTS.map(d => ({ ...d, taken: had.has(d.code) }))
+}
+function renderWiz() {
+  document.querySelectorAll('.step').forEach(el => {
+    const s = Number(el.dataset.s)
+    el.classList.toggle('cur', s === wizStep); el.classList.toggle('done', s < wizStep)
+  })
+  $('wiz1').style.display = wizStep === 1 ? '' : 'none'
+  $('wiz2').style.display = wizStep === 2 ? '' : 'none'
+  $('wiz3').style.display = wizStep === 3 ? '' : 'none'
+  $('wizPrev').disabled = wizStep === 1
+  $('wizNext').textContent = wizStep === 3 ? '提交批量创建' : '下一步'
+  if (wizStep === 1) {
+    $('wizEpGrid').innerHTML = ENDPOINTS.map(e => `<div class="dict-card ${e === wizEpSel ? 'sel' : ''}" data-ep="${e.id}">
+      <div><b>${e.sys}</b><small>${e.ch} · ${e.subs.length} 订阅 · ${e.active ? '启用' : '停用'}</small></div></div>`).join('')
+    document.querySelectorAll('#wizEpGrid .dict-card').forEach(c => c.onclick = () => {
+      wizEpSel = ENDPOINTS.find(e => e.id === Number(c.dataset.ep)); $('wEpSys').value = ''; renderWiz()
+    })
+  }
+  if (wizStep === 2) {
+    $('wizDictGrid').innerHTML = availDicts().map(d => `<div class="dict-card ${d.taken ? 'dis' : wizDicts.has(d.code) ? 'sel' : ''}" data-d="${d.code}">
+      <input type="checkbox" ${d.taken ? 'disabled' : wizDicts.has(d.code) ? 'checked' : ''}>
+      <div><b>${d.code}</b><small>${d.taken ? '该端点已订阅（自动排除）' : d.label}</small></div></div>`).join('')
+    document.querySelectorAll('#wizDictGrid .dict-card').forEach(c => c.onclick = () => {
+      const code = c.dataset.d
+      if (availDicts().find(d => d.code === code).taken) return
+      wizDicts.has(code) ? wizDicts.delete(code) : wizDicts.add(code); renderWiz()
+    })
+    $('wizSelCnt').textContent = `已选 ${wizDicts.size} 个`
+  }
+  if (wizStep === 3) {
+    $('wizCfgList').innerHTML = [...wizDicts].map(code => `
+      <div class="cfg-item open" data-c="${code}">
+        <div class="cfg-hd"><b>${code} · ${ALL_DICTS.find(d => d.code === code)?.label || ''}</b><span class="hint">默认：全事件 / 无过滤 / 全字段 ▾</span></div>
+        <div class="cfg-bd">
+          <div class="chk-row">
+            <label><input type="checkbox" checked>created 新增</label>
+            <label><input type="checkbox" checked>updated 变更</label>
+            <label><input type="checkbox" checked>merged 合并</label>
+            <span class="hint">全不选 = 全部事件</span>
+          </div>
+          <div class="hint">行级过滤（AND）</div>
+          <div class="rule-row"><input style="flex:1" placeholder="字段名（dct/meta 候选）"><select><option>等于</option><option>不等于</option><option>属于</option><option>模糊</option></select><input style="flex:1" placeholder="值"><button class="ghost">＋</button><button class="ghost">－</button></div>
+          <div class="grid3">
+            <div class="f"><label>仅投递字段</label><input placeholder="逗号分隔，空=全部"></div>
+            <div class="f"><label>字段改名</label><input placeholder="old:new，逗号分隔"></div>
+            <div class="f"><label>字段脱敏</label><input placeholder="逗号分隔字段名"></div>
+          </div>
+        </div>
+      </div>`).join('')
+    document.querySelectorAll('.cfg-hd').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'))
+  }
+}
+
+renderEps(); renderSubs()
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>本体平台 · 通俗说明与待办清单</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--fg:#1c2530;--muted:#5a6b7b;--border:#d9dee5;
+  --accent:#0a6ed1;--accent2:#7c5cf0;--accent-soft:#e9f2fc;--ok:#178a5a;--warn:#b25f00;--err:#c9364a;
+  --code-bg:#0f1729;--code-fg:#d8e4f5;--chip:#edf3fa;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0c111d;--card:#151c2c;--fg:#dfe6f0;--muted:#8fa0b4;--border:#28324a;
+  --accent:#4d9eff;--accent2:#a58bff;--accent-soft:#15243c;--ok:#3ecf8e;--warn:#f0a35e;--err:#ff7a8a;
+  --code-bg:#0a0f1c;--code-fg:#d8e4f5;--chip:#1b2740}
+}
+body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.8;font-size:15px}
+.wrap{max-width:1030px;margin:0 auto;padding:0 26px 70px}
+.hero{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border-radius:0 0 18px 18px;padding:40px 26px 34px}
+.hero .kicker{font-size:12.5px;letter-spacing:2px;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:27px;font-weight:700;letter-spacing:.5px}
+.hero p{margin-top:10px;font-size:14.5px;opacity:.92;max-width:800px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:2px 12px;font-size:12px;margin-right:8px;vertical-align:2px}
+h2{border-left:4px solid var(--accent);padding-left:12px;margin:44px 0 14px;font-size:20px}
+h3{margin:22px 0 8px;font-size:16px}
+p{margin:8px 0}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;font-size:13.5px}
+th{background:var(--chip);text-align:left;padding:9px 12px;font-size:13px}
+td{padding:8px 12px;border-top:1px solid var(--border);vertical-align:top}
+td code,p code,li code,h3 code{background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:Consolas,Menlo,monospace;font-size:12.6px;color:var(--accent)}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow:auto;font-size:13px;line-height:1.65;font-family:Consolas,Menlo,monospace;margin:12px 0}
+pre .c{color:#7d8db0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:14px 0}
+.fbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:12.8px;text-align:center}
+.fbox b{color:var(--accent)}
+.fa{display:flex;align-items:center;color:var(--accent);font-weight:700;font-size:13px}
+.tip,.warn,.danger{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13.8px;border:1px solid}
+.tip{background:var(--accent-soft);border-color:var(--accent)}
+.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:var(--warn)}
+.danger{background:color-mix(in srgb,var(--err) 10%,transparent);border-color:var(--err)}
+.pri{display:inline-block;border-radius:6px;padding:1px 9px;font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap}
+.p0{background:var(--err)}.p1{background:var(--warn)}.p2{background:var(--muted)}
+.term{font-weight:700;color:var(--accent)}
+details{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin:8px 0}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+details[open]{padding-bottom:14px}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a{color:var(--accent);text-decoration:none;margin-right:14px}
+footer a:hover{text-decoration:underline}
+ul,ol{padding-left:22px}li{margin:4px 0}
+.anchor{font-size:12.5px;color:var(--muted);margin:-6px 0 10px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="kicker">CMX 本体平台（cmx-ontology :8097）· 通俗版</div>
+  <h1><span class="badge">大白话版</span>本体平台是什么、怎么用、怎么接、还欠什么</h1>
+  <p>这份文档不讲术语堆砌——每个词第一次出现都配大白话和类比（地图、快递单、冰箱），覆盖：它是干嘛的、数据怎么存、主数据和第三方怎么接进来、动作/流程/校验怎么配合，最后列出<b>代码里还没有做、但迟早要做的事</b>。技术细节版见另外五份说明文档。</p>
+</div>
+<div class="wrap">
+
+<h2>一、一句话：本体平台是干什么的</h2>
+<div class="card">
+<p><b>本体平台就是给企业数据画一张"地图"，并提供在地图上"导航"和"办事"的能力。</b></p>
+<table>
+  <tr><th style="width:220px">百度地图</th><th>本体平台</th></tr>
+  <tr><td>地点（餐厅、公司）</td><td><b>对象</b>（客户、订单、凭证、科目）</td></tr>
+  <tr><td>道路（连着两个地点）</td><td><b>关系</b>（"客户下单"连着客户和订单）</td></tr>
+  <tr><td>导航："从这里出发能到哪"</td><td><b>查询</b>："这个客户的订单里金额超 1 万的有哪些"（顺关系钻取）</td></tr>
+  <tr><td>在地点上办事（预约、下单）</td><td><b>动作</b>（"停用这个客户"= 校验+改状态+发审批，一个按钮）</td></tr>
+</table>
+<p>它<b>不是</b>又一个业务系统：不替你记账、不替你审批、不替你算报表。MDM 管主数据对不对、流程引擎管审批怎么走、报表管算数——<b>本体负责把它们连起来，让你在一个地方看全景、顺着关系查、按一个按钮办事。</b></p>
+</div>
+
+<h2>二、能用来做什么（五个场景）</h2>
+<table>
+  <tr><th style="width:150px">场景</th><th>大白话</th></tr>
+  <tr><td><b>客户 360</b></td><td>点开客户"北方贸易"，看他的所有订单、订单挂的凭证——一层层钻，不写 SQL</td></tr>
+  <tr><td><b>反向追查</b></td><td>一张凭证出问题，反查它属于哪个订单、哪个客户</td></tr>
+  <tr><td><b>影响面分析</b></td><td>停用一个科目/客户前，先问"有多少在途单据会受影响"</td></tr>
+  <tr><td><b>跨系统连图</b></td><td>MDM 的客户、业务库的订单、报表的结果，挂到同一张图上，关系连起来</td></tr>
+  <tr><td><b>操作变按钮</b></td><td>"关账"本来要手动改状态+发起审批+跑报表，定义成动作后点一下全串起来，自动留痕</td></tr>
+</table>
+
+<h2>三、术语表（每个词都翻译成人话）</h2>
+<table>
+  <tr><th style="width:130px">术语</th><th style="width:150px">代码里叫</th><th>大白话</th></tr>
+  <tr><td><span class="term">本体</span></td><td>Ontology</td><td>那张"企业数据地图"本身：有哪些东西、什么关系，登记成一套统一定义</td></tr>
+  <tr><td><span class="term">对象类型</span></td><td>ObjectType</td><td>地图上的"地点种类"——客户、订单这类模板。有名字、属性清单、主键，归哪个域哪个模块</td></tr>
+  <tr><td><span class="term">对象（实例）</span></td><td>Object</td><td>按模板填出来的一条真实数据：客户"北方贸易"就是客户类型的一个对象</td></tr>
+  <tr><td><span class="term">关系</span></td><td>LinkType / 边</td><td>地图上的"道路"：客户—下单—>订单。带方向、带基数（1 对 1 / 1 对多 / 多对多）、两端各有一个角色名（places / placedBy）</td></tr>
+  <tr><td><span class="term">pk（主键）</span></td><td>primaryKey</td><td>对象的"身份证号"，一表内绝不重复；建关系、定位对象全靠它。统一存成字符串</td></tr>
+  <tr><td><span class="term">title（标题）</span></td><td>titleProperty</td><td>对象的"给人看的名字"（列表里显示"北方贸易"而不是一串编号），从指定属性自动抄一份单独存</td></tr>
+  <tr><td><span class="term">props（属性包）</span></td><td>props JSONB</td><td>对象的"全部家当"：所有业务字段塞在一个 JSON 里（快递单 = pk 是单号、title 是收件人、props 是箱子里所有的货）。字段是建模时动态定的，所以不建一堆列</td></tr>
+  <tr><td><span class="term">层块</span></td><td>array / struct 属性</td><td>单据的"行"塞进 props 的姿势：订单的明细行折叠成一个嵌套数组——一张单据一个对象，行不单独成对象</td></tr>
+  <tr><td><span class="term">DAM 分类</span></td><td>dam</td><td>每个对象类型归入"域▸应用▸模块"三级文件夹，前端图按此折叠，大图不乱</td></tr>
+  <tr><td><span class="term">接口</span></td><td>Interface</td><td>横切能力标签："可定位物""可审批物"。对象说"我实现它"，图上画一条虚线。它不是网络接口，是类型上的契约</td></tr>
+  <tr><td><span class="term">共享属性</span></td><td>SharedProperty</td><td>全局标准字段（币种、金额）：一处定义，各对象类型引用，避免各写各的</td></tr>
+  <tr><td><span class="term">动作</span></td><td>ActionType</td><td>地图上的"办事按钮"：参数 → 规则校验 → 要改什么 → 办完通知谁，一个定义全包，全程留痕</td></tr>
+  <tr><td><span class="term">FEEL 校验</span></td><td>validations</td><td>点按钮前系统替你把关的业务规则（"金额≥1000 才许改派"）。表达式算不出 true 就直接拒绝，数据一下不动；表达式写错了也算不通过（从严，宁误拦不放病）</td></tr>
+  <tr><td><span class="term">副作用 / 发件箱</span></td><td>sideEffects / outbox</td><td>动作办完要通知的后续（起审批、发 webhook、算报表）。先登记后投递——对方系统挂了也不拖死你的操作，排队补发，每一步可查</td></tr>
+  <tr><td><span class="term">函数</span></td><td>Function</td><td>一段可复用的计算（"延误风险 = 金额大于 1000 则 0.8 否则 0.2"），用 FEEL 小语言写，配置即生效</td></tr>
+  <tr><td><span class="term">对象集 / 顺关系查</span></td><td>ObjectSet / SearchAround</td><td>导航指令："从这些客户出发，沿'下单'这条路，过滤金额≥1000"。写成代数表达式，系统编译成一条 SQL，一次往返出结果</td></tr>
+  <tr><td><span class="term">发布 / 版本</span></td><td>publish / version</td><td>把整套定义拍照存档，版本号只增不改，随时回看任意历史版本的全貌（像代码打 tag）</td></tr>
+  <tr><td><span class="term">三态生命周期</span></td><td>status</td><td>类型的三支队伍：试验（新建默认）→ 激活（稳定可用）→ 废弃。图卡片描边颜色跟着变</td></tr>
+  <tr><td><span class="term">乐观锁</span></td><td>modify + expectedUpdatedAt</td><td>防两人改同一条数据互相覆盖：保存时对一下"我读的时候最后修改时间还是不是那个"，不是就返回冲突让你刷新重来</td></tr>
+  <tr><td><span class="term">漏斗 / 源映射</span></td><td>funnel / mapping</td><td>把外部表的数据灌进本体的管道：配"读哪张表、列怎么映射、主键怎么拼"，触发同步后好数据进本体、坏数据进隔离区</td></tr>
+  <tr><td><span class="term">隔离区</span></td><td>quarantine</td><td>同步时的"不合格品区"：主键为空、必填缺失的行连同原因放这里，人工复核，不污染主数据</td></tr>
+  <tr><td><span class="term">参照对象</span></td><td>reference object</td><td>从主数据/字典同步进来的"标准参照点"（币种、客户主数据），业务对象引用它而不是各自存一份</td></tr>
+  <tr><td><span class="term">OSDK</span></td><td>osdk/typescript</td><td>一键生成前端用的 TypeScript 客户端：对象变 interface，查询/动作变方法，前后端字段自动对齐</td></tr>
+  <tr><td><span class="term">SSE 事件流</span></td><td>events</td><td>本体的"广播喇叭"：发布、动作执行等事件实时推给订阅方（刷新统计、联动页面用）</td></tr>
+</table>
+
+<h2>四、数据怎么存的（没有图数据库）</h2>
+<div class="card">
+<p><b>逻辑上是图，物理上就是 PostgreSQL 的三组表</b>——没有 Neo4j，不引入新数据库品种：</p>
+<pre><span class="c">── ① 定义层：登记"有哪些东西、什么关系"（6 张 om_* 表）──</span>
+om_object_type   客户有哪些属性、主键是谁……
+om_link_type     "客户下单"是 1:N、角色叫 places……
+
+<span class="c">── ② 对象数据：每种类型一张表，第一次写入时自动建 ──</span>
+oo_Customer
+  pk   | title    | props (JSONB)                          | updated_at
+  "1"  | 北方贸易 | {"id":1,"name":"北方贸易","region":"north"} | ...
+   ↑身份证   ↑人看的名        ↑全部家当(箱子里的货)          ↑防两人打架的时间戳
+
+<span class="c">── ③ 关系数据：所有关系共用这一张"边表" ──</span>
+ol_edge
+  link                | a_pk | b_pk
+  customerPlacesOrder | "1"  | "101"     <span class="c">← 一行=一条边："1号客户 下了 101号订单"</span></pre>
+<p>要点三条：<b>属性全塞 props 一个 JSON 列</b>（字段动态定，不用改表结构）；<b>加新关系不用建任何表</b>（边表通吃）；<b>不建外键</b>（靠索引+代码维护）。"图查询"就是 SQL 里的 IN/JOIN：三跳查询也被编译成<b>一条 SQL</b>，数据库一次往返。</p>
+</div>
+
+<h3>业务单据塞不塞？——能塞 ≠ 自动全塞</h3>
+<div class="card">
+<p>两个问题要分开：<b>"能不能塞"</b>——能，一张单据一个对象，头字段平铺、明细行折叠成嵌套数组（层块），这条路是通的；<b>"会不会自动塞"</b>——不会，本体不会自己去业务库拉数据，<b>不配同步就一张都不进来，塞多少由配置说了算</b>（冰箱能放肉，但肉不会自己跑进冰箱）。</p>
+<table>
+  <tr><th>数据</th><th>量级</th><th>进不进</th></tr>
+  <tr><td>主数据/参照（客户、物料、科目）</td><td>千~十万</td><td><b>全进</b>，没压力</td></tr>
+  <tr><td>关键业务实体（订单头、凭证头）</td><td>万~百万</td><td><b>挑着进</b>（同步 SQL 加时间窗/条件）</td></tr>
+  <tr><td>单据明细行（分录）</td><td>百万~亿</td><td><b>不进</b>，算数走报表系统</td></tr>
+  <tr><td>聚合结果（客户月度汇总）</td><td>千级</td><td><b>进</b>，小而准</td></tr>
+</table>
+<p class="muted">体感数字：一张单据 props 约 1~2KB，10 万张 ≈ 200MB（PG 毫无压力），百万张 ≈ 2GB（存储扛得住，但同步耗时、JSON 过滤无索引、边表 JOIN 会在"百万级"这道坎开始疼）。地图不需要存每辆车跑过的轨迹。</p>
+</div>
+
+<h2>五、和主数据（MDM）怎么配合</h2>
+<div class="flow">
+  <div class="fbox"><b>MDM 变更申请</b><br><span class="muted">录单→审批</span></div><div class="fa">→</div>
+  <div class="fbox"><b>业务库主数据表</b><br><span class="muted">落库</span></div><div class="fa">→同步(拷贝)→</div>
+  <div class="fbox"><b>本体参照对象</b><br><span class="muted">带时间差的副本</span></div><div class="fa">←引用←</div>
+  <div class="fbox"><b>业务对象+关系</b><br><span class="muted">订单↔客户↔科目</span></div>
+</div>
+<p><b>要同步（拷贝一份），不是查询时实时去 MDM 取。</b>为什么：关系钻取要数据都在本地才能一条 SQL 出结果；MDM 挂了不该影响本体看数；主数据"读多写少变更有流程"，慢几分钟无碍。代价是<b>新鲜度=同步间隔</b>——要准实时，就把同步挂到"审批落库"那一刻触发（见待办清单 T5）。</p>
+<p>四条现成通路：<b>① DCT 字典导入</b>（低频字典一键变参照对象+种子项）；<b>② 漏斗同步</b>（主通道：配源映射→定时同步→坏数据进隔离区，幂等可重跑）；<b>③ 单据关联</b>（对象类型挂 docType 标明对应哪种单据）；<b>④ 动作↔审批流</b>（治理闭环）。<b>单向</b>：MDM→本体，回写暂无。</p>
+
+<h2>六、第三方系统的单据怎么接进来（两条门）</h2>
+<table>
+  <tr><th style="width:170px">姿势</th><th>怎么走</th><th>适合</th></tr>
+  <tr><td><b>门一：API 直推</b></td><td>先建对象类型（一次），第三方在单据落库后调 <code>POST /objects/{类型}/batch</code> 推数据、<code>POST /links</code> 挂关系。<b>pk 用第三方的单据号</b>——重推=覆盖，天然防重</td><td>对方有开发能力；准实时</td></tr>
+  <tr><td><b>门二：中转表+同步</b></td><td>第三方数据先落到本体读得到的库的一张中转表（ETL/导出都行），配一条漏斗源映射，定时触发同步。脏数据自动进隔离区，SQL 里随手加时间窗控量</td><td>对方是黑盒只能给数据；定时批量</td></tr>
+</table>
+<div class="tip"><b>代码现状：门都修好了，搬运工没有。</b>两条门的每个端点都已实现并有真机测试（QA 脚本就是姿势一的参考实现）；但没有定时器、没有消息队列监听、没有现成连接器——cron 要自己挂，MQ 要自己消费转投。</div>
+
+<h2>七、本体怎么"伸手"操作外部，流程是干嘛的</h2>
+<p><b>本体伸手的出口只有一个：动作的副作用</b>，共五种，全部经"发件箱"投递（先登记后发送，对方挂了不拖死你，全程留痕可查）：</p>
+<table>
+  <tr><th style="width:200px">副作用</th><th>伸向谁</th><th>大白话</th></tr>
+  <tr><td><code>webhook</code></td><td><b>任意第三方</b></td><td>往对方 URL POST 一段 JSON（有域名白名单管控）——操作第三方的直接通道</td></tr>
+  <tr><td><code>startBusinessProcess</code></td><td>流程引擎</td><td>起一条审批流，把对象 pk 当 businessKey 带过去</td></tr>
+  <tr><td><code>computeReport</code></td><td>报表服务</td><td>触发一张报表计算</td></tr>
+  <tr><td><code>callFunction</code></td><td>本体内部</td><td>调一个 FEEL 函数</td></tr>
+  <tr><td><code>emitEvent</code></td><td>订阅方</td><td>SSE 广播事件</td></tr>
+</table>
+<p><b>流程（flowengine）的作用 = 治理环：</b>本体管"机器敢不敢做"（FEEL 校验+权限），流程管"<b>人同不同意</b>"。停用大客户这种事，副作用走"起审批流"而不是直接 webhook 通知——审批人在待办中心看到"这是 1 号客户，金额多少"，点通过或驳回。</p>
+<div class="warn"><b>闭环现状（如实）</b>：本体→流程目前是<b>单向发起</b>，"审批通过后自动回来改对象"的回路没有内置。两种落地姿势：<b>先审后改</b>（动作只起流程，通过后由流程侧回调本体 API 落实修改——MDM 变更申请就是这个模式，缺的只是"流程完成→调本体"一小段接线）；<b>先改后审</b>（当场改+起流程备案，适合低风险操作）。</div>
+
+<h2>八、动作执行的五道闸（FEEL 校验在哪）</h2>
+<div class="flow">
+  <div class="fbox"><b>① 参数齐不齐</b><br><span class="muted">必填非空</span></div><div class="fa">→</div>
+  <div class="fbox"><b>② FEEL 校验</b><br><span class="muted">业务规则算不算得过</span></div><div class="fa">→</div>
+  <div class="fbox"><b>③ 解析改动</b><br><span class="muted">要改哪些对象/边</span></div><div class="fa">→</div>
+  <div class="fbox"><b>④ 权限</b><br><span class="muted">这人能做吗</span></div><div class="fa">→</div>
+  <div class="fbox"><b>⑤ 单事务执行</b><br><span class="muted">改动+审计+发件箱</span></div>
+</div>
+<p>FEEL 是国际标准 DMN 配的官方表达式语言（Camunda/Flowable/规则引擎同款），能写 <code>amount >= 1000</code>、<code>amount in [100..100000]</code>、<code>count(items) >= 1</code>、<code>some item in items satisfies item.qty > 0</code> 这类规则，外加 28 个内置函数。<b>规则是配置不是代码</b>——设计工作台里改完即生效，不用发版。算不出 true（含表达式写错）一律拒绝：<b>宁误拦，不放病</b>。</p>
+
+<h2>九、怎么上手（10 分钟路径，服务已在跑）</h2>
+<ol>
+  <li>浏览器开 <code>http://127.0.0.1:8097/</code>——免登录建模控制台，看地图上已有什么；</li>
+  <li>门户（:8080）→ 菜单"数据平台 → 本体"→ <b>设计工作台</b>：左边类型树、中间关系图、点"+ 对象类型"建一个试试；</li>
+  <li><b>对象浏览器</b>：选类型看数据，点对象沿关系钻一圈；</li>
+  <li><b>对象工作台</b>：选中对象，右侧"可执行的动作"按钮点一下——动作是什么就懂了。</li>
+</ol>
+
+<h2>十、三个页面操作手册（点哪里）</h2>
+<p class="muted">入口：门户（:8080）→ 菜单「数据平台 → 本体」下的三个节点。三个页面共用同一套四区布局：上=model 条、左=explorer 区、中=content 区、右=property 区。</p>
+
+<h3>10.1 设计工作台（建模：画地图）</h3>
+<div class="card">
+<p><b>建对象类型</b>：左侧底栏「<code>+ 对象类型</code>」（或中间工具栏同款按钮）→ 右侧 Inspector 填显示名/apiName，属性表格里「加属性」逐行加（勾必填/主键◇/标题⌾/索引⚡，可引用共享属性、加子属性；支持批量必填/批量删除）→「保存」。左上角状态点：●未保存 / 已同步。</p>
+<p><b>建关系（拉线）</b>：鼠标按住卡片<b>右缘的小圆点</b>拖到目标卡片上松手 → 画布内弹出「新建关系」气泡（显示 属性连接：外键 → 主键）→ 填 apiName/显示名/基数（1:1、1:N、N:M）/双向角色名 →「创建关系」。<b>拖回卡片自己 = 自关联层级</b>。点连线可选中，在右侧 Inspector 改基数/角色/删除。</p>
+<p><b>大图操作</b>：工具栏「<code>⊟ 收起</code>」把全图按 DAM 域收成小盒（大图提速）、「<code>⊞ 展开</code>」、重排」重新网格布局；节点可直接拖动移位。</p>
+<p><b>建动作</b>：「<code>+ 动作</code>」从零配（参数→FEEL 校验→编辑规则→副作用富块：起流程/算报表/webhook），或「<code>+ 从模板</code>」直接拿 <code>consolClose</code>（关账联动：起审批流+算报表）/<code>objectApprove</code>（对象审批）改。Inspector 里有「<b>试算</b>」按钮——dry-run 预演，显示"试算通过 · 编辑 N 条 · 副作用 M 条"但<b>不动任何数据</b>；「执行」才真跑。</p>
+<p><b>函数试算</b>：「+ 函数」写 FEEL 函数体 → Inspector「试算」直接看求值结果。</p>
+<p><b>影响面</b>：选中一个对象类型，Inspector 显示它被哪些关系引用、影响多少对象。</p>
+<p><b>发布</b>：model 条「发布本体」→ 填摘要 → 版本号+1，快照固化（SSE 广播）。</p>
+</div>
+
+<h3>10.2 对象浏览器（逛数据：一键查询在这）</h3>
+<div class="card">
+<p><b>一键查询有两种，都在这个页面：</b></p>
+<p>① <b>过滤查询</b>：左侧「对象集构造器」= 属性下拉 + 操作符下拉（= ≠ &gt; ≥ &lt; ≤ 包含 为空）+ 值输入框 → 点「<code>加过滤</code>」→ <b>中间表格立即刷新</b>（多个条件叠 AND，条件变成小标签，点 ✕ 删除）。这就是"一键查询"的过滤器形态。</p>
+<p>② <b>关系钻取（Search-Around）</b>：中间表格<b>点一行</b>选中对象 → 右侧出现「关系」按钮组（每个关系一个按钮，文案如「客户下单 → 订单」）→ <b>点按钮 = 一键查询</b>：中间列表整体换成相关对象，顶部记下面包屑钻取路径，选中其中一行可继续钻下一跳，model 条「← 返回」回上一跳。</p>
+<p>典型走法：类型树（域▸应用▸模块▸单据▸类型，可 ⊟ ⊞ 折叠）选「客户」→ 表格点"北方贸易" → 右侧点「下单 → 订单」→ 表格变成他的订单 → 再点订单行 → 点反向关系回到客户。</p>
+</div>
+
+<h3>10.3 对象 360 / 应用搭建台（办事：一键操作在这）</h3>
+<div class="card">
+<p>左侧类型下拉（按「模块 · 单据类型」分组）选类型 → 点一个对象 → 中间自动变 <b>360 视图</b>：属性卡 + <b>每个关系类型一块的相关对象</b>（进对象即并发拉全，不用点）。</p>
+<p><b>一键操作 = 右侧「可执行动作」区的 ⚡ 按钮</b>（每个已定义动作一个）：</p>
+<p>点「⚡ 动作名」→ 弹对话框：必填参数带红 *，提示"当前对象 类型#主键（如动作参数含对象主键，请填 xxx）"→ 填参 → 「执行」→ 绿色结果条「✔ 已执行 · 编辑 N 条 · 副作用 M 条」→ 页面自动刷新（属性/关系可能已变）。对话框里也写明"<b>执行将真实写回对象并触发副作用</b>"。</p>
+<p class="muted">动作本身在设计工作台定义和试算；这里只管对具体对象执行。执行主体当前固定以管理员角色（workshop 壳）发起。</p>
+</div>
+
+<h2>十一、需要做但还没做的（待办清单）</h2>
+<p class="muted">分三类：集成自动化缺口（这几天讨论暴露的）、安全债、性能债。优先级：P0 尽快 / P1 排期 / P2 有空。</p>
+
+<h3>11.1 集成与自动化缺口</h3>
+<table>
+  <tr><th style="width:56px">优先级</th><th style="width:230px">缺什么</th><th>现状与为什么需要</th></tr>
+  <tr><td><span class="pri p1">P1</span></td><td><b>T1 · 定时调度器</b></td><td>全仓无任何 cron/后台任务（已实测确认）。漏斗同步只能人/外部系统手动调 <code>POST /funnel/sync</code>。需要：内置调度或规范"外部 cron + 管理页手动触发"双通道</td></tr>
+  <tr><td><span class="pri p1">P1</span></td><td><b>T2 · MDM 审批完成 → 自动触发同步</b></td><td>现在新鲜度靠人跑同步。在 MDM 审批落库的回调里加一行"调 sync"，就是准实时，小改造大收益</td></tr>
+  <tr><td><span class="pri p1">P1</span></td><td><b>T3 · 流程审批通过 → 回写本体的回路</b></td><td>"先审后改"闭环缺最后一段接线（流程完成事件→调本体 API 落实修改）。MDM 侧已有同款先例可抄</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>T4 · 增量同步（水位线）</b></td><td>现在是全量读（幂等但每次全扫）。加"上次同步时间"水位，大表同步从分钟级到秒级</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>T5 · 异步任务中心</b></td><td>代码注释原话"M1 同步执行；M2 接异步任务中心 SSE 进度/暂停/HA"。大表同步现在会占住 HTTP 请求</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>T6 · 消息队列入站</b></td><td>无 MQ/Kafka 监听。第三方只能走 API 或落表；要 MQ 得自写消费端转投</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>T7 · 本体 → MDM 回写</b></td><td>数据单向（MDM→本体）。本体侧发起的主数据修改变更，目前只能靠动作起流程间接治理</td></tr>
+</table>
+
+<h3>11.2 安全债</h3>
+<table>
+  <tr><th style="width:56px">优先级</th><th style="width:230px">问题</th><th>现状与规避</th></tr>
+  <tr><td><span class="pri p0">P0</span></td><td><b>S1 · subjects 越权面</b></td><td>安全查询和动作权限的注释说"jwt 模式以令牌主体为准"，实现却是"请求带 subjects 就采纳"，没按鉴权模式分支——jwt 模式下调用方自报身份可绕过行级过滤和动作拒绝。<b>规避</b>：生产网关剥离调用方 subjects 头；根治是改成按模式分支</td></tr>
+  <tr><td><span class="pri p0">P0</span></td><td><b>S2 · 漏斗拼接 SQL + 任意 sourceQuery</b></td><td>隔离区/管道状态查询用字符串拼接（全仓唯一不走参数绑定的地方）；同步会真实执行调用方配置的任意 SQL。<b>规避</b>：映射配置仅限管理员、只配 SELECT、该组端点不对普通用户开放</td></tr>
+</table>
+
+<h3>11.3 性能与正确性债</h3>
+<table>
+  <tr><th style="width:56px">优先级</th><th style="width:230px">问题</th><th>现状与规避</th></tr>
+  <tr><td><span class="pri p1">P1</span></td><td><b>Q1 · JSONB 过滤无索引</b></td><td>建模时的"是否索引"标记（isIndexed）存了但没消费，按 props 里的字段过滤是全表扫，大表高频过滤会疼。<b>规避</b>：过滤字段控量、走分页</td></tr>
+  <tr><td><span class="pri p1">P1</span></td><td><b>Q2 · 删对象清边按 pk 全局匹配</b></td><td>删对象时清边不带类型限定，pk 是跨类型的字符串，不同类型撞了值会误删别人的边。<b>规避</b>：各类型 pk 加前缀隔离命名空间</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>Q3 · 发布并发撞版本</b></td><td>版本号=最大值+1 无锁，并发发布会撞号。<b>规避</b>：发布串行化（低频管理动作）</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>Q4 · FEEL 金额精度</b></td><td>数值统一 64 位浮点，金额判定有精度风险。<b>规避</b>：金额比较用整数（以分为单位）或区间</td></tr>
+  <tr><td><span class="pri p2">P2</span></td><td><b>Q5 · 杂项</b></td><td>OpenAPI 文档落后路由约 15 个端点；SSE 断线丢事件（可靠通知走发件箱）；图组件大图拖拽整图重画（用分域折叠规避）</td></tr>
+</table>
+
+<h2>十二、一页总结</h2>
+<div class="card">
+<ul>
+  <li><b>是什么</b>：企业数据的地图——对象=地点、关系=道路、查询=导航、动作=办事按钮；连接层，不是又一个业务系统。</li>
+  <li><b>怎么存</b>：没有图数据库，就是 PG 三组表：定义表 + 每类型一张对象表（pk/title/props/updated_at 四列，属性全在 props JSON）+ 一张公共边表；三跳查询编译成一条 SQL。</li>
+  <li><b>塞多少</b>：能塞 ≠ 自动全塞。主数据全进、单据挑着进（时间窗）、明细不进、聚合进；量控开关就是同步 SQL 的 WHERE。</li>
+  <li><b>主数据</b>：同步（拷贝）不是实时查；新鲜度=同步间隔；四条通路（DCT 导入/漏斗同步/docType/动作↔审批流）；单向。</li>
+  <li><b>第三方</b>：两条门——API 直推（pk 用对方单据号防重）或 中转表+定时同步；门都修好了，调度/消息这些搬运工要自己带。</li>
+  <li><b>操作外部</b>：只有动作副作用一个出口（webhook/起流程/算报表/函数/SSE），全走发件箱——对方挂了不拖死你。流程=人批不批的治理环。</li>
+  <li><b>FEEL 校验</b>：点按钮前的业务规则闸门，fail-closed，配置即生效。</li>
+  <li><b>最欠的三件事</b>：S1/S2 两个安全口子（P0）、审批通过自动回写回路（T3）、同步的定时与增量（T1/T2/T4）。</li>
+</ul>
+</div>
+
+<footer>
+  <b>配套技术文档（详细版）：</b>
+  <a href="20260907_本体平台_详细说明.html">完整详细说明</a>
+  <a href="20260907_本体平台_简要说明_本体如何设计.html">简要·设计</a>
+  <a href="20260907_本体平台_简要说明_如何使用.html">简要·使用</a>
+  <a href="20260907_本体平台_简要说明_如何增加对象.html">简要·增对象</a>
+  <a href="20260907_本体平台_简要说明_如何结合主数据.html">简要·结合主数据</a>
+  <p style="margin-top:8px">CMX 企业门户 · 本体平台通俗说明 · 2026-09-07 · 基于代码实测与真机 e2e；待办清单优先级为建议值，立项以评审为准</p>
+</footer>
+</div>
+</body>
+</html>

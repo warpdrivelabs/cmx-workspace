@@ -1,0 +1,89 @@
+<svg viewBox="0 0 820 452" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+  </marker>
+  <marker id="b6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"/>
+  </marker>
+  <filter id="sh6" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="452" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">层级维度展开　PgDimensionExpander::descendants —— WITH RECURSIVE 求下行闭包（含自身）</text>
+
+<!-- left: dimension tree -->
+<g filter="url(#sh6)"><rect x="30" y="52" width="250" height="316" rx="10" fill="#ffffff" stroke="#e2e8f0"/></g>
+<text x="46" y="74" font-size="11.5" font-weight="700" fill="#334155">cmx_dataauth_dimension_value（org）</text>
+<!-- 1001 -->
+<rect x="56" y="90" width="176" height="32" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+<text x="70" y="110" font-size="11" font-weight="700" fill="#92400e">1001　华东　(parent=∅)</text>
+<!-- 100101 -->
+<rect x="86" y="136" width="146" height="28" rx="8" fill="#fffbeb" stroke="#f59e0b"/>
+<text x="100" y="154" font-size="10.5" fill="#92400e">100101　上海</text>
+<!-- 100102 -->
+<rect x="86" y="176" width="146" height="28" rx="8" fill="#fffbeb" stroke="#f59e0b"/>
+<text x="100" y="194" font-size="10.5" fill="#92400e">100102　杭州</text>
+<!-- 2001 -->
+<rect x="56" y="234" width="176" height="28" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="70" y="252" font-size="10.5" fill="#94a3b8">2001　华南　(未授权)</text>
+<!-- 2002 -->
+<rect x="86" y="274" width="146" height="28" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="100" y="292" font-size="10.5" fill="#94a3b8">2002　广州</text>
+<!-- tree connectors -->
+<path d="M74,122 V150 H86" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+<path d="M74,122 V190 H86" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+<path d="M74,262 V288 H86" fill="none" stroke="#cbd5e1" stroke-width="1.4"/>
+<rect x="56" y="320" width="200" height="36" rx="8" fill="#fef9c3" stroke="#fde047"/>
+<text x="66" y="336" font-size="9.5" fill="#854d0e">授权命中华东子树（黄）；</text>
+<text x="66" y="350" font-size="9.5" fill="#854d0e">华南子树未授（灰）→ 不可见</text>
+
+<!-- middle: grant + SQL -->
+<g filter="url(#sh6)"><rect x="298" y="52" width="268" height="316" rx="10" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="314" y="74" font-size="11.5" font-weight="700" fill="#334155">输入 Grant（根值）</text>
+<rect x="314" y="84" width="236" height="40" rx="7" fill="#fffbeb" stroke="#f59e0b"/>
+<text x="324" y="101" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">{ subjectType:USER, subjectId:u42,</text>
+<text x="324" y="116" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">  dimKey:org, dimValues:["1001"] }</text>
+<text x="314" y="146" font-size="11.5" font-weight="700" fill="#334155">递归 SQL（expander.rs）</text>
+<rect x="314" y="156" width="236" height="164" rx="7" fill="#0f172a"/>
+<text x="326" y="176" font-size="9" fill="#7dd3fc" font-family="ui-monospace,Menlo,Consolas,monospace">WITH RECURSIVE sub AS (</text>
+<text x="326" y="190" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">  SELECT dim_value</text>
+<text x="326" y="204" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">   WHERE dim_key=$1</text>
+<text x="326" y="218" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">     AND dim_value=$2</text>
+<text x="326" y="232" font-size="9" fill="#fca5a5" font-family="ui-monospace,Menlo,Consolas,monospace">  UNION ALL</text>
+<text x="326" y="246" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">  SELECT d.dim_value</text>
+<text x="326" y="260" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">   JOIN sub ON</text>
+<text x="326" y="274" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">   d.parent_value=sub.dim_value</text>
+<text x="326" y="288" font-size="9" fill="#e2e8f0" font-family="ui-monospace,Menlo,Consolas,monospace">   AND d.dim_key=$1</text>
+<text x="326" y="302" font-size="9" fill="#7dd3fc" font-family="ui-monospace,Menlo,Consolas,monospace">) SELECT dim_value FROM sub</text>
+<text x="314" y="340" font-size="9.3" fill="#64748b">参数化 $1=org $2=1001（DataValue，绝不拼串）</text>
+<text x="314" y="356" font-size="9.3" fill="#64748b">下行闭包（descendants）≠ cmx-flow 上行</text>
+
+<!-- right: result -->
+<g filter="url(#sh6)"><rect x="584" y="52" width="206" height="316" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="600" y="74" font-size="11.5" font-weight="700" fill="#5b21b6">展开结果</text>
+<rect x="600" y="84" width="174" height="72" rx="8" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="612" y="104" font-size="10" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">descendants =</text>
+<text x="612" y="122" font-size="10" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace"> { 1001,</text>
+<text x="612" y="138" font-size="10" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">   100101,</text>
+<text x="612" y="154" font-size="10" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">   100102 }</text>
+<text x="600" y="186" font-size="11" fill="#5b21b6">↓ 回填 $dim:org 占位</text>
+<rect x="600" y="196" width="174" height="56" rx="8" fill="#ede9fe" stroke="#8b5cf6"/>
+<text x="612" y="216" font-size="9.5" fill="#5b21b6" font-family="ui-monospace,Menlo,Consolas,monospace">In(ou_id, [1001,</text>
+<text x="612" y="231" font-size="9.5" fill="#5b21b6" font-family="ui-monospace,Menlo,Consolas,monospace">  100101, 100102])</text>
+<text x="612" y="246" font-size="8.8" fill="#7c3aed">→ SQL: ou_id IN ($1,$2,$3)</text>
+<rect x="600" y="266" width="174" height="86" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="612" y="286" font-size="10" font-weight="700" fill="#b91c1c">fail-safe 兜底</text>
+<text x="612" y="304" font-size="9.3" fill="#991b1b">维度树未登记该值时，</text>
+<text x="612" y="320" font-size="9.3" fill="#991b1b">闭包为空 → 至少含自身</text>
+<text x="612" y="336" font-size="9.3" fill="#991b1b">（仅授权自身节点，</text>
+<text x="612" y="348" font-size="9.3" fill="#991b1b">　不放大权限）</text>
+
+<!-- arrows between panels -->
+<line x1="280" y1="106" x2="298" y2="106" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+<line x1="566" y1="120" x2="584" y2="120" stroke="#0ea5e9" stroke-width="1.6" marker-end="url(#b6)"/>
+
+<text x="40" y="392" font-size="10.5" fill="#334155">展开在 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">engine::decide</tspan> 第 3 步完成：每个 grant 的每个根值 → descendants，按 (dim_key,root) 记忆化去重，再交 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">compose</tspan> 回填占位。</text>
+<text x="40" y="412" font-size="10.5" fill="#64748b">方向差异：数据权限要"我管辖谁"（下行 descendants）；cmx-flow 的 DimensionResolver 求"我归属谁"（上行 ancestors）→ 不复用，各自实现。</text>
+</svg>

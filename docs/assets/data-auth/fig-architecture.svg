@@ -1,0 +1,94 @@
+<svg viewBox="0 0 820 588" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/>
+  </marker>
+  <filter id="s4" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="588" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="36" font-size="15" font-weight="700" fill="#0f172a">总体架构：PDP 一处决策 · 约束 AST 为轴 · PEP 多后端执行</text>
+
+<!-- L0 接入 -->
+<rect x="30" y="56" width="600" height="52" rx="9" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="46" y="78" font-size="11.5" font-weight="700" fill="#334155">接入面</text>
+<rect x="120" y="66" width="150" height="32" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="195" y="87" font-size="11.5" fill="#334155" text-anchor="middle">应用查询/列表</text>
+<rect x="290" y="66" width="150" height="32" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="365" y="87" font-size="11.5" fill="#334155" text-anchor="middle">报表引擎</text>
+<rect x="460" y="66" width="150" height="32" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="535" y="87" font-size="11.5" fill="#334155" text-anchor="middle">API · 外部集成</text>
+
+<!-- L1 PDP -->
+<g filter="url(#s4)"><rect x="30" y="128" width="600" height="120" rx="11" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="46" y="150" font-size="12.5" font-weight="700" fill="#3730a3">决策面 · PDP</text>
+<rect x="46" y="160" width="260" height="74" rx="9" fill="#ffffff" stroke="#818cf8"/>
+<text x="176" y="182" font-size="12.5" font-weight="700" fill="#3730a3" text-anchor="middle">cmx-dataauth-core</text>
+<text x="176" y="202" font-size="10.5" fill="#4338ca" text-anchor="middle">Subject · Resource · Decision</text>
+<text x="176" y="220" font-size="10.5" fill="#4338ca" text-anchor="middle">语义中立·不依赖任何 DB</text>
+<rect x="322" y="160" width="146" height="74" rx="9" fill="#faf5ff" stroke="#a855f7"/>
+<text x="395" y="180" font-size="11.5" font-weight="700" fill="#7e22ce" text-anchor="middle">cmx-rulesengine</text>
+<text x="395" y="199" font-size="10" fill="#7e22ce" text-anchor="middle">决策表 · FEEL</text>
+<text x="395" y="216" font-size="10" fill="#7e22ce" text-anchor="middle">复用为策略源</text>
+<rect x="484" y="160" width="130" height="74" rx="9" fill="#fffbeb" stroke="#f59e0b"/>
+<text x="549" y="180" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">DimensionResolver</text>
+<text x="549" y="199" font-size="10" fill="#b45309" text-anchor="middle">维度 → 值集</text>
+<text x="549" y="216" font-size="10" fill="#b45309" text-anchor="middle">层级展开（复用）</text>
+
+<!-- L2 IR -->
+<g filter="url(#s4)"><rect x="30" y="268" width="600" height="46" rx="9" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="330" y="296" font-size="13" font-weight="700" fill="#5b21b6" text-anchor="middle">约束 AST（残差谓词） —— 稳定 IR，一次决策多处执行</text>
+
+<!-- L3 PEP -->
+<text x="46" y="352" font-size="12.5" font-weight="700" fill="#155e75">执行面 · PEP（可插拔编译后端）</text>
+<g filter="url(#s4)">
+<rect x="30" y="362" width="192" height="64" rx="9" fill="#ecfeff" stroke="#06b6d4"/>
+<rect x="234" y="362" width="192" height="64" rx="9" fill="#ecfeff" stroke="#06b6d4"/>
+<rect x="438" y="362" width="192" height="64" rx="9" fill="#ecfeff" stroke="#06b6d4"/>
+</g>
+<text x="126" y="386" font-size="12" font-weight="700" fill="#155e75" text-anchor="middle">SqlCompiler</text>
+<text x="126" y="406" font-size="10" fill="#0e7490" text-anchor="middle">参数化 WHERE 下推</text>
+<text x="330" y="386" font-size="12" font-weight="700" fill="#155e75" text-anchor="middle">RowFilterCompiler</text>
+<text x="330" y="406" font-size="10" fill="#0e7490" text-anchor="middle">cmx-rowsource 内存谓词</text>
+<text x="534" y="386" font-size="12" font-weight="700" fill="#155e75" text-anchor="middle">EsCompiler</text>
+<text x="534" y="406" font-size="10" fill="#0e7490" text-anchor="middle">bool/terms 查询</text>
+
+<!-- L4 数据 -->
+<g filter="url(#s4)">
+<rect x="30" y="446" width="192" height="58" rx="9" fill="#ecfdf5" stroke="#10b981"/>
+<rect x="234" y="446" width="192" height="58" rx="9" fill="#ecfdf5" stroke="#10b981"/>
+<rect x="438" y="446" width="192" height="58" rx="9" fill="#ecfdf5" stroke="#10b981"/>
+</g>
+<text x="126" y="472" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">PostgreSQL</text>
+<text x="126" y="491" font-size="10" fill="#047857" text-anchor="middle">+ RLS 兜底（高敏）</text>
+<text x="330" y="472" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">ElasticSearch</text>
+<text x="330" y="491" font-size="10" fill="#047857" text-anchor="middle">全文/宽表检索</text>
+<text x="534" y="472" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">内存 DataSet</text>
+<text x="534" y="491" font-size="10" fill="#047857" text-anchor="middle">CSV/API/跨库</text>
+
+<text x="40" y="536" font-size="11" fill="#64748b">租户维已由 db-per-tenant 在连接路由解决（不进 WHERE）；数据权限只在租户内做 scope。</text>
+<text x="40" y="558" font-size="11" fill="#64748b">左侧配置：da_policy / da_grant / da_relation_tuple / da_mask_rule —— 决策结果按 (subject,resource) 键缓存。</text>
+
+<!-- 侧栏配置 -->
+<g filter="url(#s4)"><rect x="650" y="128" width="140" height="376" rx="11" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="720" y="150" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">配置 &amp; 缓存</text>
+<rect x="664" y="164" width="112" height="34" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="720" y="185" font-size="10.5" fill="#334155" text-anchor="middle">da_policy</text>
+<rect x="664" y="206" width="112" height="34" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="720" y="227" font-size="10.5" fill="#334155" text-anchor="middle">da_grant（角色/维度）</text>
+<rect x="664" y="248" width="112" height="34" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="720" y="269" font-size="10.5" fill="#334155" text-anchor="middle">da_relation_tuple</text>
+<rect x="664" y="290" width="112" height="34" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="720" y="311" font-size="10.5" fill="#334155" text-anchor="middle">da_mask_rule</text>
+<rect x="664" y="360" width="112" height="60" rx="7" fill="#eef2ff" stroke="#818cf8"/>
+<text x="720" y="384" font-size="10.5" fill="#3730a3" text-anchor="middle">决策缓存</text>
+<text x="720" y="402" font-size="9.5" fill="#4338ca" text-anchor="middle">主体维度集</text>
+<rect x="664" y="430" width="112" height="60" rx="7" fill="#ecfeff" stroke="#22d3ee"/>
+<text x="720" y="454" font-size="10.5" fill="#155e75" text-anchor="middle">编译产物缓存</text>
+<text x="720" y="472" font-size="9.5" fill="#0e7490" text-anchor="middle">AST→SQL 模板</text>
+
+<!-- 纵向箭头 -->
+<line x1="330" y1="108" x2="330" y2="128" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+<line x1="330" y1="248" x2="330" y2="268" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+<line x1="330" y1="314" x2="330" y2="362" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+<line x1="126" y1="426" x2="126" y2="446" stroke="#64748b" stroke-width="1.4" marker-end="url(#a4)"/>
+<line x1="330" y1="426" x2="330" y2="446" stroke="#64748b" stroke-width="1.4" marker-end="url(#a4)"/>
+<line x1="534" y1="426" x2="534" y2="446" stroke="#64748b" stroke-width="1.4" marker-end="url(#a4)"/>
+</svg>

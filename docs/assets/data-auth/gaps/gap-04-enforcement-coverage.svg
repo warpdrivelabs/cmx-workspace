@@ -1,0 +1,53 @@
+<svg viewBox="0 0 820 438" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <filter id="g4" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.6" flood-color="#0f172a" flood-opacity="0.09"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="438" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">P0#4 + P1#5 · 执行接缝覆盖矩阵　—— decide 支持全动作，但下游消费者只覆盖"读"</text>
+
+<!-- column headers -->
+<rect x="168" y="52" width="114" height="46" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="225" y="72" font-size="10" font-weight="700" fill="#3730a3" text-anchor="middle">PEP 中间件</text><text x="225" y="88" font-size="9" fill="#4338ca" text-anchor="middle">SQL 下推</text>
+<rect x="288" y="52" width="114" height="46" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="345" y="72" font-size="10" font-weight="700" fill="#3730a3" text-anchor="middle">enforce</text><text x="345" y="88" font-size="9" fill="#4338ca" text-anchor="middle">内存过滤</text>
+<rect x="408" y="52" width="114" height="46" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/><text x="465" y="72" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">报表取数</text><text x="465" y="88" font-size="9" fill="#64748b" text-anchor="middle">注入</text>
+<rect x="528" y="52" width="114" height="46" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/><text x="585" y="72" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">流程查询</text><text x="585" y="88" font-size="9" fill="#64748b" text-anchor="middle">注入</text>
+<rect x="648" y="52" width="114" height="46" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/><text x="705" y="72" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">PG RLS</text><text x="705" y="88" font-size="9" fill="#64748b" text-anchor="middle">兜底</text>
+
+<!-- row: read -->
+<rect x="40" y="106" width="122" height="48" rx="8" fill="#ecfdf5" stroke="#6ee7b7"/><text x="54" y="130" font-size="12" font-weight="700" fill="#065f46">read 读</text><text x="54" y="146" font-size="8.5" fill="#059669">主力路径</text>
+<rect x="168" y="106" width="114" height="48" rx="8" fill="#ecfdf5" stroke="#10b981"/><text x="225" y="128" font-size="14" fill="#059669" text-anchor="middle">✓</text><text x="225" y="145" font-size="8.5" fill="#047857" text-anchor="middle">仅 demo/vouchers</text>
+<rect x="288" y="106" width="114" height="48" rx="8" fill="#ecfdf5" stroke="#10b981"/><text x="345" y="130" font-size="14" fill="#059669" text-anchor="middle">✓</text><text x="345" y="146" font-size="8.5" fill="#047857" text-anchor="middle">/enforce</text>
+<rect x="408" y="106" width="114" height="48" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="465" y="130" font-size="14" fill="#dc2626" text-anchor="middle">✗</text><text x="465" y="146" font-size="8.5" fill="#b91c1c" text-anchor="middle">未接线</text>
+<rect x="528" y="106" width="114" height="48" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="585" y="130" font-size="14" fill="#dc2626" text-anchor="middle">✗</text><text x="585" y="146" font-size="8.5" fill="#b91c1c" text-anchor="middle">未接线</text>
+<rect x="648" y="106" width="114" height="48" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="705" y="130" font-size="14" fill="#dc2626" text-anchor="middle">✗</text><text x="705" y="146" font-size="8.5" fill="#b91c1c" text-anchor="middle">未生成</text>
+
+<!-- row: write -->
+<rect x="40" y="160" width="122" height="44" rx="8" fill="#fffbeb" stroke="#fde68a"/><text x="54" y="187" font-size="12" font-weight="700" fill="#92400e">write 写</text>
+<rect x="168" y="160" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="225" y="187" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="288" y="160" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="345" y="187" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="408" y="160" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="465" y="187" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="528" y="160" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="585" y="187" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="648" y="160" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="705" y="187" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+
+<!-- row: delete -->
+<rect x="40" y="210" width="122" height="44" rx="8" fill="#fffbeb" stroke="#fde68a"/><text x="54" y="237" font-size="12" font-weight="700" fill="#92400e">delete 删</text>
+<rect x="168" y="210" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="225" y="237" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="288" y="210" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="345" y="237" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="408" y="210" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="465" y="237" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="528" y="210" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="585" y="237" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="648" y="210" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="705" y="237" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+
+<!-- row: export -->
+<rect x="40" y="260" width="122" height="44" rx="8" fill="#fffbeb" stroke="#fde68a"/><text x="54" y="287" font-size="12" font-weight="700" fill="#92400e">export 导出</text>
+<rect x="168" y="260" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="225" y="287" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="288" y="260" width="114" height="44" rx="8" fill="#fffbeb" stroke="#fcd34d"/><text x="345" y="282" font-size="13" fill="#d97706" text-anchor="middle">△</text><text x="345" y="298" font-size="8" fill="#b45309" text-anchor="middle">可复用未专接</text>
+<rect x="408" y="260" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="465" y="287" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="528" y="260" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="585" y="287" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+<rect x="648" y="260" width="114" height="44" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="705" y="287" font-size="14" fill="#dc2626" text-anchor="middle">✗</text>
+
+<!-- legend + notes -->
+<text x="40" y="330" font-size="10" fill="#334155">✓ 已接线　△ 可复用 read 路径但未专门接　✗ 缺口</text>
+<g filter="url(#g4)"><rect x="40" y="342" width="740" height="80" rx="10" fill="#f8fafc" stroke="#e2e8f0"/></g>
+<text x="56" y="364" font-size="10.5" fill="#334155"><tspan font-weight="700" fill="#5b21b6">关键澄清</tspan>：<tspan font-family="ui-monospace,Menlo,Consolas,monospace">decide()</tspan> 对 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">Action::Read/Write/Delete/Export</tspan> 皆成立——缺的是<tspan font-weight="700">下游消费者（执行接缝）</tspan>，不是决策能力。</text>
+<text x="56" y="386" font-size="10.5" fill="#334155">#4：写/删需在 UPDATE/DELETE 前用同一 constraint 限定行集（如 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">... WHERE id=? AND {scope}</tspan>）；导出走 read scope + 强制 apply_masks。</text>
+<text x="56" y="408" font-size="10.5" fill="#334155">#5：把 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">DataScope</tspan> 接进 cmx-report 取数与 cmx-flow 查询——这是数据权限落地 ERP 的<tspan font-weight="700" fill="#b91c1c">主价值点</tspan>，当前仅 demo 一处消费。</text>
+</svg>

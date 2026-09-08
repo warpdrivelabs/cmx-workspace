@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模型中心 · 元数据建模与数据库部署方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:268px 1fr;max-width:1400px;margin:0 auto;gap:0}
+  /* ToC */
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:30px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink);text-transform:none}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.6;color:#c9d4ee;margin:14px 0}
+  .mono-block .c{color:#5d6680}/*comment*/
+  .mono-block .k{color:#c792ea}/*keyword*/
+  .mono-block .s{color:#9ece6a}/*string*/
+  .mono-block .f{color:#7aa2f7}/*func/type*/
+  .mono-block .a{color:#e0af68}/*attr*/
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .phase{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0}
+  .phase .ph-head{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .phase .ph-head .pno{background:var(--accent);color:#06080f;font-weight:800;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .phase .ph-head .pt{font-weight:700;font-size:15.5px}
+  .phase .ph-head .pw{margin-left:auto;color:var(--ink-dim);font-size:12.5px}
+  .phase .ph-body{padding:16px 20px}
+  .phase .ph-body .deliver{font-size:13px;color:var(--ink-dim);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .kbd{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 0;font-size:12.5px;color:var(--ink-dim)}
+  .ascii{font-family:var(--mono);font-size:12px;line-height:1.45;white-space:pre;color:#9ec1ff;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:18px;overflow-x:auto}
+  .ref{font-family:var(--mono);font-size:11.8px;color:var(--ink-dim)}
+  .tag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:8px;vertical-align:middle}
+  a.inl{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent)}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:30px 0}
+  .footnote{color:var(--ink-dim);font-size:12.5px;margin-top:8px}
+  .two-col-list{columns:2;column-gap:32px}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}nav.toc{display:none}main{padding:28px 20px 80px}.two-col-list{columns:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= TOC ================= -->
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#bg"><span class="n">1</span>背景与目标</a>
+  <a href="#asis"><span class="n">2</span>现状盘点</a>
+  <a class="sub" href="#asis-front">2.1 前端五大功能</a>
+  <a class="sub" href="#asis-engine">2.2 已就绪的引擎</a>
+  <a class="sub" href="#asis-gap">2.3 能力差距</a>
+  <a href="#concept"><span class="n">3</span>核心概念模型</a>
+  <a href="#arch"><span class="n">4</span>总体架构</a>
+  <a href="#compiler"><span class="n">5</span>模型编译器（核心新增）</a>
+  <a class="sub" href="#compiler-map">5.1 字段→列映射</a>
+  <a class="sub" href="#compiler-fieldset">5.2 字段集展开</a>
+  <a class="sub" href="#compiler-i18n">5.3 i18n 与索引</a>
+  <a href="#dbreg"><span class="n">6</span>目标数据库注册</a>
+  <a href="#version"><span class="n">7</span>模型版本与快照</a>
+  <a href="#deploy"><span class="n">8</span>部署编排（创建/升级）</a>
+  <a href="#api"><span class="n">9</span>后端 API 设计</a>
+  <a href="#ui"><span class="n">10</span>模型中心前端</a>
+  <a href="#sequence"><span class="n">11</span>关键时序</a>
+  <a href="#plan"><span class="n">12</span>分阶段实施计划</a>
+  <a href="#risk"><span class="n">13</span>风险与对策</a>
+  <a href="#accept"><span class="n">14</span>验收标准</a>
+  <a href="#appendix"><span class="n">15</span>附录·代码坐标</a>
+</nav>
+
+<!-- ================= MAIN ================= -->
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX Platform · 方案设计</div>
+  <h1>模型中心：元数据建模与数据库部署方案</h1>
+  <div class="sub">将 CMXPortalManager 的五项元数据能力统一收编为「模型中心」，支持在模型定义完成后向指定数据库执行<strong>创建 / 升级</strong>，并在元数据版本变化时<strong>再次升级</strong>到目标库。</div>
+  <div class="meta">
+    <span class="chip b">范围：方案设计（不改代码）</span>
+    <span class="chip">日期：2026-06-28</span>
+    <span class="chip g">核心结论：建表引擎已就绪，主要工作量在「编译器 + 编排 + UI」</span>
+  </div>
+</header>
+
+<!-- 1 背景 -->
+<section id="bg">
+  <h2 class="sec"><span class="num">01</span>背景与目标</h2>
+  <p class="lead">CMXPortalManager 当前以「定义中心」名义提供五项元数据维护功能。它们目前只是 <em>JSON 设计态编辑器</em>——能定义，但定义完无法落到任何真实数据库。本方案将这五项功能归并为<strong>模型中心</strong>，并补齐「定义 → 应用到数据库 → 版本升级」的闭环。</p>
+
+  <div class="card">
+    <h4 style="margin-top:0">归入模型中心的五项功能</h4>
+    <table>
+      <thead><tr><th>序号</th><th>功能</th><th>本质</th><th>是否产生物理表</th></tr></thead>
+      <tbody>
+        <tr><td>①</td><td>字典基础元数据 <span class="tag">BASE-DCT</span></td><td>公共字段集模板（被字典表复用）</td><td>否（仅被合并）</td></tr>
+        <tr><td>②</td><td>单据基础元数据 <span class="tag">BASE-DOC</span></td><td>公共字段集模板（被单据表复用）</td><td>否（仅被合并）</td></tr>
+        <tr><td>③</td><td>数据字典定义 <span class="tag">DCT</span></td><td>一组字典表 <code>dictionaryTables[]</code>，每表含 <code>tableName</code>+<code>fields[]</code></td><td><strong>是</strong></td></tr>
+        <tr><td>④</td><td>业务单据定义 <span class="tag">DOC</span></td><td>多层单据表 <code>voucherTables[]</code>（L1批/L2头/L3行/L4辅助）</td><td><strong>是</strong></td></tr>
+        <tr><td>⑤</td><td>弹性组合管理 <span class="tag">CP</span></td><td>场景化字段/列规则（运行时驱动 UI），引用 ③④</td><td>否（运行态配置）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout key">
+    <div class="t">目标（用户原话拆解）</div>
+    <ol style="margin:6px 0">
+      <li><b>归并</b>：五项功能统一进入「模型中心」，形成一致的建模工作台。</li>
+      <li><b>应用/创建</b>：模型定义完成后，可<strong>创建</strong>到某个具体数据库（生成物理表 + 种子数据）。</li>
+      <li><b>升级</b>：当元数据版本变化时，可<strong>再次升级</strong>到指定数据库（增量 ALTER，不丢数据）。</li>
+      <li>以上「应用 / 创建 / 升级」全部属于模型中心的职责。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 2 现状 -->
+<section id="asis">
+  <h2 class="sec"><span class="num">02</span>现状盘点（基于代码勘察）</h2>
+  <p class="lead">本节区分「已有可复用资产」与「能力差距」。结论先行：<strong>最难的建表/升级引擎已经存在且经过插件安装链路验证</strong>，本方案绝大部分是把现成能力接起来，而非从零造轮子。</p>
+
+  <h3 id="asis-front">2.1 前端五大功能现状</h3>
+  <div class="grid2">
+    <div class="card tight">
+      <div class="status"><span class="dot have"></span><b>已具备</b></div>
+      <ul>
+        <li>五项功能均已有成熟编辑器：<code>portal-definition-manager.js</code>（①②③④）与 <code>portal-flexible-combination-manager.js</code>（⑤）。</li>
+        <li>DCT/DOC 定义中每张表已携带 <code>tableName</code> 与 <code>fields[]</code>，字段含 <code>dataType / fieldLength / nullable / intDigits / decimalDigits / caption</code> 等——<strong>这正是建表所需的全部信息</strong>。</li>
+        <li>DCT/DOC 已有「SQL schema 视图」标签页（<code>dct-def-schema</code> / <code>doc-def-schema</code>），具备展示 DDL 的位置。</li>
+      </ul>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot partial"></span><b>差距</b></div>
+      <ul>
+        <li>全工程 <code>grep "模型中心"</code> = <strong>0 命中</strong>：模型中心尚不存在。</li>
+        <li>所有「应用 / apply」按钮都只是<strong>表单/JSON 提交到内存</strong>，无任何「落库 / 建表 / 升级」语义。</li>
+        <li>无目标数据库选择、无版本对比、无部署历史。</li>
+        <li>前端目前仍打到 <strong>Node 服务</strong>（<code>/api/definitions/*</code> 等，<code>vite</code> 代理到 <code>127.0.0.1:8080</code>），<strong>尚未接入 Rust 容器的 <code>/api/portal/*</code></strong>。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 id="asis-engine">2.2 已就绪的引擎与先例（cmx-container / Rust）</h3>
+  <div class="callout key">
+    <div class="t">关键发现 · 建表引擎是现成的</div>
+    <code>crates/libs/cmx-metadata</code> 是一套完整的「元数据 → PostgreSQL」引擎，且已被插件安装链路实战使用。
+  </div>
+
+  <table>
+    <thead><tr><th>能力</th><th>位置</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="status"><span class="dot have"></span>建表</span></td><td><code>PgTableDefineExecutor::create_table()</code></td><td>由 <code>TableDefine</code> 生成 <code>CREATE TABLE</code> + 注释 + 索引并执行。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>升级（增量）</span></td><td><code>upgrade_table()</code> + <code>ddl/diff.rs</code></td><td>反查 <code>information_schema</code> 得到现状 → 与目标 <code>TableDefine</code> 做 <code>DdlDiff</code> → 仅生成 <code>ADD/ALTER COLUMN</code>、建/删索引。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>创建或升级</span></td><td><code>create_or_upgrade_table()</code></td><td>先试建表，失败则走升级——天然幂等。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>安全护栏</span></td><td><code>diff.rs</code></td><td><code>DROP TABLE</code> / <code>DROP COLUMN</code> <strong>只记录不执行</strong>，防误删数据。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>种子数据</span></td><td><code>seed/executor.rs</code> <code>PgSeedDataExecutor</code></td><td>JSON/CSV → 批量 <code>INSERT ... ON CONFLICT DO UPDATE</code>（UPSERT，幂等）。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>i18n 伴生表</span></td><td><code>i18n.rs</code> <code>derive_i18n_table_define()</code></td><td>对标记 <code>i18n</code> 的列自动派生 <code>{table}_i18n</code>（<code>ref_id + locale</code> 复合主键）。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>多库定向</span></td><td><code>cmx-database</code> <code>DbRegistry</code></td><td>以 <code>db_id</code> 命名注册多个连接池；<code>register_data_source(DbConfig)</code> 运行期可增。执行器入参即 <code>db_id</code>。</td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>部署台账</span></td><td><code>cmx_meta_table_define</code> + <code>_version</code> 表</td><td>已存在！按 <code>db_id</code> 记录每表的 <code>TableDefine</code> JSON、<code>version</code> 字符串、<code>ddl_status</code>(pending/…/completed)。<span class="ref">handlers/table_metadata</span></td></tr>
+      <tr><td><span class="status"><span class="dot have"></span>分布式锁 + 事务先例</span></td><td><code>cmx-plugin/service/utils.rs</code></td><td>插件安装 = 加锁 → 载入 <code>TableDefine</code> → <code>create_or_upgrade_table</code> 循环 → 种子数据 → 写台账。<strong>这就是「应用到指定库」的完整范本</strong>。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="t">最关键的一行先例</div>
+    <div class="mono-block" style="margin:8px 0 0"><span class="c">// crates/libs/cmx-plugin/src/service/utils.rs（插件安装 = 应用模型到库的现成范本）</span>
+<span class="k">let</span> executor = <span class="f">PgTableDefineExecutor</span>::<span class="f">new</span>(db_id, txn_id);
+<span class="k">for</span> table_def <span class="k">in</span> &table_defs {
+    executor.<span class="f">create_or_upgrade_table</span>(table_def).<span class="k">await</span>?;   <span class="c">// ← 建表或升级，一行搞定</span>
+}
+<span class="k">let</span> seed = <span class="f">PgSeedDataExecutor</span>::<span class="f">new</span>(db_id, txn_id);
+seed.<span class="f">execute_all_seed_data</span>(&table_defs, &seed_configs, path).<span class="k">await</span>;  <span class="c">// ← 种子数据</span>
+<span class="f">save_plugin_table_metadata</span>(ctx).<span class="k">await</span>?;                       <span class="c">// ← 写部署台账（含版本）</span></div>
+  </div>
+
+  <h3 id="asis-gap">2.3 能力差距：只缺三块</h3>
+  <div class="grid3">
+    <div class="card tight">
+      <div class="status"><span class="dot new"></span><b>缺口 A · 编译器</b></div>
+      <p style="margin:8px 0 0">Portal 的 DCT/DOC 定义（<code>dictionaryTables[]</code>/<code>voucherTables[]</code> + 字段集引用）<strong>尚无</strong>转换为 cmx-core <code>TableDefine</code> 的代码。这是必须新写的核心。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot new"></span><b>缺口 B · 编排与版本</b></div>
+      <p style="margin:8px 0 0">把「选库 → 预览 DDL → 执行 → 记版本 → 再升级」串成一个对外 HTTP 服务（插件链路是内部的，需提炼为模型中心的部署服务）。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot new"></span><b>缺口 C · 模型中心 UI</b></div>
+      <p style="margin:8px 0 0">新的导航分区「模型中心」，统一五项编辑器，并新增「目标库选择 / DDL 预览 / 部署 / 版本历史」交互。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 概念 -->
+<section id="concept">
+  <h2 class="sec"><span class="num">03</span>核心概念模型</h2>
+  <p class="lead">统一术语，避免「定义/版本/目标库/部署」混淆。模型中心围绕四个名词运转。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0">模型 Model</h4>
+      <p>一个可建模的元数据单元。三类「物理模型」会产生表：<br>
+      • <b>字典模型</b>（DCT，1 个定义 = N 张字典表）<br>
+      • <b>单据模型</b>（DOC，1 个定义 = 多层单据表）<br>
+      其余两类是<b>共享资产</b>（BASE-DCT/BASE-DOC 字段集模板）与<b>运行态配置</b>（弹性组合 CP，不建表）。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">模型版本 ModelVersion</h4>
+      <p>模型定义在某一时刻的<strong>不可变快照</strong>。复用既有 <code>moduleMeta.version</code>（整数，默认 1）。每次发布生成一个快照（含编译后的 <code>TableDefine[]</code> 与种子数据指纹），作为「升级」的对比基线。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">目标库 TargetDatabase</h4>
+      <p>由 <code>db_id</code> 唯一标识的物理库（<code>DbRegistry</code> 已注册，<code>dev.toml [[databases]]</code> 配置，可运行期新增）。一个模型版本可部署到<strong>多个</strong>目标库（开发/测试/生产）。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">部署 Deployment</h4>
+      <p>「把某模型版本应用到某目标库」的一次动作及其结果。落到既有台账 <code>cmx_meta_table_define(_version)</code>：记录 <code>db_id × table × version × ddl_status</code>。据此判定下次是<strong>创建</strong>还是<strong>升级</strong>。</p>
+    </div>
+  </div>
+
+  <div class="ascii">
+   模型(DCT/DOC定义)                                        目标库 db_id="prod"
+   ┌───────────────────┐    编译 compile     ┌──────────────┐   ┌──────────────────────────┐
+   │ moduleMeta v=3    │  ───────────────▶   │ TableDefine[]│   │ cf_comp_unit, cv_header… │
+   │ dictionaryTables[]│                     │ (cmx-core)   │   │  (物理表)                 │
+   │ + 字段集引用      │                     └──────┬───────┘   └──────────────┬───────────┘
+   └───────────────────┘                            │ diff 现状↔目标         ▲ create / alter
+            │发布快照                                ▼                        │
+            ▼                              ┌──────────────────┐   apply      │
+   ┌───────────────────┐                   │ DDL 预览 + 执行   │ ────────────┘
+   │ ModelVersion v=3  │ ◀──── 对比基线 ── │ (含安全护栏)      │
+   └───────────────────┘                   └────────┬─────────┘
+                                                     ▼ 写台账
+                                       cmx_meta_table_define(_version)
+                                       db_id × table × version × ddl_status</div>
+</section>
+
+<!-- 4 架构 -->
+<section id="arch">
+  <h2 class="sec"><span class="num">04</span>总体架构</h2>
+  <p class="lead">分层清晰：前端模型中心 → 模型服务（编译/版本/部署编排）→ 既有 cmx-metadata 引擎 → 目标库。新增代码集中在「编译 + 编排 + UI」，引擎层尽量零改动。</p>
+
+  <div class="ascii">
+ ┌────────────────────────────────────────────────────────────────────────────────┐
+ │  前端 · 模型中心 (CMXPortalManager)                                  【新增 UI】 │
+ │  导航分区「模型中心」 ── 五编辑器(沿用) ── + 目标库选择 / DDL预览 / 部署 / 历史 │
+ └───────────────────────────────┬────────────────────────────────────────────────┘
+                                  │  HTTP  /api/portal/model/*        【新增路由】
+ ┌───────────────────────────────▼────────────────────────────────────────────────┐
+ │  模型服务 cmx-portal::model  （新增模块）                                        │
+ │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────────────────┐ │
+ │  │ 编译器       │ │ 版本/快照    │ │ 部署编排     │ │ DDL 预览(dry-run)      │ │
+ │  │ compile.rs   │ │ snapshot.rs  │ │ deploy.rs    │ │ (复用 diff，不执行)    │ │
+ │  └──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └───────────┬────────────┘ │
+ └─────────┼────────────────┼────────────────┼───────────────────┼────────────────┘
+           │ 复用            │ 复用            │ 复用 (插件链路同款) │ 复用
+ ┌─────────▼────────────────▼────────────────▼───────────────────▼────────────────┐
+ │  既有引擎  cmx-metadata  +  cmx-plugin(台账/锁)        【零~少改动 · 已就绪】   │
+ │  TableDefine · DdlDialect · DdlDiff · PgTableDefineExecutor · PgSeedDataExecutor │
+ │  i18n 派生 · TableMetadataService(cmx_meta_table_define) · 分布式锁             │
+ └───────────────────────────────┬────────────────────────────────────────────────┘
+                                  │  db_id 定向 (DbRegistry)
+ ┌───────────────────────────────▼────────────────────────────────────────────────┐
+ │  目标数据库  dev / test / prod …  (PostgreSQL, [[databases]] in *.toml)          │
+ └────────────────────────────────────────────────────────────────────────────────┘</div>
+
+  <div class="callout">
+    <div class="t">设计原则</div>
+    <ul style="margin:6px 0">
+      <li><b>引擎不重写</b>：编译产物严格对齐 cmx-core <code>TableDefine</code>，下游直接复用 executor / diff / seed / 台账。</li>
+      <li><b>对齐插件先例</b>：部署编排照搬 <code>cmx-plugin/service/utils.rs</code> 的「锁 + 事务 + 台账」骨架，仅把数据来源从「插件 JSON」换成「Portal 定义编译产物」。</li>
+      <li><b>前端复用编辑器</b>：五项编辑器组件不动其内核，只在外层包一个「模型中心」工作台与部署交互。</li>
+      <li><b>幂等优先</b>：建表用 create-or-upgrade、种子用 UPSERT，重复部署安全。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 5 编译器 -->
+<section id="compiler">
+  <h2 class="sec"><span class="num">05</span>模型编译器（核心新增）</h2>
+  <p class="lead">编译器是本方案唯一「从零写」的核心：把 Portal 的 DCT/DOC 定义转换为 cmx-core <code>TableDefine</code>。下面给出<strong>逐字段映射规范</strong>——这是实现的施工图。</p>
+
+  <h3 id="compiler-map">5.1 字段 → 列映射规范</h3>
+  <p>Portal 字段对象（来自真实文件 <code>cmxfico_dct_meta_v1.json</code> 等）到 <code>ColumnDefine</code> 的映射：</p>
+  <table>
+    <thead><tr><th>Portal 字段键</th><th>样例值</th><th>→ ColumnDefine 字段</th><th>转换规则</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code> / <code>name</code></td><td><code>"comp_unit_id"</code></td><td><code>name</code></td><td>直接作为列名。</td></tr>
+      <tr><td><code>caption.zh_CN</code></td><td><code>"公司代码"</code></td><td><code>label</code> + <code>comment</code></td><td>作为 UI 标签与列注释 <code>COMMENT ON COLUMN</code>。</td></tr>
+      <tr><td><code>dataType</code></td><td><code>VARCHAR/BIGINT/INT/TINYINT/DECIMAL/DATE/DATETIME</code></td><td><code>field_type</code> (<code>FieldType</code> 枚举)</td><td>见下方类型映射表。</td></tr>
+      <tr><td><code>fieldLength</code></td><td><code>64</code></td><td><code>length</code></td><td>VARCHAR 长度。</td></tr>
+      <tr><td><code>intDigits</code> / <code>decimalDigits</code></td><td><code>21 / 2</code></td><td><code>precision</code> / <code>scale</code></td><td>DECIMAL 精度/标度 → <code>NUMERIC(21,2)</code>。</td></tr>
+      <tr><td><code>nullable</code></td><td><code>false</code></td><td><code>is_nullable</code></td><td>取反即 <code>NOT NULL</code>。</td></tr>
+      <tr><td>主键判定</td><td><code>name=="id"</code> 来自公共字段集</td><td><code>is_primary_key</code> + <code>primary_keys[]</code></td><td>由字段集语义/<code>idField</code> 推定（详见 5.2）。</td></tr>
+      <tr><td><code>refDict</code> + <code>refField</code></td><td><code>"country" / "code"</code></td><td><code>is_foreign_key</code> + <code>foreign_key_table/column</code></td><td>记录 FK 元信息（是否生成物理 FK 约束可配，默认只记录+建索引）。</td></tr>
+      <tr><td><code>dimType</code> / <code>agg</code> / <code>physicalField</code> / <code>edit</code> / <code>displayField</code></td><td><code>"measure" / "sum" / "BUKRS"</code></td><td><code>extensions{}</code></td><td>业务语义原样存入 <code>ColumnDefine.extensions</code>（不影响 DDL，保留可追溯）。</td></tr>
+    </tbody>
+  </table>
+
+  <h4>类型映射（dataType → FieldType → PostgreSQL）</h4>
+  <table>
+    <thead><tr><th>Portal dataType</th><th>FieldType</th><th>PostgreSQL（由 <code>ddl/postgres.rs</code> 生成）</th></tr></thead>
+    <tbody>
+      <tr><td><code>VARCHAR</code></td><td><code>String</code>(+length)</td><td><code>VARCHAR(n)</code>，无 length 时 <code>TEXT</code></td></tr>
+      <tr><td><code>BIGINT</code></td><td><code>Int</code></td><td><code>BIGINT</code></td></tr>
+      <tr><td><code>INT</code> / <code>TINYINT</code></td><td><code>Int</code>(配 length 语义)</td><td><code>BIGINT</code>（或编译器细化为 <code>INTEGER/SMALLINT</code>，见下注）</td></tr>
+      <tr><td><code>DECIMAL</code></td><td><code>Decimal</code>(precision,scale)</td><td><code>NUMERIC(p,s)</code></td></tr>
+      <tr><td><code>DATE</code></td><td><code>Date</code></td><td><code>DATE</code></td></tr>
+      <tr><td><code>DATETIME</code></td><td><code>DateTime</code></td><td><code>TIMESTAMP WITH TIME ZONE</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="t">注 · TINYINT/INT 的精度细化</div>
+    cmx-core <code>FieldType::Int</code> 默认映射 <code>BIGINT</code>。若需保留 <code>TINYINT(1)</code>→<code>SMALLINT</code>、<code>INT(6)</code>→<code>INTEGER</code> 的语义，编译器可在 <code>ColumnDefine.db_type</code> 写入精确类型字符串，引擎已支持 <code>prefer_db_type</code> 模式（round-trip）直接采用 <code>db_type</code>。这是一个明确的实现开关，无需改引擎。
+  </div>
+
+  <h3 id="compiler-fieldset">5.2 字段集展开（关键合并逻辑）</h3>
+  <p>DCT/DOC 表的完整列 = <strong>该表自有 <code>fields[]</code></strong> + <strong>所引用的公共字段集</strong>（来自 BASE-DCT/BASE-DOC）。编译器必须先做字段集展开。</p>
+  <div class="mono-block"><span class="c">// 真实样例：cf_comp_unit 字典表引用了多个公共字段集</span>
+{
+  <span class="a">"dictMeta"</span>: { <span class="a">"tableName"</span>: <span class="s">"cf_comp_unit"</span>, <span class="a">"idField"</span>: <span class="s">"id"</span>, <span class="a">"codeField"</span>: <span class="s">"code"</span> },
+  <span class="a">"fields"</span>: [ <span class="c">/* 表自有业务字段：company_id, vat_reg_no … */</span> ],
+  <span class="a">"baseFieldSet"</span>:      <span class="s">"dictionaryCommonFields"</span>,    <span class="c">// ← 含 id(PK)/code/name/sort_no/status</span>
+  <span class="a">"auditFieldSet"</span>:     <span class="s">"dictionaryAuditFields"</span>,     <span class="c">// ← create_by/create_time/update_*</span>
+  <span class="a">"effectiveFieldSet"</span>: <span class="s">"dictionaryEffectiveFields"</span>, <span class="c">// ← effective_from/to</span>
+  <span class="a">"uniqueKeys"</span>: [[<span class="s">"code"</span>]]                       <span class="c">// ← 唯一索引</span>
+}</div>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>解析引用</b>：读取表上的 <code>baseFieldSet / auditFieldSet / effectiveFieldSet / disableFieldSet / hierarchyFieldSet / documentFieldSets[] / includeFieldSets[]</code> 等键，得到字段集名列表。</div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>载入模板</b>：从对应 BASE-DCT/BASE-DOC 定义（<code>baseDctMetaRef.file</code> 指向，如 <code>base_dct_meta_v1.json</code>）的 <code>fieldSets{}</code> 取出字段数组。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>合并去重</b>：公共字段集字段 + 表自有 <code>fields[]</code>，按列名去重（自有优先覆盖）。</div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>推定主键</b>：公共字段集中的 <code>id</code> 列（<code>dictionaryCommonFields</code> 提供）→ <code>primary_keys=["id"]</code>；DOC 多层表用 <code>documentLevelFields</code> 的层级主键语义。</div></div>
+    <div class="step"><div class="badge">5</div><div class="body"><b>生成索引</b>：<code>uniqueKeys[]</code> → <code>IndexDefine{kind:Unique}</code>；<code>refDict</code> 外键列 → 普通索引。</div></div>
+    <div class="step"><div class="badge">6</div><div class="body"><b>产出</b>：每张 DCT/DOC 表 → 一个 <code>TableDefine{ table_name, columns, primary_keys, indexes, version, i18n, schema, comment }</code>。</div></div>
+  </div>
+  <div class="callout key">
+    <div class="t">复用而非另造</div>
+    Node 侧「SQL schema 视图」已实现过一版字段集合并逻辑（前端 <code>portal-definition-manager.js</code> 的 schema 标签页）。编译器是把这套合并规则<strong>权威化、后端化</strong>，作为唯一可信源（前端预览也调它），避免前后端两套实现漂移。
+  </div>
+
+  <h3 id="compiler-i18n">5.3 i18n 与索引</h3>
+  <ul>
+    <li><b>i18n 列</b>：字段若带 <code>i18n:true</code>，编译时置 <code>ColumnDefine.i18n=true</code> 且 <code>TableDefine.i18n=true</code>；引擎 <code>derive_i18n_table_define()</code> 自动派生 <code>{table}_i18n</code> 伴生表（<code>ref_id + locale</code> 复合主键），无需编译器额外处理。</li>
+    <li><b>注释</b>：<code>caption.zh_CN</code> → 列注释、<code>dictName/tableAlias</code> → 表注释，建表时由引擎输出 <code>COMMENT ON</code>。</li>
+    <li><b>DOC 多层</b>：<code>voucherTables[]</code> 的 L1/L2/L3/L4 各编译为独立 <code>TableDefine</code>；层间父子关系（<code>upper_id/line_no</code> 来自 <code>documentLevelFields</code>）作为列与索引体现。</li>
+  </ul>
+</section>
+
+<!-- 6 目标库 -->
+<section id="dbreg">
+  <h2 class="sec"><span class="num">06</span>目标数据库注册</h2>
+  <p class="lead">"应用到某个具体数据库" = 选定一个 <code>db_id</code>。该机制已存在，模型中心只需在其上提供选择与（可选）运行期登记。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0">已有：静态配置</h4>
+      <div class="mono-block" style="margin:8px 0 0"><span class="c"># cmx-container/dev.toml</span>
+[[databases]]
+db_id   = <span class="s">"primary"</span>
+db_type = <span class="s">"postgres"</span>
+db_url  = <span class="s">"postgresql://…@host:5432/cmx"</span>
+default = <span class="k">true</span></div>
+      <p class="footnote">启动即注册进 <code>DbRegistry</code>；执行器以 <code>db_id</code> 取连接池。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">已有：运行期登记</h4>
+      <p><code>DatabaseManager::register_data_source(DbConfig)</code> 支持运行时注册新库，<code>list_data_sources()</code> 列出全部 <code>db_id</code>。</p>
+      <p class="footnote">→ 模型中心可在「目标库」面板调用它，让用户填写连接串临时挂载一个部署目标，而不必改 toml 重启。</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="t">模型中心要补的薄层</div>
+    <ul style="margin:6px 0">
+      <li><span class="pill get">GET</span> <code>/api/portal/model/targets</code> —— 列出可部署目标库（封装 <code>list_data_sources()</code> + 每库连通性探测）。</li>
+      <li>（可选）<span class="pill post">POST</span> <code>/api/portal/model/targets</code> —— 运行期登记新目标库（封装 <code>register_data_source</code>），连接串加密保存。</li>
+      <li>权限：部署到非默认库属高危操作，必须有独立权限位（见 §13）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 版本 -->
+<section id="version">
+  <h2 class="sec"><span class="num">07</span>模型版本与快照</h2>
+  <p class="lead">"版本变化时再次升级" 的前提是：每次发布都留下一个可对比的<strong>不可变快照</strong>。复用既有 <code>version</code> 字段与既有台账，不新造存储。</p>
+
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>编辑态</b>：用户在五编辑器里改定义，存的是「草稿」（沿用现有 <code>/definitions/config</code> 存储）。<code>moduleMeta.version</code> 标识当前版本号。</div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>发布快照</b>：点「发布版本 v=N」时，后端<strong>编译</strong>当前定义为 <code>TableDefine[]</code>，连同种子数据指纹一起冻结为一个 <code>ModelVersion</code> 记录。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>部署到库</b>：把某个已发布快照应用到目标库。台账 <code>cmx_meta_table_define_version.metadata</code> 存的正是该库当前生效的 <code>TableDefine</code> JSON 与 <code>version</code>。</div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>升级</b>：发布 v=N+1 后再次部署到同一库 —— 引擎 <code>upgrade_table()</code> 反查该库现状（或读台账里 v=N 的快照）与 v=N+1 目标做 diff，仅执行增量 DDL。</div></div>
+  </div>
+
+  <div class="callout key">
+    <div class="t">两条 diff 基线，二选一/互补</div>
+    <ul style="margin:6px 0">
+      <li><b>库现状基线（引擎默认）</b>：<code>upgrade_table()</code> 实时反查 <code>information_schema</code>。最真实，能纠正手工漂移。</li>
+      <li><b>台账快照基线</b>：读 <code>cmx_meta_table_define_version</code> 里上次部署的 <code>TableDefine</code>。可在执行前做「版本 N → N+1」的<strong>纯逻辑 diff 预览</strong>（无需连库），用于发布前评审。</li>
+    </ul>
+    建议：<strong>预览用台账快照</strong>（快、可离线评审），<strong>执行用库现状</strong>（安全、防漂移）。
+  </div>
+
+  <table>
+    <thead><tr><th>台账字段</th><th>来源</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>db_id</code></td><td>部署目标</td><td>区分「同模型部署到多库」。</td></tr>
+      <tr><td><code>table_name</code> + <code>version</code></td><td>编译产物</td><td>定位「某库某表当前版本」。</td></tr>
+      <tr><td><code>metadata</code> (JSONB)</td><td><code>serde_json(TableDefine)</code></td><td>快照本体，作 diff 基线。</td></tr>
+      <tr><td><code>ddl_status</code></td><td>部署编排</td><td><code>pending→executing→completed/failed</code>，驱动 UI 状态灯。</td></tr>
+      <tr><td><code>domain/app/module_code</code></td><td><code>moduleMeta</code></td><td>按 DAM 维度归类与过滤。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 8 部署 -->
+<section id="deploy">
+  <h2 class="sec"><span class="num">08</span>部署编排（创建 / 升级）</h2>
+  <p class="lead">把插件安装链路（内部）提炼成模型中心的对外部署服务。骨架不变：<strong>锁 → 编译 → (预览) → 执行 → 种子 → 写台账</strong>，全程一个事务。</p>
+
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>选择</b>：用户选定「模型版本 × 目标库 db_id」与模式（<code>create_or_upgrade</code> 默认 / 强制 <code>create</code> / 仅 <code>upgrade</code>）。</div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>编译</b>：模型服务调用编译器 → <code>TableDefine[]</code>（含 i18n 派生、索引）。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>预览 dry-run</b>：对每张表用台账快照或库现状做 <code>DdlDiff</code>，<strong>只生成不执行</strong> DDL 文本返回前端评审；高亮「将被忽略的 DROP」。</div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>加锁</b>：照搬 <code>execute_ddl_with_lock</code>，锁键 <code>model:ddl:{model_id}:{db_id}</code>，串行化同库部署。</div></div>
+    <div class="step"><div class="badge">5</div><div class="body"><b>事务执行</b>：开事务 → <code>create_or_upgrade_table()</code> 逐表 → <code>PgSeedDataExecutor</code> 种子（UPSERT）→ 提交。</div></div>
+    <div class="step"><div class="badge">6</div><div class="body"><b>写台账</b>：<code>save_*_table_metadata</code> 更新 <code>cmx_meta_table_define(_version)</code>：<code>version</code>、<code>metadata</code> 快照、<code>ddl_status=completed</code>。</div></div>
+    <div class="step"><div class="badge">7</div><div class="body"><b>回执</b>：返回每表 created/altered/skipped、生成的 DDL、种子 success/failed 计数、耗时；失败则整事务回滚并记 <code>ddl_status=failed</code>。</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="callout key">
+      <div class="t">天然幂等</div>
+      <ul style="margin:6px 0"><li>表：create-or-upgrade，重复部署=空 diff。</li><li>种子：<code>ON CONFLICT DO UPDATE</code>。</li><li>锁：<code>try_lock</code> 非阻塞，避免并发双写。</li></ul>
+    </div>
+    <div class="callout danger">
+      <div class="t">破坏性变更护栏</div>
+      <ul style="margin:6px 0"><li>引擎默认<strong>不执行</strong> <code>DROP TABLE/COLUMN</code>，仅在预览中列为「需人工确认」。</li><li>类型收窄（如 VARCHAR(64)→(32)）在预览标红警告。</li><li>生产库部署要求二次确认 + 权限位。</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 9 API -->
+<section id="api">
+  <h2 class="sec"><span class="num">09</span>后端 API 设计（新增路由）</h2>
+  <p class="lead">在 cmx-portal 既有 <code>/api/portal/*</code> 体系下，新增 <code>model</code> 子命名空间。沿用既有 <code>ApiResp{code,msg,data}</code> 信封。定义/字典/弹性组合的 CRUD 仍走既有路由，<strong>model 只承担「编译/版本/部署/目标库」</strong>。</p>
+
+  <table>
+    <thead><tr><th>方法 / 路径</th><th>作用</th><th>复用</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill get">GET</span> <code>/api/portal/model/list</code></td><td>模型清单（聚合 DCT/DOC 定义 + 各库部署状态徽标）</td><td>definitions list + 台账</td></tr>
+      <tr><td><span class="pill get">GET</span> <code>/api/portal/model/targets</code></td><td>可部署目标库列表（含连通性）</td><td><code>list_data_sources()</code></td></tr>
+      <tr><td><span class="pill post">POST</span> <code>/api/portal/model/compile</code></td><td>编译某模型为 <code>TableDefine[]</code>（仅返回，不落库）</td><td>编译器（新）</td></tr>
+      <tr><td><span class="pill post">POST</span> <code>/api/portal/model/preview</code></td><td>对「模型版本 × db_id」做 DDL dry-run，返回将执行的 DDL 与警告</td><td><code>DdlDiff</code>（不执行）</td></tr>
+      <tr><td><span class="pill post">POST</span> <code>/api/portal/model/publish</code></td><td>发布快照（冻结当前定义为 ModelVersion v=N）</td><td>编译器 + 台账</td></tr>
+      <tr><td><span class="pill post">POST</span> <code>/api/portal/model/deploy</code></td><td><strong>应用/创建/升级</strong>到目标库（锁+事务+种子+台账）</td><td>插件链路骨架 + executor</td></tr>
+      <tr><td><span class="pill get">GET</span> <code>/api/portal/model/deployments</code></td><td>某模型在各库的部署历史与当前版本</td><td>台账查询</td></tr>
+      <tr><td><span class="pill post">POST</span> <code>/api/portal/model/targets</code> <span class="tag">可选</span></td><td>运行期登记新目标库</td><td><code>register_data_source</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4>请求/响应示例 · <code>POST /api/portal/model/deploy</code></h4>
+  <div class="grid2">
+    <div class="mono-block"><span class="c">// 请求</span>
+{
+  <span class="a">"modelRef"</span>: { <span class="a">"domain"</span>:<span class="s">"fi"</span>, <span class="a">"app"</span>:<span class="s">"cmxfico"</span>,
+                <span class="a">"module"</span>:<span class="s">"gl"</span>, <span class="a">"file"</span>:<span class="s">"cmxfico_dct_meta_v1"</span> },
+  <span class="a">"version"</span>: 3,
+  <span class="a">"dbId"</span>: <span class="s">"prod"</span>,
+  <span class="a">"mode"</span>: <span class="s">"create_or_upgrade"</span>,
+  <span class="a">"applySeed"</span>: <span class="k">true</span>,
+  <span class="a">"confirmDestructive"</span>: <span class="k">false</span>
+}</div>
+    <div class="mono-block"><span class="c">// 响应 data</span>
+{
+  <span class="a">"deploymentId"</span>: <span class="s">"dep_…"</span>,
+  <span class="a">"dbId"</span>: <span class="s">"prod"</span>, <span class="a">"version"</span>: 3,
+  <span class="a">"tables"</span>: [
+    { <span class="a">"table"</span>:<span class="s">"cf_comp_unit"</span>, <span class="a">"action"</span>:<span class="s">"altered"</span>,
+      <span class="a">"ddl"</span>:[<span class="s">"ALTER TABLE … ADD COLUMN …"</span>] },
+    { <span class="a">"table"</span>:<span class="s">"cf_ledger"</span>, <span class="a">"action"</span>:<span class="s">"created"</span> }
+  ],
+  <span class="a">"seed"</span>: { <span class="a">"success"</span>:128, <span class="a">"failed"</span>:0 },
+  <span class="a">"skippedDestructive"</span>: [<span class="s">"DROP COLUMN cf_comp_unit.legacy_x"</span>],
+  <span class="a">"status"</span>: <span class="s">"completed"</span>, <span class="a">"elapsedMs"</span>: 412
+}</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">前后端打通的前置条件</div>
+    现状前端走 Node（<code>127.0.0.1:8080</code>）。模型中心的部署能力<strong>只存在于 Rust 容器</strong>。因此实施时需把模型中心相关请求指向 Rust（调整 <code>vite</code> 代理或 <code>CMX_VITE_BACKEND</code>，并对齐 <code>/api/portal/*</code> 前缀）。这是 §12 第 0 阶段要先处理的接线问题。
+  </div>
+</section>
+
+<!-- 10 UI -->
+<section id="ui">
+  <h2 class="sec"><span class="num">10</span>模型中心前端</h2>
+  <p class="lead">新增导航分区「模型中心」，三区工作台沿用门户既有 explorer/content/property 模式（与 <code>fi-gl-fico-ws</code> 等工作台一致），五编辑器内核复用，仅新增部署交互。</p>
+
+  <div class="ascii">
+ ┌─ 模型中心 ───────────────────────────────────────────────────────────────────┐
+ │ Explorer 区              │ Content 区                        │ Property 区     │
+ │ ┌──────────────────────┐ │ ┌───────────────────────────────┐ │ ┌─────────────┐ │
+ │ │ ▾ 共享资产           │ │ │ [设计] [JSON] [SQL预览] [部署] │ │ │ 字段/表属性 │ │
+ │ │   字典基础元数据     │ │ │ ─────────────────────────────  │ │ │ (沿用)      │ │
+ │ │   单据基础元数据     │ │ │  ← 沿用现有五编辑器内核        │ │ └─────────────┘ │
+ │ │ ▾ 物理模型           │ │ │                                 │ │ ┌─────────────┐ │
+ │ │   数据字典定义  ●prod│ │ │  [SQL预览] 标签：              │ │ │ 部署状态     │ │
+ │ │   业务单据定义  ○test│ │ │   显示编译后 DDL + 差异        │ │ │ prod ● v3   │ │
+ │ │ ▾ 运行态配置         │ │ │                                 │ │ │ test ○ v2   │ │
+ │ │   弹性组合管理     │ │ │  [部署] 标签：                  │ │ │ dev  ● v3   │ │
+ │ └──────────────────────┘ │ │   目标库▾  模式▾  [预览][部署] │ │ └─────────────┘ │
+ │                          │ └───────────────────────────────┘ │                 │
+ └──────────────────────────┴───────────────────────────────────┴─────────────────┘
+   ● 已部署最新   ○ 落后于已发布版本   (空) 未部署</div>
+
+  <h3>关键交互</h3>
+  <ul>
+    <li><b>SQL 预览标签</b>：把现有 <code>*-def-schema</code> 视图升级为「调后端编译器 + diff」的真实 DDL 预览（当前是前端拼的，改为权威源）。</li>
+    <li><b>部署面板</b>：目标库下拉（来自 <code>/model/targets</code>）→ 模式选择 → 「预览」弹出 DDL 与警告 → 「部署」二次确认 → 进度与回执。</li>
+    <li><b>部署状态徽标</b>：Explorer 树节点与 Property 区显示该模型在各库的版本与状态灯（驱动自台账 <code>ddl_status</code> / <code>version</code>）。</li>
+    <li><b>版本历史</b>：列出该模型的发布快照与每库部署记录，可对任意两版做逻辑 diff。</li>
+    <li><b>弹性组合（⑤）</b>：不建表，部署面板替换为「校验 + 发布」（沿用既有 validate/preview），仅做版本化下发。</li>
+  </ul>
+
+  <div class="callout">
+    <div class="t">导航迁移</div>
+    将 <code>explorer-menu.json</code> 中「定义中心」下的五个菜单项，迁入新顶层活动「模型中心」，按「共享资产 / 物理模型 / 运行态配置」三组重排。组件 ID 与 workspace 视图<strong>保持不变</strong>，仅调整菜单归属与分组，降低改动面。
+  </div>
+</section>
+
+<!-- 11 时序 -->
+<section id="sequence">
+  <h2 class="sec"><span class="num">11</span>关键时序：从「定义」到「升级到生产」</h2>
+  <div class="ascii">
+ 用户          模型中心UI        模型服务(新)         cmx-metadata引擎       目标库 prod
+  │  编辑定义v3   │                 │                      │                   │
+  │──────────────▶│  存草稿          │                      │                   │
+  │  点"SQL预览"  │────────────────▶│ 编译→TableDefine[]   │                   │
+  │               │                 │ diff(台账v2 ↔ v3)    │                   │
+  │◀──────────────│  DDL文本+警告 ◀─│                      │                   │
+  │  点"发布v3"   │────────────────▶│ 冻结ModelVersion v3  │                   │
+  │  选prod+部署  │────────────────▶│ 加锁 model:ddl:…:prod│                   │
+  │               │                 │──────────────────────▶│ upgrade_table:    │
+  │               │                 │                      │  反查现状↔v3 diff │
+  │               │                 │                      │──ALTER/CREATE────▶│
+  │               │                 │                      │  种子UPSERT───────▶│
+  │               │                 │ 写台账 status=done   │                   │
+  │◀──────────────│  回执:altered×4 ◀──────────────────────│                   │
+  │               │  prod状态灯●v3   │                      │                   │</div>
+  <p class="footnote">下一次再改成 v4 重复同样路径：引擎只生成 v3→v4 的增量 DDL，存量数据不受影响。这就完整满足了"版本变化时可再次升级到指定数据库"。</p>
+</section>
+
+<!-- 12 计划 -->
+<section id="plan">
+  <h2 class="sec"><span class="num">12</span>分阶段实施计划</h2>
+  <p class="lead">按「先打通最小闭环、再扩面、最后体验打磨」推进。每阶段都有可独立验收的交付物。括号内为粗略规模感（人日量级，供排期参考，非承诺）。</p>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">0</div><div class="pt">接线与地基</div><div class="pw">~3–5 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li>把模型中心相关请求从 Node 切到 Rust 容器：对齐 <code>/api/portal/*</code> 前缀，调整 <code>vite</code> 代理/<code>CMX_VITE_BACKEND</code>。</li>
+        <li>确认 <code>definitions / flexible-combination / dict</code> 的 Rust 路由可用（已存在），前端 API 包装层切换。</li>
+        <li>在 cmx-portal 下新建 <code>model</code> 模块骨架与空路由。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：前端能从 Rust 容器读到五项定义；<code>/api/portal/model/*</code> 路由可达（返回桩数据）。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">1</div><div class="pt">编译器（核心）</div><div class="pw">~6–9 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li>实现 DCT 定义 → <code>TableDefine[]</code>：字段映射、类型映射、字段集展开、主键/索引/i18n（按 §5 规范）。</li>
+        <li>实现 DOC 定义 → 多层 <code>TableDefine[]</code>。</li>
+        <li><span class="pill post">POST</span> <code>/model/compile</code> 返回编译产物；单元测试覆盖真实样例（<code>cmxfico_dct/doc_meta_v1.json</code>）。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：任取一个真实 DCT/DOC 定义，编译出与预期一致的 <code>TableDefine[]</code>（含字段集合并、PK、注释、i18n 派生）。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">2</div><div class="pt">预览（dry-run DDL）</div><div class="pw">~3–4 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li><span class="pill post">POST</span> <code>/model/preview</code>：编译 + 用台账快照/库现状 <code>DdlDiff</code>，只生成不执行，返回 DDL 与破坏性警告。</li>
+        <li>前端「SQL 预览」标签接真实后端产物。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：UI 中可看到「若部署到 X 库将执行的 DDL」与红色 DROP 警告，全程不碰库。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">3</div><div class="pt">部署最小闭环（创建+升级）</div><div class="pw">~6–8 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li><span class="pill get">GET</span> <code>/model/targets</code>（封装 <code>list_data_sources</code>）。</li>
+        <li><span class="pill post">POST</span> <code>/model/deploy</code>：照搬插件 <code>execute_ddl_with_lock</code> 骨架——锁+事务+<code>create_or_upgrade_table</code>+种子+写台账。</li>
+        <li>前端部署面板：选库→预览→确认→部署→回执；Explorer/Property 显示部署状态灯。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：在 dev 库对一个字典模型「首次创建」成功生成物理表+种子；改版本后「再次升级」只跑增量 ALTER，存量数据不丢。<strong>用户核心诉求达成。</strong></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">4</div><div class="pt">版本快照与多库历史</div><div class="pw">~4–6 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li><span class="pill post">POST</span> <code>/model/publish</code> 冻结 ModelVersion；<span class="pill get">GET</span> <code>/model/deployments</code> 返回各库版本矩阵。</li>
+        <li>前端版本历史视图：发布记录、各库当前版本、任意两版逻辑 diff。</li>
+        <li>DOC 单据模型完整跑通（多层表）。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：一个模型可发布多版本、部署到多库，UI 清晰呈现「哪个库在哪个版本」。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">5</div><div class="pt">归并、权限与体验打磨</div><div class="pw">~4–6 人日</div></div>
+    <div class="ph-body">
+      <ul>
+        <li>导航：五项菜单正式迁入「模型中心」三分组（仅改菜单归属）。</li>
+        <li>权限位：部署/生产库部署/运行期登记目标库的独立权限；生产二次确认。</li>
+        <li>弹性组合（⑤）的「校验+发布」纳入统一工作台。</li>
+        <li>（可选）运行期登记目标库 <span class="pill post">POST</span> <code>/model/targets</code>、连接串加密。</li>
+      </ul>
+      <div class="deliver"><b>交付物</b>：五项功能统一在「模型中心」内，权限与高危确认到位，对外可用。</div>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <div class="t">里程碑判定</div>
+    <b>MVP = 阶段 0–3 完成</b>：即可满足用户三大诉求（归并入口 + 创建到库 + 版本升级到指定库）。阶段 4–5 是多库治理与体验完善。
+  </div>
+</section>
+
+<!-- 13 风险 -->
+<section id="risk">
+  <h2 class="sec"><span class="num">13</span>风险与对策</h2>
+  <table>
+    <thead><tr><th>风险</th><th>影响</th><th>对策</th></tr></thead>
+    <tbody>
+      <tr><td>破坏性变更误执行（DROP 列/表、类型收窄）</td><td>数据丢失</td><td>引擎默认不执行 DROP；预览强制标红；生产部署二次确认+权限位；类型收窄前置告警。</td></tr>
+      <tr><td>前后端字段集合并逻辑不一致</td><td>预览 DDL 与实际执行漂移</td><td>合并逻辑唯一权威源放后端编译器；前端预览也调它，废弃前端自拼 schema。</td></tr>
+      <tr><td>TINYINT/INT 精度在 <code>FieldType::Int</code> 被统一为 BIGINT</td><td>类型不精确</td><td>编译器写 <code>db_type</code> 精确串 + 引擎 <code>prefer_db_type</code> 模式；无需改引擎。</td></tr>
+      <tr><td>并发部署同一库</td><td>双写冲突</td><td>复用插件分布式锁 <code>try_lock</code>，锁键含 <code>db_id</code>。</td></tr>
+      <tr><td>前端仍连 Node、Rust 容器未接通</td><td>部署能力够不着</td><td>阶段 0 优先解决接线（代理/前缀/认证），先于功能开发。</td></tr>
+      <tr><td>生产库连接串安全</td><td>凭据泄露</td><td>运行期登记目标库的连接串加密存储；目标库列表对前端只暴露 <code>db_id</code> 与可用性，不回传凭据。</td></tr>
+      <tr><td>种子数据与既有数据冲突</td><td>覆盖业务数据</td><td>种子用 UPSERT 且仅限模型自带初始化数据；部署面板可选「不应用种子」。</td></tr>
+      <tr><td>跨库类型差异（未来非 PG）</td><td>方言不兼容</td><td>引擎已是 <code>DdlDialect</code> trait 设计；当前锁定 PostgreSQL，其他方言后续按 trait 扩展。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 14 验收 -->
+<section id="accept">
+  <h2 class="sec"><span class="num">14</span>验收标准</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0">功能验收</h4>
+      <ul>
+        <li>✅ 五项功能在「模型中心」统一入口可达。</li>
+        <li>✅ 选定 DCT 模型 + dev 库 → 一键<strong>创建</strong>出物理表（结构、注释、索引、i18n 伴生表、种子数据正确）。</li>
+        <li>✅ 修改字段后版本+1 → 同库<strong>升级</strong>只执行增量 ALTER，存量数据零丢失。</li>
+        <li>✅ DOC 多层单据模型可整体部署。</li>
+        <li>✅ 部署前可预览将执行的 DDL 与破坏性警告，且预览不触碰库。</li>
+        <li>✅ 同一模型可部署到多库，UI 正确显示各库当前版本与状态。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">质量验收</h4>
+      <ul>
+        <li>✅ 重复部署同版本 = 无变更（幂等）。</li>
+        <li>✅ DROP 类操作默认不执行，仅提示。</li>
+        <li>✅ 部署失败整事务回滚，台账记 <code>failed</code>，UI 可见原因。</li>
+        <li>✅ 编译器对真实 <code>cmxfico_dct/doc</code> 样例有单测覆盖。</li>
+        <li>✅ 生产库部署需权限位 + 二次确认。</li>
+        <li>✅ 并发部署同库被锁串行化。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 15 附录 -->
+<section id="appendix">
+  <h2 class="sec"><span class="num">15</span>附录 · 代码坐标（勘察实证）</h2>
+  <p class="lead">本方案所依赖的现成资产位置，便于实施时直接定位。路径相对 <code>presentation/</code>。</p>
+
+  <h4>已就绪引擎</h4>
+  <table>
+    <thead><tr><th>能力</th><th>文件 / 符号</th></tr></thead>
+    <tbody>
+      <tr><td>建表/升级执行器</td><td class="ref">cmx-container/crates/libs/cmx-metadata/src/executor.rs · <code>PgTableDefineExecutor</code>{create_table, upgrade_table, create_or_upgrade_table}</td></tr>
+      <tr><td>DDL 生成（PG 方言）</td><td class="ref">…/cmx-metadata/src/ddl/postgres.rs · <code>PostgresDdlDialect</code>（支持 <code>prefer_db_type</code>）</td></tr>
+      <tr><td>增量 diff + 安全护栏</td><td class="ref">…/cmx-metadata/src/ddl/diff.rs · <code>DdlDiff</code>（DROP 仅记录不执行）</td></tr>
+      <tr><td>种子数据</td><td class="ref">…/cmx-metadata/src/seed/executor.rs · <code>PgSeedDataExecutor</code>；dml.rs · <code>generate_pg_insert_or_upsert</code></td></tr>
+      <tr><td>i18n 伴生表派生</td><td class="ref">…/cmx-metadata/src/i18n.rs · <code>derive_i18n_table_define</code></td></tr>
+      <tr><td>配置/加载/依赖排序</td><td class="ref">…/cmx-metadata/src/{config,loader}.rs · <code>TableDefinesConfigManager</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4>目标库与台账</h4>
+  <table>
+    <thead><tr><th>能力</th><th>文件 / 符号</th></tr></thead>
+    <tbody>
+      <tr><td>多库注册表</td><td class="ref">cmx-container/crates/libs/cmx-infra/cmx-database/src/connection/mod.rs · <code>DbRegistry</code>；manager/mod.rs · <code>DatabaseManager{register_data_source, list_data_sources, get_default_db_manager}</code></td></tr>
+      <tr><td>库连接配置</td><td class="ref">cmx-container/dev.toml · <code>[[databases]]</code>{db_id, db_url, default}</td></tr>
+      <tr><td>部署台账（已存在）</td><td class="ref">cmx-container/crates/libs/cmx-plugin/src/infrastructure/database/table_metadata/{entity,service,bmc}.rs · 表 <code>cmx_meta_table_define</code> + <code>_version</code>（含 metadata JSONB、version、ddl_status）</td></tr>
+      <tr><td>台账 HTTP</td><td class="ref">cmx-container/crates/libs/cmx-api/src/handlers/table_metadata/ · <code>/api/table-metadata/*</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4>「应用到库」先例（插件安装）</h4>
+  <table>
+    <thead><tr><th>环节</th><th>文件 / 符号</th></tr></thead>
+    <tbody>
+      <tr><td>锁+建表+种子+台账 全流程</td><td class="ref">cmx-container/crates/libs/cmx-plugin/src/service/utils.rs · <code>create_plugin_tables</code> / <code>execute_ddl_with_lock</code> / <code>save_plugin_table_metadata</code></td></tr>
+      <tr><td>核心数据结构</td><td class="ref">cmx-container/crates/libs/cmx-core/src/model/meta/table.rs · <code>TableDefine</code> / <code>ColumnDefine</code> / <code>IndexDefine</code>（含 version/i18n/schema/db_type/ordinal）</td></tr>
+    </tbody>
+  </table>
+
+  <h4>前端五编辑器与定义存储</h4>
+  <table>
+    <thead><tr><th>对象</th><th>文件 / 符号</th></tr></thead>
+    <tbody>
+      <tr><td>①②③④ 编辑器</td><td class="ref">CMXPortalManager/src/components/portal-definition-manager.js（data-kind: BASE-DCT/BASE-DOC/DCT/DOC）</td></tr>
+      <tr><td>⑤ 弹性组合编辑器</td><td class="ref">CMXPortalManager/src/components/portal-flexible-combination-manager.js</td></tr>
+      <tr><td>定义/弹性组合 路由（Rust）</td><td class="ref">cmx-container/crates/libs/cmx-portal/src/{definitions,flexible_combination,dict}/ → /api/portal/{definitions,flexible-combination,dict}/*</td></tr>
+      <tr><td>真实样例数据</td><td class="ref">CMXPortalManager/cmx-node-server/data/meta/definitions/fi/cmxfico/gl/cmxfico_{dct,doc}_meta_v1.json；base/base_{dct,doc}_meta_v1.json</td></tr>
+      <tr><td>前端代理</td><td class="ref">CMXPortalManager/vite.config.js · <code>CMX_VITE_BACKEND</code>(默认 127.0.0.1:8080 → Node)</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="soft">
+  <p class="footnote">本文档为方案设计，未改动任何代码。所有「已就绪」结论均来自对上述文件的实际勘察。实施阶段以本文 §5 编译器规范与 §8 部署编排为核心施工图，其余尽量复用既有引擎与插件链路骨架。</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>

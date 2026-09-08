@@ -1,0 +1,79 @@
+<svg viewBox="0 0 820 486" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="ag2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+  <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <filter id="g2" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="486" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">P0 · 认证与管理面鉴权缺口（#1 谁治理"治理者" · #2 JWT 弱校验）</text>
+
+<!-- lane A governed -->
+<rect x="30" y="46" width="760" height="26" rx="7" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="42" y="64" font-size="11" font-weight="700" fill="#065f46">① 数据面（已治理）—— 决策/执行解耦按预期工作 ✓</text>
+<g filter="url(#g2)"><rect x="44" y="82" width="150" height="46" rx="8" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="119" y="101" font-size="10.5" font-weight="700" fill="#334155" text-anchor="middle">调用者 u42</text>
+<text x="119" y="118" font-size="9.5" fill="#64748b" text-anchor="middle">roles=[finance]</text>
+<g filter="url(#g2)"><rect x="250" y="82" width="150" height="46" rx="8" fill="#eef2ff" stroke="#818cf8"/></g>
+<text x="325" y="101" font-size="10.5" font-weight="700" fill="#3730a3" text-anchor="middle">decide → compile</text>
+<text x="325" y="118" font-size="9.5" fill="#4338ca" text-anchor="middle">按授权求残差</text>
+<g filter="url(#g2)"><rect x="456" y="78" width="300" height="52" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="470" y="98" font-size="10.5" font-weight="700" fill="#065f46">DataScope · ou_id IN {授权子树}</text>
+<text x="470" y="117" font-size="9.5" fill="#047857">仅可见被授数据　✓ 正确 scoped</text>
+<line x1="194" y1="105" x2="250" y2="105" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag2)"/>
+<line x1="400" y1="105" x2="456" y2="105" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag2)"/>
+
+<!-- lane B ungoverned -->
+<rect x="30" y="142" width="760" height="26" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="42" y="160" font-size="11" font-weight="700" fill="#b91c1c">② 管理面（未治理）—— 治理数据访问的权限系统，自身不设防</text>
+<!-- dashed trust boundary that SHOULD be here -->
+<rect x="210" y="176" width="340" height="72" rx="10" fill="none" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="380" y="192" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">应有 admin 鉴权边界 —— 实际缺失</text>
+<g filter="url(#g2)"><rect x="44" y="184" width="150" height="56" rx="8" fill="#fef2f2" stroke="#fca5a5"/></g>
+<text x="119" y="205" font-size="10.5" font-weight="700" fill="#b91c1c" text-anchor="middle">任意调用者</text>
+<text x="119" y="222" font-size="9" fill="#991b1b" text-anchor="middle">off 模式无需身份</text>
+<g filter="url(#g2)"><rect x="222" y="184" width="150" height="56" rx="8" fill="#ffffff" stroke="#ef4444"/></g>
+<text x="232" y="201" font-size="9.3" fill="#b91c1c" font-family="ui-monospace,Menlo,Consolas,monospace">POST /grants {</text>
+<text x="232" y="214" font-size="9.3" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace"> subjectId:自己,</text>
+<text x="232" y="227" font-size="9.3" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace"> dimValues:["*"] }</text>
+<g filter="url(#g2)"><rect x="388" y="184" width="150" height="56" rx="8" fill="#fff1f2" stroke="#ef4444"/></g>
+<text x="463" y="205" font-size="10.5" font-weight="700" fill="#b91c1c" text-anchor="middle">200 OK</text>
+<text x="463" y="222" font-size="9" fill="#991b1b" text-anchor="middle">无角色门 · 落库</text>
+<g filter="url(#g2)"><rect x="566" y="180" width="200" height="64" rx="8" fill="#450a0a"/></g>
+<text x="666" y="202" font-size="10.5" font-weight="700" fill="#fca5a5" text-anchor="middle">再次 decide</text>
+<text x="666" y="220" font-size="9.5" fill="#fecaca" text-anchor="middle">ou_id 全量 / True</text>
+<text x="666" y="235" font-size="9.5" font-weight="700" fill="#f87171" text-anchor="middle">✗ 已自我提权</text>
+<line x1="194" y1="212" x2="222" y2="212" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar2)"/>
+<line x1="372" y1="212" x2="388" y2="212" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar2)"/>
+<line x1="538" y1="212" x2="566" y2="212" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar2)"/>
+
+<!-- evidence cards -->
+<g filter="url(#g2)"><rect x="30" y="262" width="246" height="150" rx="10" fill="#fef2f2" stroke="#fecaca"/></g>
+<text x="46" y="284" font-size="11" font-weight="700" fill="#b91c1c">#1a 默认免鉴权</text>
+<text x="46" y="304" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">AUTH_MODE 默认 "off"</text>
+<text x="46" y="320" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">auth.rs:57</text>
+<text x="46" y="340" font-size="9.8" fill="#991b1b">off → scoped_run(default)</text>
+<text x="46" y="356" font-size="9.8" fill="#991b1b">直接放行全部端点</text>
+<text x="46" y="380" font-size="9.5" fill="#334155">→ 生产须强制 jwt，禁 off</text>
+<text x="46" y="398" font-size="9.5" fill="#334155">　（开箱即"裸奔"）</text>
+
+<g filter="url(#g2)"><rect x="288" y="262" width="246" height="150" rx="10" fill="#fef2f2" stroke="#fecaca"/></g>
+<text x="304" y="284" font-size="11" font-weight="700" fill="#b91c1c">#1b 管理面无角色门</text>
+<text x="304" y="304" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">handlers.rs save_*/delete_*</text>
+<text x="304" y="322" font-size="9.8" fill="#991b1b">/policies /grants /mask-rules</text>
+<text x="304" y="338" font-size="9.8" fill="#991b1b">/relation-tuples … 均只读</text>
+<text x="304" y="354" font-size="9.8" fill="#991b1b">current_tenant()，无 admin 门</text>
+<text x="304" y="378" font-size="9.5" fill="#334155">→ 任一合法主体可改策略/</text>
+<text x="304" y="396" font-size="9.5" fill="#334155">　自授维度 = 越权</text>
+
+<g filter="url(#g2)"><rect x="546" y="262" width="244" height="150" rx="10" fill="#fef2f2" stroke="#fecaca"/></g>
+<text x="562" y="284" font-size="11" font-weight="700" fill="#b91c1c">#2 JWT 弱校验</text>
+<text x="562" y="304" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">validate_exp = false</text>
+<text x="562" y="320" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">required_spec_claims.clear()</text>
+<text x="562" y="336" font-size="9.5" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">auth.rs:98-99</text>
+<text x="562" y="356" font-size="9.8" fill="#991b1b">令牌永不过期 · 无 iss/aud</text>
+<text x="562" y="372" font-size="9.8" fill="#991b1b">密钥默认 change-me</text>
+<text x="562" y="392" font-size="9.5" fill="#334155">→ 开 exp + 强密钥 + 租户白名单</text>
+
+<text x="40" y="440" font-size="10.5" fill="#334155">补齐方向：新增管理员角色门（<tspan font-family="ui-monospace,Menlo,Consolas,monospace">dataauth-admin</tspan> / superadmin）守全部写端点；生产强制 jwt/api-key；JWT 校验 exp + 拒默认密钥 + 租户白名单。</text>
+<text x="40" y="460" font-size="10.5" fill="#64748b">关键：数据面已治理不代表管理面已治理——两条 lane 的信任边界必须分别建立。这是"who guards the guards"的经典缺口。</text>
+</svg>

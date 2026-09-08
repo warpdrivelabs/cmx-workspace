@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAP FICO 会计凭证相关表结构（经典 BKPF/BSEG，不含 ACDOCA）</title>
+<style>
+:root{color-scheme:light;--ink:#1d2433;--muted:#617084;--line:#d8dee8;--head:#eef4fb;--accent:#0b65c2;--band:#f7f9fc;--warn:#fff7e6;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:#fff}
+header{padding:26px 32px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f7fbff,#fff)}
+h1{margin:0 0 6px;font-size:26px}
+header p{margin:6px 0;line-height:1.6;color:var(--muted);font-size:13.5px;max-width:1000px}
+.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.pill{border:1px solid var(--line);background:#fff;padding:5px 10px;border-radius:6px;color:#304158;font-size:12.5px}
+.toolbar{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 32px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96);backdrop-filter:saturate(1.2) blur(8px)}
+#q{height:36px;border:1px solid var(--line);border-radius:6px;padding:0 12px;font:inherit;min-width:320px;flex:1;max-width:520px}
+.toolbar .hint{color:var(--muted);font-size:12.5px}
+main{padding:18px 32px 40px;max-width:1180px;margin:0 auto}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:6px 0 22px}
+.tocitem{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:8px;padding:8px 11px;text-decoration:none;color:var(--ink);background:#fff;transition:.12s}
+.tocitem:hover{border-color:var(--accent);background:#f3f9ff}
+.tocitem b{font-family:ui-monospace,Menlo,Consolas,monospace;color:#084a8f;font-size:13px}
+.tocitem span{color:var(--muted);font-size:12px}
+.card{border:1px solid var(--line);border-radius:10px;margin-bottom:20px;overflow:hidden;background:#fff}
+.card-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);background:#fafcff}
+.card-head h2{margin:0;font-size:17px;font-weight:700}
+.tn{font-family:ui-monospace,Menlo,Consolas,monospace;color:#084a8f;background:#eef4fb;padding:2px 8px;border-radius:6px;font-size:15px}
+.cat{color:#fff;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:11px;white-space:nowrap}
+.desc{margin:12px 16px;color:#33425a;line-height:1.65;font-size:13px}
+.tw{overflow:auto;margin:0 16px 8px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.8px}
+th{text-align:left;background:var(--head);color:#26384f;font-weight:700;padding:8px 11px;border-bottom:1px solid var(--line);position:sticky;top:60px;z-index:1}
+td{padding:7px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:var(--band)}
+td code{font-family:ui-monospace,Menlo,Consolas,monospace;color:#084a8f;font-weight:650;font-size:12.5px}
+td.de{color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+td.ty{color:#6a4b00;white-space:nowrap;font-size:12px}
+td.ds{line-height:1.55;min-width:300px}
+.kt{font-size:11px;font-weight:700;padding:1px 6px;border-radius:9px}
+.k-pk{background:#e7f0ff;color:#0b65c2}
+.k-fk{background:#f0e9fa;color:#7a3ea8}
+.fcount{color:var(--muted);font-size:12px;padding:0 16px 12px}
+.relbox{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff;margin-bottom:20px;line-height:1.9;font-size:13px;overflow:auto}
+.relbox code{font-family:ui-monospace,Menlo,Consolas,monospace;color:#084a8f;font-weight:650}
+h3.sech{font-size:16px;margin:26px 0 10px;padding-left:10px;border-left:4px solid var(--accent)}
+.note{background:var(--warn);border:1px solid #f1d49a;padding:12px 14px;border-radius:8px;margin:0 0 18px;font-size:13px;line-height:1.6}
+.ctab td{font-size:12.8px}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>SAP FICO 会计凭证相关表结构</h1>
+  <p>覆盖 SAP ERP（ECC 及 S/4HANA 兼容）财务会计（FI）<b>会计凭证</b>相关的经典数据表：凭证抬头/行项目/税务、未清已清索引、跨公司、New GL（新总账）行项目与汇总、经典总账余额、科目与客商主数据、变更凭证、编号范围与凭证控制配置。<b>本文档不包含 S/4HANA 的 ACDOCA（Universal Journal 通用日记账）表。</b></p>
+  <div class="meta">
+    <span class="pill">核心：BKPF 抬头 · BSEG 行项目 · BSET 税务</span>
+    <span class="pill">主键：MANDT+BUKRS+BELNR+GJAHR(+BUZEI)</span>
+    <span class="pill">借贷：金额 + 借贷标志 SHKZG</span>
+    <span class="pill">不含 ACDOCA</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input id="q" type="search" placeholder="搜索表名 / 中文 / 分类（如 BSEG、税务、未清、主数据）…">
+  <span class="hint">点目录跳转 · 关键词实时过滤卡片</span>
+</div>
+
+<main>
+  <div class="note">
+    <b>阅读提示：</b>会计凭证的“真身”是 <code>BKPF</code>（抬头）+ <code>BSEG</code>（行项目）。<code>BSEG</code> 是<b>簇表（Cluster Table，物理存于 RFBLG 簇）</b>，不能任意 SQL 查询，因此 SAP 用 <code>BSID/BSAD</code>（客户）、<code>BSIK/BSAK</code>（供应商）、<code>BSIS/BSAS</code>（总账）等<b>二级索引表</b>按未清（Open）/已清（Cleared）冗余存储，供快速查询。S/4HANA 中行项目并入 <code>ACDOCA</code>（本文档不展开），上述索引表多改为兼容用的 CDS 视图。
+  </div>
+
+  <h3 class="sech">凭证表目录</h3>
+  <div class="toc">
+    <a href="#BKPF" class="tocitem"><b>BKPF</b><span>会计凭证抬头</span></a><a href="#BSEG" class="tocitem"><b>BSEG</b><span>会计凭证行项目</span></a><a href="#BSET" class="tocitem"><b>BSET</b><span>税务行项目</span></a><a href="#BSID" class="tocitem"><b>BSID / BSAD</b><span>客户未清/已清项目索引</span></a><a href="#BSIK" class="tocitem"><b>BSIK / BSAK</b><span>供应商未清/已清项目索引</span></a><a href="#BSIS" class="tocitem"><b>BSIS / BSAS</b><span>总账未清/已清项目索引</span></a><a href="#BVOR" class="tocitem"><b>BVOR</b><span>跨公司代码凭证</span></a><a href="#FAGLFLEXA" class="tocitem"><b>FAGLFLEXA</b><span>新总账行项目(实际)</span></a><a href="#FAGLFLEXT" class="tocitem"><b>FAGLFLEXT</b><span>新总账汇总(余额)</span></a><a href="#GLT0" class="tocitem"><b>GLT0</b><span>经典总账汇总(余额)</span></a><a href="#SKA1" class="tocitem"><b>SKA1 / SKB1 / SKAT</b><span>总账科目主数据</span></a><a href="#KNA1" class="tocitem"><b>KNA1 / KNB1</b><span>客户主数据</span></a><a href="#LFA1" class="tocitem"><b>LFA1 / LFB1</b><span>供应商主数据</span></a><a href="#CDHDR" class="tocitem"><b>CDHDR / CDPOS</b><span>变更凭证(抬头/明细)</span></a><a href="#NRIV" class="tocitem"><b>NRIV</b><span>凭证编号范围</span></a>
+  </div>
+
+  <h3 class="sech">关系总览（凭证如何串起来）</h3>
+  <div class="relbox">
+    <b>① 凭证主体（一张凭证）</b><br>
+    <code>BKPF</code>（抬头, 1）── BELNR+BUKRS+GJAHR ──&lt; <code>BSEG</code>（行项目, N）──&lt; <code>BSET</code>（税务行, N）<br><br>
+    <b>② 行项目 → 二级索引（按账户类型冗余，便于查询）</b><br>
+    <code>BSEG</code>（KOART=D 客户行）→ <code>BSID</code>/<code>BSAD</code>（客户 未清/已清）<br>
+    <code>BSEG</code>（KOART=K 供应商行）→ <code>BSIK</code>/<code>BSAK</code>（供应商 未清/已清）<br>
+    <code>BSEG</code>（KOART=S 总账行, 开未清管理）→ <code>BSIS</code>/<code>BSAS</code>（总账 未清/已清）<br><br>
+    <b>③ 行项目 → 主数据（科目/客商）</b><br>
+    <code>BSEG.HKONT/SAKNR</code> → <code>SKA1</code>/<code>SKB1</code>/<code>SKAT</code>（总账科目）<br>
+    <code>BSEG.KUNNR</code> → <code>KNA1</code>/<code>KNB1</code>（客户）　·　<code>BSEG.LIFNR</code> → <code>LFA1</code>/<code>LFB1</code>（供应商）<br><br>
+    <b>④ 行项目 → 余额汇总</b><br>
+    经典：<code>BSEG</code> → <code>GLT0</code>　·　New GL：<code>FAGLFLEXA</code>（行）→ <code>FAGLFLEXT</code>（余额）<br><br>
+    <b>⑤ 跨公司 / 冲销 / 变更 / 取号</b><br>
+    跨公司：<code>BVOR.BVORG</code> 串多张 BKPF　·　冲销：<code>BKPF.STBLG/STJAH</code> 指向红冲凭证<br>
+    变更留痕：<code>CDHDR</code>/<code>CDPOS</code>（OBJECTCLAS=BELEG）　·　凭证取号：<code>NRIV</code>（对象 RF_BELEG）
+  </div>
+
+  <h3 class="sech">表结构明细</h3>
+  
+<section class="card" id="BKPF" data-name="bkpf 会计凭证抬头 核心凭证">
+  <div class="card-head">
+    <span class="cat" style="background:#0b65c2">核心凭证</span>
+    <h2><code class="tn">BKPF</code> · 会计凭证抬头</h2>
+  </div>
+  <p class="desc">会计凭证的抬头表，一张凭证一行。真实主键 MANDT+BUKRS+BELNR+GJAHR(集团+公司代码+凭证号+会计年度)。BELNR 由凭证类型(BLART)的编号范围(FI Number Range)生成。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团/客户端</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码(法定核算主体)</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BLART</code></td><td class="de">BLART</td><td></td><td class="ty">CHAR(2)</td><td class="ds">凭证类型(SA总账/KR供应商发票/DR客户发票/KZ供应商付款/DZ客户收款…)</td></tr>
+<tr><td><code>BLDAT</code></td><td class="de">BLDAT</td><td></td><td class="ty">DATS(8)</td><td class="ds">凭证日期(业务发生日)</td></tr>
+<tr><td><code>BUDAT</code></td><td class="de">BUDAT</td><td></td><td class="ty">DATS(8)</td><td class="ds">过账日期(决定落入哪个会计期间)</td></tr>
+<tr><td><code>MONAT</code></td><td class="de">MONAT</td><td></td><td class="ty">NUMC(2)</td><td class="ds">会计期间(记账期间)</td></tr>
+<tr><td><code>CPUDT</code></td><td class="de">CPUDT</td><td></td><td class="ty">DATS(8)</td><td class="ds">凭证录入日期(系统日期)</td></tr>
+<tr><td><code>USNAM</code></td><td class="de">USNAM</td><td></td><td class="ty">CHAR(12)</td><td class="ds">录入人(用户名)</td></tr>
+<tr><td><code>TCODE</code></td><td class="de">TCODE</td><td></td><td class="ty">CHAR(20)</td><td class="ds">录入事务码(FB01/MIRO/F-02…)</td></tr>
+<tr><td><code>XBLNR</code></td><td class="de">XBLNR1</td><td></td><td class="ty">CHAR(16)</td><td class="ds">参考凭证号(外部单据/发票号)</td></tr>
+<tr><td><code>BKTXT</code></td><td class="de">BKTXT</td><td></td><td class="ty">CHAR(25)</td><td class="ds">凭证抬头文本</td></tr>
+<tr><td><code>WAERS</code></td><td class="de">WAERS</td><td></td><td class="ty">CUKY(5)</td><td class="ds">凭证货币(交易币种)</td></tr>
+<tr><td><code>KURSF</code></td><td class="de">KURSF</td><td></td><td class="ty">DEC(9,5)</td><td class="ds">汇率</td></tr>
+<tr><td><code>AWTYP</code></td><td class="de">AWTYP</td><td></td><td class="ty">CHAR(5)</td><td class="ds">参考交易类型(关联来源:RMRP发票/VBRK开票…)</td></tr>
+<tr><td><code>AWKEY</code></td><td class="de">AWKEY</td><td></td><td class="ty">CHAR(20)</td><td class="ds">参考对象键(来源单据键,用于追溯 MM/SD/AA)</td></tr>
+<tr><td><code>STBLG</code></td><td class="de">STBLG</td><td></td><td class="ty">CHAR(10)</td><td class="ds">冲销凭证号(本凭证被哪张红冲)</td></tr>
+<tr><td><code>STJAH</code></td><td class="de">STJAH</td><td></td><td class="ty">NUMC(4)</td><td class="ds">冲销凭证年度</td></tr>
+<tr><td><code>STGRD</code></td><td class="de">STGRD</td><td></td><td class="ty">CHAR(2)</td><td class="ds">冲销原因</td></tr>
+<tr><td><code>BSTAT</code></td><td class="de">BSTAT</td><td></td><td class="ty">CHAR(1)</td><td class="ds">凭证状态(空=正常/V=预制 Parked/A=平行/S=统计…)</td></tr>
+<tr><td><code>XREVERSAL</code></td><td class="de">XREVERSAL</td><td></td><td class="ty">CHAR(1)</td><td class="ds">冲销标识(1=冲销凭证/2=被冲销)</td></tr>
+<tr><td><code>LDGRP</code></td><td class="de">FAGL_LDGRP</td><td></td><td class="ty">CHAR(4)</td><td class="ds">分类账组(New GL/并行会计)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 23 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BSEG" data-name="bseg 会计凭证行项目 核心凭证">
+  <div class="card-head">
+    <span class="cat" style="background:#0b65c2">核心凭证</span>
+    <h2><code class="tn">BSEG</code> · 会计凭证行项目</h2>
+  </div>
+  <p class="desc">会计凭证的行项目表(分录)，一行一条分录。主键在 BKPF 基础上加行项目号 BUZEI。借贷由金额(WRBTR/DMBTR)+借贷标志(SHKZG)表达，不分借贷两栏。BSEG 是簇表(Cluster，属 RFBLG 簇)，不能直接做任意 SQL 报表，故有下面的索引表。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BUZEI</code></td><td class="de">BUZEI</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">行项目号</td></tr>
+<tr><td><code>BUZID</code></td><td class="de">BUZID</td><td></td><td class="ty">CHAR(1)</td><td class="ds">行项目标识(税/现金折扣/自动生成行)</td></tr>
+<tr><td><code>BSCHL</code></td><td class="de">BSCHL</td><td></td><td class="ty">CHAR(2)</td><td class="ds">记账码(40总账借/50总账贷/01客户借/31供应商贷…)</td></tr>
+<tr><td><code>KOART</code></td><td class="de">KOART</td><td></td><td class="ty">CHAR(1)</td><td class="ds">账户类型(S总账/D客户/K供应商/A资产/M物料)</td></tr>
+<tr><td><code>UMSKZ</code></td><td class="de">UMSKZ</td><td></td><td class="ty">CHAR(1)</td><td class="ds">特别总账标识(A预付/F预收/W应收票据…)</td></tr>
+<tr><td><code>SHKZG</code></td><td class="de">SHKZG</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志(S借方/H贷方)</td></tr>
+<tr><td><code>HKONT</code></td><td class="de">HKONT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">总账科目(统驭科目,指向 SKB1)</td></tr>
+<tr><td><code>SAKNR</code></td><td class="de">SAKNR</td><td></td><td class="ty">CHAR(10)</td><td class="ds">总账科目号</td></tr>
+<tr><td><code>KUNNR</code></td><td class="de">KUNNR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">客户编号(指向 KNA1)</td></tr>
+<tr><td><code>LIFNR</code></td><td class="de">LIFNR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">供应商编号(指向 LFA1)</td></tr>
+<tr><td><code>WRBTR</code></td><td class="de">WRBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币金额</td></tr>
+<tr><td><code>DMBTR</code></td><td class="de">DMBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币金额(公司代码货币)</td></tr>
+<tr><td><code>DMBE2</code></td><td class="de">DMBE2</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">第二本位币金额(集团/硬通货)</td></tr>
+<tr><td><code>DMBE3</code></td><td class="de">DMBE3</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">第三本位币金额</td></tr>
+<tr><td><code>MWSKZ</code></td><td class="de">MWSKZ</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(2)</td><td class="ds">税码(指向 T007A)</td></tr>
+<tr><td><code>MWSTS</code></td><td class="de">MWSTS</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币税额</td></tr>
+<tr><td><code>KOSTL</code></td><td class="de">KOSTL</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">成本中心</td></tr>
+<tr><td><code>PRCTR</code></td><td class="de">PRCTR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">利润中心</td></tr>
+<tr><td><code>GSBER</code></td><td class="de">GSBER</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(4)</td><td class="ds">业务范围</td></tr>
+<tr><td><code>SEGMENT</code></td><td class="de">FB_SEGMENT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">段(分部报告)</td></tr>
+<tr><td><code>FKBER</code></td><td class="de">FKBER</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(16)</td><td class="ds">功能范围(成本性态法)</td></tr>
+<tr><td><code>AUFNR</code></td><td class="de">AUFNR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(12)</td><td class="ds">订单号(内部订单)</td></tr>
+<tr><td><code>PROJK</code></td><td class="de">PS_PSP_PNR</td><td><span class="kt k-fk">外键</span></td><td class="ty">NUMC(8)</td><td class="ds">WBS 元素(项目)</td></tr>
+<tr><td><code>ANLN1</code></td><td class="de">ANLN1</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(12)</td><td class="ds">资产主号</td></tr>
+<tr><td><code>MATNR</code></td><td class="de">MATNR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(18)</td><td class="ds">物料号</td></tr>
+<tr><td><code>MENGE</code></td><td class="de">MENGE_D</td><td></td><td class="ty">QUAN(13,3)</td><td class="ds">数量</td></tr>
+<tr><td><code>MEINS</code></td><td class="de">MEINS</td><td></td><td class="ty">UNIT(3)</td><td class="ds">计量单位</td></tr>
+<tr><td><code>ZUONR</code></td><td class="de">DZUONR</td><td></td><td class="ty">CHAR(18)</td><td class="ds">分配号(清账/排序参照)</td></tr>
+<tr><td><code>SGTXT</code></td><td class="de">SGTXT</td><td></td><td class="ty">CHAR(50)</td><td class="ds">行项目文本(摘要)</td></tr>
+<tr><td><code>ZFBDT</code></td><td class="de">DZFBDT</td><td></td><td class="ty">DATS(8)</td><td class="ds">基准日期(账龄起算)</td></tr>
+<tr><td><code>ZTERM</code></td><td class="de">DZTERM</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(4)</td><td class="ds">付款条件(指向 T052)</td></tr>
+<tr><td><code>ZLSCH</code></td><td class="de">DZLSCH</td><td></td><td class="ty">CHAR(1)</td><td class="ds">付款方式</td></tr>
+<tr><td><code>AUGBL</code></td><td class="de">AUGBL</td><td></td><td class="ty">CHAR(10)</td><td class="ds">清账凭证号(为空=未清项)</td></tr>
+<tr><td><code>AUGDT</code></td><td class="de">AUGDT</td><td></td><td class="ty">DATS(8)</td><td class="ds">清账日期</td></tr>
+<tr><td><code>VBUND</code></td><td class="de">RASSC</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(6)</td><td class="ds">贸易伙伴(集团内公司,合并抵销)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 39 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BSET" data-name="bset 税务行项目 核心凭证">
+  <div class="card-head">
+    <span class="cat" style="background:#0b65c2">核心凭证</span>
+    <h2><code class="tn">BSET</code> · 税务行项目</h2>
+  </div>
+  <p class="desc">会计凭证的税务明细表，每条税行一行。记录税基、税额、税码、税务过程的条件类型，供税务申报。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BUZEI</code></td><td class="de">BUZEI</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">行项目号</td></tr>
+<tr><td><code>MWSKZ</code></td><td class="de">MWSKZ</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(2)</td><td class="ds">税码</td></tr>
+<tr><td><code>HWBAS</code></td><td class="de">HWBAS</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币税基</td></tr>
+<tr><td><code>FWBAS</code></td><td class="de">FWBAS</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币税基</td></tr>
+<tr><td><code>HWSTE</code></td><td class="de">HWSTE</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币税额</td></tr>
+<tr><td><code>FWSTE</code></td><td class="de">FWSTE</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币税额</td></tr>
+<tr><td><code>KTOSL</code></td><td class="de">KTOSL</td><td></td><td class="ty">CHAR(3)</td><td class="ds">税务过程交易码(MWS销项/VST进项)</td></tr>
+<tr><td><code>KSCHL</code></td><td class="de">KSCHL</td><td></td><td class="ty">CHAR(4)</td><td class="ds">条件类型</td></tr>
+<tr><td><code>HKONT</code></td><td class="de">HKONT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">税额过账的总账科目</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 13 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BSID" data-name="bsid / bsad 客户未清/已清项目索引 未清已清索引(经典)">
+  <div class="card-head">
+    <span class="cat" style="background:#7a3ea8">未清已清索引(经典)</span>
+    <h2><code class="tn">BSID / BSAD</code> · 客户未清/已清项目索引</h2>
+  </div>
+  <p class="desc">客户(应收)行项目的二级索引表:BSID=未清项(Open)，BSAD=已清项(Cleared)。从 BSEG 抽取客户行,便于按客户/到期日快速查询。S/4HANA 已用 CDS 视图替代(查 BSEG/ACDOCA),保留为兼容视图。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>KUNNR</code></td><td class="de">KUNNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">客户编号</td></tr>
+<tr><td><code>UMSKS</code></td><td class="de">UMSKS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(1)</td><td class="ds">特别总账业务类型</td></tr>
+<tr><td><code>UMSKZ</code></td><td class="de">UMSKZ</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(1)</td><td class="ds">特别总账标识</td></tr>
+<tr><td><code>AUGDT</code></td><td class="de">AUGDT</td><td><span class="kt k-pk">主键</span></td><td class="ty">DATS(8)</td><td class="ds">清账日期(BSID 为 00000000)</td></tr>
+<tr><td><code>AUGBL</code></td><td class="de">AUGBL</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">清账凭证号</td></tr>
+<tr><td><code>ZUONR</code></td><td class="de">DZUONR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(18)</td><td class="ds">分配号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>BUZEI</code></td><td class="de">BUZEI</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">行项目号</td></tr>
+<tr><td><code>SHKZG</code></td><td class="de">SHKZG</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志</td></tr>
+<tr><td><code>DMBTR</code></td><td class="de">DMBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币金额</td></tr>
+<tr><td><code>WRBTR</code></td><td class="de">WRBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币金额</td></tr>
+<tr><td><code>ZFBDT</code></td><td class="de">DZFBDT</td><td></td><td class="ty">DATS(8)</td><td class="ds">基准日期</td></tr>
+<tr><td><code>ZTERM</code></td><td class="de">DZTERM</td><td></td><td class="ty">CHAR(4)</td><td class="ds">付款条件</td></tr>
+<tr><td><code>MABER</code></td><td class="de">MABER</td><td></td><td class="ty">CHAR(2)</td><td class="ds">催款范围</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 17 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BSIK" data-name="bsik / bsak 供应商未清/已清项目索引 未清已清索引(经典)">
+  <div class="card-head">
+    <span class="cat" style="background:#7a3ea8">未清已清索引(经典)</span>
+    <h2><code class="tn">BSIK / BSAK</code> · 供应商未清/已清项目索引</h2>
+  </div>
+  <p class="desc">供应商(应付)行项目的二级索引表:BSIK=未清项，BSAK=已清项。结构与 BSID/BSAD 对称,主键以 LIFNR(供应商)替代 KUNNR。S/4HANA 同样由 CDS 视图替代。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>LIFNR</code></td><td class="de">LIFNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">供应商编号</td></tr>
+<tr><td><code>UMSKS</code></td><td class="de">UMSKS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(1)</td><td class="ds">特别总账业务类型</td></tr>
+<tr><td><code>UMSKZ</code></td><td class="de">UMSKZ</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(1)</td><td class="ds">特别总账标识</td></tr>
+<tr><td><code>AUGDT</code></td><td class="de">AUGDT</td><td><span class="kt k-pk">主键</span></td><td class="ty">DATS(8)</td><td class="ds">清账日期</td></tr>
+<tr><td><code>AUGBL</code></td><td class="de">AUGBL</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">清账凭证号</td></tr>
+<tr><td><code>ZUONR</code></td><td class="de">DZUONR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(18)</td><td class="ds">分配号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>BUZEI</code></td><td class="de">BUZEI</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">行项目号</td></tr>
+<tr><td><code>SHKZG</code></td><td class="de">SHKZG</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志</td></tr>
+<tr><td><code>DMBTR</code></td><td class="de">DMBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币金额</td></tr>
+<tr><td><code>WRBTR</code></td><td class="de">WRBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币金额</td></tr>
+<tr><td><code>ZFBDT</code></td><td class="de">DZFBDT</td><td></td><td class="ty">DATS(8)</td><td class="ds">基准日期</td></tr>
+<tr><td><code>ZTERM</code></td><td class="de">DZTERM</td><td></td><td class="ty">CHAR(4)</td><td class="ds">付款条件</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 16 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BSIS" data-name="bsis / bsas 总账未清/已清项目索引 未清已清索引(经典)">
+  <div class="card-head">
+    <span class="cat" style="background:#7a3ea8">未清已清索引(经典)</span>
+    <h2><code class="tn">BSIS / BSAS</code> · 总账未清/已清项目索引</h2>
+  </div>
+  <p class="desc">总账科目行项目的二级索引表:BSIS=未清项，BSAS=已清项。仅针对开启“未清项管理(OI Management)”的总账科目(如 GR/IR、银行清算)。S/4HANA 由 CDS 视图替代。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>HKONT</code></td><td class="de">HKONT</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">总账科目</td></tr>
+<tr><td><code>AUGDT</code></td><td class="de">AUGDT</td><td><span class="kt k-pk">主键</span></td><td class="ty">DATS(8)</td><td class="ds">清账日期</td></tr>
+<tr><td><code>AUGBL</code></td><td class="de">AUGBL</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">清账凭证号</td></tr>
+<tr><td><code>ZUONR</code></td><td class="de">DZUONR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(18)</td><td class="ds">分配号</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>BUZEI</code></td><td class="de">BUZEI</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">行项目号</td></tr>
+<tr><td><code>SHKZG</code></td><td class="de">SHKZG</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志</td></tr>
+<tr><td><code>DMBTR</code></td><td class="de">DMBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">本位币金额</td></tr>
+<tr><td><code>WRBTR</code></td><td class="de">WRBTR</td><td></td><td class="ty">CURR(13,2)</td><td class="ds">凭证货币金额</td></tr>
+<tr><td><code>BUDAT</code></td><td class="de">BUDAT</td><td></td><td class="ty">DATS(8)</td><td class="ds">过账日期</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 13 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="BVOR" data-name="bvor 跨公司代码凭证 核心凭证">
+  <div class="card-head">
+    <span class="cat" style="background:#0b65c2">核心凭证</span>
+    <h2><code class="tn">BVOR</code> · 跨公司代码凭证</h2>
+  </div>
+  <p class="desc">跨公司代码凭证的关联表。一笔跨公司业务在各公司代码生成独立凭证,用同一个跨公司凭证号 BVORG 串起来。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>BVORG</code></td><td class="de">BVORG</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(16)</td><td class="ds">跨公司代码凭证号</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">会计凭证号</td></tr>
+<tr><td><code>MANDT2</code></td><td class="de"></td><td></td><td class="ty"></td><td class="ds">-</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 6 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="FAGLFLEXA" data-name="faglflexa 新总账行项目(实际) New GL(新总账)">
+  <div class="card-head">
+    <span class="cat" style="background:#0a7d55">New GL(新总账)</span>
+    <h2><code class="tn">FAGLFLEXA</code> · 新总账行项目(实际)</h2>
+  </div>
+  <p class="desc">New General Ledger 的实际行项目表(ECC New GL/凭证拆分后)。比经典总账多分类账维度 RLDNR、段/利润中心拆分后的平衡维度。S/4HANA 中其角色由 ACDOCA 承担(本文档不展开 ACDOCA)。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>RLDNR</code></td><td class="de">FAGL_RLDNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(2)</td><td class="ds">分类账(0L 主/IFRS、其它本地准则)</td></tr>
+<tr><td><code>RBUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>GJAHR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>BELNR</code></td><td class="de">BELNR_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">总账凭证号</td></tr>
+<tr><td><code>DOCLN</code></td><td class="de">DOCLN6</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(6)</td><td class="ds">总账行项目号</td></tr>
+<tr><td><code>RACCT</code></td><td class="de">RACCT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">科目号</td></tr>
+<tr><td><code>DRCRK</code></td><td class="de">DRCRK</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志</td></tr>
+<tr><td><code>HSL</code></td><td class="de">VHCUR12</td><td></td><td class="ty">CURR</td><td class="ds">本位币金额</td></tr>
+<tr><td><code>KSL</code></td><td class="de">VKCUR12</td><td></td><td class="ty">CURR</td><td class="ds">集团币金额</td></tr>
+<tr><td><code>PRCTR</code></td><td class="de">PRCTR</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">利润中心</td></tr>
+<tr><td><code>SEGMENT</code></td><td class="de">FB_SEGMENT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">段</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 12 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="FAGLFLEXT" data-name="faglflext 新总账汇总(余额) New GL(新总账)">
+  <div class="card-head">
+    <span class="cat" style="background:#0a7d55">New GL(新总账)</span>
+    <h2><code class="tn">FAGLFLEXT</code> · 新总账汇总(余额)</h2>
+  </div>
+  <p class="desc">New GL 的汇总表(科目余额),按分类账/公司代码/科目/利润中心/段等维度按期累计借贷与余额,供报表。S/4 中由 ACDOCA 派生。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>RLDNR</code></td><td class="de">FAGL_RLDNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(2)</td><td class="ds">分类账</td></tr>
+<tr><td><code>RBUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>RYEAR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>RACCT</code></td><td class="de">RACCT</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">科目</td></tr>
+<tr><td><code>RPMAX</code></td><td class="de">RPMAX</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(3)</td><td class="ds">期间</td></tr>
+<tr><td><code>PRCTR</code></td><td class="de">PRCTR</td><td></td><td class="ty">CHAR(10)</td><td class="ds">利润中心</td></tr>
+<tr><td><code>HSLVT</code></td><td class="de"></td><td></td><td class="ty">CURR</td><td class="ds">本位币期初余额</td></tr>
+<tr><td><code>HSL01</code></td><td class="de"></td><td></td><td class="ty">CURR</td><td class="ds">第1期本位币发生额(HSL01~HSL16)</td></tr>
+<tr><td><code>TSL01</code></td><td class="de"></td><td></td><td class="ty">CURR</td><td class="ds">第1期交易币发生额</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 9 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="GLT0" data-name="glt0 经典总账汇总(余额) 经典总账余额">
+  <div class="card-head">
+    <span class="cat" style="background:#0a7d55">经典总账余额</span>
+    <h2><code class="tn">GLT0</code> · 经典总账汇总(余额)</h2>
+  </div>
+  <p class="desc">经典总账(非 New GL)的科目余额汇总表,按公司代码/科目/业务范围按期累计。ECC 非 New GL 场景使用。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>RRCTY</code></td><td class="de">RRCTY</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(1)</td><td class="ds">记录类型(0实际/1计划)</td></tr>
+<tr><td><code>RVERS</code></td><td class="de">RVERS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(3)</td><td class="ds">版本</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码</td></tr>
+<tr><td><code>RACCT</code></td><td class="de">RACCT</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">科目</td></tr>
+<tr><td><code>RYEAR</code></td><td class="de">GJAHR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">会计年度</td></tr>
+<tr><td><code>RTCUR</code></td><td class="de">RTCUR</td><td></td><td class="ty">CUKY(5)</td><td class="ds">币种</td></tr>
+<tr><td><code>DRCRK</code></td><td class="de">DRCRK</td><td></td><td class="ty">CHAR(1)</td><td class="ds">借贷标志</td></tr>
+<tr><td><code>HSLVT</code></td><td class="de"></td><td></td><td class="ty">CURR</td><td class="ds">本位币期初余额</td></tr>
+<tr><td><code>HSL01</code></td><td class="de"></td><td></td><td class="ty">CURR</td><td class="ds">各期本位币发生额(HSL01~HSL16)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 10 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="SKA1" data-name="ska1 / skb1 / skat 总账科目主数据 主数据">
+  <div class="card-head">
+    <span class="cat" style="background:#b4690e">主数据</span>
+    <h2><code class="tn">SKA1 / SKB1 / SKAT</code> · 总账科目主数据</h2>
+  </div>
+  <p class="desc">总账科目主数据三件套:SKA1=科目表级(科目号/科目组,跨公司代码共享);SKB1=公司代码级(币种/未清管理/字段状态);SKAT=科目文本(多语言名称)。凭证行项目 HKONT/SAKNR 指向它。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>KTOPL</code></td><td class="de">KTOPL</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">科目表(SKA1/SKAT)</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码(SKB1)</td></tr>
+<tr><td><code>SAKNR</code></td><td class="de">SAKNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">总账科目号</td></tr>
+<tr><td><code>KTOKS</code></td><td class="de">KTOKS</td><td></td><td class="ty">CHAR(4)</td><td class="ds">科目组(SKA1)</td></tr>
+<tr><td><code>XBILK</code></td><td class="de">XBILK</td><td></td><td class="ty">CHAR(1)</td><td class="ds">资产负债表科目标识(SKA1)</td></tr>
+<tr><td><code>GVTYP</code></td><td class="de">GVTYP</td><td></td><td class="ty">CHAR(2)</td><td class="ds">损益表科目类型(SKA1)</td></tr>
+<tr><td><code>WAERS</code></td><td class="de">WAERS</td><td></td><td class="ty">CUKY(5)</td><td class="ds">科目货币(SKB1)</td></tr>
+<tr><td><code>XOPVW</code></td><td class="de">XOPVW</td><td></td><td class="ty">CHAR(1)</td><td class="ds">未清项管理(SKB1)</td></tr>
+<tr><td><code>XKRES</code></td><td class="de">XKRES</td><td></td><td class="ty">CHAR(1)</td><td class="ds">行项目显示(SKB1)</td></tr>
+<tr><td><code>FSTAG</code></td><td class="de">FSTAG</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(4)</td><td class="ds">字段状态组(SKB1,指向 T004G)</td></tr>
+<tr><td><code>MWSKZ</code></td><td class="de">MWSKZ</td><td></td><td class="ty">CHAR(2)</td><td class="ds">税务类别(SKB1)</td></tr>
+<tr><td><code>TXT20/TXT50</code></td><td class="de">TXT20_SKAT</td><td></td><td class="ty">CHAR</td><td class="ds">科目短/长文本(SKAT,按语言)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 12 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="KNA1" data-name="kna1 / knb1 客户主数据 主数据">
+  <div class="card-head">
+    <span class="cat" style="background:#b4690e">主数据</span>
+    <h2><code class="tn">KNA1 / KNB1</code> · 客户主数据</h2>
+  </div>
+  <p class="desc">客户主数据:KNA1=总级(地址/名称,跨公司代码);KNB1=公司代码级(统驭科目/付款条件)。S/4HANA 由业务伙伴 BP(BUT000)统一驱动,但经典表仍存在。凭证 KUNNR 指向它。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>KUNNR</code></td><td class="de">KUNNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">客户编号</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码(KNB1)</td></tr>
+<tr><td><code>NAME1</code></td><td class="de">NAME1_GP</td><td></td><td class="ty">CHAR(35)</td><td class="ds">客户名称(KNA1)</td></tr>
+<tr><td><code>LAND1</code></td><td class="de">LAND1_GP</td><td></td><td class="ty">CHAR(3)</td><td class="ds">国家(KNA1)</td></tr>
+<tr><td><code>STCD1</code></td><td class="de">STCD1</td><td></td><td class="ty">CHAR(16)</td><td class="ds">税号(KNA1)</td></tr>
+<tr><td><code>AKONT</code></td><td class="de">AKONT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">统驭科目(KNB1,指向 SKB1)</td></tr>
+<tr><td><code>ZTERM</code></td><td class="de">DZTERM</td><td></td><td class="ty">CHAR(4)</td><td class="ds">付款条件(KNB1)</td></tr>
+<tr><td><code>ZUAWA</code></td><td class="de">ZUAWA</td><td></td><td class="ty">CHAR(3)</td><td class="ds">排序码(KNB1)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 9 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="LFA1" data-name="lfa1 / lfb1 供应商主数据 主数据">
+  <div class="card-head">
+    <span class="cat" style="background:#b4690e">主数据</span>
+    <h2><code class="tn">LFA1 / LFB1</code> · 供应商主数据</h2>
+  </div>
+  <p class="desc">供应商主数据:LFA1=总级,LFB1=公司代码级。与客户主数据对称。S/4HANA 同样由 BP 驱动。凭证 LIFNR 指向它。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>LIFNR</code></td><td class="de">LIFNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">供应商编号</td></tr>
+<tr><td><code>BUKRS</code></td><td class="de">BUKRS</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(4)</td><td class="ds">公司代码(LFB1)</td></tr>
+<tr><td><code>NAME1</code></td><td class="de">NAME1_GP</td><td></td><td class="ty">CHAR(35)</td><td class="ds">供应商名称(LFA1)</td></tr>
+<tr><td><code>LAND1</code></td><td class="de">LAND1_GP</td><td></td><td class="ty">CHAR(3)</td><td class="ds">国家(LFA1)</td></tr>
+<tr><td><code>STCD1</code></td><td class="de">STCD1</td><td></td><td class="ty">CHAR(16)</td><td class="ds">税号(LFA1)</td></tr>
+<tr><td><code>AKONT</code></td><td class="de">AKONT</td><td><span class="kt k-fk">外键</span></td><td class="ty">CHAR(10)</td><td class="ds">统驭科目(LFB1)</td></tr>
+<tr><td><code>ZTERM</code></td><td class="de">DZTERM</td><td></td><td class="ty">CHAR(4)</td><td class="ds">付款条件(LFB1)</td></tr>
+<tr><td><code>ZWELS</code></td><td class="de">DZWELS</td><td></td><td class="ty">CHAR(10)</td><td class="ds">付款方式(LFB1)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 9 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="CDHDR" data-name="cdhdr / cdpos 变更凭证(抬头/明细) 审计/变更">
+  <div class="card-head">
+    <span class="cat" style="background:#c0392b">审计/变更</span>
+    <h2><code class="tn">CDHDR / CDPOS</code> · 变更凭证(抬头/明细)</h2>
+  </div>
+  <p class="desc">通用变更凭证表:CDHDR=变更抬头(谁/何时/对哪个对象),CDPOS=变更明细(字段旧值→新值)。会计凭证、主数据的修改留痕都记在这里,审计追溯用。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDANT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>OBJECTCLAS</code></td><td class="de">CDOBJECTCL</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(15)</td><td class="ds">对象类(BELEG=会计凭证/KRED=供应商…)</td></tr>
+<tr><td><code>OBJECTID</code></td><td class="de">CDOBJECTV</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(90)</td><td class="ds">对象键(公司代码+凭证号+年度)</td></tr>
+<tr><td><code>CHANGENR</code></td><td class="de">CDCHANGENR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">变更号</td></tr>
+<tr><td><code>USERNAME</code></td><td class="de">CDUSERNAME</td><td></td><td class="ty">CHAR(12)</td><td class="ds">变更人(CDHDR)</td></tr>
+<tr><td><code>UDATE</code></td><td class="de">CDDATUM</td><td></td><td class="ty">DATS(8)</td><td class="ds">变更日期(CDHDR)</td></tr>
+<tr><td><code>UTIME</code></td><td class="de">CDUZEIT</td><td></td><td class="ty">TIMS(6)</td><td class="ds">变更时间(CDHDR)</td></tr>
+<tr><td><code>TABNAME</code></td><td class="de">TABNAME</td><td></td><td class="ty">CHAR(30)</td><td class="ds">被改表名(CDPOS)</td></tr>
+<tr><td><code>FNAME</code></td><td class="de">FIELDNAME</td><td></td><td class="ty">CHAR(30)</td><td class="ds">被改字段(CDPOS)</td></tr>
+<tr><td><code>VALUE_OLD</code></td><td class="de">CDFLDVALO</td><td></td><td class="ty">CHAR(254)</td><td class="ds">旧值(CDPOS)</td></tr>
+<tr><td><code>VALUE_NEW</code></td><td class="de">CDFLDVALN</td><td></td><td class="ty">CHAR(254)</td><td class="ds">新值(CDPOS)</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 11 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+<section class="card" id="NRIV" data-name="nriv 凭证编号范围 配置">
+  <div class="card-head">
+    <span class="cat" style="background:#5a6b7d">配置</span>
+    <h2><code class="tn">NRIV</code> · 凭证编号范围</h2>
+  </div>
+  <p class="desc">编号范围区间表(通用)。凭证类型/对象通过编号范围对象在此取号,控制 BELNR 的区间与当前号(CURRENT_NUMBER)。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>数据元素</th><th>键</th><th>类型(长度)</th><th>中文说明</th></tr></thead>
+      <tbody><tr><td><code>MANDT</code></td><td class="de">MANDT_D</td><td><span class="kt k-pk">主键</span></td><td class="ty">CLNT(3)</td><td class="ds">集团</td></tr>
+<tr><td><code>OBJECT</code></td><td class="de">NROBJ</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(10)</td><td class="ds">编号范围对象(RF_BELEG 会计凭证)</td></tr>
+<tr><td><code>SUBOBJECT</code></td><td class="de">NRSOBJ</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(20)</td><td class="ds">子对象(公司代码)</td></tr>
+<tr><td><code>NRRANGENR</code></td><td class="de">NRNR</td><td><span class="kt k-pk">主键</span></td><td class="ty">CHAR(2)</td><td class="ds">编号范围号(对应凭证类型)</td></tr>
+<tr><td><code>TOYEAR</code></td><td class="de">NRYEAR</td><td><span class="kt k-pk">主键</span></td><td class="ty">NUMC(4)</td><td class="ds">截止年度</td></tr>
+<tr><td><code>FROMNUMBER</code></td><td class="de">NRRNR</td><td></td><td class="ty">CHAR(20)</td><td class="ds">区间起</td></tr>
+<tr><td><code>TONUMBER</code></td><td class="de">NRRNR</td><td></td><td class="ty">CHAR(20)</td><td class="ds">区间止</td></tr>
+<tr><td><code>NRLEVEL</code></td><td class="de">NRLEVEL</td><td></td><td class="ty">NUMC(20)</td><td class="ds">当前号</td></tr></tbody>
+    </table>
+  </div>
+  <div class="fcount">共列出 8 个关键字段（实际表字段更多，此处列凭证相关核心列）</div>
+</section>
+
+  <h3 class="sech">凭证控制配置表（速查）</h3>
+  <div class="tw" style="margin:0 0 20px">
+    <table class="ctab">
+      <thead><tr><th>表</th><th>中文名</th><th>说明</th></tr></thead>
+      <tbody><tr><td><code>T001</code></td><td>公司代码</td><td class="ds">BUKRS/BUTXT/WAERS/KTOPL/PERIV — 公司代码定义(名称/本位币/科目表/年度变式)</td></tr>
+<tr><td><code>T003 / T003T</code></td><td>凭证类型</td><td class="ds">BLART/编号范围/允许账户类型/冲销凭证类型;T003T 为类型文本</td></tr>
+<tr><td><code>TBSL / TBSLT</code></td><td>记账码</td><td class="ds">BSCHL/借贷方向 SHKZG/账户类型 KOART/字段状态;TBSLT 为文本</td></tr>
+<tr><td><code>T074 / T074U</code></td><td>特别总账标识</td><td class="ds">UMSKZ/特别总账类型/替代统驭科目(预收预付票据)</td></tr>
+<tr><td><code>T004 / T004T</code></td><td>科目表</td><td class="ds">KTOPL 科目表定义;T004T 文本</td></tr>
+<tr><td><code>T077S</code></td><td>科目组</td><td class="ds">科目组 KTOKS/编号区间/字段状态(资产负债损益分类)</td></tr>
+<tr><td><code>T004V / T004F / T004G</code></td><td>字段状态变式/组</td><td class="ds">凭证字段必填/可选/隐藏控制;科目主数据挂 FSTAG</td></tr>
+<tr><td><code>T007A / T007S</code></td><td>税码</td><td class="ds">税码 MWSKZ/税率/税务过程;T007S 文本</td></tr>
+<tr><td><code>T052 / T052U</code></td><td>付款条件</td><td class="ds">账期与现金折扣;T052U 文本</td></tr>
+<tr><td><code>T042Z / T042ZT</code></td><td>付款方式</td><td class="ds">转账/支票/汇票等;ZLSCH</td></tr>
+<tr><td><code>T009 / T009B</code></td><td>会计年度变式/期间</td><td class="ds">一年几期/特别期(K4=12+4);T009B 期间定义</td></tr>
+<tr><td><code>T001B</code></td><td>记账期间</td><td class="ds">开关账控制:哪些期间允许哪类账户过账(OB52)</td></tr>
+<tr><td><code>TCURC / TCURR / TCURV</code></td><td>币种/汇率/汇率类型</td><td class="ds">币种主数据/每日汇率/汇率类型(M平均…)</td></tr>
+<tr><td><code>T880</code></td><td>公司(合并主体)</td><td class="ds">集团合并层,公司代码上卷;贸易伙伴 RASSC</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<footer>SAP FICO 会计凭证表结构（经典 BKPF/BSEG 体系，不含 ACDOCA）· 字段为凭证相关核心列，非全字段 · 供建模/集成/取数参考</footer>
+
+<script>
+const q=document.getElementById('q'); const cards=[...document.querySelectorAll('.card')];
+q.addEventListener('input',()=>{
+  const v=q.value.trim().toLowerCase();
+  cards.forEach(c=>{
+    const hay=(c.dataset.name+' '+c.textContent).toLowerCase();
+    c.classList.toggle('hidden', v && !hay.includes(v));
+  });
+});
+</script>
+</body>
+</html>

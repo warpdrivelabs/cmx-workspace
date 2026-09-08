@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>简要说明 1/4 · 本体如何设计</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--fg:#1c2530;--muted:#5a6b7b;--border:#d9dee5;
+  --accent:#0a6ed1;--accent2:#7c5cf0;--accent-soft:#e9f2fc;--ok:#178a5a;--warn:#b25f00;--err:#c9364a;
+  --code-bg:#0f1729;--code-fg:#d8e4f5;--chip:#edf3fa;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0c111d;--card:#151c2c;--fg:#dfe6f0;--muted:#8fa0b4;--border:#28324a;
+  --accent:#4d9eff;--accent2:#a58bff;--accent-soft:#15243c;--ok:#3ecf8e;--warn:#f0a35e;--err:#ff7a8a;
+  --code-bg:#0a0f1c;--code-fg:#d8e4f5;--chip:#1b2740}
+}
+body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.75;font-size:15px}
+.wrap{max-width:1000px;margin:0 auto;padding:0 26px 70px}
+.hero{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border-radius:0 0 18px 18px;padding:38px 26px 34px}
+.hero .kicker{font-size:12.5px;letter-spacing:2px;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:27px;font-weight:700;letter-spacing:.5px}
+.hero p{margin-top:10px;font-size:14.5px;opacity:.92;max-width:760px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:2px 12px;font-size:12px;margin-right:8px;vertical-align:2px}
+h2{border-left:4px solid var(--accent);padding-left:12px;margin:40px 0 14px;font-size:20px}
+h3{margin:22px 0 8px;font-size:16px;color:var(--fg)}
+p{margin:8px 0}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;font-size:13.8px}
+th{background:var(--chip);text-align:left;padding:9px 12px;font-size:13px;letter-spacing:.4px}
+td{padding:8px 12px;border-top:1px solid var(--border);vertical-align:top}
+td code,p code,li code{background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:Consolas,Menlo,monospace;font-size:13px;color:var(--accent)}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow:auto;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;margin:12px 0}
+pre .c{color:#7d8db0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:14px 0}
+.fbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:13px;display:flex;flex-direction:column;justify-content:center}
+.fbox b{color:var(--accent)}
+.fa{display:flex;align-items:center;color:var(--accent);font-weight:700;font-size:16px}
+.layer{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin:8px 0}
+.layer .no{min-width:118px;font-weight:700;color:var(--accent);font-size:13.5px}
+.layer .nm{min-width:170px;font-family:Consolas,Menlo,monospace;font-size:13px}
+.tip,.warn,.danger{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13.8px;border:1px solid}
+.tip{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:var(--warn)}
+.danger{background:color-mix(in srgb,var(--err) 10%,transparent);border-color:var(--err)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a,.links a{color:var(--accent);text-decoration:none;margin-right:16px}
+footer a:hover,.links a:hover{text-decoration:underline}
+ul{padding-left:22px}li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="kicker">CMX 本体平台（cmx-ontology :8097）</div>
+  <h1><span class="badge">简要说明 1/4</span>本体如何设计</h1>
+  <p>用六类元模型元素描述企业的"对象—关系"世界，把建模、数据、动作、安全分层落到一套可发布的不可变版本体系上。对标 Palantir Foundry 的 Ontology 概念。</p>
+</div>
+<div class="wrap">
+
+<h2>一、六类元模型：本体的"词法表"</h2>
+<p>整个平台只围绕六类元素建模，全部以 <code>apiName</code> 为跨版本稳定标识：</p>
+<table>
+  <tr><th style="width:150px">元素</th><th>回答的问题</th><th>关键设计</th></tr>
+  <tr><td><b>ObjectType 对象类型</b></td><td>业务世界里"有什么东西"（客户、订单、凭证…）</td><td>属性列表（16 种基础类型）+ 主键 + 标题属性 + DAM 三级分类（域▸应用▸模块）+ 可挂业务单据 <code>docType</code></td></tr>
+  <tr><td><b>LinkType 关系类型</b></td><td>东西之间"什么关系"</td><td>基数（1:1 / 1:N / N:M）+ 双向角色名（places / placedBy）+ 落库方式（外键/中间表）</td></tr>
+  <tr><td><b>Interface 接口</b></td><td>横切能力契约（"可定位物""可审批物"）</td><td>只声明要求的属性名集合，对象类型 <code>implements</code> 它，可继承</td></tr>
+  <tr><td><b>SharedProperty 共享属性</b></td><td>全局标准字段（币种、金额…）</td><td>一处定义处处引用，带语义类型</td></tr>
+  <tr><td><b>ActionType 动作类型</b></td><td>对对象"能做什么操作"</td><td>参数 + FEEL 校验 + 五种编辑原子（建/改/删对象、加/删关系）+ 副作用（起流程/算报表/webhook）</td></tr>
+  <tr><td><b>Function 函数</b></td><td>"怎么算"（派生属性、判定逻辑）</td><td>FEEL 表达式为体，输入可为标量/对象/对象集</td></tr>
+</table>
+
+<h2>二、五条核心设计原则</h2>
+<div class="card">
+  <ul>
+    <li><b>apiName 是唯一稳定锚</b>——命名白名单（字母/下划线开头）从建模层一路贯穿到 SQL 表名拼接，改显示名不改 apiName，版本间不漂移。</li>
+    <li><b>生命周期三态</b>——<code>experimental（试验）→ active（激活）→ deprecated（废弃）</code>。新建默认试验态；发布固化进版本快照。</li>
+    <li><b>DAM 分域管理</b>——每个对象类型归入 域▸应用▸模块 三级分类，前端图组件按此分域折叠，大图不瘫。</li>
+    <li><b>定义与数据分离</b>——六类定义存 <code>om_*</code> 表（元数据），实例数据按类型惰性物化为 <code>oo_&lt;type&gt;</code> 表，互不锁死。</li>
+    <li><b>发布即快照</b>——<code>POST /publish</code> 把全量定义打成带内容指纹（xxhash64）的不可变版本，版本号只增不改，可随时回看任意历史版本的本体全貌。</li>
+  </ul>
+</div>
+
+<h2>三、分层架构：一芯多壳</h2>
+<div class="layer"><div class="no">壳 · 服务</div><div class="nm">cmx-onto-server (:8097)</div><div>薄 bin：读 toml、挂路由、启动建表。门户经反代把 <code>/api/onto/*</code> 转发到这里</div></div>
+<div class="layer"><div class="no">芯 · 应用层</div><div class="nm">cmx-onto-app</div><div>63 个 REST 方法端点 + 鉴权/多租户/SSE 事件/出站调用</div></div>
+<div class="layer"><div class="no">落地层</div><div class="nm">cmx-onto-store-pg</div><div>PostgreSQL 实现：13 张静态表 + 对象集→SQL 编译器 + 动作执行器</div></div>
+<div class="layer"><div class="no">内核</div><div class="nm">cmx-onto-model</div><div>元模型 + FEEL 解释器 + 动作解析，零 DB 依赖、纯函数、可单测</div></div>
+<p class="muted">配套前端：本体图组件 <code>cmx-ontology-graph</code>（独立仓）画 ER 图，三个工作台页面（设计工作台 / 对象浏览器 / 对象工作台）承载交互。</p>
+
+<h2>四、数据怎么存（PostgreSQL）</h2>
+<table>
+  <tr><th style="width:190px">层</th><th>表</th><th>说明</th></tr>
+  <tr><td>定义层</td><td><code>om_object_type / om_link_type / om_interface / om_shared_property / om_action_type / om_function</code></td><td>六类元素各一张，JSONB 存属性/参数等复杂结构</td></tr>
+  <tr><td>版本层</td><td><code>om_version</code></td><td>发布快照（不可变），带内容指纹 rev</td></tr>
+  <tr><td>运行层</td><td><code>oe_action_log / oe_outbox / om_policy / om_source_mapping / oo_quarantine</code></td><td>动作审计 / 副作用发件箱 / 安全策略 / 源映射 / 隔离区</td></tr>
+  <tr><td>对象层</td><td><code>oo_&lt;type&gt;</code>（惰性建）+ <code>ol_edge</code></td><td>每类型一张实例表（首次写入时创建）；所有关系共用一张超边表，双向索引</td></tr>
+</table>
+<p class="muted">硬纪律：不建外键（用索引替代），表内不带租户列（库即租户边界，db-per-tenant）。</p>
+
+<h2>五、四个核心机制（每条两句话）</h2>
+<div class="grid2">
+  <div class="card"><b>① 对象集代数 → 单条 SQL</b><p class="muted">查询用 7 种算子（Base/Filter/SearchAround/Union/Intersect/Subtract/Static）组成代数树，编译成<b>一条</b> SQL 执行——三跳关系查询只往返数据库一次，天然防注入（值全参数绑定）。</p></div>
+  <div class="card"><b>② FEEL 表达式引擎</b><p class="muted">内置标准 FEEL 子集解释器（for/some/every、区间、28 个内置函数），用于动作提交校验与函数求值，判定一律 fail-closed（求值失败=不通过）。</p></div>
+  <div class="card"><b>③ 动作 = 事务 + 发件箱</b><p class="muted">一次动作里的全部对象编辑、审计日志、副作用登记在<b>同一事务</b>提交（全成或全败）；副作用（起审批流/算报表/webhook）由 dispatcher 事后从发件箱可靠投递。</p></div>
+  <div class="card"><b>④ 动态安全（行级+列级）</b><p class="muted">策略的行级过滤谓词直接 AND 进对象集编译管道（复用同一编译器），列级按安全标记打码 <code>***</code>——权限即查询的一部分，不是事后过滤。</p></div>
+</div>
+
+<h2>六、与整体平台的关系</h2>
+<div class="flow">
+  <div class="fbox"><b>CMXPortal 门户</b><br><span class="muted">:8080 菜单/页面</span></div><div class="fa">→反代→</div>
+  <div class="fbox"><b>cmx-onto-server</b><br><span class="muted">:8097 本体服务</span></div><div class="fa">→HTTP→</div>
+  <div class="fbox"><b>cmx-flowengine</b><br><span class="muted">:8091 审批流</span></div>
+</div>
+<div class="flow">
+  <div class="fbox"><b>cmx-ontology-graph</b><br><span class="muted">图组件（独立仓）</span></div><div class="fa">→构建产物→</div>
+  <div class="fbox"><b>assets/onto 工作台</b><br><span class="muted">三个 native 页面</span></div><div class="fa">→同一份源→</div>
+  <div class="fbox"><b>onto-server 投递</b><br><span class="muted">运行时直读</span></div>
+</div>
+<p class="muted">跨服务只走 HTTP 不共代码；图组件改源码须重跑 build.sh + sync-component.sh 才会生效。</p>
+
+<footer>
+  <b>相关文档：</b>
+  <a href="20260907_本体平台_简要说明_如何使用.html">简要 2/4 · 如何使用</a>
+  <a href="20260907_本体平台_简要说明_如何增加对象.html">简要 3/4 · 如何增加对象</a>
+  <a href="20260907_本体平台_简要说明_如何结合主数据.html">简要 4/4 · 如何结合主数据</a>
+  <a href="20260907_本体平台_详细说明.html">完整详细说明</a>
+  <p style="margin-top:8px">CMX 企业门户 · 本体平台说明文档 · 2026-09-07 · 基于 cmx-ontology / cmx-ontology-graph 代码实测整理</p>
+</footer>
+</div>
+</body>
+</html>

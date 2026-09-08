@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cmx-docwright · 无头业务单据 · 设计方案</title>
+<style>
+  :root{
+    --rust:#c65d21; --rust-2:#e08c4a; --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee;
+    --bg:#f7f8fb; --card:#ffffff; --code-bg:#0f1524; --code-ink:#d6def0;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --drop:#b4433a; --drop-bg:#fbecea;
+    --move:#8a6d1f; --move-bg:#faf3df; --accent:#2f6fed;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.7;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#1b2230 0%,#2a2140 55%,#3a2418 100%);color:#fff;padding:56px 24px 46px;margin-bottom:0}
+  header.hero .inner{max-width:1080px;margin:0 auto}
+  header.hero h1{margin:0 0 10px;font-size:34px;letter-spacing:.5px}
+  header.hero .tag{display:inline-block;background:rgba(224,140,74,.22);color:var(--rust-2);
+       border:1px solid rgba(224,140,74,.4);padding:3px 12px;border-radius:999px;font-size:12.5px;margin-bottom:18px}
+  header.hero p.lead{font-size:16.5px;color:#c7cfdd;max-width:830px;margin:6px 0}
+  header.hero .meta{margin-top:20px;font-size:13px;color:#94a0b4}
+  header.hero .meta b{color:#e0e6f0;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 12px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:40px}
+  nav.toc li{margin:4px 0;break-inside:avoid}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--rust);border-bottom-color:var(--rust)}
+  section{margin:0 0 44px}
+  h2{font-size:23px;margin:44px 0 14px;padding-top:14px;border-top:3px solid var(--rust);display:inline-block}
+  h2 .n{color:var(--rust);font-weight:800;margin-right:10px}
+  h3{font-size:17px;margin:26px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:9px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.at{color:#c7a0e0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.5px;letter-spacing:.3px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.drop{background:var(--drop-bg);color:var(--drop)}
+  .pill.move{background:var(--move-bg);color:var(--move)}
+  .pill.add{background:#eaf1ff;color:var(--accent)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.dec{background:#fff8f2;border-color:#f0d3b8}
+  .callout.dec .h{color:var(--rust)}
+  .callout.warn{background:#fff9f0;border-color:#f0dcb0}
+  .callout.warn .h{color:#a5761f}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}
+  .callout.note .h{color:var(--accent)}
+  .callout.win{background:#f0f8f2;border-color:#bfe3ca}
+  .callout.win .h{color:var(--keep)}
+  .rec{display:inline-block;background:var(--keep);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:4px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.5px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--rust);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .kbd{font-size:11.5px;color:var(--muted)}
+  .legend{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .legend .pill{margin-right:6px}
+  a.anchor{color:var(--rust);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <div class="tag">设计方案 · DRAFT · 先方案后编码 · 对标 cmx-sheetwright</div>
+    <h1>cmx-docwright · 无头业务单据</h1>
+    <p class="lead">在 <code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-hierarchy</code> 层级引擎<strong>外面</strong>套一层「协议 + 传输」的壳，让它像<strong>无头浏览器</strong>那样被进程外驱动：装载 → 改行 → 逐层上卷 → 校验 → 过账落库 → 出单据。<strong>与 cmx-sheetwright 之于 cmx-rust-sheet 完全同构</strong>——那是无头电子表格，这是无头业务单据。</p>
+    <div class="meta">
+      对标样板：<b>cmx-sheetwright</b>（无头 Excel：protocol/convert/server 三层）&nbsp;·&nbsp;
+      引擎：<b>cmx-hierarchy</b>（已落地：hier-core/agg/store-pg + 门面，38 测试绿）&nbsp;·&nbsp;
+      落点：<b>presentation/cmx-docwright/</b>（与 cmx-container 并列）&nbsp;·&nbsp;
+      本文档：<b>仅方案，不含实现代码</b>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="callout warn" style="margin:24px 0 0">
+  <div class="h">⚠ 方向修正（2026-08）：引擎已改为 cmx-container 叶子 crate</div>
+  本方案写作时，引擎设想为独立 workspace <code>cmx-hierarchy</code>。<strong>后经用户澄清并已落地修正</strong>：后端主从协调器做成 cmx-container 叶子 crate <code>cmx-master-slave</code>（<code>struct CmxMasterSlave</code> + <code>trait HierService</code>），<strong>doc/dct 服务 impl 它、复用现成加载保存</strong>（服务依赖协调器，非协调器依赖服务）。<br>
+  故本无头壳若落地，<strong>驱动应经 <code>CmxMasterSlave::{load_via, save_via, expand_via}</code> 打到某个 <code>HierService</code> 实现（DocHierService / DctHierService）</strong>，而非本文所述的自造引擎门面。协议动词 / CLI / HTTP 三层设计仍适用，只是底座换成叶子 crate + 可换服务。
+</div>
+
+<nav class="toc">
+  <h4>目录</h4>
+  <ol>
+    <li><a href="#s1">为什么叫「无头业务单据」</a></li>
+    <li><a href="#s2">无头浏览器 / 无头 Excel 的类比</a></li>
+    <li><a href="#s3">引擎现状：已经有什么</a></li>
+    <li><a href="#s4">缺的只是「一层壳」</a></li>
+    <li><a href="#s5">三种壳形态</a></li>
+    <li><a href="#s6">驱动协议：动词映射到引擎</a></li>
+    <li><a href="#s7">会话模型：async + Send（与 sheet 相反）</a></li>
+    <li><a href="#s8">分层架构（壳不侵入引擎）</a></li>
+    <li><a href="#s9">HTTP 端点草案（形态 B）</a></li>
+    <li><a href="#s10">CLI 草案（形态 A）</a></li>
+    <li><a href="#s11">前端 CmxMasterSlave 互通（顺带解决）</a></li>
+    <li><a href="#s12">里程碑（DW-M0 → M4）</a></li>
+    <li><a href="#s13">风险与取舍</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<section id="s1">
+  <h2><span class="n">01</span>为什么叫「无头业务单据」</h2>
+  <p>前端 <b>CmxMasterSlave</b> 是业务单据的「有头」形态：浏览器里，一个主表单 + N 个子表格，选行联动、改值即时汇总反馈。但那颗「头」——DOM、视图、鼠标——只是<strong>交互外壳</strong>。单据真正的骨肉是：层级结构、逐层上卷、落库前校验、铸号、乐观锁、过账事务。</p>
+  <p><b>cmx-docwright</b> 把这颗头摘掉，只留骨肉，用<strong>中性 JSON 脚本</strong>驱动：喂一串"动词"（装载/改行/上卷/保存），引擎在后端执行，吐出结果——<strong>不要浏览器、不要 CmxMasterSlave、不要人在场</strong>。</p>
+  <div class="callout note">
+    <div class="h">◆ 一句话</div>
+    <b>cmx-hierarchy</b> 是引擎（骨肉），<b>cmx-docwright</b> 是让它<strong>进程外可驱动</strong>的那层壳（协议 + CLI + HTTP）。目的与 cmx-sheetwright 一字不差：<strong>后端无头运行业务对象</strong>——sheet 无头出报表，doc 无头过单据。
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <h2><span class="n">02</span>无头浏览器 / 无头 Excel 的类比</h2>
+  <p>这条路 cmx-sheetwright 已经走通，直接抄它的心智：</p>
+  <table>
+    <tr><th style="width:22%">层</th><th>无头浏览器</th><th>无头 Excel（sheetwright）</th><th>无头业务单据（docwright）</th></tr>
+    <tr><td>被驱动的引擎</td><td>渲染引擎（Chromium）</td><td>cmx-rust-sheet（Workbook）</td><td><b>cmx-hierarchy（HierManager）</b></td></tr>
+    <tr><td>摘掉的「头」</td><td>窗口 / GUI</td><td>画布 / 鼠标</td><td>DOM / CmxMasterSlave 视图</td></tr>
+    <tr><td>驱动方式</td><td>CDP / WebDriver 脚本</td><td>中性 JSON 动词脚本</td><td><b>中性 JSON 动词脚本</b></td></tr>
+    <tr><td>动词举例</td><td>goto / click / screenshot</td><td>open / setValue / recalc / export</td><td><b>load / setCell / addRow / rollup / save</b></td></tr>
+    <tr><td>典型产出</td><td>PDF / 截图 / DOM 快照</td><td>XLSX / PDF / CSV</td><td><b>过账回执 / 单据 JSON / 校验报告</b></td></tr>
+  </table>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <h2><span class="n">03</span>引擎现状：已经有什么</h2>
+  <p>骨肉已经落地（<code>cmx-hierarchy</code>，见其方案与代码）。壳能直接调的门面方法：</p>
+  <table>
+    <tr><th style="width:30%">门面 API（HierManager）</th><th>作用</th><th>状态</th></tr>
+    <tr><td><code>load_tree(query)</code></td><td>装载完整层级树（形状 A/B）</td><td><span class="pill keep">已实现</span></td></tr>
+    <tr><td><code>expand(path, ids)</code></td><td>懒加载子层 / 大树下钻</td><td><span class="pill keep">已实现</span></td></tr>
+    <tr><td><code>save(changeset)</code></td><td>铸号→校验→写时上卷→单事务落库→乐观锁→派生列重算</td><td><span class="pill keep">已实现</span></td></tr>
+    <tr><td><code>rollup_read_only(tree)</code> / <code>rollup_in_place</code></td><td>读时上卷 / 内存试算（不落库）</td><td><span class="pill keep">已实现</span></td></tr>
+  </table>
+  <p class="legend">底层：<code>hier-core</code>（树/schema/数值语义）· <code>hier-agg</code>（汇总引擎，成环拒）· <code>hier-store-pg</code>（两形状装载 + 变更集事务 + 铸号 + CTE 重算）。38 测试绿，clippy 干净。</p>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <h2><span class="n">04</span>缺的只是「一层壳」</h2>
+  <p>引擎是<strong>库</strong>——只能被 Rust 进程内 <code>use</code>。要"无头业务单据"，缺三样，全是壳的活，<strong>零引擎改动</strong>：</p>
+  <div class="grid3">
+    <div class="box"><h4>① 驱动协议</h4><p style="font-size:13px">一套中性 JSON 动词（load/setCell/addRow/rollup/save/export）+ 批请求/响应。把 JSON「动词」一对一翻成门面调用。<b>唯一真正的新设计。</b></p></div>
+    <div class="box"><h4>② CLI</h4><p style="font-size:13px"><code>cmxdoc run script.json</code> / <code>post voucher.json</code>。命令行喂脚本，无头过账、试算、导出。</p></div>
+    <div class="box"><h4>③ HTTP</h4><p style="font-size:13px">axum，<code>POST /run</code> 吃脚本、<code>/save</code>、<code>/load</code>。任何语言的调用方（含前端）都能驱动。</p></div>
+  </div>
+  <div class="callout win">
+    <div class="h">✅ 顺带解决前端互通</div>
+    协议动词的 JSON 形状 = 前端契约：<code>save</code> 的 payload 正是 <code>ChangeSetCollector.export()</code> 的产出；<code>load</code> 的响应经 <code>export</code> 成列式包，正是 <code>CmxDataSet.fromJSON</code> 吃的。<strong>互通不是单独的活，是协议壳的自然产物</strong>（详见 §11）。
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <h2><span class="n">05</span>三种壳形态</h2>
+  <p>沿用 sheetwright 的三形态，按推荐度：</p>
+  <table>
+    <tr><th style="width:16%">形态</th><th style="width:20%">交付</th><th>用途</th><th style="width:14%">推荐</th></tr>
+    <tr><td><b>A · CLI</b></td><td><code>cmxdoc</code> 二进制</td><td>批量过账、定时试算、单据迁移/导出；CI 里跑校验。</td><td><span class="rec">首选</span></td></tr>
+    <tr><td><b>B · HTTP</b></td><td><code>cmxdoc serve</code>（axum）</td><td>服务化：前端 / 其它语言 <code>POST /run</code> 驱动；与各业务服务解耦。</td><td>次选</td></tr>
+    <tr><td><b>C · 库</b></td><td>直接 <code>use cmx_hierarchy</code></td><td>Rust 后端进程内嵌。已就绪（引擎本身）。</td><td>已有</td></tr>
+  </table>
+  <p class="legend">A/B 共享同一份 <code>protocol</code> 模块（动词→引擎的翻译），只是传输不同——与 sheetwright 一致。</p>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <h2><span class="n">06</span>驱动协议：动词映射到引擎</h2>
+  <p>唯一真正的新设计。一段脚本 = 一次会话的动词序列，服务端顺序执行，最后一并返回。对齐 sheetwright 的 <code>Op</code> 枚举 + <code>RunRequest/RunResponse</code>。</p>
+
+  <h3>6.1 动词集（<code>Op</code>，<code>#[serde(tag="op")]</code>）</h3>
+  <table>
+    <tr><th style="width:16%">动词</th><th style="width:34%">payload</th><th>翻成引擎调用</th></tr>
+    <tr><td><code>load</code></td><td><code>{ query: LoadQuery }</code></td><td><code>mgr.load_tree(query)</code> → 会话持有该树</td></tr>
+    <tr><td><code>expand</code></td><td><code>{ path, parentIds:[] }</code></td><td><code>mgr.expand(path, ids)</code> → 并入会话树</td></tr>
+    <tr><td><code>setCell</code></td><td><code>{ path, id, field, value }</code></td><td>会话树内改一格（供随后 rollup/save）</td></tr>
+    <tr><td><code>addRow</code></td><td><code>{ path, row, parentId? }</code></td><td>会话树内插一行（temp id）</td></tr>
+    <tr><td><code>deleteRow</code></td><td><code>{ path, id }</code></td><td>会话树内删一行</td></tr>
+    <tr><td><code>rollup</code></td><td><code>{ mode: "write"|"read" }</code></td><td><code>rollup_in_place</code>（试算）/ <code>rollup_read_only</code></td></tr>
+    <tr><td><code>save</code></td><td><code>{ changeset?, mode:"merge" }</code></td><td><code>mgr.save(changeset)</code>；缺省则用会话累积的变更集</td></tr>
+    <tr><td><code>read</code></td><td><code>{ path, id?, field? }</code></td><td>读会话树某格/某行（回执用）</td></tr>
+    <tr><td><code>export</code></td><td><code>{ format:"columnar"|"nested"|"json" }</code></td><td>会话树 → 列式包（喂前端）/ 嵌套 JSON</td></tr>
+  </table>
+
+  <h3>6.2 批请求 / 响应（<code>RunRequest</code> / <code>RunResponse</code>）</h3>
+  <pre><code><span class="cmt">// 一次凭证过账：装载定义 → 改行 → 写时上卷 → 落库 → 回执</span>
+{
+  <span class="str">"schema"</span>: { <span class="cmt">/* HierSchema：形状+layers+relations+aggregations */</span> },
+  <span class="str">"dbId"</span>: <span class="str">"fico"</span>,
+  <span class="str">"ops"</span>: [
+    { <span class="str">"op"</span>:<span class="str">"save"</span>, <span class="str">"changeset"</span>: {
+        <span class="str">"cv_header"</span>:   { <span class="str">"inserted"</span>:[{<span class="str">"id"</span>:<span class="str">"t1"</span>,<span class="str">"voucher_no"</span>:<span class="str">"V001"</span>}] },
+        <span class="str">"cv_acc_line"</span>: { <span class="str">"inserted"</span>:[
+            {<span class="str">"id"</span>:<span class="str">"t2"</span>,<span class="str">"upper_id"</span>:<span class="str">"t1"</span>,<span class="str">"local_dr"</span>:<span class="nu">100</span>},
+            {<span class="str">"id"</span>:<span class="str">"t3"</span>,<span class="str">"upper_id"</span>:<span class="str">"t1"</span>,<span class="str">"local_cr"</span>:<span class="nu">100</span>} ] }
+      }}
+  ]
+}
+<span class="cmt">// 响应</span>
+{ <span class="str">"ok"</span>:<span class="kw">true</span>, <span class="str">"results"</span>:[
+    { <span class="str">"op"</span>:<span class="str">"save"</span>, <span class="str">"affected"</span>:<span class="nu">3</span>,
+      <span class="str">"idMap"</span>:{<span class="str">"t1"</span>:<span class="nu">7001</span>,<span class="str">"t2"</span>:<span class="nu">7002</span>,<span class="str">"t3"</span>:<span class="nu">7003</span>},
+      <span class="str">"updatedAt"</span>:[<span class="cmt">/* 乐观锁新基线 */</span>] } ] }</code></pre>
+  <div class="callout warn">
+    <div class="h">⚠ 补 serde + 两个字段（上一轮"互通"识别的接线件都在这里）</div>
+    引擎侧的 <code>ChangeSet/LayerChanges/SaveOutcome</code> 目前只 derive 了 Debug/Clone。协议壳要给它们加 <code>Serialize/Deserialize</code>，并给 <code>SaveOutcome</code> 补 <code>updated_at</code>（收集各行新基线回传）。这是协议层的活，不侵入引擎逻辑。
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <h2><span class="n">07</span>会话模型：async + Send（与 sheet 恰好相反）</h2>
+  <p>这是与 sheetwright 唯一的实质差异，值得钉死。</p>
+  <table>
+    <tr><th style="width:24%">维度</th><th>cmx-sheetwright</th><th>cmx-docwright</th></tr>
+    <tr><td>引擎调用</td><td><b>同步</b>（Workbook 纯内存）</td><td><b>async</b>（HierManager 连 DB）</td></tr>
+    <tr><td>Send 约束</td><td><code>Workbook</code> 是 <strong>!Send</strong>（含 Rc/RefCell）</td><td>引擎<strong>天然 Send</strong>（arena 树，无 Rc/RefCell）</td></tr>
+    <tr><td>会话状态</td><td><b>无状态</b>：每请求现造 Workbook，算完转 Send 产物即扔</td><td>会话可<strong>短暂持有一棵内存树</strong>（HierTree 是 Send，可跨 .await）</td></tr>
+    <tr><td>并发纪律</td><td>所有引擎调用关进 <code>spawn_blocking</code></td><td><strong>直接 async</strong>，无需 spawn_blocking；DB 池本就异步</td></tr>
+  </table>
+  <div class="callout note">
+    <div class="h">◆ 因此 docwright 的壳更简单</div>
+    sheet 的壳要费力隔离 <code>!Send</code>；doc 的引擎本就是 <code>async + Send</code>，壳只是"把 JSON 动词 <code>.await</code> 到门面"。<strong>一次会话 = 装载出一棵 <code>HierTree</code>（Send，可跨 await），动词在其上累积，最后 save 落库。</strong>无状态模式（每请求自足）与有状态会话（多动词共享一棵树）都能支持——推荐<strong>单请求内有状态、跨请求无状态</strong>（一个 RunRequest 自带装载+变更+保存，服务端不留会话）。
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <h2><span class="n">08</span>分层架构（壳不侵入引擎）</h2>
+  <div class="dag">presentation/cmx-docwright/           # 无头壳，与 cmx-container / cmx-hierarchy 并列
+│  唯一领域依赖：path 引 cmx-hierarchy 门面（非 workspace 成员，独立项目）
+├─ src/
+│   ├─ protocol.rs      ← 驱动协议：Op 动词枚举 + RunRequest/RunResponse
+│   │                     + ChangeSet/SaveOutcome 的 serde（唯一新设计）
+│   ├─ session.rs       ← 会话：持一棵 HierTree，动词在其上累积 → save
+│   ├─ convert.rs       ← 无状态转换：单据树 ↔ columnar/nested/json（喂前端）
+│   ├─ server.rs        ← HTTP 传输（serve 子命令，axum，async 直调）
+│   └─ bin/docwright.rs ← CLI 入口（clap）
+└─ docs/方案.html       ← 本文档
+
+依赖（path，单向，不并入任何 workspace）：
+  cmx-hierarchy = { path = "../cmx-hierarchy/crates/cmx-hierarchy" }
+  serde/serde_json · clap · tokio · axum</div>
+  <div class="callout note">
+    <div class="h">◆ 纪律：壳只翻译，不含业务逻辑</div>
+    <code>protocol</code> 把 JSON 动词一对一 <code>.await</code> 到 <code>HierManager</code> 门面；校验/铸号/上卷/事务全在引擎里。壳<strong>零业务判断</strong>——换个业务域（采购单、BOM、组织树）不改一行壳代码，只换 <code>schema</code>。这与引擎的"业务无感知"底线一脉相承。
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <h2><span class="n">09</span>HTTP 端点草案（形态 B）</h2>
+  <table>
+    <tr><th style="width:30%">端点</th><th>请求 / 响应</th></tr>
+    <tr><td><code>POST /run</code></td><td>吃完整 <code>RunRequest</code>（schema + dbId + ops[]），顺序执行，返回 <code>RunResponse</code>。<strong>主入口</strong>，一次自足。</td></tr>
+    <tr><td><code>POST /save</code></td><td>便捷：<code>{schema, dbId, changeset}</code> → 校验+铸号+上卷+落库 → <code>{affected, idMap, updatedAt}</code>。校验失败 422 带 violations，冲突 409。</td></tr>
+    <tr><td><code>POST /load</code></td><td>便捷：<code>{schema, dbId, query}</code> → 列式包（前端 <code>CmxDataSet.fromJSON</code> 直吃）。</td></tr>
+    <tr><td><code>POST /rollup</code></td><td>便捷：<code>{schema, tree}</code> → 读时上卷结果（不落库，纯试算）。</td></tr>
+    <tr><td><code>GET /health</code></td><td>存活探针（~10 行）。</td></tr>
+  </table>
+  <p class="legend">全部无状态：每请求自带 schema + dbId，服务端不留会话。引擎 async 直调，无需 spawn_blocking（见 §7）。错误映射沿用引擎的 422/409/500 语义。</p>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="n">10</span>CLI 草案（形态 A）</h2>
+  <pre><code><span class="cmt"># 过账：喂一个 RunRequest 脚本（含 schema + 变更集）</span>
+cmxdoc run voucher-post.json --db fico
+
+<span class="cmt"># 便捷过账：schema 与数据分开</span>
+cmxdoc post --schema voucher.schema.json --changes v001.json --db fico
+
+<span class="cmt"># 无头试算：只上卷不落库，打印结果（借贷平衡校验、层间小计）</span>
+cmxdoc rollup --schema voucher.schema.json --data tree.json
+
+<span class="cmt"># 装载导出：把某组织的单据树导成 JSON（迁移/对账）</span>
+cmxdoc load --schema voucher.schema.json --query '{"root_filter":{"org":"HQ"}}' --db fico &gt; out.json
+
+<span class="cmt"># 批量：目录下每个 *.json 过一遍（CI 校验 / 批量导入）</span>
+cmxdoc batch ./vouchers/ --schema voucher.schema.json --db fico</code></pre>
+  <div class="callout note">
+    <div class="h">◆ 无头业务单据的真实用途（都无浏览器）</div>
+    ① <b>批量过账</b>：一次几千张凭证，校验+铸号+逐层上卷+落库。② <b>无头试算</b>：借贷平衡、层间小计现算不落库。③ <b>单据迁移/对账</b>：装载一组织树 → 导 JSON → 灌另一库（铸号跨部署不撞，免改号）。④ <b>CI 校验</b>：把单据定义 + 样例数据跑一遍，回归结构/校验规则。
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <h2><span class="n">11</span>前端 CmxMasterSlave 互通（顺带解决）</h2>
+  <p>协议壳一旦成立，前后端往返<strong>自然接通</strong>——因为动词的 JSON 形状本就是前端契约。上一轮识别的 4 个接线件，全部落在协议层：</p>
+  <table>
+    <tr><th style="width:26%">方向</th><th>协议动词</th><th>前端对接点</th></tr>
+    <tr><td>前端保存 → 引擎</td><td><code>save</code> 的 changeset</td><td><code>ChangeSetCollector.export()</code> 产出 = <code>save</code> payload（同结构，补 serde 即通）</td></tr>
+    <tr><td>引擎装载 → 前端</td><td><code>load</code> / <code>export{columnar}</code></td><td>列式包 <code>{datasetId,columns,rows,childRows}</code> = <code>CmxDataSet.fromJSON</code> 直吃</td></tr>
+    <tr><td>保存回执 → 前端</td><td><code>save</code> 响应</td><td><code>{idMap, updatedAt}</code> → 前端 temp 行采用真 id + <code>refreshBaselines</code> 刷乐观锁</td></tr>
+    <tr><td>汇总规则 双向</td><td>schema.aggregations</td><td>前端 <code>aggregations</code> ↔ 引擎 <code>AggRule</code>（已逐字对齐）</td></tr>
+  </table>
+  <div class="callout win">
+    <div class="h">✅ 互通是协议的产物，不是单独工程</div>
+    做协议壳时给 <code>ChangeSet/SaveOutcome</code> 加 serde、写 <code>HierTree → 列式包</code> 编码器（底层 <code>ZmcDataSet.encode_columnar_json</code> 已存在）、<code>SaveOutcome</code> 补 <code>updated_at</code>——这三件正是协议动词 <code>save</code>/<code>load</code>/<code>export</code> 的实现内容。<strong>做完协议壳，前后端端到端往返即通</strong>：前端导出的 changeset 喂 CLI 过账，引擎装载结果喂回前端渲染。
+  </div>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <h2><span class="n">12</span>里程碑（DW-M0 → M4）</h2>
+  <table class="mile">
+    <tr><th style="width:11%">里程碑</th><th style="width:32%">交付</th><th>验收</th></tr>
+    <tr><td>DW-M0</td><td>workspace 脚手架 + <code>protocol</code> 骨架：<code>Op</code> 枚举 + <code>RunRequest/RunResponse</code> + <code>ChangeSet/SaveOutcome</code> 补 serde</td><td>动词 JSON ↔ 类型 round-trip 单测绿</td></tr>
+    <tr><td>DW-M1</td><td><code>session</code>：装载一棵树 → 动词累积（setCell/addRow/deleteRow）→ save；<code>convert</code>：HierTree ↔ 列式/嵌套 JSON</td><td>mock store 下"装载→改→上卷→保存"序列单测；列式包与前端 fromJSON 对拍</td></tr>
+    <tr><td>DW-M2</td><td><b>CLI</b>（形态 A）：<code>run/post/rollup/load/batch</code></td><td><code>cmxdoc post</code> 真机对 fico 库过一张凭证，回读一致；<strong>DOC 对拍</strong></td></tr>
+    <tr><td>DW-M3</td><td><b>HTTP</b>（形态 B）：axum <code>/run /save /load /rollup /health</code></td><td>curl 全端点通；422/409 语义正确；无状态并发</td></tr>
+    <tr><td>DW-M4</td><td>前端互通闭环 + <strong>DCT 对拍</strong></td><td>前端导出 changeset → CLI 过账 → 装载结果喂回前端渲染；自分级字典树往返</td></tr>
+    <tr><td style="color:#8a6d1f">DW-M5+</td><td>（可选）批量并行（rayon 多树过账）· 导出格式扩展（CSV/其它）· 组件站</td><td>一次几千张并行；对标 sheet 三件套齐活</td></tr>
+  </table>
+  <p class="kbd">关键顺序：DW-M0/M1 是协议+会话（纯逻辑，可 mock 测）；M2 起接真实 DB 做 DOC/DCT 对拍——正好补上 cmx-hierarchy 尚缺的真机集成验证（HM-5）。<strong>两个方案在此汇流</strong>。</p>
+</section>
+
+<!-- 13 -->
+<section id="s13">
+  <h2><span class="n">13</span>风险与取舍</h2>
+  <ul class="tight">
+    <li><b>壳绝不含业务逻辑（底线）</b>：protocol 只做 JSON 动词 → 门面调用的翻译；校验/铸号/上卷/事务全在引擎。任何"为某类单据在壳里加分支"都是架构倒退，必须拒绝——与引擎的业务无感知一脉相承。</li>
+    <li><b>会话状态的边界</b>：推荐<strong>单请求内有状态、跨请求无状态</strong>（一个 RunRequest 自带装载+变更+保存，服务端不留会话），避免分布式会话粘性。需要长会话（人工逐步编辑）时再评估有状态服务，但那更像"有头"，与无头定位相悖。</li>
+    <li><b>schema 从哪来</b>：壳吃已解析的 <code>HierSchema</code>。DOC/DCT 的定义 JSON → HierSchema 的适配，放调用方还是壳带一个 <code>adapter</code>？倾向调用方（保壳中立）；可提供一个可选 <code>hier-adapter</code> 便捷件。</li>
+    <li><b>与 sheet 壳的差异要记住</b>：doc 引擎是 async+Send，<strong>不要</strong>照抄 sheetwright 的 spawn_blocking 隔离——那是为 !Send 的 Workbook 准备的，doc 不需要，直接 async 更简单（§7）。</li>
+    <li><b>校验 TableSpec 仍是引擎侧待补</b>：cmx-hierarchy 的 <code>build_layer_spec</code> 现返回空 spec。壳做 DOC/DCT 对拍前，引擎需从定义 JSON 的 fields 经 <code>build_table_spec</code> 构造并缓存（HM-5 一并做）。</li>
+    <li><b>不过度统一</b>：docwright 与 sheetwright 是<strong>同构而非同一</strong>——共享"引擎+无头壳+协议"的姿态，但动词集、产出、会话纪律各按领域定。别强行合并成一个壳。</li>
+  </ul>
+  <div class="callout dec">
+    <div class="h">▶ 落地前需用户拍板</div>
+    <b>①</b> 壳落点：独立 <code>cmx-docwright/</code>（与 cmx-hierarchy 并列，对标 sheetwright，推荐）还是并进 cmx-hierarchy workspace 加 <code>hier-cli</code>/<code>hier-service</code> 两 crate？&nbsp;&nbsp;
+    <b>②</b> 先做哪个形态：CLI（推荐，批量过账最实用）还是 HTTP？&nbsp;&nbsp;
+    <b>③</b> 会话模型：单请求自足（推荐）还是要跨请求长会话？
+  </div>
+</section>
+
+<div class="foot">
+  cmx-docwright · 无头业务单据 · 设计方案（DRAFT v1）· 对标 cmx-sheetwright 无头 Excel · 引擎 cmx-hierarchy 已落地 · 本文档不含实现代码<br>
+  下一步：用户就 §13 三点拍板确认后，进入 DW-M0（protocol 骨架 + ChangeSet/SaveOutcome serde）。
+</div>
+
+</div>
+</body>
+</html>

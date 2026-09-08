@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAP FB50 — 货币 标签页</title>
+<style>
+  :root{--sapline:#c6c6c6;--sapfield:#fff;--sapfieldb:#8c8c8c;--reqbg:#fffdf0;--reqborder:#e0b400;--red:#bb0000}
+  *{box-sizing:border-box}
+  body{margin:0;background:#cdd3da;font-family:"Segoe UI","Microsoft YaHei",Tahoma,sans-serif;font-size:12px;color:#1d2d3e;padding:18px}
+  .win{max-width:980px;margin:0 auto;border:1px solid #5a6b7d;border-radius:4px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.25);background:#f0f0f0}
+  .titlebar{background:linear-gradient(#5a7a9c,#3f5b78);color:#fff;display:flex;align-items:center;gap:8px;padding:5px 10px;font-weight:600}
+  .titlebar .logo{background:#fff;color:#0a6ed1;font-weight:800;border-radius:3px;padding:1px 6px;font-size:11px}
+  .titlebar .sp{flex:1}
+  .titlebar .winbtn{width:16px;height:14px;border:1px solid #cdd6e0;border-radius:2px;text-align:center;line-height:12px;font-size:10px;background:#dfe6ee;color:#33425a}
+  .menubar{background:#dfe3e8;border-bottom:1px solid var(--sapline);padding:3px 8px;display:flex;gap:16px;color:#33425a}
+  .toolbar{background:#eef1f4;border-bottom:1px solid var(--sapline);padding:4px 8px;display:flex;align-items:center;gap:5px}
+  .okfield{height:22px;border:1px solid var(--sapfieldb);width:120px;border-radius:2px;background:#fff;margin-right:6px}
+  .ibtn{width:22px;height:22px;border:1px solid #bcc4cd;border-radius:3px;background:linear-gradient(#fff,#eef1f4);display:inline-flex;align-items:center;justify-content:center;color:#33597a}
+  .tcmd{background:#0a6ed1;color:#fff;border:0;border-radius:3px;padding:3px 8px;font-size:11px}
+  .toolbar .sp{flex:1}
+  .screenttl{background:#cfd8e0;border-bottom:1px solid var(--sapline);padding:6px 12px;font-weight:700;font-size:13px;color:#22344a;display:flex;align-items:center}
+  .screenttl .light{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-weight:600;font-size:12px}
+  .dot{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#5fdc8a,#107e3e);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+  .body{padding:12px 14px;background:#f4f6f8}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--sapline);margin-bottom:12px}
+  .tab{padding:5px 16px;background:#dfe3e8;border:1px solid var(--sapline);border-bottom:0;border-radius:4px 4px 0 0;color:#33425a}
+  .tab.active{background:#fff;font-weight:700;color:#0a6ed1}
+  .panel{background:#fff;border:1px solid var(--sapline);border-radius:4px;padding:6px 0 12px;margin-bottom:12px}
+  .grp{padding:10px 16px}
+  .grp h4{margin:0 0 10px;font-size:12.5px;color:#0a6ed1;border-bottom:1px solid #e3e9f0;padding-bottom:5px}
+  .hgrid{display:grid;grid-template-columns:auto 190px auto 190px;gap:8px 14px;align-items:center}
+  .lbl{color:#333;text-align:right;white-space:nowrap}
+  .lbl.req::after{content:" *";color:var(--red);font-weight:700}
+  .fld{height:22px;border:1px solid var(--sapfieldb);border-radius:2px;background:var(--sapfield);display:flex;align-items:center;padding:0 6px}
+  .fld.req{background:var(--reqbg);border-color:var(--reqborder)}
+  .fld.ro{background:#eef1f4;color:#555}
+  .fld.num{justify-content:flex-end;font-variant-numeric:tabular-nums}
+  .fld .ph{color:#aaa}
+  .fld.drop::after{content:"▾";margin-left:auto;color:#7a8aa0}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:2px}
+  th{background:#e8edf2;border:1px solid var(--sapline);padding:5px 8px;text-align:left;color:#26384f;font-weight:700}
+  td{border:1px solid var(--sapline);padding:5px 8px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:nth-child(even) td{background:#f7f9fc}
+  .note{margin:0 16px;padding:8px 10px;background:#fff7e6;border:1px solid #f1d49a;border-radius:6px;color:#6b4e00;font-size:11.5px;line-height:1.55}
+  .statusbar{background:#dfe3e8;border-top:1px solid var(--sapline);padding:4px 10px;display:flex;align-items:center;color:#33425a;font-size:11.5px}
+  .legend{max-width:980px;margin:12px auto 0;color:#3a4a5d;font-size:11.5px;line-height:1.6;background:#fff;border:1px solid var(--sapline);border-radius:6px;padding:10px 14px}
+  .legend code{background:#eef1f4;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Consolas,monospace;color:#084a8f}
+  .legend b{color:#0a6ed1}
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="titlebar"><span class="logo">SAP</span><span>录入总账凭证：公司代码 1000</span><span class="sp"></span><span class="winbtn">—</span><span class="winbtn">▢</span><span class="winbtn">✕</span></div>
+  <div class="menubar"><span>凭证(D)</span><span>编辑(E)</span><span>转到(G)</span><span>其他(A)</span><span>设置(S)</span><span>环境(N)</span><span>系统(Y)</span><span>帮助(H)</span></div>
+  <div class="toolbar"><input class="okfield" value="/nFB50" readonly><span class="ibtn">✓</span><span class="ibtn">💾</span><span class="ibtn">⮌</span><span class="sp"></span><button class="tcmd">暂存</button><button class="tcmd">模拟</button><button class="tcmd">过账</button></div>
+  <div class="screenttl">录入总账凭证：公司代码 1000（中国石油股份）<span class="light"><span class="dot"></span>借贷平衡</span></div>
+
+  <div class="body">
+    <div class="tabs"><div class="tab">基本数据</div><div class="tab">明细</div><div class="tab active">货币</div></div>
+
+    <div class="panel">
+      <div class="grp">
+        <h4>货币与汇率</h4>
+        <div class="hgrid">
+          <span class="lbl req">凭证货币</span><div class="fld req drop">USD　美元</div>
+          <span class="lbl">公司代码货币</span><div class="fld ro">CNY　人民币</div>
+
+          <span class="lbl">汇率</span><div class="fld num">7.18500</div>
+          <span class="lbl">汇率类型</span><div class="fld drop">M　平均汇率</div>
+
+          <span class="lbl">折算日期</span><div class="fld">2026.06.15</div>
+          <span class="lbl">直接/间接报价</span><div class="fld ro">直接报价</div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h4>各币种合计（系统按汇率折算）</h4>
+        <table>
+          <thead><tr><th>币种</th><th>类型</th><th style="text-align:right">借方合计</th><th style="text-align:right">贷方合计</th><th style="text-align:right">差额</th></tr></thead>
+          <tbody>
+            <tr><td>USD 美元</td><td>凭证货币（输入币）</td><td class="num">157,272.10</td><td class="num">157,272.10</td><td class="num">0.00</td></tr>
+            <tr><td>CNY 人民币</td><td>公司代码货币（本位币）</td><td class="num">1,130,000.00</td><td class="num">1,130,000.00</td><td class="num">0.00</td></tr>
+            <tr><td>CNY 人民币</td><td>第二本位币（集团货币）</td><td class="num">1,130,000.00</td><td class="num">1,130,000.00</td><td class="num">0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        ℹ️ 当凭证货币 = 本位币（CNY）时，汇率自动为 1.00000、本页通常无需维护；本例以<b>外币（USD）</b>录入，故需指定汇率与汇率类型，系统按汇率把输入币折算为本位币 / 集团货币并各自校验借贷平衡。
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar"><span>货币页：凭证级币种 / 汇率 / 多币种折算（BKPF 级）</span><span style="margin-left:auto">FB50 ▸ 1000 ▸ ZHANGSAN ▸ INS</span></div>
+</div>
+
+<div class="legend">
+  <b>「货币」标签页</b>：FB50 抬头级的<b>币种与汇率</b>页。指定凭证货币、汇率、汇率类型、折算日期，并按多币种（输入币 / 本位币 / 集团货币）分别显示借贷合计与差额。<br>
+  对应 <code>BKPF</code>：凭证货币 <code>WAERS</code>、汇率 <code>KURSF</code>、汇率类型 <code>KURST</code>、折算日期 <code>WWERT</code>；行项目多币种金额存 <code>BSEG</code>：<code>WRBTR</code>（凭证货币）、<code>DMBTR</code>（本位币）、<code>DMBE2</code>（第二本位币）。
+</div>
+</body>
+</html>

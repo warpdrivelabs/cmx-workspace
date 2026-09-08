@@ -1,0 +1,85 @@
+<svg viewBox="0 0 820 448" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="dn9" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="7" markerHeight="7" orient="0">
+    <path d="M0,0 L10,0 L5,9 z" fill="#94a3b8"/>
+  </marker>
+  <marker id="rt9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+  </marker>
+  <filter id="sh9" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="448" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">L3 物化权限集缓存（matcache）　急切物化 · 空间换时间 · 前端查字典 O(1) 直取 · 再分配即刷新</text>
+
+<!-- col1 cache store -->
+<g filter="url(#sh9)"><rect x="30" y="50" width="246" height="308" rx="10" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="46" y="72" font-size="11.5" font-weight="700" fill="#3730a3">进程内缓存</text>
+<text x="46" y="90" font-size="8.8" fill="#4338ca" font-family="ui-monospace,Menlo,Consolas,monospace">OnceLock&lt;Mutex&lt;HashMap&gt;&gt;</text>
+<rect x="46" y="100" width="214" height="42" rx="7" fill="#ffffff" stroke="#c7d2fe"/>
+<text x="56" y="118" font-size="8.8" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">key = (tenant, dictCode,</text>
+<text x="56" y="132" font-size="8.8" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">       subjectType, subjectId)</text>
+<text x="46" y="160" font-size="9.6" fill="#3730a3" font-weight="700">按 principal 分桶</text>
+<rect x="46" y="168" width="214" height="40" rx="6" fill="#ffffff" stroke="#818cf8"/>
+<text x="56" y="184" font-size="8.6" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">(fico,org,ROLE,mc-fin)</text>
+<text x="56" y="199" font-size="8.6" fill="#16a34a" font-family="ui-monospace,Menlo,Consolas,monospace"> → {1001,100101,100102} @t1</text>
+<rect x="46" y="214" width="214" height="40" rx="6" fill="#ffffff" stroke="#818cf8"/>
+<text x="56" y="230" font-size="8.6" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">(fico,org,USER,u42)</text>
+<text x="56" y="245" font-size="8.6" fill="#16a34a" font-family="ui-monospace,Menlo,Consolas,monospace"> → {100101} @t2</text>
+<rect x="46" y="260" width="214" height="40" rx="6" fill="#ffffff" stroke="#818cf8"/>
+<text x="56" y="276" font-size="8.6" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">(fico,org,SUPER,*)</text>
+<text x="56" y="291" font-size="8.6" fill="#16a34a" font-family="ui-monospace,Menlo,Consolas,monospace"> → 全量字典 @t0</text>
+<rect x="46" y="312" width="214" height="34" rx="6" fill="#e0e7ff" stroke="#a5b4fc"/>
+<text x="56" y="329" font-size="9" fill="#3730a3">CacheEntry{ values: Arc&lt;Vec&gt;,</text>
+<text x="56" y="341" font-size="9" fill="#3730a3">  at: DateTime }　M1 进程内 → 生产 Redis</text>
+
+<!-- col2 query path -->
+<g filter="url(#sh9)"><rect x="288" y="50" width="246" height="308" rx="10" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="304" y="72" font-size="11.5" font-weight="700" fill="#334155">查询　permitted_entries</text>
+<rect x="304" y="82" width="214" height="34" rx="7" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="314" y="98" font-size="8.6" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">GET /dict/org/permitted</text>
+<text x="314" y="111" font-size="8.6" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    ?userId=u42&amp;roles=mc-fin</text>
+<rect x="304" y="124" width="214" height="30" rx="7" fill="#eef2ff" stroke="#c7d2fe"/>
+<text x="314" y="143" font-size="9" fill="#3730a3">principals = [USER:u42] + [ROLE:mc-fin]</text>
+<rect x="304" y="162" width="214" height="52" rx="7" fill="#fef2f2" stroke="#fecaca"/>
+<text x="314" y="180" font-size="9.4" fill="#b91c1c" font-weight="700">首查　fromCache=false</text>
+<text x="314" y="196" font-size="8.8" fill="#7f1d1d">未命中 → materialize → 落缓存</text>
+<text x="314" y="209" font-size="8.8" fill="#7f1d1d">华东子树 count=3</text>
+<rect x="304" y="222" width="214" height="44" rx="7" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="314" y="240" font-size="9.4" fill="#065f46" font-weight="700">再查　fromCache=true　O(1)</text>
+<text x="314" y="256" font-size="8.8" fill="#047857">直取集合，可完全不碰库</text>
+<rect x="304" y="274" width="214" height="44" rx="7" fill="#f5f3ff" stroke="#c4b5fd"/>
+<text x="314" y="292" font-size="9.2" fill="#5b21b6" font-weight="700">有效可见集 =</text>
+<text x="314" y="308" font-size="8.8" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">cache[user] ∪ cache[roles]（去重）</text>
+<text x="304" y="338" font-size="8.6" fill="#64748b">超管 / 授 "*" → 全量字典（SUPER 桶）</text>
+<text x="304" y="351" font-size="8.6" fill="#64748b">from_cache=全命中 · at=最早物化时刻</text>
+
+<!-- col3 materialize + invalidate -->
+<g filter="url(#sh9)"><rect x="546" y="50" width="244" height="308" rx="10" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="562" y="72" font-size="11.5" font-weight="700" fill="#92400e">物化 materialize(principal)</text>
+<rect x="562" y="82" width="212" height="78" rx="7" fill="#ffffff" stroke="#fde68a"/>
+<text x="572" y="100" font-size="8.8" fill="#92400e">① load_grants(principal)</text>
+<text x="572" y="116" font-size="8.8" fill="#92400e">② 取 dim_key==dict 的根值</text>
+<text x="572" y="132" font-size="8.8" fill="#92400e">③ descendants（复用 WITH RECURSIVE）</text>
+<text x="572" y="148" font-size="8.8" fill="#92400e">④ 过滤全量字典 → 可见条目</text>
+<text x="562" y="180" font-size="9.4" font-weight="700" fill="#b45309">再分配即刷新（一致性）</text>
+<rect x="562" y="190" width="212" height="66" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="572" y="208" font-size="8.6" fill="#b91c1c" font-family="ui-monospace,Menlo,Consolas,monospace">save_grant / delete_grant</text>
+<text x="572" y="223" font-size="8.6" fill="#7f1d1d">→ invalidate_for_grant：</text>
+<text x="572" y="237" font-size="8.6" fill="#7f1d1d">　精准失效该 principal 键</text>
+<text x="572" y="250" font-size="8.6" fill="#7f1d1d">　+ SUPER 键（全量可能变）</text>
+<rect x="562" y="266" width="212" height="34" rx="7" fill="#ecfeff" stroke="#67e8f9"/>
+<text x="572" y="283" font-size="8.6" fill="#155e75">save_dimension_value → 整字典失效</text>
+<text x="572" y="295" font-size="8.6" fill="#0e7490">POST /dict/org/refresh 显式刷新</text>
+<rect x="562" y="308" width="212" height="38" rx="7" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="572" y="325" font-size="8.6" fill="#475569" font-weight="700">判据：仅小字典（可枚举）</text>
+<text x="572" y="338" font-size="8.6" fill="#64748b">大表集合会爆炸 → 走 L1/L2 惰性下推</text>
+
+<!-- arrows -->
+<line x1="288" y1="150" x2="276" y2="150" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#rt9)"/>
+<line x1="534" y1="188" x2="546" y2="120" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#rt9)"/>
+
+<text x="40" y="384" font-size="10.5" fill="#334155">给某<tspan font-weight="700">角色</tspan>重分配只失效一个键，其全体成员下次查询自动取到最新 —— 角色分桶天然扇出。stats 暴露 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">matCacheEntries</tspan>。</text>
+<text x="40" y="404" font-size="10.5" fill="#64748b">物化复用 decide 第 3 步同一 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">descendants</tspan> 展开逻辑；缓存值 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">Arc&lt;Vec&lt;DimensionValue&gt;&gt;</tspan> 零拷贝共享，读多写少。</text>
+</svg>

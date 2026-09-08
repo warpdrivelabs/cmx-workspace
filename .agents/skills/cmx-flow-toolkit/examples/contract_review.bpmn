@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:flowable="http://flowable.org/bpmn"
+                  xmlns:cmx="http://cmx.io/bpmn"
+                  targetNamespace="http://cmx.io/flow/created"
+                  id="defs_contract_review">
+  <bpmn:process id="contract_review" name="合同评审" isExecutable="true">
+    <bpmn:startEvent id="s" name="发起"/>
+    <bpmn:userTask id="apply" name="发起申请" cmx:candidates="initiator" cmx:cc="user(u_auditor1)"/>
+    <bpmn:parallelGateway id="fork" name="fork"/>
+    <bpmn:userTask id="legal" name="法务审核" cmx:candidates="role(finance)"/>
+    <bpmn:userTask id="sign" name="评审会签" flowable:assignee="${reviewer}">
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false" flowable:collection="reviewers" flowable:elementVariable="reviewer">
+        <bpmn:completionCondition>${nrOfCompletedInstances/nrOfInstances &gt;= 0.5}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:parallelGateway id="join" name="join"/>
+    <bpmn:userTask id="boss" name="总经理审批" cmx:candidates="orgLeader"/>
+    <bpmn:exclusiveGateway id="gw2" name="结果" default="f10"/>
+    <bpmn:endEvent id="pass" name="通过"/>
+    <bpmn:endEvent id="veto" name="一票否决">
+      <bpmn:terminateEventDefinition/>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="apply"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="apply" targetRef="fork"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="fork" targetRef="legal"/>
+    <bpmn:sequenceFlow id="f4" sourceRef="fork" targetRef="sign"/>
+    <bpmn:sequenceFlow id="f5" sourceRef="legal" targetRef="join"/>
+    <bpmn:sequenceFlow id="f6" sourceRef="sign" targetRef="join"/>
+    <bpmn:sequenceFlow id="f7" sourceRef="join" targetRef="boss"/>
+    <bpmn:sequenceFlow id="f8" sourceRef="boss" targetRef="gw2"/>
+    <bpmn:sequenceFlow id="f9" name="否决" sourceRef="gw2" targetRef="veto">
+      <bpmn:conditionExpression>${rejected == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f10" sourceRef="gw2" targetRef="pass"/>
+  </bpmn:process>
+</bpmn:definitions>

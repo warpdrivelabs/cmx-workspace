@@ -1,0 +1,68 @@
+<svg viewBox="0 0 820 468" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="dn7" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="7" markerHeight="7" orient="0">
+    <path d="M0,0 L10,0 L5,9 z" fill="#94a3b8"/>
+  </marker>
+  <marker id="rt7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+  </marker>
+  <filter id="sh7" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="468" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">列脱敏义务　build_obligations（双门过滤）→ apply_masks（投影层，只改呈现值，不碰存储原值）</text>
+
+<!-- left flow -->
+<g filter="url(#sh7)"><rect x="30" y="54" width="380" height="52" rx="9" fill="#fdf2f8" stroke="#db2777"/></g>
+<text x="44" y="74" font-size="11" font-weight="700" fill="#9d174d">mask_rule（cmx_dataauth_mask_rule）</text>
+<text x="44" y="93" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">column=salary · type=FULL · condition="grade&lt;5" · min_role=hr</text>
+
+<!-- gate1 -->
+<g filter="url(#sh7)"><rect x="30" y="126" width="380" height="56" rx="9" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="44" y="147" font-size="11" font-weight="700" fill="#92400e">门 ①　角色豁免门</text>
+<text x="44" y="166" font-size="9.6" fill="#b45309">min_role ∈ subject.roles ？　命中 → continue（<tspan font-weight="700">不脱敏</tspan>）</text>
+<text x="44" y="178" font-size="9" fill="#a16207">如持有 hr 角色则该列对其明文可见</text>
+
+<!-- gate2 -->
+<g filter="url(#sh7)"><rect x="30" y="202" width="380" height="72" rx="9" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="44" y="223" font-size="11" font-weight="700" fill="#155e75">门 ②　FEEL 条件门（cmx-rule-feel）</text>
+<text x="44" y="242" font-size="9.4" fill="#0e7490" font-family="ui-monospace,Menlo,Consolas,monospace">eval_expression(condition_expr, {user: attrs})</text>
+<text x="44" y="258" font-size="9.4" fill="#0e7490">Bool(true)→脱敏 · false→跳过 · <tspan fill="#b91c1c" font-weight="700">Err→fail-safe 脱敏</tspan></text>
+<text x="44" y="270" font-size="9" fill="#0369a1">condition 为空 → 恒脱敏</text>
+
+<!-- obligation -->
+<g filter="url(#sh7)"><rect x="30" y="294" width="380" height="48" rx="9" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="44" y="314" font-size="11" font-weight="700" fill="#5b21b6">Obligation { column, mask_type, pattern }</text>
+<text x="44" y="332" font-size="9.3" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">→ 汇入 Decision.obligations（与行过滤正交）</text>
+
+<line x1="220" y1="106" x2="220" y2="126" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#dn7)"/>
+<line x1="220" y1="182" x2="220" y2="202" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#dn7)"/>
+<line x1="220" y1="274" x2="220" y2="294" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#dn7)"/>
+
+<!-- right: mask types -->
+<g filter="url(#sh7)"><rect x="430" y="54" width="360" height="288" rx="10" fill="#ffffff" stroke="#e2e8f0"/></g>
+<text x="446" y="76" font-size="11.5" font-weight="700" fill="#334155">三种脱敏（core::mask）</text>
+<rect x="446" y="88" width="328" height="52" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+<text x="458" y="107" font-size="10.5" font-weight="700" fill="#b91c1c">FULL　完整遮蔽</text>
+<text x="458" y="126" font-size="9.6" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">"secret" / 12345  →  "****"</text>
+<rect x="446" y="148" width="328" height="66" rx="8" fill="#fffbeb" stroke="#fde68a"/>
+<text x="458" y="167" font-size="10.5" font-weight="700" fill="#92400e">PARTIAL　保留首尾 {h}...{t}</text>
+<text x="458" y="186" font-size="9.6" fill="#78350f" font-family="ui-monospace,Menlo,Consolas,monospace">"13812345678"  →  "138****5678"</text>
+<text x="458" y="203" font-size="9" fill="#a16207">默认头 3 尾 4；串长不足保留位 → 全遮蔽</text>
+<rect x="446" y="222" width="328" height="52" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+<text x="458" y="241" font-size="10.5" font-weight="700" fill="#3730a3">HASH　不可逆令牌化</text>
+<text x="458" y="260" font-size="9.6" fill="#312e81" font-family="ui-monospace,Menlo,Consolas,monospace">"100000"  →  "tok_9f3a…"（生产换 HMAC）</text>
+<rect x="446" y="282" width="328" height="46" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="458" y="301" font-size="10.5" font-weight="700" fill="#475569">null　不脱敏</text>
+<text x="458" y="319" font-size="9.6" fill="#64748b">空值无信息可泄露 → 原样返回 Null</text>
+
+<line x1="410" y1="318" x2="430" y2="300" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#rt7)"/>
+
+<!-- bottom: apply_masks row before/after -->
+<g filter="url(#sh7)"><rect x="30" y="356" width="760" height="96" rx="10" fill="#0f172a"/></g>
+<text x="44" y="378" font-size="11" font-weight="700" fill="#e2e8f0">apply_masks(rows, obligations)　逐行逐列就地改写呈现值　obligations=[salary:FULL, phone:PARTIAL]</text>
+<text x="44" y="402" font-size="9.6" fill="#94a3b8" font-family="ui-monospace,Menlo,Consolas,monospace">before: { name:"张三", salary:9000,   phone:"13812345678", memo:null }</text>
+<text x="44" y="424" font-size="9.6" fill="#6ee7b7" font-family="ui-monospace,Menlo,Consolas,monospace">after : { name:"张三", salary:"****", phone:"138****5678",  memo:null }</text>
+<text x="44" y="443" font-size="9" fill="#64748b">name 未列义务 → 不动 · memo=null → 不脱敏 · 未命中行早已被行过滤剔除</text>
+</svg>

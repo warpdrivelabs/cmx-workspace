@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CMX 本体平台 · 详细说明</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--fg:#1c2530;--muted:#5a6b7b;--border:#d9dee5;
+  --accent:#0a6ed1;--accent2:#7c5cf0;--accent-soft:#e9f2fc;--ok:#178a5a;--warn:#b25f00;--err:#c9364a;
+  --code-bg:#0f1729;--code-fg:#d8e4f5;--chip:#edf3fa;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0c111d;--card:#151c2c;--fg:#dfe6f0;--muted:#8fa0b4;--border:#28324a;
+  --accent:#4d9eff;--accent2:#a58bff;--accent-soft:#15243c;--ok:#3ecf8e;--warn:#f0a35e;--err:#ff7a8a;
+  --code-bg:#0a0f1c;--code-fg:#d8e4f5;--chip:#1b2740}
+}
+body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.75;font-size:15px}
+.wrap{max-width:1060px;margin:0 auto;padding:0 26px 70px}
+.hero{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border-radius:0 0 18px 18px;padding:42px 26px 36px}
+.hero .kicker{font-size:12.5px;letter-spacing:2px;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:29px;font-weight:700;letter-spacing:.5px}
+.hero p{margin-top:10px;font-size:14.5px;opacity:.92;max-width:820px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:2px 12px;font-size:12px;margin-right:8px;vertical-align:2px}
+.toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin:22px 0;columns:2;column-gap:34px;font-size:13.6px}
+.toc a{color:var(--accent);text-decoration:none;display:block;padding:2.5px 0;break-inside:avoid}
+.toc a:hover{text-decoration:underline}
+@media(max-width:760px){.toc{columns:1}}
+h2{border-left:4px solid var(--accent);padding-left:12px;margin:46px 0 14px;font-size:21px}
+h3{margin:24px 0 8px;font-size:16.5px}
+h4{margin:18px 0 6px;font-size:14.5px;color:var(--muted)}
+p{margin:8px 0}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;font-size:13.4px}
+th{background:var(--chip);text-align:left;padding:9px 12px;font-size:13px}
+td{padding:7px 12px;border-top:1px solid var(--border);vertical-align:top}
+td code,p code,li code,h3 code{background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:Consolas,Menlo,monospace;font-size:12.6px;color:var(--accent)}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow:auto;font-size:12.9px;line-height:1.6;font-family:Consolas,Menlo,monospace;margin:12px 0}
+pre .c{color:#7d8db0}
+.mth{display:inline-block;min-width:50px;text-align:center;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700;color:#fff;font-family:Consolas,Menlo,monospace}
+.m-get{background:var(--ok)}.m-post{background:var(--accent)}.m-del{background:var(--err)}
+.layer{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin:8px 0}
+.layer .no{min-width:112px;font-weight:700;color:var(--accent);font-size:13.5px}
+.layer .nm{min-width:168px;font-family:Consolas,Menlo,monospace;font-size:12.8px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:14px 0}
+.fbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:12.8px;text-align:center}
+.fbox b{color:var(--accent)}
+.fa{display:flex;align-items:center;color:var(--accent);font-weight:700;font-size:13px}
+.tip,.warn,.danger{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13.8px;border:1px solid}
+.tip{background:var(--accent-soft);border-color:var(--accent)}
+.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:var(--warn)}
+.danger{background:color-mix(in srgb,var(--err) 10%,transparent);border-color:var(--err)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a{color:var(--accent);text-decoration:none;margin-right:16px}
+footer a:hover{text-decoration:underline}
+ul,ol{padding-left:22px}li{margin:4px 0}
+.kv{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="kicker">CMX 企业门户 · cmx-ontology（:8097）× cmx-ontology-graph</div>
+  <h1><span class="badge">详细说明</span>本体平台：设计 · 使用 · 增加对象 · 结合主数据</h1>
+  <p>本文是四份简要说明的汇总详解版，覆盖架构分层、六类元模型、存储与算法、63 个 API 端点、完整操作序列、主数据集成四通路、前端图组件与风险清单。所有示例取自仓库内 QA 脚本与 e2e 测试的真实通过用例（2026-09-07 基于代码实测）。</p>
+</div>
+<div class="wrap">
+
+<nav class="toc">
+  <a href="#s1">1. 定位与总体架构</a>
+  <a href="#s2">2. 元模型设计详解</a>
+  <a href="#s3">3. 存储设计</a>
+  <a href="#s4">4. 四大核心算法</a>
+  <a href="#s5">5. API 全景（63 端点）</a>
+  <a href="#s6">6. 使用指南</a>
+  <a href="#s7">7. 如何增加对象（全流程）</a>
+  <a href="#s8">8. 如何结合主数据系统</a>
+  <a href="#s9">9. 前端图组件 cmx-ontology-graph</a>
+  <a href="#s10">10. 测试与质量</a>
+  <a href="#s11">11. 风险与技术债</a>
+  <a href="#s12">12. 附录：速查与文件索引</a>
+</nav>
+
+<!-- ═══════════════ 1 ═══════════════ -->
+<h2 id="s1">1. 定位与总体架构</h2>
+<p><b>定位</b>：企业本体平台（对标 Palantir Foundry Ontology）——把企业的"东西（对象）—关系—操作（动作）—计算（函数）"建模为一套可发布、可查询、可治理的元数据体系，业务数据按类型物化存储，跨对象的关系查询（Search-Around）编译成单条 SQL。</p>
+<p><b>规模</b>：Rust 后端 4 个 crate 共约 8,800 行；前端工作台 3 个页面（约 2,100 行）；图组件 1 个（约 2,100 行 TS）。服务端口 <b>8097</b>，API 前缀 <code>/api/onto</code> 与 <code>/api/onto/v1</code> 双前缀等价。</p>
+
+<h3>1.1 一芯多壳分层</h3>
+<div class="layer"><div class="no">壳 · 服务</div><div class="nm">cmx-onto-server</div><div>薄 bin（136 行）：读 toml 配置 → 挂路由（认证层 + 免认证层）→ 启动时建表预热。无轮询线程，纯请求驱动。</div></div>
+<div class="layer"><div class="no">芯 · 应用层</div><div class="nm">cmx-onto-app</div><div>63 个 REST 方法端点；横切：JWT/API-Key 鉴权、db-per-tenant 多租户、SSE 事件广播、出站调用（flow/report/webhook）。</div></div>
+<div class="layer"><div class="no">落地层</div><div class="nm">cmx-onto-store-pg</div><div>PostgreSQL 实现：13 张静态表 DDL、对象集→SQL 编译器、动作执行器（事务+发件箱）、策略/漏斗存储。</div></div>
+<div class="layer"><div class="no">内核</div><div class="nm">cmx-onto-model</div><div>六类元模型 + FEEL 解释器（645 行）+ 动作解析 + 导入映射 + OSDK 生成器。零 DB 依赖、纯函数、54 个内联单测。</div></div>
+<p class="muted">依赖严格单向向下；app 层对任意壳泛型（<code>onto_routes::&lt;S&gt;()</code>），将来可内嵌进其它宿主。"一芯多壳"的另一个壳在 cmx-container 仓：OntoProxyModule 反代模块（不含本体代码，纯转发）。</p>
+
+<h3>1.2 集成拓扑</h3>
+<div class="flow">
+  <div class="fbox"><b>门户 :8080</b><br><span class="muted">菜单/页面/同源 API</span></div><div class="fa">→反代 /api/onto/*→</div>
+  <div class="fbox"><b>onto-server :8097</b><br><span class="muted">本体服务</span></div><div class="fa">→HTTP→</div>
+  <div class="fbox"><b>flowengine :8091</b><br><span class="muted">审批流实例</span></div>
+</div>
+<div class="flow">
+  <div class="fbox" style="visibility:hidden"></div>
+  <div class="fbox" style="visibility:hidden"></div>
+  <div class="fbox"><b>onto-server</b></div><div class="fa">→HTTP→</div>
+  <div class="fbox"><b>cmx-report :8092</b><br><span class="muted">报表计算</span></div><div class="fa">／</div>
+  <div class="fbox"><b>任意 webhook</b><br><span class="muted">白名单管控</span></div>
+</div>
+<ul>
+  <li><b>被门户反代</b>：门户配置 <code>[service_rpc.services].onto</code> 后挂载 <code>OntoProxyModule</code>，<code>/api/onto/*</code> 恒等映射转发到 8097，自动注入 <code>X-API-Key</code>（服务身份）+ <code>X-Delegated-User-Token</code>（用户身份）。native 页面按 id 前缀 <code>portal.onto.*</code> 判定归属转发。</li>
+  <li><b>出站</b>（均为 HTTP、8 秒超时、可 <code>ONTO_OUTBOUND=off</code> 一键熄火）：起流程 <code>POST /api/flow/v1/instances</code>；算报表 <code>POST /api/report-design/reports/{code}/compute</code>；webhook 走 host 白名单（默认仅 127.0.0.1/localhost，防 SSRF）。</li>
+  <li><b>资产真源</b>：前端页面在 <code>cmx-container/assets/onto/web/ui-native/</code>，onto-server 的 <code>[assets].ui_native_dir</code> 直指该目录（跨仓相对路径），无拷贝同步环节。</li>
+</ul>
+
+<!-- ═══════════════ 2 ═══════════════ -->
+<h2 id="s2">2. 元模型设计详解</h2>
+<h3>2.1 六类元素与关键字段</h3>
+<table>
+  <tr><th style="width:120px">元素</th><th style="width:290px">关键字段</th><th>语义</th></tr>
+  <tr><td><b>ObjectType</b></td><td><code>apiName / displayName / icon / color</code>、<code>dam{domain,application,module}</code>、<code>docType{code,name}</code>、<code>primaryKey / titleProperty</code>、<code>status</code>、<code>properties[]</code>、<code>implements[]</code>、<code>datasource</code>、<code>cmxOrigin</code></td><td>业务实体模板。DAM 三级分类驱动图分域折叠；docType 关联 MDM 业务单据类型；implements 声明接口多态；cmxOrigin 记录 DOC/DCT 导入来源存证。</td></tr>
+  <tr><td><b>Property</b></td><td><code>apiName / baseType / required / isIndexed / semanticType / sharedProperty / marking / constraints</code></td><td>16 种基础类型（string/integer/long/double/decimal/boolean/date/timestamp/array/struct/attachment/mediaReference/marking/geohash/geoShape/vector）；semanticType 复用平台语义类型体系；marking 列级安全标记（脱敏用）；复合层块藏在 constraints（导入的子实体结构）。</td></tr>
+  <tr><td><b>LinkType</b></td><td><code>apiName / cardinality / objectTypeA / objectTypeB / roleA / roleB / backing / status</code></td><td>基数 oneToOne/oneToMany(默认)/manyToMany；双向角色名（如 places/placedBy）；backing 记录落库方式设想（外键/中间表/媒介表）。</td></tr>
+  <tr><td><b>Interface</b></td><td><code>apiName / properties[] / extends[]</code></td><td>横切能力契约，只约束属性名集合；前端渲染为虚线挂接（由 implements 派生，非独立边数据）。</td></tr>
+  <tr><td><b>SharedProperty</b></td><td><code>apiName / baseType / semanticType</code></td><td>全局标准属性，一处定义处处引用。</td></tr>
+  <tr><td><b>ActionType</b></td><td><code>parameters / logic / validations / sideEffects</code>（JSONB）+ <code>functionBacking</code></td><td>参数定义 → FEEL 校验 → 五种编辑原子 → 副作用（详见 §4.3）。</td></tr>
+  <tr><td><b>Function</b></td><td><code>runtime / kind / inputs[] / output / body</code></td><td>runtime 默认 feel（rhai/wasm/nativeRust 为预留）；kind 分 query/derivedProperty/validation/actionLogic/aggregation；inputs 支持 object/objectSet 型注入。</td></tr>
+</table>
+
+<h3>2.2 命名与校验（后端强制，建模必读）</h3>
+<ul>
+  <li><code>apiName</code> 白名单：字母/下划线开头，仅字母/数字/下划线——该规则同时是 SQL 表名/列名拼接安全的基础。</li>
+  <li><code>primaryKey</code>、<code>titleProperty</code> 指定必须能在 properties 中找到。</li>
+  <li>属性 apiName 不得重复；关系两端 objectTypeA/B 必须非空且已定义。</li>
+  <li>upsert 语义：同 apiName 重复保存=覆盖更新（不是报错）。</li>
+  <li>校验专用端点 <code>POST /object-types/validate</code> 只验不存，返回 <code>{valid, error}</code>。</li>
+</ul>
+
+<h3>2.3 生命周期与发布</h3>
+<div class="flow">
+  <div class="fbox"><b>experimental</b><br><span class="muted">新建默认·琥珀虚线</span></div><div class="fa">→</div>
+  <div class="fbox"><b>active</b><br><span class="muted">稳定·绿描边</span></div><div class="fa">→</div>
+  <div class="fbox"><b>deprecated</b><br><span class="muted">废弃·灰</span></div>
+</div>
+<p><code>POST /publish {summary}</code>：把六类元素全量快照序列化 → 计算 xxhash64 内容指纹（16 位 hex 的 <code>rev</code>）→ 版本号 = 当前最大版本 + 1 → 写入 <code>om_version</code> 不可变快照，同时 SSE 广播 <code>published</code> 事件。<code>GET /versions/{v}</code> 可回看任意历史版本完整定义。</p>
+
+<!-- ═══════════════ 3 ═══════════════ -->
+<h2 id="s3">3. 存储设计</h2>
+<h3>3.1 表全景（13 张静态 + 动态对象表）</h3>
+<table>
+  <tr><th style="width:110px">层</th><th style="width:330px">表</th><th>说明</th></tr>
+  <tr><td>定义层</td><td><code>om_object_type / om_link_type / om_interface / om_shared_property / om_action_type / om_function</code></td><td>六类元素各一张，apiName 主键，复杂结构存 JSONB；status 建索引。</td></tr>
+  <tr><td>版本层</td><td><code>om_version</code></td><td>发布快照：version 主键 + rev 内容指纹 + snapshot JSONB，不可变。</td></tr>
+  <tr><td>运行层</td><td><code>oe_action_log</code>（动作审计）<code>oe_outbox</code>（副作用发件箱）<code>om_policy</code>（安全策略）<code>om_source_mapping</code>（漏斗源映射）<code>oo_quarantine</code>（隔离区）</td><td>审计按 (action, executed_at) 建索引；发件箱按 (status,id) 建索引供 dispatcher 领取。</td></tr>
+  <tr><td>对象层</td><td><code>oo_&lt;type&gt;</code>（惰性建）＋ <code>ol_edge</code></td><td>实例表 <code>(pk TEXT 主键, title, props JSONB, created_at, updated_at)</code> + title 索引；超边表 <code>(link, a_pk, b_pk, props)</code> 联合主键 + 双向索引。</td></tr>
+</table>
+<ul>
+  <li><b>惰性物化</b>：某对象类型第一次写入实例时才创建对应 <code>oo_&lt;type&gt;</code> 表——建模零成本，写数即建表。</li>
+  <li><b>无外键纪律</b>：一切引用靠索引不靠 FK 约束（删对象时代码层面清边）。</li>
+  <li><b>租户即库</b>：表内不带 tenant 列；多租户模式按 <code>onto_&lt;tenant&gt;</code> 每库一套 schema。</li>
+  <li><b>迁移方式</b>：幂等 DDL 重放（启动时 <code>ensure_schema</code> 顺序执行 + <code>ADD COLUMN IF NOT EXISTS</code> 补列），无版本化 migration 框架。</li>
+</ul>
+
+<!-- ═══════════════ 4 ═══════════════ -->
+<h2 id="s4">4. 四大核心算法</h2>
+
+<h3>4.1 对象集代数 → 单条 SQL（查询引擎）</h3>
+<p>查询不写 SQL，写<b>代数树</b>。7 种算子：</p>
+<table>
+  <tr><th style="width:150px">算子（op）</th><th>编译结果</th></tr>
+  <tr><td><code>base</code></td><td><code>SELECT pk FROM oo_T</code></td></tr>
+  <tr><td><code>filter</code> + 谓词树</td><td>终端表 self-join：外层套 <code>WHERE pk IN (内层) AND (谓词)</code></td></tr>
+  <tr><td><code>searchAround</code></td><td><code>SELECT DISTINCT e.对端 FROM ol_edge e WHERE e.link=$N AND e.本端 IN (内层)</code>，direction 决定 forward(a→b)/reverse(b→a)</td></tr>
+  <tr><td><code>union / intersect / subtract</code></td><td>SQL <code>UNION / INTERSECT / EXCEPT</code>；两侧终端类型不一致<b>编译期报错</b></td></tr>
+  <tr><td><code>static</code></td><td><code>VALUES ($1),($2)</code> 主键直列</td></tr>
+</table>
+<p>谓词是 11 种类型化节点（eq/ne/gt/ge/lt/le/in/contains/isNull/and/or/not），<b>不接受裸 SQL 片段</b>。三跳查询示例（北区客户 → 金额 ≥1000 的订单）编译形态：</p>
+<pre><span class="c">-- 参数 $1=region 值，$2=amount 值，$3=link 名（示意，实际由编译器生成）</span>
+SELECT o.pk, o.title, o.props FROM oo_Order o
+WHERE o.pk IN (
+  SELECT DISTINCT e.b_pk FROM ol_edge e
+  WHERE e.link = $3 AND e.a_pk IN (
+    SELECT c.pk FROM oo_Customer c
+    WHERE c.pk IN (SELECT pk FROM oo_Customer)
+      AND (c.props -&gt;&gt; 'region') = $1))
+  AND (o.props -&gt;&gt; 'amount')::numeric &gt;= ($2)::text::numeric
+ORDER BY o.title, o.pk LIMIT 100</pre>
+<ul>
+  <li><b>防注入双保险</b>：表名/属性名过 <code>safe_ident</code> 白名单（与建模 apiName 规则同源）；值一律 <code>$N</code> 参数绑定。</li>
+  <li><b>数值比较</b>双侧 <code>::numeric</code>；contains 转 <code>LIKE</code> 且转义 <code>%_</code>。</li>
+  <li>分页 limit 钳制 1..1000，<code>hasMore</code>=页满判断。</li>
+</ul>
+
+<h3>4.2 FEEL 表达式引擎（判定与求值）</h3>
+<div class="grid2">
+<div class="card"><b>能力</b><ul>
+  <li>三段式：tokenizer → Pratt 解析（完整绑定力表）→ 作用域链求值</li>
+  <li><code>and/or/not</code>、比较、<code>in</code>、区间 <code>[a..b]</code>（开闭端）</li>
+  <li><code>if then else</code>、<code>for x in list return</code></li>
+  <li><code>some/every … satisfies</code> 量词（短路）</li>
+  <li>列表谓词过滤 <code>list[c &gt; 100]</code>、下标从 1 起（负数从尾）</li>
+  <li>约 28 个内置函数：floor/round/abs/min/max/sum/mean/upper/substring/contains/count/sort/append/coalesce…</li>
+</ul></div>
+<div class="card"><b>纪律</b><ul>
+  <li>判定一律 <b>fail-closed</b>：求值出错或非布尔真 = 不通过</li>
+  <li>数值统一 f64，相等比较 1e-9 容差</li>
+  <li>除 0 / 类型不匹配返回 null 而非报错</li>
+  <li>clean-room 内嵌（不跨仓依赖规则引擎），独立微服务边界纪律</li>
+  <li>使用位置：动作提交校验 validations、函数求值 body、（预留）属性约束</li>
+</ul></div>
+</div>
+
+<h3>4.3 动作执行：事务 + 发件箱（写引擎）</h3>
+<p>动作定义四段结构：<code>parameters</code>（参数契约）→ <code>validations</code>（FEEL 校验列表）→ <code>logic</code>（编辑序列）→ <code>sideEffects</code>（副作用列表）。</p>
+<div class="flow">
+  <div class="fbox"><b>① 参数校验</b><br><span class="muted">required 非空</span></div><div class="fa">→</div>
+  <div class="fbox"><b>② FEEL 校验</b><br><span class="muted">fail-closed 全量报错</span></div><div class="fa">→</div>
+  <div class="fbox"><b>③ 编辑解析</b><br><span class="muted">$name 替换/插值</span></div><div class="fa">→</div>
+  <div class="fbox"><b>④ 写侧 PEP</b><br><span class="muted">deny_actions 拒绝</span></div><div class="fa">→</div>
+  <div class="fbox"><b>⑤ 单事务提交</b><br><span class="muted">编辑+审计+发件箱</span></div>
+</div>
+<ul>
+  <li><b>五种编辑原子</b>：createObject（upsert）/ modifyObject（读改写，对象须存在）/ deleteObject（连带清边）/ addLink / removeLink。</li>
+  <li><b>参数绑定两套机制</b>：<code>$name</code> 整串等于时递归替换（结构化）；内嵌插值（如 <code>"approve_$orderId"</code> → <code>"approve_O-1"</code>）。</li>
+  <li><b>事务边界 = 整个动作</b>：任一编辑失败全部回滚；审计日志与副作用发件箱同事务写入。</li>
+  <li><b>dry-run</b>：只预演 + 落 status=dryRun 审计，不触库不入发件箱。</li>
+  <li><b>发件箱消费</b>：dispatcher 用 <code>FOR UPDATE SKIP LOCKED</code> 原子领取（多实例安全）→ 按 kind 投递（startBusinessProcess→flow / computeReport→report / webhook→HTTP / emitEvent→SSE / callFunction→FEEL）→ 回标 dispatched/deferred/failed。</li>
+</ul>
+
+<h3>4.4 动态安全（行级 + 列级）</h3>
+<ul>
+  <li>策略 <code>om_policy</code>：按 (objectType 可空=全局, subject) 匹配主体，产出 <code>rowFilter</code>（谓词树）+ <code>denyMarkings</code> + <code>denyActions</code>。</li>
+  <li><b>读侧</b> <code>POST /secure/object-sets/load</code>：命中策略的行级残差谓词 AND 包一层 Filter 进编译管道（复用对象集编译器，安全即查询）；结果行按属性 marking 打 <code>***</code>。</li>
+  <li><b>写侧</b> PEP：动作执行前检查 denyActions，命中即拒绝并返回策略名。</li>
+</ul>
+
+<!-- ═══════════════ 5 ═══════════════ -->
+<h2 id="s5">5. API 全景（48 路径 / 63 方法端点）</h2>
+<p class="muted">前缀 <code>/api/onto/v1</code>（<code>/api/onto</code> 等价）。免认证四端点除外，全部在鉴权层内。响应统一 <code>{code, msg, data}</code>。</p>
+
+<h3>建模（O1）</h3>
+<table>
+  <tr><th style="width:420px">端点</th><th>功能</th></tr>
+  <tr><td><span class="mth m-get">GET</span><span class="mth m-post">POST</span> <code>/object-types</code>；<span class="mth m-post">POST</span> <code>/object-types/validate</code>；<span class="mth m-get">GET</span><span class="mth m-del">DEL</span> <code>/object-types/{api}</code></td><td>对象类型清单/upsert/只校验/详情/幂等删除</td></tr>
+  <tr><td><span class="mth m-get">GET</span><span class="mth m-post">POST</span> <code>/link-types</code>；<span class="mth m-get">GET</span><span class="mth m-del">DEL</span> <code>/{api}</code></td><td>关系类型（同上模式）</td></tr>
+  <tr><td><span class="mth m-get">GET</span><span class="mth m-post">POST</span> <code>/interfaces</code>、<code>/shared-properties</code>、<code>/action-types</code>、<code>/functions</code>（各配 <span class="mth m-get">GET</span><span class="mth m-del">DEL</span> <code>/{api}</code>）</td><td>接口/共享属性/动作/函数 CRUD</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/manifest</code>；<span class="mth m-get">GET</span> <code>/stats</code></td><td>六类全量清单 / 各类计数+最新版本</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/publish</code>；<span class="mth m-get">GET</span> <code>/versions</code>、<code>/versions/{v}</code></td><td>发布快照 / 版本列表 / 版本详情</td></tr>
+</table>
+
+<h3>对象数据（O2）</h3>
+<table>
+  <tr><th style="width:420px">端点</th><th>功能</th></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/objects/{type}</code>；<span class="mth m-post">POST</span> <code>/objects/{type}/batch</code>；<span class="mth m-del">DEL</span> <code>/objects/{type}/{pk}</code></td><td>写单条（pk 自动抽取）/ 批量单事务 / 删除连带清边</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/objects/{type}/{pk}/modify</code></td><td>乐观锁修改：<code>{set, expectedUpdatedAt}</code>，冲突返回 conflict+现值</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/objects/{type}/{pk}/links/{link}</code></td><td>便捷 Search-Around（正向一跳）</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/links</code>；<span class="mth m-del">DEL</span> <code>/links</code></td><td>建边 / 删边（关系类型须已定义）</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/object-sets/load</code>；<span class="mth m-post">POST</span> <code>/object-sets/aggregate</code></td><td>代数查询（分页）/ count·groupCount·groupSum</td></tr>
+</table>
+
+<h3>动作（O4）／函数（O5）</h3>
+<table>
+  <tr><th style="width:420px">端点</th><th>功能</th></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/action-types/{api}/execute</code>；<span class="mth m-post">POST</span> <code>/action-types/{api}/dry-run</code></td><td>执行 / 预演（body：<code>{params, dryRun, actor?, subjects?}</code>）</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/action-logs</code>；<span class="mth m-get">GET</span> <code>/action-outbox</code>、<code>/action-outbox/config</code></td><td>审计查询 / 发件箱状态与出站配置快照</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/action-outbox/dispatch</code>；<span class="mth m-post">POST</span> <code>/action-outbox/{id}/dispatched</code></td><td>触发投递 / 外部 dispatcher 回标</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/flow/definitions</code>、<code>/report/definitions</code>、<code>/action-templates</code></td><td>代理 flow/report 定义清单（不可达降级）/ 内置动作模板</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/functions/{api}/evaluate</code></td><td>函数求值：标量 args / 对象 objects / 对象集 objectSets / 聚合</td></tr>
+</table>
+
+<h3>安全（O6）／数据集成（O3）／导入／OSDK</h3>
+<table>
+  <tr><th style="width:420px">端点</th><th>功能</th></tr>
+  <tr><td><span class="mth m-get">GET</span><span class="mth m-post">POST</span> <code>/policies</code>；<span class="mth m-del">DEL</span> <code>/policies/{api}</code>；<span class="mth m-post">POST</span> <code>/secure/object-sets/load</code></td><td>策略 CRUD / 带安全加载（残差+脱敏，回带 appliedPolicies）</td></tr>
+  <tr><td><span class="mth m-get">GET</span><span class="mth m-post">POST</span> <code>/funnel/mappings</code>；<span class="mth m-del">DEL</span> <code>/{type}</code>；<span class="mth m-post">POST</span> <code>/funnel/sync/{type}</code></td><td>源映射 CRUD / 全量同步（read·written·quarantined 报告）</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/funnel/quarantine</code>；<span class="mth m-get">GET</span> <code>/funnel/pipeline-status/{type}</code></td><td>隔离区（违规行+原因）/ 抽取·映射·索引三段状态</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/import/doc</code>；<span class="mth m-post">POST</span> <code>/import/dct</code></td><td>DOC 主从图导入（对象+组合关系）/ DCT 字典导入（参照类型+种子项）</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/osdk/typescript</code></td><td>生成强类型 TS SDK（text/typescript 直返）</td></tr>
+</table>
+
+<h3>免认证端点</h3>
+<table>
+  <tr><th style="width:420px">端点</th><th>功能</th></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/</code>（:8097 根）</td><td>自包含建模控制台单页（统计/建类型/发布）</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/api/onto/v1/openapi.json</code>、<code>/docs</code></td><td>OpenAPI 契约 / Swagger UI</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/api/onto/v1/events</code></td><td>SSE 事件流（connected 首帧；?tenant= 过滤；无持久化）</td></tr>
+</table>
+
+<!-- ═══════════════ 6 ═══════════════ -->
+<h2 id="s6">6. 使用指南</h2>
+<h3>6.1 入口与鉴权</h3>
+<table>
+  <tr><th style="width:190px">入口</th><th>说明</th></tr>
+  <tr><td><b>门户工作台（推荐）</b></td><td>门户菜单 → 数据平台 → 本体。三页面：<code>portal.onto.designer</code> 设计工作台（四区：统计瓦片/DAM 树/图编辑/Inspector）、<code>portal.onto.explorer</code> 对象浏览器（对象集过滤+Search-Around 钻取）、<code>portal.onto.workshop</code> 对象工作台（对象 360+动作办理）。前端走同源 <code>/api/onto/v1</code>，零鉴权配置。</td></tr>
+  <tr><td><b>建模控制台</b></td><td>直开 <code>http://127.0.0.1:8097/</code>，免登录单页。</td></tr>
+  <tr><td><b>API 直连</b></td><td><code>X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6</code>（开发密钥，生产换 JWT Bearer）。</td></tr>
+</table>
+<div class="warn"><b>启动方式</b>：<code>cd cmx-ontology && ./onto.sh</code>（读 onto-server-dev.toml，连真机库 192.168.157.46:5432/cmx_fico）。改前端页面源码后须<b>重启 onto-server</b>（磁盘读取非热更）。</div>
+
+<h3>6.2 标准动线</h3>
+<div class="flow">
+  <div class="fbox"><b>① 建模</b><br><span class="muted">工作台/API</span></div><div class="fa">→</div>
+  <div class="fbox"><b>② 发布</b><br><span class="muted">/publish</span></div><div class="fa">→</div>
+  <div class="fbox"><b>③ 灌数据</b><br><span class="muted">objects/funnel</span></div><div class="fa">→</div>
+  <div class="fbox"><b>④ 查询钻取</b><br><span class="muted">对象集/Search-Around</span></div><div class="fa">→</div>
+  <div class="fbox"><b>⑤ 定义动作</b><br><span class="muted">校验+编辑+副作用</span></div><div class="fa">→</div>
+  <div class="fbox"><b>⑥ 办理</b><br><span class="muted">workshop 执行</span></div>
+</div>
+
+<h3>6.3 OSDK（TS 客户端生成）</h3>
+<p><code>GET /osdk/typescript</code> 按当前本体生成：每对象类型一个 interface（16 种 baseType→TS 类型映射，required 决定 <code>?</code>）、Predicate/ObjectSet 联合类型、<code>OntologyClient</code> 类（objects.all/filter → object-sets/load；actions → execute；functions → evaluate；searchAround 便捷方法）。e2e 用 tsc 编译验证过生成物有效性。</p>
+
+<!-- ═══════════════ 7 ═══════════════ -->
+<h2 id="s7">7. 如何增加对象（全流程）</h2>
+<h3>7.1 概念：类型 vs 实例</h3>
+<p><b>对象类型</b>=模板（元数据，落 <code>om_object_type</code>）；<b>对象实例</b>=数据（落 <code>oo_&lt;type&gt;</code> 表）。先有类型才能写实例（写未定义类型直接业务错误）。</p>
+
+<h3>7.2 增加类型的四条路</h3>
+<table>
+  <tr><th style="width:150px">途径</th><th>做法与示例</th></tr>
+  <tr><td><b>A · 设计工作台</b></td><td>explorer 区「+ 对象类型」→ Inspector 编辑属性（主键◇/标题⌾/必填*/索引⚡/语义类型）→ 保存。可视化、带本地校验（图组件 validate 镜像后端规则）。</td></tr>
+  <tr><td><b>B · REST API</b></td><td>validate → save 两步（完整 JSON 见下）。</td></tr>
+  <tr><td><b>C · DOC 导入</b></td><td><code>POST /import/doc</code>：entities[]（apiName/primaryKey/titleProperty/properties）+ relations[]（from/to/cardinality/role）→ 每实体一类型 + 每关系一组合关系（命名 <code>&lt;from&gt;_&lt;role&gt;_&lt;to&gt;</code>）。</td></tr>
+  <tr><td><b>D · DCT 导入</b></td><td><code>POST /import/dct</code>：{apiName, displayName, items:[{code,name}]} → 参照类型（code 主键/name 标题）+ items 批量落对象。</td></tr>
+</table>
+
+<h3>7.3 途径 B 完整序列（可直接照抄）</h3>
+<pre><span class="c"># ① 校验（不落库）</span>
+curl -s -X POST http://127.0.0.1:8097/api/onto/v1/object-types/validate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6" \
+  -d '{ "apiName":"Customer","displayName":"客户",
+        "primaryKey":"id","titleProperty":"name",
+        "properties":[
+          {"apiName":"id","baseType":"long","required":true},
+          {"apiName":"name","baseType":"string","required":true,"isIndexed":true},
+          {"apiName":"region","baseType":"string"},
+          {"apiName":"createdAt","baseType":"timestamp"} ],
+        "status":"active",
+        "dam":{"domain":"客商域","application":"客户管理","module":"客户档案"} }'
+
+<span class="c"># ② 落库（同一 JSON 换端点）→ {code:0, data:{saved:true}}</span>
+curl -s -X POST http://127.0.0.1:8097/api/onto/v1/object-types ...同上...
+
+<span class="c"># ③ 关系类型（1:N + 双角色）</span>
+curl -s -X POST http://127.0.0.1:8097/api/onto/v1/link-types \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{"apiName":"customerPlacesOrder","displayName":"客户下单",
+       "objectTypeA":"Customer","objectTypeB":"Order",
+       "cardinality":"oneToMany","roleA":"places","roleB":"placedBy"}'</pre>
+
+<h3>7.4 增加实例与关系</h3>
+<pre><span class="c"># 单条（pk/title 按 primaryKey/titleProperty 自动抽取；重复=upsert；返回 data.pk）</span>
+curl -s -X POST .../api/onto/v1/objects/Customer \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{"properties":{"id":1,"name":"北方贸易","region":"north"}}'
+
+<span class="c"># 批量（单事务，written 计数）</span>
+curl -s -X POST .../api/onto/v1/objects/Order/batch \
+  -d '[{"properties":{"oid":101,"no":"SO-101","amount":1500}},
+       {"properties":{"oid":102,"no":"SO-102","amount":800}},
+       {"properties":{"oid":103,"no":"SO-103","amount":3200}}]'
+
+<span class="c"># 关系边（幂等）</span>
+curl -s -X POST .../api/onto/v1/links \
+  -d '{"link":"customerPlacesOrder","aPk":"1","bPk":"101"}'
+
+<span class="c"># 乐观锁修改（并发安全：先读 updatedAt，改时带上）</span>
+curl -s -X POST .../api/onto/v1/objects/Customer/1/modify \
+  -d '{"set":{"region":"south"},"expectedUpdatedAt":"2026-09-07T10:00:00.123456+00:00"}'
+
+<span class="c"># 删除（连带清边）</span>
+curl -s -X DELETE .../api/onto/v1/objects/Customer/1</pre>
+
+<h3>7.5 验证查询（写入后自查）</h3>
+<pre><span class="c"># 正向一跳：客户 1 → 订单</span>
+curl -s ".../api/onto/v1/objects/Customer/1/links/customerPlacesOrder"
+
+<span class="c"># 反向：订单 103 → 属于哪个客户</span>
+curl -s -X POST .../api/onto/v1/object-sets/load \
+  -d '{"objectSet":{"op":"searchAround",
+       "source":{"op":"static","objectType":"Order","primaryKeys":["103"]},
+       "link":"customerPlacesOrder","direction":"reverse"}}'
+
+<span class="c"># 聚合：按区域数客户</span>
+curl -s -X POST .../api/onto/v1/object-sets/aggregate \
+  -d '{"objectSet":{"op":"base","objectType":"Customer"},
+       "aggregation":{"kind":"groupCount","property":"region"}}'</pre>
+
+<h3>7.6 常见错误对照</h3>
+<table>
+  <tr><th style="width:300px">报错/现象</th><th>原因与解法</th></tr>
+  <tr><td>「对象类型 X 未定义」</td><td>先建类型再写实例；检查 apiName 大小写</td></tr>
+  <tr><td>校验错误含「主键」</td><td>primaryKey 指向的属性缺失，或写入时该属性为空</td></tr>
+  <tr><td>「apiName 非法」</td><td>数字开头/含连字符等；改用字母下划线命名</td></tr>
+  <tr><td>异类型 union 报错</td><td>集合运算两侧终端类型必须一致（编译期类型检查）</td></tr>
+  <tr><td>modify 返回 conflict</td><td>expectedUpdatedAt 过期（他人已改）——用返回的现值刷新后重试</td></tr>
+  <tr><td>类型改了但查不到</td><td>列表接口缓存/前端未刷新；确认 save 返回 code=0</td></tr>
+</table>
+
+<!-- ═══════════════ 8 ═══════════════ -->
+<h2 id="s8">8. 如何结合主数据系统</h2>
+<h3>8.1 分工定位</h3>
+<p>MDM（cmx-mdm :8095）是<b>治理与发放层</b>：变更申请（录单）→ 流程审批 → 落字典/主数据表。本体是<b>关联与消费层</b>：把主数据物化为参照对象，供业务对象引用、图谱钻取、动作治理。数据流向单向：MDM → 本体（回写暂无）。</p>
+
+<h3>8.2 通路 ①：DCT 字典导入（低频字典一次性接入）</h3>
+<pre>curl -s -X POST .../api/onto/v1/import/dct \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{ "apiName":"Currency","displayName":"币种",
+        "items":[{"code":"USD","name":"美元"},
+                 {"code":"CNY","name":"人民币"},
+                 {"code":"EUR","name":"欧元"}] }'
+<span class="c"># → {objectType:"Currency", seededItems:3}
+# 参照类型主键=code、标题=name；字典项即对象，可进对象集过滤：
+#   filter(code=USD) → 美元 ✓、欧元 ✗（e2e 实测）</span></pre>
+<p class="muted">输入是归一化 JSON（调用方从 cmx-model 的 DctQuery 适配），保持 onto 与模型中心解耦。字典更新后重调即幂等覆盖。</p>
+
+<h3>8.3 通路 ②：Funnel 源映射持续同步（主通道，推荐）</h3>
+<p>面向业务库的主数据表/字典表，三段管道：抽取（执行 sourceQuery）→ 映射校验（map_row：主键空/必填缺失即违规）→ 物化（合格 upsert 成对象，违规入隔离区）。</p>
+<pre><span class="c"># 1) 目标参照类型（status=active）</span>
+curl -s -X POST .../api/onto/v1/object-types \
+  -d '{"apiName":"MdmCustomer","displayName":"主数据客户","primaryKey":"id",
+       "titleProperty":"name","status":"active",
+       "properties":[{"apiName":"id","baseType":"string"},
+                     {"apiName":"name","baseType":"string"},
+                     {"apiName":"region","baseType":"string"}]}'
+
+<span class="c"># 2) 源映射（多列主键 keyColumns 以 | 拼接）</span>
+curl -s -X POST .../api/onto/v1/funnel/mappings \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{ "objectType":"MdmCustomer",
+        "sourceQuery":"SELECT cust_id, cust_name, region_code FROM md_customer",
+        "keyColumns":["cust_id"], "titleColumn":"cust_name",
+        "propertyMap":[{"source":"cust_id","property":"id"},
+                       {"source":"cust_name","property":"name"},
+                       {"source":"region_code","property":"region"}],
+        "required":["name"] }'
+
+<span class="c"># 3) 同步（幂等 upsert；源行变化再同步即覆盖）</span>
+curl -s -X POST .../api/onto/v1/funnel/sync/MdmCustomer -d '{}'
+<span class="c"># → {read:4, written:3, quarantined:1, mode:"full"}</span>
+
+<span class="c"># 4) 违规行处理与管道状态</span>
+curl -s ".../api/onto/v1/funnel/quarantine?objectType=MdmCustomer"   <span class="c"># 原始行+violations</span>
+curl -s ".../api/onto/v1/funnel/pipeline-status/MdmCustomer"</pre>
+<div class="tip">节奏建议：MDM 审批落库高峰后（或每日定时）由外部调度触发 sync——同步为全量幂等模式，天然适合"审批完成 → 刷新本体"。</div>
+
+<h3>8.4 通路 ③：业务单据关联（docType + DOC 导入）</h3>
+<ul>
+  <li>对象类型挂 <code>docType:{code,name}</code> 标明对应 MDM 单据类型（导入时自动回填，也可手工指定）。</li>
+  <li><code>POST /import/doc</code> 把主从实体图批量建为对象类型+组合关系；子实体折叠为层块属性（array/struct + constraints 层结构），适合"已有业务模型整体进本体"。</li>
+</ul>
+
+<h3>8.5 通路 ④：动作 ↔ 治理审批流</h3>
+<ul>
+  <li>动作副作用 <code>startBusinessProcess</code> 直连 cmx-flowengine 起流程实例（透传 definitionKey/variables/businessKey）；对主数据对象的治理操作（停用/合并/改主）可定义成本体动作，执行即发起 MDM 审批。</li>
+  <li>内置模板：<code>objectApprove</code>（对象审批）、<code>consolClose</code>（关账联动：一个动作同时起审批流+算报表）——设计工作台「从模板创建」可改。</li>
+  <li>全链路留痕：execute 审计 + 发件箱投递状态可查。</li>
+</ul>
+
+<h3>8.6 推荐落地配方</h3>
+<div class="card">
+<b>1.</b> MDM 治理流程不动（申请→审批→落库）；<br>
+<b>2.</b> 低频字典（币种/凭证类型/行业分类）走 <b>DCT 导入</b>；<br>
+<b>3.</b> 高频主数据（客户/物料/组织/科目）走 <b>Funnel 源映射</b>，指向业务库表；<br>
+<b>4.</b> 业务对象类型用 <b>LinkType</b> 引用参照对象（订单→客户、凭证→科目、物料→组织）；<br>
+<b>5.</b> 外部定时（cron/门户定时任务）调 <b>sync</b> 保持新鲜；隔离区定期人工复核；<br>
+<b>6.</b> 需治理的变更定义成<b>动作</b>：FEEL 校验 + 乐观锁写回 + 起审批流；<br>
+<b>7.</b> <b>publish</b> 固化版本 + <b>OSDK</b> 给下游系统生成 TS 客户端。
+</div>
+<div class="warn"><b>现状边界</b>：同步为 M1 全量同步执行（长任务雏形，增量/异步在路线图）；无内置调度需外部触发；DCT 导入为快照式；本体→MDM 回写未内置；sourceQuery 会真实执行配置的 SQL——仅限可信管理员配置 SELECT。</div>
+
+<!-- ═══════════════ 9 ═══════════════ -->
+<h2 id="s9">9. 前端图组件 cmx-ontology-graph</h2>
+<h3>9.1 定位与契约</h3>
+<p>独立仓 TypeScript Web Component（<code>&lt;cmx-ontology-graph&gt;</code>，零框架零运行时依赖，约 2,100 行/9 文件/22 个单测），与 <code>@cmx/decision-graph</code> 平级——本体图是一般 ER 图（可双向/自环），不是 DAG，故不共用代码只共享设计语言。</p>
+<table>
+  <tr><th style="width:110px">类别</th><th>成员</th></tr>
+  <tr><td>数据入</td><td>属性 <code>data-spec</code>（JSON）／ <code>setSpec(def)</code> ／ <code>getSpec()</code></td></tr>
+  <tr><td>配置</td><td><code>readonly</code>（只读预览模式，隐藏锚点、缩小的布局档）</td></tr>
+  <tr><td>结构操作</td><td><code>addObjectType / addInterface / addLink / delNode / delLink / autoLayout / selectNode / setAllGroups</code></td></tr>
+  <tr><td>逃生舱</td><td><code>getModel()</code> 返 OntologyModel（节点/边/属性/implements 全量操作 API）</td></tr>
+  <tr><td>事件出</td><td><code>spec-change</code>（任何变更带全量 def）／ <code>type-select</code> ／ <code>edge-select</code> ／ <code>link-add</code>（拉线落点，宿主弹速建气泡补元数据）／ <code>link-added</code> ／ <code>node-add</code> ／ <code>node-del</code> ／ <code>connect-rejected</code>（均 bubbles+composed）</td></tr>
+</table>
+<p class="muted">图 JSON 契约（camelCase 对齐后端）：nodes[{id,kind,displayName,color,status,properties[{apiName,baseType,isPrimaryKey,isTitle,required,isIndexed,semanticType,children}],implements,groupPath}] + edges[{apiName,source,target,cardinality,roleA,roleB,sourceProperty,targetProperty}]；<code>_layout/_edgeRoutes/_groupCollapsed</code> 为组件私有布局态，后端忽略。</p>
+
+<h3>9.2 核心能力</h3>
+<ul>
+  <li><b>富卡片</b>：色条+显示名+mono apiName+属性行（◇主键/⌾标题/*必填/⚡索引/语义徽标）；超 maxRows 折叠 +N；状态描边三态；业务单据层块（array/struct 子层）递归缩进渲染、整块展开不截断。</li>
+  <li><b>基数边</b>：有向连线+角色标签；锚点默认"属性→属性"（源外键属性可显式指定或按名称启发式猜测，靶默认主键）。</li>
+  <li><b>正交避让布线</b>：A* 在"有趣坐标线"网格求最短正交路径（障碍膨胀+转弯惩罚），无解兜底中线折线；自关联画环；手动拖拽线段整段平移保持正交。</li>
+  <li><b>DAM 分域折叠</b>：按 groupPath 建嵌套可折叠容器，<b>默认全收起</b>——可见节点数受"已展开"约束而非总数，大图性能方案；跨容器边聚合为计数捆线。</li>
+  <li><b>拉线建关系</b>：从卡内任一属性行锚点拖橡皮筋线到目标锚点（26px 磁吸）→ 派 link-add 交宿主补元数据。</li>
+  <li><b>主题</b>：--og-* 令牌锚定门户 --sap*，UI5 亮暗自动穿透 shadow 边界，零 JS。</li>
+</ul>
+
+<h3>9.3 交付链路（重要纪律）</h3>
+<pre>cd cmx-ontology-graph
+./build.sh            <span class="c"># tsc 类型检查 + esbuild 打单文件 ESM → dist/cmx-ontology-graph.esm.js</span>
+./sync-component.sh   <span class="c"># 拷产物 → cmx-container/assets/onto/web/ui-native/vendor/cmx-ontology-graph.js</span>
+<span class="c"># 不跑这两步，本体平台用的还是旧组件（对标 megasheet vendor 纪律）</span></pre>
+<p class="muted">designer 工作台运行时经 fetch 页面源码 → Blob URL → 动态 import 自注册（幂等守卫）。工具链为仓内隔离副本（离线可构建）。</p>
+
+<!-- ═══════════════ 10 ═══════════════ -->
+<h2 id="s10">10. 测试与质量</h2>
+<table>
+  <tr><th style="width:190px">层</th><th>内容</th></tr>
+  <tr><td>单元测试（54）</td><td>model 47：apiName/六类校验/serde round-trip/偏序 JSON/动作参数替换/FEEL/函数/漏斗映射/导入/OSDK/安全残差；store-pg 7：编译器注入拒绝/双向 SearchAround/异类型检查/三跳参数数。</td></tr>
+  <tr><td>e2e（16 个 bash）</td><td>真机库直连：漏斗同步/动作引擎/PEP+乐观锁/FEEL 校验/发件箱+dispatcher+真出站捕获/flow 与 report 真集成（真建流程实例、真算报表落库）/函数/动态安全/headless/导入/OSDK tsc 验证/连通性。</td></tr>
+  <tr><td>QA 套件（2 个）</td><td><code>qa-backend.sh</code>（O1 建模 7 组断言）、<code>qa-object.sh</code>（O2 数据 8 组断言，含三跳单 SQL 精确结果集）。</td></tr>
+  <tr><td>前端 CDP（19 个）</td><td>四区工作台/本体图/对象浏览器/DAM 折叠/主题跟随/副作用富配置/模板建动作/门户菜单真机走查。</td></tr>
+</table>
+<p class="muted">复跑方式：先起服务（<code>./onto.sh</code>），再 <code>./qa-backend.sh && ./qa-object.sh</code>；e2e 在 <code>test/e2e/</code> 逐个跑。</p>
+
+<!-- ═══════════════ 11 ═══════════════ -->
+<h2 id="s11">11. 风险与技术债（使用时规避 / 后续加固）</h2>
+<div class="danger"><b>① subjects 越权面（高·安全）</b>：secure_load 与动作 PEP 的注释声称"jwt 模式以令牌主体为准"，但实现是请求带 subjects 即采纳、未按鉴权模式分支——jwt 模式下调用方仍可自报主体绕过行级残差与 deny_actions。<b>规避</b>：生产用 jwt 时应在网关/代理层剥离调用方 subjects 头，或尽快修复为按模式分支。</div>
+<div class="danger"><b>② funnel 拼接 SQL 与任意 sourceQuery（高·注入面）</b>：load_mapping/list_quarantine/pipeline_status 用字符串拼接（非参数绑定）；run_full_sync 直接执行调用方配置的任意 SQL。<b>规避</b>：映射配置仅限可信管理员；sourceQuery 只配 SELECT；该组端点不对普通用户开放。</div>
+<div class="warn"><b>③ publish 并发撞版本（中）</b>：版本号 = MAX+1 无锁，并发发布会撞号；快照组装 N+1 查询。<b>规避</b>：发布操作串行化（管理动作，频率低）。</div>
+<div class="warn"><b>④ 删对象清边按 pk 全局匹配（中）</b>：pk 是跨类型 TEXT，不同类型撞 pk 值会误删他类型的边。<b>规避</b>：类型间 pk 命名空间隔离（如带前缀）。</div>
+<div class="warn"><b>⑤ is_indexed 未消费（中）</b>：实例表只建 title 索引，Filter 走 JSONB 抽取全表扫。<b>规避</b>：大表高频过滤属性暂用聚合/分页控制范围，等待索引物化特性。</div>
+<div class="warn"><b>⑥ FEEL 数值全 f64（中）</b>：decimal 金额在判定路径有精度风险，相等比较 1e-9 容差。<b>规避</b>：金额判定用区间/整数分单位（分为整数）。</div>
+<p class="muted">轻量项：策略全表拉取 Rust 过滤（量大放大）；非法 row_filter JSON 静默变空（残差失效无告警）；OpenAPI 手写未收录约 15 个新端点（以路由表为准）；SSE 无持久化（可靠投递走发件箱）；图组件 paint 全量重建（大扁平图拖拽可能掉帧，用分域折叠规避）。</p>
+
+<!-- ═══════════════ 12 ═══════════════ -->
+<h2 id="s12">12. 附录</h2>
+<h3>12.1 常用 curl 速查（B=http://127.0.0.1:8097/api/onto/v1，K=开发密钥）</h3>
+<pre>curl -s $B/manifest -H "X-API-Key: $K"                                   <span class="c"># 本体全貌</span>
+curl -s $B/stats    -H "X-API-Key: $K"                                   <span class="c"># 计数+最新版本</span>
+curl -s -X POST $B/publish -H "X-API-Key: $K" -H "Content-Type: application/json" -d '{"summary":"v1"}'
+curl -s "$B/objects/Customer/1/links/customerPlacesOrder" -H "X-API-Key: $K"   <span class="c"># 一跳</span>
+curl -s -X POST $B/object-sets/load -H "X-API-Key: $K" -H "Content-Type: application/json" \
+     -d '{"objectSet":{"op":"base","objectType":"Customer"}}'                  <span class="c"># 全量分页</span>
+curl -s -X POST $B/action-types/objectApprove/execute -H "X-API-Key: $K" -H "Content-Type: application/json" \
+     -d '{"params":{"pk":"C-1"},"dryRun":true}'                                <span class="c"># 动作预演</span>
+curl -s "$B/action-outbox?status=pending" -H "X-API-Key: $K"                   <span class="c"># 待投递副作用</span>
+curl -s -X POST $B/funnel/sync/MdmCustomer -H "X-API-Key: $K"                  <span class="c"># 主数据刷新</span>
+curl -s "$B/osdk/typescript" -H "X-API-Key: $K" -o ontology-sdk.ts             <span class="c"># 生成 SDK</span></pre>
+
+<h3>12.2 关键文件索引</h3>
+<table>
+  <tr><th style="width:340px">位置</th><th>内容</th></tr>
+  <tr><td><code>cmx-ontology/crates/cmx-onto-server/src/main.rs</code></td><td>启动/路由装配/资产指向</td></tr>
+  <tr><td><code>cmx-ontology/crates/cmx-onto-model/src/{def,action,feel,objectset,import,funnel,osdk,authz}.rs</code></td><td>元模型与纯逻辑内核</td></tr>
+  <tr><td><code>cmx-ontology/crates/cmx-onto-store-pg/src/{ddl,store,compile,object_store,action_exec,policy_store,funnel_store}.rs</code></td><td>PG 落地与三大引擎</td></tr>
+  <tr><td><code>cmx-ontology/crates/cmx-onto-app/src/lib.rs</code>（onto_routes）</td><td>63 端点路由表真源</td></tr>
+  <tr><td><code>cmx-container/assets/onto/web/ui-native/onto/{designer,explorer,workshop}.js</code></td><td>前端三页面（改后须重启 onto-server）</td></tr>
+  <tr><td><code>cmx-ontology-graph/src/</code>（model/layout/render/interaction/element）</td><td>图组件源码（改后 build.sh + sync-component.sh）</td></tr>
+  <tr><td><code>cmx-ontology/{qa-backend.sh,qa-object.sh,test/e2e/*.sh}</code></td><td>QA 与 e2e（本文示例来源）</td></tr>
+  <tr><td><code>cmx-ontology/docs/20260830_cmx-ontology_完整实现方案_图文并茂.md</code></td><td>原始实现方案（设计背景）</td></tr>
+</table>
+
+<footer>
+  <b>相关文档：</b>
+  <a href="20260907_本体平台_简要说明_本体如何设计.html">简要 1/4 · 本体如何设计</a>
+  <a href="20260907_本体平台_简要说明_如何使用.html">简要 2/4 · 如何使用</a>
+  <a href="20260907_本体平台_简要说明_如何增加对象.html">简要 3/4 · 如何增加对象</a>
+  <a href="20260907_本体平台_简要说明_如何结合主数据.html">简要 4/4 · 如何结合主数据</a>
+  <p style="margin-top:8px">CMX 企业门户 · 本体平台说明文档 · 2026-09-07 · 全部数字与示例基于 cmx-ontology / cmx-ontology-graph 仓库代码实测（63 端点=路由表 grep 统计；13 表=DDL 语句统计；示例取自 qa-*.sh 与 test/e2e/*.sh 真实通过用例）</p>
+</footer>
+</div>
+</body>
+</html>

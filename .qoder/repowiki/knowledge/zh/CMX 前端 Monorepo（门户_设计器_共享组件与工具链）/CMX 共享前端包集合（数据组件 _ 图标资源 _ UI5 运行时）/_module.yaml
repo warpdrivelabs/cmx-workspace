@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: shared_packages
+title: CMX 共享前端包集合（数据组件 / 图标资源 / UI5 运行时）
+scope:
+    - packages/
+source_files: []
+depends_on: []
+related_to:
+    - path: cmx_html_designer
+    - path: cmx_portal_manager

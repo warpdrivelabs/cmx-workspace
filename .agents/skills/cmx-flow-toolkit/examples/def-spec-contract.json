@@ -1,0 +1,124 @@
+{
+  "_comment": "样例2：并行网关 + 会签（过半收口）+ 角色候选池 + 抄送 + 终止型终点。注意：发起人审批用 candidates:\"initiator\"（assignee 只接受静态 id 或 ${var}，不支持关系型关键字）",
+  "key": "contract_review",
+  "name": "合同评审",
+  "nodes": [
+    {
+      "id": "apply",
+      "type": "userTask",
+      "name": "发起申请",
+      "candidates": "initiator",
+      "cc": "user(u_auditor1)"
+    },
+    {
+      "id": "fork",
+      "type": "parallelGateway"
+    },
+    {
+      "id": "legal",
+      "type": "userTask",
+      "name": "法务审核",
+      "candidates": "role(finance)"
+    },
+    {
+      "id": "sign",
+      "type": "userTask",
+      "name": "评审会签",
+      "assignee": "${reviewer}",
+      "mi": {
+        "collection": "reviewers",
+        "elementVar": "reviewer",
+        "sequential": false,
+        "completion": "${nrOfCompletedInstances/nrOfInstances >= 0.5}"
+      }
+    },
+    {
+      "id": "join",
+      "type": "parallelGateway"
+    },
+    {
+      "id": "boss",
+      "type": "userTask",
+      "name": "总经理审批",
+      "candidates": "orgLeader"
+    },
+    {
+      "id": "gw2",
+      "type": "exclusiveGateway",
+      "name": "结果",
+      "defaultTo": "pass"
+    },
+    {
+      "id": "pass",
+      "type": "endEvent",
+      "name": "通过"
+    },
+    {
+      "id": "veto",
+      "type": "endEvent",
+      "name": "一票否决",
+      "terminate": true
+    }
+  ],
+  "flows": [
+    {
+      "from": "apply",
+      "to": "fork"
+    },
+    {
+      "from": "fork",
+      "to": "legal"
+    },
+    {
+      "from": "fork",
+      "to": "sign"
+    },
+    {
+      "from": "legal",
+      "to": "join"
+    },
+    {
+      "from": "sign",
+      "to": "join"
+    },
+    {
+      "from": "join",
+      "to": "boss"
+    },
+    {
+      "from": "boss",
+      "to": "gw2"
+    },
+    {
+      "from": "gw2",
+      "to": "veto",
+      "condition": "${rejected == true}",
+      "name": "否决"
+    },
+    {
+      "from": "gw2",
+      "to": "pass"
+    }
+  ],
+  "deploy": {
+    "server": "http://127.0.0.1:8091",
+    "note": "cmx-flow-toolkit 样例",
+    "publishedBy": "agent"
+  },
+  "smoke": {
+    "orgId": "zongbu",
+    "businessKey": "SMOKE-CTR-001",
+    "variables": {
+      "initiator": "u_emp",
+      "rejected": false,
+      "reviewers": [
+        "u_fin1",
+        "u_fin2",
+        "u_fin3"
+      ]
+    },
+    "expectActive": [
+      "apply"
+    ]
+  }
+}

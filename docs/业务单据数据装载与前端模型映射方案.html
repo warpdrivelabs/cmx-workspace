@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>业务单据数据装载与前端模型映射方案</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1b2438; --ink:#e7ecf5; --muted:#9aa7bd;
+    --line:#2a3550; --brand:#5b9dff; --brand2:#7c5cff; --ok:#37d39a; --warn:#ffb454;
+    --danger:#ff6b81; --code-bg:#0c111c; --code-ink:#d7e3ff; --chip:#223052;
+    --accent-soft:rgba(91,157,255,.12);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:linear-gradient(180deg,#0d1220,#0f1420 240px); color:var(--ink);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+    font-size:15.5px; line-height:1.72; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--brand); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre,.mono{font-family:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace}
+
+  /* Layout */
+  .wrap{display:grid; grid-template-columns:290px minmax(0,1fr); gap:0; max-width:1400px; margin:0 auto}
+  aside{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:26px 18px 60px; border-right:1px solid var(--line); background:rgba(13,18,32,.6);
+  }
+  aside::-webkit-scrollbar{width:8px} aside::-webkit-scrollbar-thumb{background:#2a3550;border-radius:8px}
+  main{padding:44px 52px 120px; min-width:0}
+
+  /* Sidebar */
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 14px var(--brand)}
+  .brand b{font-size:15px;letter-spacing:.3px}
+  .sub{color:var(--muted);font-size:12px;margin:0 0 18px 22px}
+  nav a{display:block;color:var(--muted);font-size:13.2px;padding:5px 10px;border-radius:7px;border-left:2px solid transparent;transition:.15s}
+  nav a:hover{color:var(--ink);background:var(--accent-soft);text-decoration:none}
+  nav a.active{color:#fff;border-left-color:var(--brand);background:var(--accent-soft);font-weight:600}
+  nav .g{margin:12px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:#68758f}
+
+  /* Hero */
+  .hero{border:1px solid var(--line);background:linear-gradient(120deg,#151d30,#1a1330);border-radius:16px;padding:30px 34px;margin-bottom:34px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(124,92,255,.28),transparent 60%)}
+  .hero h1{margin:0 0 10px;font-size:27px;line-height:1.3;letter-spacing:.4px}
+  .hero p{margin:6px 0;color:var(--muted);font-size:14px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .tag{font-size:12px;padding:4px 11px;border-radius:20px;background:var(--chip);border:1px solid var(--line);color:#bcd0f5}
+  .tag.ok{background:rgba(55,211,154,.12);border-color:rgba(55,211,154,.3);color:#7ef0c4}
+  .tag.warn{background:rgba(255,180,84,.1);border-color:rgba(255,180,84,.3);color:#ffce8f}
+
+  h2{font-size:22px;margin:52px 0 14px;padding-top:14px;letter-spacing:.3px;scroll-margin-top:20px}
+  h2 .n{color:var(--brand);font-variant-numeric:tabular-nums;margin-right:10px}
+  h3{font-size:17px;margin:28px 0 10px;color:#cfe0ff}
+  h4{font-size:14.5px;margin:20px 0 8px;color:#bcd0f5}
+  p{margin:11px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+  /* Callouts */
+  .call{border-radius:12px;padding:16px 20px;margin:20px 0;border:1px solid var(--line);background:var(--panel);position:relative;padding-left:22px}
+  .call::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+  .call.key::before{background:linear-gradient(var(--brand),var(--brand2))}
+  .call.ok::before{background:var(--ok)}
+  .call.warn::before{background:var(--warn)}
+  .call.danger::before{background:var(--danger)}
+  .call b.lead{display:block;margin-bottom:4px;color:#fff}
+  .call.key{background:linear-gradient(120deg,rgba(91,157,255,.08),rgba(124,92,255,.06))}
+
+  /* Tables */
+  .tbl{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-size:13.6px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--panel2);color:#cfe0ff;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--accent-soft)}
+  td code{white-space:nowrap}
+
+  /* Code */
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;margin:16px 0;font-size:13px;line-height:1.65;color:var(--code-ink)}
+  pre::-webkit-scrollbar{height:9px} pre::-webkit-scrollbar-thumb{background:#2a3550;border-radius:9px}
+  :not(pre)>code{background:var(--chip);padding:1.5px 6px;border-radius:6px;font-size:12.8px;color:#cfe0ff;border:1px solid #263250}
+  pre .cm{color:#5e7290}   /* comment */
+  pre .kw{color:#7cabff}   /* keyword */
+  pre .st{color:#8fe6b0}   /* string */
+  pre .nm{color:#ffce8f}   /* number/ident */
+  pre .fn{color:#c9a4ff}   /* function */
+  .diagram{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;font-size:12.2px;line-height:1.5;color:#b9c8e6;white-space:pre}
+
+  ul,ol{margin:11px 0;padding-left:24px}
+  li{margin:6px 0}
+  li::marker{color:var(--brand)}
+  strong{color:#fff}
+  em{color:#ffce8f;font-style:normal}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--panel)}
+  .card h4{margin-top:0}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;font-style:italic;text-align:center}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr} aside{display:none} main{padding:26px 20px 80px}
+    .grid2{grid-template-columns:1fr}
+  }
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--brand);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;opacity:0;transition:.25s;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .backtop.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside>
+  <div class="brand"><span class="dot"></span><b>业务单据数据链路</b></div>
+  <div class="sub">装载 → 前端模型 → 编辑 → 回存</div>
+  <nav id="toc">
+    <div class="g">概述</div>
+    <a href="#s0">0 · 一句话结论</a>
+    <a href="#s1">1 · 现状勘察 vs 缺口</a>
+    <a href="#s2">2 · 端到端架构总览</a>
+    <div class="g">元数据 & 建表</div>
+    <a href="#s3">3 · 层级模型 (id / upper_id)</a>
+    <a href="#s3b">3.6 · 后端如何访问元数据</a>
+    <a href="#s4">4 · PostgreSQL 建表</a>
+    <div class="g">数据链路</div>
+    <a href="#s5">5 · 装载：DB → 前端模型</a>
+    <a href="#s5a">5A · 维度解析 (ID→Name)</a>
+    <a href="#s6">6 · 编辑显示与回存</a>
+    <a href="#s6a">6A · 版本化 / 历史 / 审计</a>
+    <div class="g">两条硬约束</div>
+    <a href="#s7">7 · 后端零拷贝 (A)</a>
+    <a href="#s8">8 · 传输小包 (B)</a>
+    <div class="g">契约 & 落地</div>
+    <a href="#s9">9 · API 契约</a>
+    <a href="#s10">10 · 结构孪生对照</a>
+    <a href="#s11">11 · 落地顺序</a>
+    <a href="#s12">12 · 风险与护栏</a>
+    <a href="#s13">13 · 文件索引</a>
+    <a href="#s14">14 · 查漏补缺 · 横切关注点</a>
+    <a href="#s15">15 · 配置驱动可扩展机制</a>
+    <a href="#s16">16 · 运行形态：原生 vs WASM</a>
+  </nav>
+</aside>
+
+<main>
+  <div class="hero">
+    <h1>业务单据数据「装载 → 前端模型 → 编辑显示 → 回存」全链路方案</h1>
+    <p>把某个已定义的<strong>业务单据（DOC）</strong>在 PostgreSQL 中的多层业务数据，端到端装入前端 <code>CmxDataSet / CmxRowSet / CmxMasterSlave</code> 模型，在 <code>cmx-revo-grid / cmx-ui5-form</code> 中编辑显示，并可再次存回后端数据表。</p>
+    <p>两条硬约束：<strong>（A）后端尽量零拷贝</strong> · <strong>（B）传输到前端的数据包尽量小</strong>。</p>
+    <div class="tags">
+      <span class="tag">版本 v1 · 2026-07-03</span>
+      <span class="tag ok">纯方案 · 不改任何代码</span>
+      <span class="tag warn">基于源码实证</span>
+      <span class="tag">Lit 前端 · Rust/sqlx 后端</span>
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <h2 id="s0"><span class="n">0</span>一句话结论</h2>
+  <div class="call key">
+    <b class="lead">后端 <code>cmx-core::DataSet</code> 与前端 <code>CmxMasterSlave</code> 是天生的结构孪生。</b>
+    两者都是「<code>schema/id</code> + 扁平行 <code>rows</code> + 按名挂载的子数据集 <code>children</code>」的递归主从树。系统<strong>已就绪</strong>：单据元数据（<code>voucherTables/voucherSchema/relations/aggregations</code>）、<code>DdlDialect</code> 建表引擎、<code>ResultConverter</code> 把 PG 行装成 <code>DataSet</code>、<code>Arc&lt;Schema&gt;</code> 共享、前端 <code>CmxDataSet</code> 的<strong>列式序列化</strong>（<code>exportColumnar/fromJSON</code>）与<strong>零拷贝视图</strong>（<code>CmxDataSetView</code>）。
+  </div>
+  <p><strong>唯一缺口</strong>是：没有任何代码「按单据定义的 <code>upper_id</code> 层级，把多张物理表的扁平行组装成一棵嵌套 <code>DataSet</code>，再列式小包传前端；也没有把前端改动按层拆解回写各表」。本方案补上这条链路，并叠加<strong>零拷贝</strong>与<strong>小包</strong>两项优化——新增 <strong>2 个后端端点</strong> + <strong>1 套列式小包协议</strong> + <strong>1 个前端装配/拆解适配层</strong>，<strong>不改</strong>已有建表引擎、元数据存储、CRUD 宏。</p>
+
+  <!-- 1 -->
+  <h2 id="s1"><span class="n">1</span>现状勘察：可复用 vs 缺口</h2>
+  <h3>1.1 可直接复用（已就绪）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>能力</th><th>位置</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>业务单据元数据</td><td><code>data/meta/definitions/**/*_doc_meta_v1.json</code></td><td><code>voucherSchema.schema</code>(L1..Ln) + <code>relations</code>(parentKey→childKey) + <code>aggregations</code>(上卷) + <code>voucherTables[]</code>(每层字段)</td></tr>
+      <tr><td>层级基础字段集</td><td><code>base_doc_meta_v1.json → documentLevelFields</code></td><td><code>id</code>(BIGINT 主键) + <code>upper_id</code>(BIGINT 父指针) + <code>line_no</code>(INT 行号)</td></tr>
+      <tr><td>定义 → 物理表编译</td><td><code>model_center.rs</code></td><td><code>compile_doc()</code> 把 <code>voucherTables[]</code> 编成 <code>Vec&lt;TableDefine&gt;</code>；<code>field_to_column()</code> 映射类型/长度/精度</td></tr>
+      <tr><td>PG 建表引擎</td><td><code>cmx-metadata/ddl/postgres.rs</code> + <code>executor.rs</code></td><td><code>map_column_type</code> + <code>create_or_upgrade_table</code>（内省 + 增量、<strong>只加不删</strong>）</td></tr>
+      <tr><td>DB 行 → DataSet</td><td><code>cmx-database/executor/mod.rs:308</code></td><td><code>ResultConverter::convert_postgres_rows() -&gt; DataSet</code></td></tr>
+      <tr><td>查询/执行/事务</td><td><code>cmx-database/transaction/api.rs</code></td><td><code>query_sql()-&gt;DataSet</code>、<code>execute_sql_with_datavalues()</code>、<code>begin/commit/rollback</code> by <code>txn_id</code>、按 <code>db_id</code> 多库池</td></tr>
+      <tr><td>后端主从容器</td><td><code>cmx-core/.../dataset/rds.rs</code></td><td><code>DataSet{ id, schema:Arc&lt;Schema&gt;, rows, inserted/updated/deleted }</code>；<code>Row{ values, children }</code></td></tr>
+      <tr><td>前端主从协调器</td><td><code>cmx-master-slave.js</code></td><td><code>setDataSet/setFlatData</code>、<code>bindTable/bindForm</code>、<code>relations/aggregations</code>、递归监听</td></tr>
+      <tr><td>前端列式编解码</td><td><code>cmx-data-set.js</code></td><td><code>exportColumnar()/toJSON()</code> → <code>{columns, rows:[[…]], childRows}</code>；<code>fromJSON()</code> 还原</td></tr>
+      <tr><td>前端零拷贝视图</td><td><code>cmx-data-set-view.js</code></td><td><code>CmxDataSetView</code> 仅存主集 <code>CmxRowSet</code> 引用，内存 ≈ O(命中行) 指针</td></tr>
+      <tr><td>网格/表单编辑回写</td><td><code>cmx-revo-grid.js:1004</code> / <code>cmx-ui5-form.js:1137</code></td><td><code>afteredit → model.set()</code>；<code>_commit → this._row.set()</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1.2 必须新增的缺口</h3>
+  <ol>
+    <li><strong>单据数据「装载」服务</strong>：读定义 → 按层生成参数化 SQL → 按 <code>upper_id</code> 组装嵌套 <code>DataSet</code> → 列式小包。现状 <code>convert_postgres_rows</code> 只产<em>单层扁平</em> <code>DataSet</code>，主从嵌套需手动 <code>Row::add_child</code>，且<strong>无人</strong>按元数据自动做。</li>
+    <li><strong>单据数据「回存」服务</strong>：接收前端 changeset（按层 inserted/updated/deleted），<strong>一个事务</strong>内逐层 upsert/delete；子表靠 <code>upper_id = 父行 id</code> 维系。现状只有单表 CRUD 宏与 WASM 裸 SQL。</li>
+    <li><strong>小包 + 零拷贝传输层</strong>：现状<em>行式 JSON、键名逐行重复、不跳 null、无压缩</em>（<code>RowRef</code> 逐行 <code>{field:value}</code>，<code>SKIP_NULL_IN_SERIALIZE=false</code>，<code>CompressionLayer</code> 已编译未挂载）。</li>
+  </ol>
+
+  <h3>1.3 三个必须规避的现状坑</h3>
+  <div class="call warn">
+    <b class="lead">坑 A — 前端模型无脏标记</b>
+    <code>CmxRowSet</code> 没有 <code>_dirty/_isNew/_state</code>，"脏"只体现为 <code>row-changed/ds-row-added/ds-row-removed</code> 事件流。→ 回存需在适配层<strong>自建 changeset 收集器</strong>（订阅事件）。
+  </div>
+  <div class="call warn">
+    <b class="lead">坑 B — <code>DataSet</code> 变更池不序列化</b>
+    <code>rds.rs</code> 的 <code>Serialize</code> 只输出 <code>id/schema/rows</code>，<code>inserted/updated/deleted</code> <strong>不过线</strong>。→ 回存协议要<strong>显式定义</strong> changeset 字段，不能复用默认序列化。
+  </div>
+  <div class="call warn">
+    <b class="lead">坑 C — <code>upper_id</code>/层级从不进 DB 外键</b>
+    <code>compile_doc</code> 生成的 <code>upper_id</code> 只是普通 nullable <code>BIGINT</code> 列，<code>relations/level</code> 不读、不建 FK。→ 层级关系<strong>由应用层（装载/回存服务）保证</strong>，不能依赖 DB 级联。
+  </div>
+
+  <!-- 2 -->
+  <h2 id="s2"><span class="n">2</span>端到端架构总览</h2>
+  <div class="diagram">┌────────────────────────────────────────────────────────────────────────────┐
+│  PostgreSQL（每层一张物理表：cv_batch / cv_header / cv_acc_line / cv_aux_line） │
+│  行间靠 upper_id = 父行 id 关联（非 DB 外键，应用层维系）                        │
+└───────────────┬──────────────────────────────────────────────▲───────────────┘
+        装载 query_sql(每层一条 SQL)                回存 execute_sql_with_datavalues(事务内逐层)
+                ▼                                              │
+┌────────────────────────────────────────────────────────────┴───────────────┐
+│  后端 单据数据服务（新增）                                                     │
+│   ① DocLoader   ：读定义→按层查→按 upper_id 组装嵌套 DataSet（Arc&lt;Schema&gt;）     │
+│   ② DocSaver    ：收 changeset→拓扑序(父先)逐层 UPSERT/DELETE，一个 txn_id       │
+│   ③ ColumnarCodec：DataSet ⇄ 列式小包（keys 一次 + rows[[…]] + childRows）       │
+└───────────────┬──────────────────────────────────────────────▲───────────────┘
+     GET /api/doc/data（列式 + 可选 msgpack + gzip/br）   POST /api/doc/save（changeset）
+                ▼                                              │
+┌────────────────────────────────────────────────────────────┴───────────────┐
+│  前端 单据适配层（新增，页面 host 上）                                          │
+│   ④ 列式包 → CmxDataSet.fromJSON() 逐层还原 → { rootId: CmxDataSet } 树          │
+│   ⑤ ms.setDataSet(dsMap)（零拷贝接管，不再二次转换）                            │
+│   ⑥ ChangeSetCollector：订阅 row-changed/ds-row-added/ds-row-removed 收集变更    │
+└───────────────┬──────────────────────────────────────────────▲───────────────┘
+                ▼                                              │
+┌────────────────────────────────────────────────────────────┴───────────────┐
+│  可视化组件（已就绪）                                                          │
+│   cmx-revo-grid（每层一张网格，主选中→子级联）/ cmx-ui5-form（绑定当前行）        │
+│   编辑：afteredit→model.set → row-changed → 聚合上卷 + 视图刷新                 │
+└──────────────────────────────────────────────────────────────────────────────┘</div>
+  <div class="call key">
+    <b class="lead">核心洞察：无阻抗直通</b>
+    后端 <code>DataSet</code> 与前端 <code>CmxDataSet</code> 同构——两端都是 <code>{ schema/id, rows(扁平值), children(按名子集) }</code>。因此「后端组装嵌套 <code>DataSet</code> → 列式序列化 → 前端 <code>fromJSON</code> 还原 → <code>ms.setDataSet</code>」是一条<strong>没有模型翻译损耗</strong>的直通路。
+  </div>
+
+  <!-- 3 -->
+  <h2 id="s3"><span class="n">3</span>业务单据元数据与层级模型（<code>id</code> / <code>upper_id</code>）</h2>
+  <h3>3.1 单据定义结构（DOC）</h3>
+  <p>以 <code>cmxfico_doc_meta_v1.json</code> 为例，一份 DOC 定义的关键块：</p>
+  <pre><span class="cm">// 4 层主从：L1 凭证批 → L2 凭证头 → L3 科目行 → L4 辅助行</span>
+{
+  <span class="nm">"docMeta"</span>: { <span class="nm">"metaKind"</span>: <span class="st">"DOC"</span>, <span class="nm">"version"</span>: 1 },
+  <span class="nm">"voucherSchema"</span>: {
+    <span class="nm">"schema"</span>: [
+      [ { <span class="nm">"id"</span>:<span class="st">"cv_batch"</span>,    <span class="nm">"level"</span>:<span class="st">"L1"</span>, <span class="nm">"levelName"</span>:<span class="st">"凭证批"</span> } ],
+      [ { <span class="nm">"id"</span>:<span class="st">"cv_header"</span>,   <span class="nm">"level"</span>:<span class="st">"L2"</span>, <span class="nm">"levelName"</span>:<span class="st">"凭证头"</span> } ],
+      [ { <span class="nm">"id"</span>:<span class="st">"cv_acc_line"</span>, <span class="nm">"level"</span>:<span class="st">"L3"</span>, <span class="nm">"levelName"</span>:<span class="st">"科目行"</span> } ],
+      [ { <span class="nm">"id"</span>:<span class="st">"cv_aux_line"</span>, <span class="nm">"level"</span>:<span class="st">"L4"</span>, <span class="nm">"levelName"</span>:<span class="st">"辅助行"</span> } ]
+    ],
+    <span class="nm">"relations"</span>: [
+      { <span class="nm">"parent"</span>:<span class="st">"cv_batch"</span>,      <span class="nm">"child"</span>:<span class="st">"headers"</span>,       <span class="nm">"parentKey"</span>:<span class="st">"id"</span>, <span class="nm">"childKey"</span>:<span class="st">"upper_id"</span> },
+      { <span class="nm">"parent"</span>:<span class="st">"headers"</span>,       <span class="nm">"child"</span>:<span class="st">"account_lines"</span>, <span class="nm">"parentKey"</span>:<span class="st">"id"</span>, <span class="nm">"childKey"</span>:<span class="st">"upper_id"</span> },
+      { <span class="nm">"parent"</span>:<span class="st">"account_lines"</span>, <span class="nm">"child"</span>:<span class="st">"aux_lines"</span>,     <span class="nm">"parentKey"</span>:<span class="st">"id"</span>, <span class="nm">"childKey"</span>:<span class="st">"upper_id"</span> }
+    ],
+    <span class="nm">"aggregations"</span>: [
+      { <span class="nm">"from"</span>:<span class="st">"cv_header.account_lines"</span>, <span class="nm">"to"</span>:<span class="st">"cv_header"</span>, <span class="nm">"field"</span>:<span class="st">"entered_dr"</span>, <span class="nm">"toField"</span>:<span class="st">"total_dr"</span>, <span class="nm">"agg"</span>:<span class="st">"sum"</span> }
+    ]
+  },
+  <span class="nm">"voucherTables"</span>: [
+    { <span class="nm">"level"</span>:<span class="st">"L1"</span>, <span class="nm">"tableName"</span>:<span class="st">"cv_batch"</span>, <span class="nm">"fields"</span>:[ <span class="cm">/* 本层特有字段 */</span> ],
+      <span class="nm">"documentFieldSets"</span>:[ <span class="st">"documentLevelFields"</span>, <span class="st">"documentTechnicalFields"</span> ] }
+  ]
+}</pre>
+  <ul>
+    <li><strong>节点类型</strong>：<code>单据 → 层/表(level) → 字段(field)</code>。每个 <code>voucherTables[i]</code> 就是一层一张物理表。</li>
+    <li><strong>主从即多级树</strong>：这是<em>主从（master-slave）</em>，与「细分/弹性组合 CTX」是两回事（<code>flexible-combination-engine.js</code> 已废弃为壳）。</li>
+  </ul>
+
+  <h3>3.2 层级身份字段（<code>documentLevelFields</code>）</h3>
+  <pre><span class="nm">"documentLevelFields"</span>: {
+  <span class="nm">"remark"</span>: <span class="st">"业务单据层级基础字段集:id(主键)+upper_id(上级单据主键,单层父指针)+line_no(行号)"</span>,
+  <span class="nm">"fields"</span>: [
+    { <span class="nm">"id"</span>:<span class="st">"id"</span>,       <span class="nm">"dataType"</span>:<span class="st">"BIGINT"</span>, <span class="nm">"nullable"</span>:<span class="kw">false</span>, <span class="nm">"isPrimaryKey"</span>:1 },
+    { <span class="nm">"id"</span>:<span class="st">"upper_id"</span>, <span class="nm">"dataType"</span>:<span class="st">"BIGINT"</span>, <span class="nm">"nullable"</span>:<span class="kw">true</span>,  <span class="nm">"dimType"</span>:<span class="st">"attribute"</span> },
+    { <span class="nm">"id"</span>:<span class="st">"line_no"</span>,  <span class="nm">"dataType"</span>:<span class="st">"INT"</span>,    <span class="nm">"nullable"</span>:<span class="kw">false</span>, <span class="nm">"dimType"</span>:<span class="st">"attribute"</span> }
+  ]
+}</pre>
+  <ul>
+    <li><strong><code>id</code></strong>：BIGINT 主键（<code>isPrimaryKey:1</code>）。</li>
+    <li><strong><code>upper_id</code></strong>：BIGINT 父指针（可空，根层为空）。<em>从扁平行重建树的唯一依据</em>：<code>child.upper_id === parent.id</code>。</li>
+    <li><strong><code>line_no</code></strong>：INT 行内序号。</li>
+  </ul>
+
+  <h3>3.3 两种父子链方言</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>方言</th><th>父指针</th><th>代表</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>通用单指针</strong></td><td><code>upper_id</code>（每层共用，来自 documentLevelFields）</td><td>cmxfico（4 层）</td><td><code>relations.childKey = "upper_id"</code></td></tr>
+      <tr><td><strong>命名外键</strong></td><td><code>header_id</code>/<code>entry_id</code>/<code>batch_id</code>（各层显式声明）</td><td>SAP / 用友 / 金蝶 / EBS</td><td><code>childKey="header_id"</code>，字段 <code>dimType:"relation"</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="call ok"><b class="lead">统一处理</b>装载/回存服务<strong>读 <code>relations</code> 拿 <code>parentKey/childKey</code></strong>，两种方言统一，不写死 <code>upper_id</code>。文中以 <code>upper_id</code> 为默认示例。</div>
+
+  <h3>3.4 真实数据实例（<code>upper_id</code> 链）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>层</th><th><code>id</code></th><th><code>upper_id</code> → 父</th></tr></thead>
+    <tbody>
+      <tr><td>batch (L1)</td><td><code>20260003</code></td><td>—（根）</td></tr>
+      <tr><td>header (L2)</td><td><code>1000000007</code></td><td><code>20260003</code> → batch</td></tr>
+      <tr><td>account_line (L3)</td><td><code>100000000701</code></td><td><code>1000000007</code> → header</td></tr>
+      <tr><td>aux_line (L4)</td><td><code>10000000070101</code></td><td><code>100000000701</code> → 科目行</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>3.5 字段定义 schema（单字段全属性）</h3>
+  <pre><span class="cm">// 真实字段：L1 comp_unit_id 公司代码</span>
+{
+  <span class="nm">"id"</span>:<span class="st">"comp_unit_id"</span>, <span class="nm">"dataType"</span>:<span class="st">"BIGINT"</span>, <span class="nm">"fieldLength"</span>:20, <span class="nm">"decimalDigits"</span>:0,
+  <span class="nm">"nullable"</span>:<span class="kw">true</span>, <span class="nm">"dimType"</span>:<span class="st">"dimension"</span>, <span class="nm">"caption"</span>:{<span class="nm">"zh_CN"</span>:<span class="st">"公司代码"</span>},
+  <span class="nm">"refDict"</span>:<span class="st">"comp_unit"</span>, <span class="nm">"refField"</span>:<span class="st">"code"</span>, <span class="nm">"displayField"</span>:<span class="st">"name"</span>, <span class="cm">// 字典外键引用</span>
+  <span class="nm">"physicalField"</span>:<span class="st">"BUKRS"</span>                                       <span class="cm">// 物理源列(SAP 血缘)</span>
+}</pre>
+  <p>字段属性全集（<code>cmx-field-schema.js</code> 的 <code>FIELD_SCHEMA</code>）：<code>id/name/caption(多语)</code>、<code>dataType</code>、<code>fieldLength/intDigits/decimalDigits</code>、<code>nullable/isPrimaryKey</code>、<code>dimType(dimension/attribute/measure/relation)</code>、<code>refDict/refField/displayField</code>、<code>edit.mode</code>、<code>agg</code>、<code>defaultValue/unique/pattern/enumValues</code>、<code>edit.requiredWhen/editableWhen/visibleWhen</code> 等。</p>
+
+  <h3 id="s3b">3.6 后端 Rust 中如何访问这些元数据（现状：弱类型 JSON 透传）</h3>
+  <div class="call key">
+    <b class="lead">单据元数据在后端不是 Rust 结构体，而是磁盘上的 JSON 文件。</b>
+    后端把它当 <code>serde_json::Value</code> 读进来、用 <code>.get("...")</code> 逐字段取值。这正是本方案「缺口」的根源——后端对单据元数据是<strong>弱类型透传</strong>，没有 <code>VoucherMeta/DocMeta</code> 强类型，也没有任何代码遍历 <code>voucherSchema.relations</code> 的层级。
+  </div>
+  <p><strong>唯一入口</strong>：<code>cmx_portal::definitions::store</code>（实现在 <code>crates/libs/cmx-model/src/definitions/store.rs</code>）。元数据存放于 <code>data/meta/definitions/&lt;domain&gt;/&lt;app&gt;/&lt;module&gt;/&lt;file&gt;.json</code>（<code>base</code> 域特例为 <code>.../base/&lt;file&gt;.json</code>）。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>函数</th><th>作用</th><th>返回</th></tr></thead>
+    <tbody>
+      <tr><td><code>get_definition(&amp;DefRef)</code></td><td>读单个定义文件（原样 JSON）</td><td><code>serde_json::Value</code></td></tr>
+      <tr><td><code>get_definitions_batch(&amp;Value)</code></td><td>批量读 + 一次性附带各定义引用的 base 字段集（去重）</td><td><code>{ items, bases, basePaths, errors }</code></td></tr>
+      <tr><td><code>list_definitions(kind, domain, app, module)</code></td><td>递归扫描列表（按 <code>metaKind</code> 分 DCT/DOC/BASE）</td><td><code>Value</code></td></tr>
+      <tr><td><code>save_definition / set_default_version / delete_definition</code></td><td>写 / 设默认版本 / 删（base 不可删）</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>DefRef</code> 是文件坐标：<code>{ domain, application/app, module, file/id }</code>。<strong>标准范例</strong>（<code>model_center.rs</code>，后端目前<em>唯一</em>真正读单据元数据的地方——编译成建表 <code>TableDefine</code>）：</p>
+  <pre><span class="cm">// ① 读定义文件全文（弱类型 Value）</span>
+<span class="kw">let</span> r = DefRef { domain: <span class="kw">Some</span>(domain.into()), application: <span class="kw">Some</span>(app.into()),
+                 app: <span class="kw">Some</span>(app.into()), module: <span class="kw">Some</span>(module.into()), file: <span class="kw">Some</span>(file.into()), id: <span class="kw">None</span> };
+<span class="kw">let</span> doc = cmx_portal::definitions::store::<span class="fn">get_definition</span>(&amp;r).<span class="kw">await</span>?;   <span class="cm">// → serde_json::Value</span>
+
+<span class="cm">// ② 读它引用的 base 字段集（domain = "base"）</span>
+<span class="kw">let</span> base_file = doc.<span class="fn">get</span>(<span class="st">"baseDocMetaRef"</span>).<span class="fn">and_then</span>(|r| r.<span class="fn">get</span>(<span class="st">"file"</span>)).<span class="fn">and_then</span>(|v| v.<span class="fn">as_str</span>());
+<span class="kw">let</span> base = <span class="fn">read_base</span>(base_file).<span class="kw">await</span>?;
+
+<span class="cm">// ③ 用 .get(...).as_array()/.as_str() 逐字段访问，遍历 voucherTables → 每层一张表</span>
+<span class="kw">let</span> tables = doc.<span class="fn">get</span>(<span class="st">"voucherTables"</span>).<span class="fn">and_then</span>(|v| v.<span class="fn">as_array</span>())?;
+<span class="kw">for</span> t <span class="kw">in</span> tables {
+    <span class="kw">let</span> table_name = t.<span class="fn">get</span>(<span class="st">"tableName"</span>).<span class="fn">and_then</span>(|v| v.<span class="fn">as_str</span>()).<span class="fn">unwrap_or</span>(<span class="st">""</span>);
+    <span class="kw">if let</span> <span class="kw">Some</span>(own) = t.<span class="fn">get</span>(<span class="st">"fields"</span>).<span class="fn">and_then</span>(|v| v.<span class="fn">as_array</span>()) { <span class="cm">/* 本层字段 */</span> }
+    <span class="cm">// documentFieldSets 引用 base 里的共享字段集：base["fieldSets"][name]["fields"]</span>
+    <span class="kw">if let</span> <span class="kw">Some</span>(sets) = t.<span class="fn">get</span>(<span class="st">"documentFieldSets"</span>).<span class="fn">and_then</span>(|v| v.<span class="fn">as_array</span>()) {
+        <span class="kw">for</span> s <span class="kw">in</span> sets { <span class="kw">let</span> fields = <span class="fn">base_fieldset</span>(&amp;base, s.<span class="fn">as_str</span>()?); <span class="cm">/* 展开合并 */</span> }
+    }
+}</pre>
+  <div class="grid2">
+    <div class="card"><h4>现状要点</h4><ul style="margin:0">
+      <li><strong>合并 base 要自己做</strong>：一层完整字段 = 本表 <code>fields</code> + <code>documentFieldSets</code> 展开 <code>base["fieldSets"][name]["fields"]</code>。<code>get_definitions_batch</code> 顺带返回 base，省一次 IO。</li>
+      <li><strong>层级从不被读</strong>：<code>compile_doc</code> 只读 <code>voucherTables</code> 建表，<code>voucherSchema.relations</code>（<code>upper_id</code> 那套）没有任何 Rust 代码读过。</li>
+    </ul></div>
+    <div class="card"><h4>两处不足</h4><ul style="margin:0">
+      <li><strong>每次读磁盘、无缓存</strong>：<code>get_definition</code> 每次 <code>read_json</code>；<code>list_definitions</code> 每次 <code>read_dir</code> 递归遍历整树。装载会频繁读同一份定义。</li>
+      <li><strong>弱类型 <code>.get().as_str()</code> 满地散落</strong>：易错、无编译期保障、无补全。</li>
+    </ul></div>
+  </div>
+
+  <h3>3.7 改进一：定义访问缓存（与 §7 <code>Arc&lt;Schema&gt;</code> 缓存合并）</h3>
+  <p><code>DocLoader/DocSaver</code> 每次装载/回存都读同一份定义并解析层级——应加进程内缓存，键为 <code>domain/app/module/file@version</code>（版本取 <code>docMeta.version</code>），值为<strong>已解析的强类型元数据 + 各层 <code>Arc&lt;Schema&gt;</code></strong>：</p>
+  <pre><span class="cm">// 进程内缓存：docKey → Arc&lt;解析后的单据元数据&gt;</span>
+<span class="kw">static</span> DOC_META_CACHE: OnceLock&lt;DashMap&lt;String, Arc&lt;DocMetaView&gt;&gt;&gt; = OnceLock::new();
+
+<span class="kw">async fn</span> <span class="fn">load_doc_meta</span>(domain,app,module,file) -&gt; Result&lt;Arc&lt;DocMetaView&gt;&gt; {
+    <span class="kw">let</span> key = <span class="fn">format!</span>(<span class="st">"{domain}/{app}/{module}/{file}"</span>);
+    <span class="kw">if let</span> <span class="kw">Some</span>(hit) = <span class="fn">cache</span>().<span class="fn">get</span>(&amp;key) { <span class="kw">return</span> <span class="kw">Ok</span>(hit.<span class="fn">clone</span>()); }  <span class="cm">// 命中：零磁盘、零解析</span>
+    <span class="cm">// miss：get_definitions_batch（定义 + base）→ 解析为 DocMetaView → 建各层 Arc&lt;Schema&gt;</span>
+    <span class="kw">let</span> view = Arc::new(DocMetaView::<span class="fn">parse</span>(doc, base)?);
+    <span class="fn">cache</span>().<span class="fn">insert</span>(key, view.<span class="fn">clone</span>());
+    <span class="kw">Ok</span>(view)
+}</pre>
+  <ul>
+    <li><strong>失效策略</strong>：<code>save_definition/set_default_version/delete_definition</code> 成功后按 <code>docKey</code> 逐出（或带版本号天然免失效——版本变则键变）。</li>
+    <li><strong>与 §7 合并</strong>：<code>DocMetaView</code> 内直接持有 <code>Vec&lt;Arc&lt;Schema&gt;&gt;</code>（每层一个），装载时 <code>DataSet</code> 直接引用，一处缓存同时服务「元数据解析」与「零拷贝 Schema 共享」两个目标。</li>
+  </ul>
+
+  <h3>3.8 改进二：强类型只读投影层（<code>DocMetaView</code>）</h3>
+  <p>不改存储格式（仍是 JSON），只加一层 <code>serde::Deserialize</code> 投影，把「满地 <code>Value.get()</code>」收敛成一次反序列化。投影字段名与真实 JSON <strong>逐一对齐</strong>（<code>#[serde(default)]</code> 容错缺失键）：</p>
+  <pre><span class="cm">/// 单据元数据的只读投影（从 DOC 定义 JSON 反序列化；未知键忽略）</span>
+<span class="cm">#[derive(Debug, Clone, Deserialize)]</span>
+<span class="kw">pub struct</span> DocMetaView {
+    <span class="cm">#[serde(rename = "docMeta")]</span>    <span class="kw">pub</span> module_meta: ModuleMeta,
+    <span class="cm">#[serde(rename = "voucherSchema")]</span> <span class="kw">pub</span> schema: VoucherSchema,
+    <span class="cm">#[serde(rename = "voucherTables")]</span> <span class="kw">pub</span> tables: Vec&lt;VoucherTable&gt;,
+    <span class="cm">// 解析后自建（非 JSON 字段）：tableName → Arc&lt;Schema&gt;，供装载零拷贝</span>
+    <span class="cm">#[serde(skip)]</span>                     <span class="kw">pub</span> layer_schemas: HashMap&lt;String, Arc&lt;Schema&gt;&gt;,
+}
+<span class="cm">#[derive(Debug, Clone, Deserialize)]</span>
+<span class="kw">pub struct</span> RelationDef {                       <span class="cm">// ← 层级父子链强类型化（现状无人读）</span>
+    <span class="kw">pub</span> parent: String, <span class="kw">pub</span> child: String,
+    <span class="cm">#[serde(rename="parentKey", default="id_default")]</span> <span class="kw">pub</span> parent_key: String,  <span class="cm">// 默认 "id"</span>
+    <span class="cm">#[serde(rename="childKey")]</span>  <span class="kw">pub</span> child_key: String,                         <span class="cm">// "upper_id" 或 "header_id"</span>
+}
+<span class="cm">#[derive(Debug, Clone, Deserialize)]</span>
+<span class="kw">pub struct</span> VoucherTable {
+    <span class="cm">#[serde(rename="tableName")]</span>  <span class="kw">pub</span> table_name: String,
+    <span class="cm">#[serde(default)]</span> <span class="kw">pub</span> fields: Vec&lt;serde_json::Value&gt;,          <span class="cm">// 字段仍留 Value（属性多，按需取）</span>
+    <span class="cm">#[serde(rename="documentFieldSets", default)]</span> <span class="kw">pub</span> field_sets: Vec&lt;String&gt;,
+}</pre>
+  <div class="call ok"><b class="lead">收益</b>
+    <code>DocLoader</code> 直接 <code>view.schema.relations</code> 拿父子键、<code>view.layer_schemas["cv_header"]</code> 拿该层 <code>Arc&lt;Schema&gt;</code> 装载零拷贝；<code>RelationDef.parent_key/child_key</code> 让「通用 <code>upper_id</code>」与「命名外键 <code>header_id</code>」两方言统一，不写死列名。<strong>字段级仍留 <code>Vec&lt;Value&gt;</code></strong>（属性 30+ 且三端共享 schema），按需 <code>.get()</code>——强类型化只覆盖「层级骨架」，字段「血肉」仍透传，取得类型安全与灵活性的平衡。
+  </div>
+  <div class="call warn"><b class="lead">落地归属</b><code>DocMetaView</code> + 缓存放在新增的 <code>DocLoader</code> 所在 crate（建议 <code>cmx-biz</code> 或新建 <code>cmx-doc</code>）；<strong>不改</strong> <code>definitions::store</code>（它继续做纯 JSON 读写），投影层是它之上的消费者。</div>
+
+  <!-- 4 -->
+  <h2 id="s4"><span class="n">4</span>后端：在 PostgreSQL 中创建业务单据的表</h2>
+  <h3>4.1 定义 → <code>TableDefine</code> 编译（已就绪）</h3>
+  <p><code>model_center.rs::compile_doc(doc, base)</code> 遍历 <code>voucherTables[]</code>，每层一张 <code>TableDefine</code>；列 = 本表 <code>fields</code> + <code>documentFieldSets</code> 引用的 base 字段集（去重）。<code>field_to_column</code> 关键映射：</p>
+  <pre><span class="kw">let</span> ft = <span class="fn">map_field_type</span>(dataType);  <span class="cm">// "BIGINT"→Int, "DECIMAL"→Decimal, "VARCHAR"→String</span>
+<span class="kw">let</span> (length, precision, scale) = <span class="kw">match</span> ft {
+    FieldType::String  =&gt; (fieldLength, <span class="kw">None</span>, <span class="kw">None</span>),
+    FieldType::Decimal =&gt; (<span class="kw">None</span>, fieldLength<span class="cm">/*精度*/</span>, decimalDigits.<span class="fn">or</span>(<span class="kw">Some</span>(0))<span class="cm">/*小数位*/</span>),
+    _                  =&gt; (<span class="kw">None</span>, <span class="kw">None</span>, <span class="kw">None</span>),
+};
+ColumnDefine { name, field_type: ft, is_primary_key: name==id_field,
+               is_nullable: <span class="kw">if</span> pk {<span class="kw">false</span>} <span class="kw">else</span> {nullable}, length, precision, scale, .. }</pre>
+
+  <h3>4.2 <code>TableDefine</code> → PostgreSQL DDL（已就绪）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>FieldType</th><th>PostgreSQL</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td><code>String</code></td><td><code>VARCHAR(n)</code> / <code>TEXT</code></td><td>有/无 length</td></tr>
+      <tr><td><code>Int</code></td><td><code>BIGINT</code></td><td><code>id/upper_id</code> 落此</td></tr>
+      <tr><td><code>Decimal</code></td><td><code>NUMERIC(p,s)</code></td><td>p=fieldLength, s=decimalDigits</td></tr>
+      <tr><td><code>DateTime</code> / <code>Date</code></td><td><code>TIMESTAMPTZ</code> / <code>DATE</code></td><td></td></tr>
+      <tr><td><code>Bool</code> / <code>Text</code></td><td><code>BOOLEAN</code> / <code>TEXT</code></td><td></td></tr>
+      <tr><td><code>Binary</code></td><td><code>BYTEA</code></td><td></td></tr>
+      <tr><td><code>Array</code> / <code>Json</code></td><td><code>JSONB</code></td><td></td></tr>
+      <tr><td><code>Uuid</code></td><td><code>UUID</code></td><td></td></tr>
+    </tbody>
+  </table></div>
+  <p>生成 <code>CREATE TABLE "public"."cv_header" (… PRIMARY KEY ("id"))</code> + <code>COMMENT ON</code> + <code>CREATE INDEX</code>。</p>
+
+  <h3>4.3 建表执行（已就绪，additive-safe）</h3>
+  <div class="call ok">
+    <b class="lead">幂等、安全</b>
+    <code>PgTableDefineExecutor::create_or_upgrade_table</code>：先建；已存在则<strong>内省</strong> <code>information_schema</code>/<code>pg_catalog</code> 反查现表 → <code>DdlDiff</code> 增量 <code>ALTER</code>。<strong><code>DROP TABLE/COLUMN</code> 只记录不执行</strong>，天然幂等。部署入口 <code>deploy_stream</code>（SSE 进度）。
+  </div>
+  <div class="call warn">
+    <b class="lead">建表物理形态</b>
+    一份 4 层单据 = 4 张独立物理表，每张都含 <code>id</code>(PK) + <code>upper_id</code>(普通 BIGINT) + <code>line_no</code> + 本层字段。<strong>层级不建 DB 外键</strong>，由应用层维系（坑 C）。
+  </div>
+
+  <h3>4.4 建议：两条非破坏性 DDL 增强（可选）</h3>
+  <p>不改引擎，仅在编译期给每层 <code>TableDefine</code> 追加索引（走现有 <code>IndexDefine</code>，additive，零风险）：</p>
+  <ul>
+    <li><strong><code>upper_id</code> 普通索引</strong>：<code>CREATE INDEX idx_&lt;table&gt;_upper ON &lt;table&gt;(upper_id)</code> —— 子表 <code>WHERE upper_id = ANY(...)</code> 批量取子集时命中（装载性能关键）。</li>
+    <li><strong><code>(upper_id, line_no)</code> 复合索引</strong>（可选）：子行按 <code>line_no</code> 有序返回，免前端再排序。</li>
+  </ul>
+
+  <!-- 5 -->
+  <h2 id="s5"><span class="n">5</span>装载：DB → 后端 <code>DataSet</code> → 前端模型</h2>
+  <h3>5.1 后端 <code>DocLoader</code>（新增服务）</h3>
+  <p><strong>入参</strong>：<code>{ db_id, domain, app, module, docFile, rootId?, filter?, page? }</code>（<code>filter</code> 作用于根层，如按凭证号/期间/组织）。</p>
+  <p><strong>算法（按层广度优先，父批量驱动子）</strong>：</p>
+  <pre><span class="nm">1.</span> 读定义：get_definition(docFile) → doc JSON；按 baseDocMetaRef 合并 base
+<span class="nm">2.</span> 解析层序与父子键：schema 得 [L1..Ln]；relations 得每层 (parentKey, childKey)
+<span class="nm">3.</span> 编译各层 Schema：voucherTables[i] 展开 documentFieldSets → cmx-core::Schema
+      —— Schema 用 Arc 包裹并【按层缓存】（同一定义所有请求共享，见 §7）
+<span class="nm">4.</span> 查 L1（根）：
+      SELECT &lt;L1列&gt; FROM cv_batch [WHERE &lt;filter&gt;] [ORDER BY id] [LIMIT/OFFSET]
+      → query_sql(db_id, None, sql, "cv_batch") → DataSet(schema=Arc&lt;L1Schema&gt;)
+    收集 rootIds = [row.id ...]
+<span class="nm">5.</span> 逐层下钻（i = 2..n）：
+      parentIds = 上一层所有 id
+      SELECT &lt;Li列&gt; FROM &lt;tableI&gt; WHERE upper_id = ANY($1) [ORDER BY upper_id, line_no]
+        参数 $1 = parentIds（<span class="st">一条 SQL 取全部子行，避免 N+1</span>）
+      按 upper_id 分桶 → 对每个父行 pr：pr.add_child(childKey_i, 子桶DataSet)
+<span class="nm">6.</span> 返回根层 DataSet（已是完整嵌套主从树）</pre>
+  <div class="grid2">
+    <div class="card"><h4>为什么快</h4><ul style="margin:0">
+      <li><strong>一层一条 SQL</strong> + <code>WHERE upper_id = ANY($ids)</code>：整树最多 n 条查询，彻底避免 N+1，命中 §4.4 索引。</li>
+      <li><code>ANY($1)</code> 数组绑定走参数化（<code>DataValue::Array</code>），注入免疫。</li>
+    </ul></div>
+    <div class="card"><h4>为什么省</h4><ul style="margin:0">
+      <li>组装即 <code>Row::add_child</code>，复用 <code>rds.rs</code> 现成能力，产出即后端主从树。</li>
+      <li><strong>Schema 共享</strong>：同层所有行、同定义跨请求共用一个 <code>Arc&lt;Schema&gt;</code>——零拷贝核心。</li>
+    </ul></div>
+  </div>
+
+  <h3>5.2 列式小包协议（<code>ColumnarCodec</code>，新增）</h3>
+  <pre><span class="cm">// GET /api/doc/data 响应 data 字段</span>
+{
+  <span class="nm">"datasetId"</span>: <span class="st">"cv_batch"</span>,
+  <span class="nm">"columns"</span>: [<span class="st">"id"</span>,<span class="st">"upper_id"</span>,<span class="st">"line_no"</span>,<span class="st">"comp_unit_id"</span>,<span class="st">"doc_no"</span>,<span class="st">"doc_status"</span>,<span class="st">"total_dr"</span>],
+  <span class="nm">"rows"</span>: [
+    [<span class="st">"20260003"</span>, <span class="kw">null</span>, 1, <span class="st">"1000"</span>, <span class="st">"PZ-0007"</span>, <span class="st">"posted"</span>, 1130000.00]
+  ],
+  <span class="nm">"childRows"</span>: {
+    <span class="st">"20260003"</span>: {
+      <span class="nm">"headers"</span>: {
+        <span class="nm">"datasetId"</span>:<span class="st">"cv_header"</span>, <span class="nm">"columns"</span>:[<span class="st">"id"</span>,<span class="st">"upper_id"</span>,<span class="st">"total_dr"</span>],
+        <span class="nm">"rows"</span>:[ [<span class="st">"1000000007"</span>,<span class="st">"20260003"</span>,<span class="st">"1130000.00"</span>] ],
+        <span class="nm">"childRows"</span>:{ <span class="st">"1000000007"</span>:{ <span class="nm">"account_lines"</span>:{ …递归… } } }
+      }
+    }
+  }
+}</pre>
+  <div class="call key">
+    <b class="lead">为什么最省</b>
+    <strong>键名只出现一次</strong>（<code>columns</code>），行是<strong>纯值数组</strong> <code>rows:[[…]]</code>——消灭现状「逐行重复键名」的最大浪费。子层按父 id 挂 <code>childRows</code>，父子只传各自的列。前端 <code>CmxDataSet.fromJSON</code> <strong>原生识别</strong> <code>{columns, rows, childRows}</code>（<code>cmx-data-set.js:362</code>），逐层递归还原，<strong>零适配</strong>。
+  </div>
+
+  <h3>5.3 前端装配（新增适配层，页面 host 上）</h3>
+  <pre><span class="cm">// ④ 列式包 → { rootId: CmxDataSet } 树</span>
+<span class="kw">const</span> pkg  = <span class="kw">await</span> host.<span class="fn">loadDocData</span>({ docFile, filter });  <span class="cm">// fetch → JSON.parse 或 msgpack decode</span>
+<span class="kw">const</span> C    = globalThis.__cmxDataComp || host.__cmxClasses;
+<span class="kw">const</span> rootDs = C.CmxDataSet.<span class="fn">fromJSON</span>(pkg);                <span class="cm">// 逐层递归还原（含 childRows）</span>
+<span class="kw">const</span> dsMap  = { [pkg.datasetId]: rootDs };
+
+<span class="cm">// ⑤ 交给协调器（零拷贝接管：ms 直接持有这些 CmxDataSet 与其 _children）</span>
+<span class="kw">const</span> ms = <span class="kw">new</span> C.<span class="fn">CmxMasterSlave</span>({
+  schema:       docSchema,        <span class="cm">// 由 voucherSchema.schema 生成</span>
+  relations:    docRelations,     <span class="cm">// 由 relations 生成</span>
+  aggregations: docAggregations,  <span class="cm">// 由 aggregations 生成</span>
+});
+ms.<span class="fn">bindTable</span>(<span class="st">'cv_batch'</span>, batchGrid);
+ms.<span class="fn">bindTable</span>(<span class="st">'cv_batch.cv_header'</span>, headerGrid);            <span class="cm">// 路径用 schema 的 child id</span>
+ms.<span class="fn">bindTable</span>(<span class="st">'cv_batch.cv_header.cv_acc_line'</span>, accGrid);
+ms.<span class="fn">setDataSet</span>(dsMap);   <span class="cm">// 装载 + 预热聚合 + 首行级联点亮</span>
+host.__cmxMs = ms;</pre>
+  <div class="call ok"><code>ms.setDataSet(dsMap)</code>（<code>cmx-master-slave.js:292</code>）<strong>递归接管</strong>每个 <code>CmxDataSet</code> 的 <code>_children</code>，给每层注册监听，并 <code>_primeCursors()</code> 定位各根首行、自上而下点亮子层视图。<strong>无需</strong>再手动转换或二次拷贝。</div>
+
+  <h3>5.4 装载时序</h3>
+  <div class="diagram">前端 loadDocData(docFile, filter)
+   │  GET /api/doc/data?db_id&amp;docFile&amp;filter   Accept: application/x-msgpack, gzip
+   ▼
+后端 DocLoader
+   │  read def → Arc&lt;Schema&gt;×n（缓存）
+   │  L1: query_sql("SELECT ... FROM cv_batch WHERE ...") → DataSet
+   │  L2: query_sql("SELECT ... FROM cv_header WHERE upper_id = ANY($ids)") → add_child
+   │  L3 ... L4 ...
+   │  ColumnarCodec.encode(rootDataSet) → 列式包
+   │  (可选) rmp_serde::to_vec → msgpack；CompressionLayer → br/gzip
+   ▼
+前端 CmxDataSet.fromJSON(pkg) → { cv_batch: CmxDataSet(嵌套) }
+   │  ms.setDataSet(dsMap) → 网格/表单点亮
+   ▼
+用户看到主从多级表格</div>
+
+  <!-- 5A -->
+  <h2 id="s5a"><span class="n">5A</span>维度解析：单据列引用数据字典，如何显示 name/属性（不牺牲性能）</h2>
+  <h3>5A.0 问题定义</h3>
+  <p>单据很多列存的是<strong>字典的 id 或 code</strong>（如 <code>comp_unit_id=1000</code>、<code>gl_account_id="2221"</code>），但界面要显示<strong>对应的名称或字典某属性</strong>。元数据已声明这层引用：</p>
+  <pre><span class="cm">// 字段元数据里的引用三件套（真实存在）</span>
+{ <span class="nm">"id"</span>:<span class="st">"gl_account_id"</span>, <span class="nm">"dataType"</span>:<span class="st">"BIGINT"</span>,
+  <span class="nm">"refDict"</span>:<span class="st">"gl_account"</span>,   <span class="cm">// 引用哪个字典</span>
+  <span class="nm">"refField"</span>:<span class="st">"code"</span>,        <span class="cm">// 用字典的哪个键匹配本列值（id 或 code）</span>
+  <span class="nm">"displayField"</span>:<span class="st">"name"</span> }  <span class="cm">// 显示字典的哪个属性（name / 或任意属性）</span></pre>
+  <div class="call danger">
+    <b class="lead">朴素做法（后端 JOIN 字典）的性能陷阱</b>
+    一张单据几十列引用十几个字典，每次装载都 <code>LEFT JOIN</code> 十几张字典表 × 多层 × 多行——JOIN 爆炸；且本系统字典条目<strong>当前多以 JSON 文件存</strong>（<code>data/dict/entries/&lt;dictId&gt;.json</code>），后端甚至没有可 JOIN 的 SQL 表，只能读文件循环匹配。<strong>逐行逐列查字典 = N×M 次点查</strong>，联机装载不可接受。
+  </div>
+  <div class="call key">
+    <b class="lead">思路：解析值是"派生数据"，谁最省就放谁那</b>
+    「把解析值存到关联表」是可行方案之一（下文 <strong>L2 伴生宽表</strong>），但不是所有场景最优。下面给一套<strong>分层组合</strong>：按「字典规模 / 变更频率 / 是否需服务端搜索排序」选层，用元数据 <code>resolveStrategy</code> 参数逐列控制，兼顾性能、通用性、可扩展性。<strong>同一单据不同列可用不同层。</strong>
+  </div>
+
+  <h3>5A.1 四层解析策略（决策矩阵）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>层</th><th>名称</th><th>解析发生地</th><th>name 存哪</th><th>适用</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td><strong>L0</strong></td><td><strong>前端整典缓存 + 本地映射</strong>（默认首选）</td><td>前端</td><td>不落库，前端内存 Map</td><td>中小字典(≤数千)、多单据共用</td><td>首次拉整典；改名要失效</td></tr>
+      <tr><td><strong>L1</strong></td><td><strong>装载期后端解析 → 派生列</strong>（瞬态）</td><td>后端 DocLoader</td><td>不落库，随包传 <code>xxx__name</code></td><td>大字典、单据少、要即显</td><td>每次装载解析(有缓存则廉价)</td></tr>
+      <tr><td><strong>L2</strong></td><td><strong>伴生宽表（反范式落库）</strong></td><td>保存期写</td><td>落库：<code>&lt;doc&gt;_disp</code></td><td>需服务端按 name 搜索/排序/导出</td><td>冗余存储、改名要重刷</td></tr>
+      <tr><td><strong>L3</strong></td><td><strong>物化视图 / 触发器</strong></td><td>DB 维护</td><td>落库：物化视图列</td><td>超大数据量、name 稳定、重查询</td><td>DB 运维复杂、刷新延迟</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>核心</strong>：多数列用 L0（前端 Map，零后端成本、零冗余）；只有「需要后端按 name 过滤/排序/分页/导出」的列才升到 L2 落库。逐列由元数据声明。</p>
+
+  <h3>5A.2 元数据扩展（逐列声明策略，纯叠加）</h3>
+  <pre>{ <span class="nm">"id"</span>:<span class="st">"gl_account_id"</span>, <span class="nm">"refDict"</span>:<span class="st">"gl_account"</span>, <span class="nm">"refField"</span>:<span class="st">"code"</span>, <span class="nm">"displayField"</span>:<span class="st">"name"</span>,
+  <span class="nm">"resolveStrategy"</span>: <span class="st">"frontend"</span>,          <span class="cm">// "frontend"(L0默认)|"backend"(L1)|"persist"(L2)|"view"(L3)</span>
+  <span class="nm">"displayAs"</span>: <span class="st">"gl_account_id__name"</span>,     <span class="cm">// 派生/落库列名（缺省 = &lt;id列&gt;__&lt;displayField&gt;）</span>
+  <span class="nm">"displayFields"</span>: [<span class="st">"name"</span>,<span class="st">"category"</span>] }  <span class="cm">// 可选：一列值带出字典多个属性（to attribute 通用化）</span></pre>
+  <ul>
+    <li><strong>通用性</strong>：<code>displayField</code> 单属性、<code>displayFields</code> 多属性（同时带 name+分类+助记码…），覆盖「to name / to code / to attribute」全部形态。</li>
+    <li><strong>可扩展性</strong>：新增引用列 = 加字段元数据选层，<strong>零代码</strong>。解析引擎读元数据驱动，不硬编码任何字典。</li>
+  </ul>
+
+  <h3>5A.3 L0：前端整典缓存 + 本地映射（默认，零后端 JOIN）</h3>
+  <p>前端装载单据后收集所有 <code>refDict</code>，<strong>一次性批量拉全量条目</strong>（复用现成 <code>POST /api/dict/batch-data</code>，<code>batch_data_endpoint</code> 已支持一次多典），建 <code>dictId → Map&lt;key, entry&gt;</code> 缓存；渲染时用显示模板把 <code>id → entry[displayField]</code>。</p>
+  <pre><span class="cm">// 装载后：一次批量拉全部引用字典（整典缓存，跨单据/跨行共用）</span>
+<span class="kw">const</span> dictIds = <span class="fn">collectRefDicts</span>(docMeta);            <span class="cm">// ["gl_account","comp_unit",...]</span>
+<span class="kw">const</span> dicts   = <span class="kw">await</span> host.<span class="fn">dictBatchData</span>(dictIds);   <span class="cm">// → { gl_account:[...], ... }</span>
+host.__dictCache = <span class="fn">buildKeyMaps</span>(dicts, docMeta);     <span class="cm">// { gl_account: Map&lt;code, {name,category}&gt; }</span>
+
+<span class="cm">// 渲染：CmxColumn 显示模板 id→name（组件已支持 cellTemplate/显示映射）</span>
+col.display = { kind:<span class="st">'dict'</span>, dictId:<span class="st">'gl_account'</span>, keyField:<span class="st">'code'</span>, labelField:<span class="st">'name'</span> };
+<span class="cm">// 组件内：host.__dictCache['gl_account'].get(row.gl_account_id)?.name ?? row.gl_account_id</span></pre>
+  <div class="grid2">
+    <div class="card"><h4>性能 & 小包</h4><ul style="margin:0">
+      <li>字典<strong>整典只拉一次</strong>（非逐行点查），之后前端内存 O(1) 查表。<strong>零后端 JOIN、零逐值往返</strong>。</li>
+      <li>单据包<strong>只传 id/code、不传 name</strong>（name 前端补），传输最小——契合 §8。字典包独立缓存、跨单据复用、版本协商增量。</li>
+    </ul></div>
+    <div class="card"><h4>失效 & 就绪度</h4><ul style="margin:0">
+      <li>字典改动 → 版本号/<code>updatedAt</code> 变 → 前端按版本重拉该典（只重拉变的典，不动单据数据）。</li>
+      <li><code>batch_data_endpoint</code>、<code>cmx-dict-data-source.js</code>、combo/列显示模板<strong>都已存在</strong>，L0 主要是"串起来 + 加缓存层"。</li>
+    </ul></div>
+  </div>
+
+  <h3>5A.4 L1：装载期后端解析 → 派生列（大字典、即取即显）</h3>
+  <p>当某字典<strong>太大不宜整典下发</strong>（百万级科目/客户），但该列要随单据立即显示：<code>DocLoader</code> 装载时<strong>只对本页出现的 id 集</strong>批量解析，把 name 作为<strong>瞬态派生列</strong>塞进列式包，<strong>不落库</strong>：</p>
+  <pre>DocLoader 装载 cv_header 后：
+  收集本层某列去重 id 集：ids = distinct(rows[].gl_account_id)
+  批量解析：SELECT code,name FROM cf_gl_account WHERE code = ANY($ids)   <span class="cm">// 一次，非逐行</span>
+            （字典存文件时：读该典缓存 Map 批量取；见 §5A.6）
+  回填派生列：row["gl_account_id__name"] = map[row.gl_account_id]
+  列式包 columns 增列 "gl_account_id__name"（瞬态，前端直接显示，不参与回存）</pre>
+  <ul>
+    <li><strong>性能</strong>：每列<strong>一次 <code>ANY($ids)</code> 批量查</strong>（命中主键索引），非逐行 JOIN；配合 §5A.6 缓存可完全免 DB。</li>
+    <li><strong>小包权衡</strong>：派生列增大包体，故 L1 只给「大到不能整典下发」的少数列；能 L0 的仍走 L0（不进包）。</li>
+    <li><strong>不落库</strong>：派生列是"读时计算"，只出现在响应，<code>ChangeSetCollector</code> 忽略它（不回存）。</li>
+  </ul>
+
+  <h3>5A.5 L2：伴生宽表（反范式落库，服务端可搜可排）</h3>
+  <p>当某些列的 name <strong>需在后端参与搜索/排序/分页/报表导出</strong>（"按科目名模糊查""按客户名排序"），必须让 name <strong>在库里可查</strong>——落一张<strong>与单据一一对应的伴生显示表</strong>：</p>
+  <pre><span class="cm">-- 伴生宽表：与主表行一一对应(共享主键 id)，只存"解析出来的显示值"</span>
+<span class="kw">CREATE TABLE</span> cv_header_disp (
+    id            <span class="kw">BIGINT PRIMARY KEY</span>,          <span class="cm">-- = cv_header.id（一一对应，非新主键）</span>
+    upper_id      <span class="kw">BIGINT</span>,                      <span class="cm">-- 冗余父指针，便于按树清理</span>
+    gl_account_id__name    <span class="kw">VARCHAR</span>(200),        <span class="cm">-- 解析值：科目名</span>
+    comp_unit_id__name     <span class="kw">VARCHAR</span>(200),        <span class="cm">-- 解析值：公司名</span>
+    comp_unit_id__category <span class="kw">VARCHAR</span>(64),         <span class="cm">-- 解析值：公司分类（to attribute 通用化）</span>
+    _resolved_at  <span class="kw">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> now()    <span class="cm">-- 解析时点（判过期）</span>
+);
+<span class="kw">CREATE INDEX</span> idx_cvh_disp_acc_name <span class="kw">ON</span> cv_header_disp (gl_account_id__name);  <span class="cm">-- 支持按名搜索/排序</span></pre>
+  <ul>
+    <li><strong>写入时机（复用 §6.4 保存链路）</strong>：<code>DocSaver</code> 保存主表行的<strong>同一事务</strong>内，对标 <code>resolveStrategy:"persist"</code> 的列解析 id→name 后 UPSERT 进 <code>&lt;table&gt;_disp</code>。<strong>装载时</strong>主表 <code>LEFT JOIN &lt;table&gt;_disp ON id</code>（一对一、走主键、极低代价，<strong>不是</strong> JOIN 十几张字典表）连 name 取回。</li>
+    <li><strong>通用性</strong>：伴生表由<strong>元数据自动生成</strong>——扫描各层带 <code>persist</code> 的列，用 §4 的 DDL 引擎建 <code>&lt;table&gt;_disp</code>。加引用列 → 重 deploy → 伴生表自动加列（additive）。</li>
+  </ul>
+  <div class="call warn">
+    <b class="lead">一致性（字典改名）三策略（可配）</b>
+    ① <strong>懒刷</strong>：装载时比对字典版本 &gt; <code>_resolved_at</code> 则该行现解析并回写（读时自愈）。
+    ② <strong>批刷</strong>：字典改名触发后台任务，按 <code>refDict</code> 反查所有引用它的 <code>_disp</code> 表批量更新（可离线/限流）。
+    ③ <strong>不刷（快照语义）</strong>：单据要的就是"当时的名称"（历史凭证按当时科目名），过期即正确——ERP 常见。
+  </div>
+  <p><strong>代价</strong>：冗余存储 + 维护刷新——<strong>只给"真的要服务端按 name 检索/排序/导出"的列用</strong>，不是所有引用列都落库。</p>
+
+  <h3>5A.6 L3 与后端字典缓存（超大数据 / 通用底座）</h3>
+  <div class="grid2">
+    <div class="card"><h4>L3 物化视图</h4><p style="margin:6px 0">数据量超大、name 稳定、以查询为主时，用 PG 物化视图把「主表 + 伴生显示」物化，定期 <code>REFRESH</code>。属重查询/报表专用，运维成本高，按需启用。</p></div>
+    <div class="card"><h4>后端字典缓存（L1/L2 公共底座）</h4><p style="margin:6px 0">无论字典存文件还是物理表，后端都应有 <code>dictId → Arc&lt;HashMap&lt;key,entry&gt;&gt;</code> 进程内缓存（与 §3.7 定义缓存同构，<code>DashMap</code>+版本失效）。L1/L2 解析都优先命中它，<strong>把"JOIN/查库"降为"内存查表"</strong>——"不牺牲性能"的公共保障。</p></div>
+  </div>
+
+  <h3>5A.7 组合推荐与决策流程</h3>
+  <div class="diagram">对单据每个"引用字典的列"，按元数据 resolveStrategy 决定：
+  ├─ 默认 frontend(L0)：字典中小、被多单据共用          → 前端整典缓存 Map，包里只传 id（最省，首选）
+  ├─ backend(L1) ：字典超大、不宜整典下发、要即显         → 装载期 ANY($ids) 批量解析成派生列（不落库）
+  ├─ persist(L2) ：要在后端按 name 搜索/排序/分页/导出     → 伴生宽表 &lt;table&gt;_disp，保存期写、装载期一对一 JOIN
+  └─ view(L3)    ：超大量 + name 稳定 + 重报表查询          → 物化视图，定期刷新
+公共底座：后端字典缓存（内存 Map，版本失效）——L1/L2 解析都命中它，杜绝逐行查库。</div>
+  <div class="call key">
+    <b class="lead">为什么这套优于"全部落一张表"</b>
+    <strong>性能</strong>：绝大多数列走 L0（前端 Map，零后端成本、包里不带 name 最小化传输）；只有少数"需服务端检索"的列才落库(L2)，避免全量冗余与全量刷新。
+    <strong>通用性</strong>：解析引擎读 <code>refDict/refField/displayField/displayFields/resolveStrategy</code> 元数据驱动，不硬编码任何字典；单/多属性、id/code 匹配全覆盖。
+    <strong>可扩展性</strong>：新增引用列 = 加元数据选层，零代码；伴生表由 DDL 引擎按元数据自动建/加列（additive-safe）。
+    <strong>一致性可选</strong>：L2 三策略适配"实时名称"与"历史快照名称"两类语义。
+  </div>
+  <div class="call ok"><b class="lead">落地优先级</b><strong>先做 L0</strong>（覆盖 ~80% 列、纯前端 + 复用现成 batch-data，见 §11 阶段 1.5）→ 需服务端检索时再对特定列上 <strong>L2</strong>（复用 §6.4 保存链路 + §4 DDL 引擎）→ 超大场景才评估 L3。</div>
+
+  <!-- 6 -->
+  <h2 id="s6"><span class="n">6</span>编辑与显示，及回存</h2>
+  <h3>6.1 可视化绑定（已就绪）</h3>
+  <ul>
+    <li><strong><code>cmx-revo-grid</code></strong>：<code>setDataSet(ds)</code> 令 <code>this._rows = ds.rows</code>（<em>共享引用</em>）；列由 <code>setColumnModel(CmxColumnModel)</code> → <code>CmxColumnAdapter.toRevoGrid</code> 生成；虚拟滚动默认开。</li>
+    <li><strong><code>cmx-ui5-form</code></strong>：<code>setDataSet(ds)</code> 绑定<em>当前行</em> <code>this._row = ds.currentRow</code>，随 <code>cursor-changed</code> 切换；控件按 <code>edit.mode</code>/<code>dataType</code> 选择。</li>
+    <li><strong>主从联动</strong>：选中主行 → <code>moveToId</code> → <code>cursor-changed</code> → 协调器 <code>_setCurrent</code> → 解析父行 <code>_children[childId]</code> → 推子 <code>CmxDataSet</code> 给子视图 → <code>childDs.moveFirst()</code> 递归点亮。</li>
+  </ul>
+
+  <h3>6.2 编辑回写与聚合（已就绪）</h3>
+  <div class="diagram">用户改单元格
+  → revo-grid afteredit → model.set(prop, val)      // model 就是 CmxRowSet（_rows===ds.rows）
+  → CmxRowSet.set → ds._notifyChange → 派发 'row-changed'
+  → 协调器监听：跑 col.calcFormula（列内计算）
+                _scheduleAggFrom（上卷：明细金额 sum → 分录 → 凭证头）
+                派发 'change'/'aggregate'
+  → 所有绑定同一行的视图自动刷新（共享 CmxRowSet，单一真相源）</div>
+  <p>表单编辑同理：<code>_commit → this._row.set(key,value)</code>，走同一条 <code>row-changed</code> 链。编辑是就地写属性，前端模型无脏标记（坑 A）——changeset 由 §6.3 收集。</p>
+
+  <h3>6.3 前端 changeset 收集（<code>ChangeSetCollector</code>，新增）</h3>
+  <pre><span class="cm">// ⑥ 订阅事件累积变更（不改模型，纯旁路记账）</span>
+<span class="kw">const</span> cs = <span class="kw">new</span> <span class="fn">ChangeSetCollector</span>(ms);
+<span class="cm">// 内部：Map&lt;path, { inserted:Set&lt;id&gt;, updated:Set&lt;id&gt;, deleted:Set&lt;id&gt; }&gt;</span>
+<span class="cm">// ds-row-added(row)   → inserted.add(row.id)（若之前在 deleted 则抵消）</span>
+<span class="cm">// row-changed(row)    → 若非新增，updated.add(row.id)</span>
+<span class="cm">// ds-row-removed(row) → deleted.add(row.id)；若之前在 inserted 则净零，不回后端</span></pre>
+  <p>保存时导出<strong>最小 changeset</strong>（只含动过的行，且可选只含变更列）：</p>
+  <pre><span class="cm">// POST /api/doc/save 请求体</span>
+{
+  <span class="nm">"db_id"</span>:<span class="st">"primary"</span>, <span class="nm">"docFile"</span>:<span class="st">"cmxfico_doc_meta_v1.json"</span>,
+  <span class="nm">"changes"</span>: {
+    <span class="nm">"cv_batch"</span>:    { <span class="nm">"updated"</span>:[ {<span class="nm">"id"</span>:<span class="st">"20260003"</span>, <span class="nm">"fields"</span>:{<span class="nm">"doc_status"</span>:<span class="st">"posted"</span>} } ] },
+    <span class="nm">"cv_header"</span>:   { <span class="nm">"updated"</span>:[ {<span class="nm">"id"</span>:<span class="st">"1000000007"</span>, <span class="nm">"fields"</span>:{<span class="nm">"total_dr"</span>:1130000.00} } ] },
+    <span class="nm">"cv_acc_line"</span>: {
+      <span class="nm">"inserted"</span>:[ {<span class="nm">"id"</span>:<span class="st">"100000000703"</span>, <span class="nm">"upper_id"</span>:<span class="st">"1000000007"</span>, <span class="nm">"line_no"</span>:3,
+                    <span class="nm">"fields"</span>:{<span class="nm">"gl_account_id"</span>:<span class="st">"2221"</span>, <span class="nm">"entered_cr"</span>:130000.00} } ],
+      <span class="nm">"deleted"</span>:[ <span class="st">"100000000702"</span> ]
+    }
+  }
+}</pre>
+  <div class="call ok"><b class="lead">对齐后端语义</b><code>cmx-core::DataSet</code> 本就有 <code>inserted/updated/deleted</code> 三池（<code>rds.rs:394</code>），只是<strong>不默认序列化</strong>（坑 B）。本协议把它们<strong>显式过线</strong>，后端可直接映射回三池语义。<strong>小包</strong>：只传动过的行 + 可选只传变更列。</div>
+
+  <h3>6.4 后端 <code>DocSaver</code>（新增服务）：两种保存模式，参数控制</h3>
+  <p>前端改完单据后，回存需支持<strong>两种模式，由请求参数 <code>saveMode</code> 控制</strong>：</p>
+  <div class="tbl"><table>
+    <thead><tr><th>模式</th><th><code>saveMode</code></th><th>语义</th><th>前端传什么</th><th>适用场景</th></tr></thead>
+    <tbody>
+      <tr><td><strong>增量更新</strong></td><td><code>"merge"</code>（默认）</td><td>按 changeset 精确 <code>INSERT/UPDATE/DELETE</code></td><td>最小 changeset（§6.3）</td><td>常规联机编辑：保主键/审计、写入最小、可乐观锁</td></tr>
+      <tr><td><strong>先删后插</strong></td><td><code>"replace"</code></td><td>对涉及父行子树，先 <code>DELETE</code> 旧子行，再全量 <code>INSERT</code> 当前子行</td><td>整棵（或整子树）当前全量</td><td>批量重算/导入/覆盖式提交：前端难精确 diff，图省心与绝对一致</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call key"><b class="lead">两模式共性</b>都遵守：<strong>同一 <code>txn_id</code> 单事务</strong> + <strong>按 <code>relations</code> 拓扑序（插/更父先、删子先）</strong> + <strong>参数化 <code>execute_sql_with_datavalues</code></strong>。差异只在"如何把前端状态落到每层表"。</div>
+  <p><strong>请求信封</strong>（<code>saveMode</code> 顶层控制，可按层覆盖）：</p>
+  <pre><span class="cm">// POST /api/doc/save</span>
+{
+  <span class="nm">"db_id"</span>:<span class="st">"primary"</span>, <span class="nm">"docFile"</span>:<span class="st">"cmxfico_doc_meta_v1.json"</span>,
+  <span class="nm">"saveMode"</span>: <span class="st">"merge"</span>,              <span class="cm">// "merge"(默认) | "replace"，全局默认</span>
+  <span class="nm">"rootId"</span>: <span class="st">"20260003"</span>,             <span class="cm">// replace 必带：界定"覆盖哪几棵树"的根</span>
+  <span class="nm">"layerModes"</span>: { <span class="nm">"cv_aux_line"</span>: <span class="st">"replace"</span> },  <span class="cm">// 可选：按层覆盖全局（混合模式）</span>
+  <span class="nm">"changes"</span>: { <span class="cm">/* merge 用：见 §6.3 */</span> },
+  <span class="nm">"snapshot"</span>: { <span class="cm">/* replace 用：整树/子树当前全量，结构同 §5.2 列式包 */</span> }
+}</pre>
+
+  <h4>模式一：增量更新（<code>merge</code>）</h4>
+  <pre>txn = begin(db_id)
+try:
+  <span class="kw">for</span> 每层 layer（<span class="st">父先</span>，L1→Ln）:
+    <span class="kw">for</span> row <span class="kw">in</span> changes[layer].inserted:                 <span class="cm">// 幂等 UPSERT</span>
+      exec(txn, "INSERT INTO &lt;t&gt;(id,upper_id,line_no,&lt;cols&gt;) VALUES($1,...)
+                 ON CONFLICT(id) DO UPDATE SET ...", [...])
+    <span class="kw">for</span> row <span class="kw">in</span> changes[layer].updated:                  <span class="cm">// 只更变更列</span>
+      exec(txn, "UPDATE &lt;t&gt; SET &lt;col=$..&gt; WHERE id=$1", [...])
+  <span class="kw">for</span> 每层 layer（<span class="st">子先</span>，Ln→L1）:                          <span class="cm">// 删子先，不留孤儿</span>
+    <span class="kw">if</span> changes[layer].deleted:
+      exec(txn, "DELETE FROM &lt;t&gt; WHERE id = ANY($1)", [deletedIds])   <span class="cm">// 批量删</span>
+  commit(txn); <span class="kw">return</span> { ok:<span class="kw">true</span>, mode:<span class="st">"merge"</span>, affected:{...}, idMap }
+except e: rollback(txn); <span class="kw">return</span> { ok:<span class="kw">false</span>, error:e }</pre>
+  <ul>
+    <li><strong>保主键与审计</strong>：更新走 <code>UPDATE</code>，行 id 不变，<code>update_time/update_by</code> 连续。</li>
+    <li><strong>写入最小</strong>：只动 changeset 里的行/列。</li>
+    <li><strong>可乐观锁</strong>（可选）：<code>UPDATE ... WHERE id=$1 AND version=$old</code>，<code>rows_affected=0</code> ⇒ 并发冲突，回滚报错。</li>
+    <li><strong>依赖前端 changeset 准确</strong>（坑 A/§6.3）——唯一前提。</li>
+  </ul>
+
+  <h4>模式二：先删后插（<code>replace</code>）</h4>
+  <pre>txn = begin(db_id)
+try:
+  <span class="cm"># 1) 先删：按 rootId 圈定的整棵子树，自底向上删（子先父后）</span>
+  <span class="kw">for</span> 每层 layer（<span class="st">子先</span>，Ln→L1）:
+    <span class="cm"># 沿 upper_id 链把"属于 rootId 这棵树的本层旧行"全删掉</span>
+    exec(txn, "DELETE FROM &lt;t&gt; WHERE upper_id = ANY($parentIds_of_this_layer)")
+    <span class="cm"># 根层：DELETE FROM &lt;L1&gt; WHERE id = ANY($rootIds)</span>
+  <span class="cm"># 2) 再插：按 snapshot 自顶向下全量 INSERT（父先，保证子 upper_id 有父）</span>
+  <span class="kw">for</span> 每层 layer（<span class="st">父先</span>，L1→Ln）:
+    <span class="kw">for</span> row <span class="kw">in</span> snapshot[layer]:
+      exec(txn, "INSERT INTO &lt;t&gt;(id,upper_id,line_no,&lt;cols&gt;) VALUES($1,...)", [...])
+  commit(txn); <span class="kw">return</span> { ok:<span class="kw">true</span>, mode:<span class="st">"replace"</span>, idMap }
+except e: rollback(txn); <span class="kw">return</span> { ok:<span class="kw">false</span>, error:e }</pre>
+  <div class="call danger"><b class="lead">删除范围界定（关键）</b><code>replace</code> <strong>必须</strong>由 <code>rootId</code>（+层级 <code>upper_id</code> 链）<strong>严格圈定</strong>"要覆盖的那几棵树"，<code>DELETE</code> 只作用于这些根的子孙，<strong>绝不</strong> <code>DELETE FROM &lt;t&gt;</code>（无 WHERE）误删他人单据。先查各层 <code>WHERE upper_id IN (上层被删 id)</code> 得本层待删 id 集，逐层下推。</div>
+  <ul>
+    <li><strong>前端简单</strong>：不需精确 diff，把整棵（子）树当前状态发过来即可，无遗漏风险。</li>
+    <li><strong>代价</strong>：行 id 与审计连续性中断（除非 snapshot 保留原 id 做"删同 id 再插同 id"）、写放大、并发下整树覆盖易冲掉他人改动——故 <code>replace</code> 建议配合<strong>悲观锁或"我方独占编辑"</strong>语义。</li>
+  </ul>
+
+  <div class="grid2">
+    <div class="card"><h4>两条硬护栏（两模式共用）</h4><ul style="margin:0">
+      <li><strong>删除边界</strong>：<code>DELETE</code> 一律带 <code>WHERE</code>（<code>id=ANY(...)</code> 或 <code>upper_id=ANY(...)</code>），<strong>永不无条件删表</strong>；<code>replace</code> 删除集必须由 <code>rootId</code> 树形圈定。</li>
+      <li><strong>id 生成</strong>：新增行 id 建议<strong>后端生成</strong>，保存后回 <code>idMap</code>（前端临时 id → 后端正式 id）前端回填，避免临时 id 泄漏进 <code>upper_id</code>（§12 风险 4）。</li>
+    </ul></div>
+    <div class="card"><h4>回存后一致性</h4><ul style="margin:0">
+      <li>保存成功后按需 <code>DocLoader</code> 重取该单据（或仅回传 <code>idMap</code>），前端 <code>ms.setDataSet</code> 刷新——保证前后端一致。</li>
+      <li>两模式都在<strong>同一事务</strong>内，崩溃全回滚，绝不半保存。</li>
+    </ul></div>
+  </div>
+
+  <h3>6.5 保存时序（双模式）</h3>
+  <div class="diagram">前端 保存按钮
+   │  merge:   cs.export() → 最小 changeset      →┐
+   │  replace: ms.exportColumnar()/整树 snapshot →┤  POST /api/doc/save { saveMode, rootId?, changes?/snapshot? }
+   ▼                                              │
+后端 DocSaver（begin txn）
+   │  ┌── saveMode = "merge" ──────────────┐   ┌── saveMode = "replace" ─────────────┐
+   │  │ L1→Ln upsert(inserted)+update       │   │ Ln→L1 DELETE(按 rootId 子树圈定)     │
+   │  │ Ln→L1 DELETE id=ANY(deleted)        │   │ L1→Ln INSERT(snapshot 全量)          │
+   │  └─────────────────────────────────────┘   └──────────────────────────────────────┘
+   │  commit(txn)
+   ▼
+前端 收 { ok, mode, idMap } → cs.reset() → （可选）重载或按 idMap 回填新 id</div>
+
+  <!-- 6A -->
+  <h2 id="s6a"><span class="n">6A</span>单据版本化 / 历史 / 审计追溯（单据级开关，开启后支持）</h2>
+  <h3>6A.0 需求与设计目标</h3>
+  <p>有些单据需要<strong>每次数据变化都被记录、可查询、可追溯、可审计</strong>——这是单据的一项<strong>设置</strong>，开启后生效（不开则零开销）。四件事：</p>
+  <div class="grid2">
+    <div class="card"><h4>可记录 · 可查询</h4><ul style="margin:0"><li>每次保存产生不可变历史版本（append-only，永不改写）。</li><li>能列全部版本、取任一历史版完整数据。</li></ul></div>
+    <div class="card"><h4>可追溯 · 可审计</h4><ul style="margin:0"><li>对比任意两版差异（哪行/哪列/旧→新/谁改）。</li><li>每次变更记 who/when/what/why。</li></ul></div>
+  </div>
+  <div class="call ok"><b class="lead">复用现成范式</b>后端已有 <code>cmx_model_source</code>（<strong>append-only + JSONB 快照 + <code>is_current</code></strong>，模型中心用）与 <code>cmx_audit_log</code>（操作级审计流水，<code>details</code> JSON）。本方案把这套成熟模式<strong>平移到业务单据数据</strong>，不新造机制。</div>
+
+  <h3>6A.1 单据级开关（<code>docMeta.versioning</code>）</h3>
+  <p>版本化是<strong>逐单据</strong>能力，落在单据定义的 <code>docMeta</code> 上（与现有 <code>version/designStyle/voucherStatusFlow</code> 并列，纯叠加）：</p>
+  <pre><span class="nm">"docMeta"</span>: {
+  <span class="nm">"metaKind"</span>: <span class="st">"DOC"</span>, <span class="nm">"version"</span>: 1,
+  <span class="nm">"versioning"</span>: {
+    <span class="nm">"enabled"</span>: <span class="kw">true</span>,                 <span class="cm">// 总开关：关闭则整套版本化零开销</span>
+    <span class="nm">"granularity"</span>: <span class="st">"document"</span>,       <span class="cm">// "document"(整单快照,默认) | "row"(行级历史)</span>
+    <span class="nm">"store"</span>: <span class="st">"jsonb"</span>,                <span class="cm">// "jsonb"(单表快照,默认) | "shadow"(每层影子表) | "both"</span>
+    <span class="nm">"diff"</span>: <span class="kw">true</span>,                    <span class="cm">// 是否同时落"字段级变更明细"（可查询/审计强）</span>
+    <span class="nm">"retention"</span>: { <span class="nm">"keep"</span>: 50, <span class="nm">"days"</span>: 3650 },  <span class="cm">// 保留：最多 50 版 / 10 年</span>
+    <span class="nm">"reason_required"</span>: <span class="kw">false</span>          <span class="cm">// 保存是否强制填变更原因</span>
+  }
+}</pre>
+  <ul>
+    <li><strong><code>granularity</code></strong>：<code>document</code>=每次存整单一个快照版（ERP 主流：完整回看"某版单据长啥样"）；<code>row</code>=逐行历史。默认 <code>document</code>。</li>
+    <li><strong><code>store</code></strong>：<code>jsonb</code>=一张版本表存整单 JSONB 快照（简单、可回滚、可整版取回）；<code>shadow</code>=每层配 <code>_hist</code> 影子表（可 SQL 查询/追溯）；<code>both</code>=兼得。默认 <code>jsonb</code>。</li>
+    <li>关闭（<code>enabled:false</code>）→ <code>DocSaver</code> 完全跳过版本逻辑，与非版本化单据<strong>零差异、零开销</strong>。</li>
+  </ul>
+
+  <h3>6A.2 存储设计</h3>
+  <h4>方案 A：JSONB 整单快照表（<code>store:"jsonb"</code>，默认）</h4>
+  <p>一张<strong>通用</strong>版本表（所有开启版本化的单据共用，非每单据一张），存整单列式包快照：</p>
+  <pre><span class="kw">CREATE TABLE</span> cmx_doc_revision (
+    id            <span class="kw">BIGINT PRIMARY KEY</span>,          <span class="cm">-- 版本记录主键（雪花）</span>
+    doc_file      <span class="kw">VARCHAR</span>(200) <span class="kw">NOT NULL</span>,       <span class="cm">-- 单据定义（哪种单据）</span>
+    root_table    <span class="kw">VARCHAR</span>(100) <span class="kw">NOT NULL</span>,       <span class="cm">-- 根层表名（如 cv_batch）</span>
+    root_id       <span class="kw">BIGINT</span>       <span class="kw">NOT NULL</span>,       <span class="cm">-- 单据根行 id（哪一张单）</span>
+    rev_no        <span class="kw">INT</span>          <span class="kw">NOT NULL</span>,       <span class="cm">-- 版本号：该单第几版</span>
+    is_current    <span class="kw">SMALLINT</span>     <span class="kw">DEFAULT</span> 1,      <span class="cm">-- 是否当前版（同 root 仅一行为 1）</span>
+    op            <span class="kw">VARCHAR</span>(16),                 <span class="cm">-- create / update / delete / restore</span>
+    snapshot      <span class="kw">JSONB</span>        <span class="kw">NOT NULL</span>,       <span class="cm">-- ★ 整单列式包快照（§5.2 结构）</span>
+    change_summary <span class="kw">JSONB</span>,                      <span class="cm">-- 可选：本版变更摘要</span>
+    reason        <span class="kw">VARCHAR</span>(500),                <span class="cm">-- 变更原因（reason_required 时必填）</span>
+    actor_id      <span class="kw">VARCHAR</span>(64), actor_name <span class="kw">VARCHAR</span>(100),   <span class="cm">-- who</span>
+    created_at    <span class="kw">TIMESTAMPTZ</span>  <span class="kw">DEFAULT</span> now(),  <span class="cm">-- when</span>
+    biz_status    <span class="kw">VARCHAR</span>(32)                  <span class="cm">-- 冗余当时单据状态，便于按态检索</span>
+);
+<span class="kw">CREATE UNIQUE INDEX</span> uk_doc_rev <span class="kw">ON</span> cmx_doc_revision (doc_file, root_id, rev_no);
+<span class="kw">CREATE INDEX</span> idx_doc_rev_cur <span class="kw">ON</span> cmx_doc_revision (doc_file, root_id, is_current);</pre>
+  <ul>
+    <li><strong>append-only</strong>：每次保存 <code>rev_no+1</code> 追加一行，旧版永不改写（<code>is_current</code> 翻旧为 0、新版置 1）。</li>
+    <li><strong><code>snapshot</code> 直接复用 §5.2 列式包</strong>：<code>ColumnarCodec.encode(整单DataSet)</code> 产物直接进 JSONB——<strong>零额外序列化代码</strong>，回滚时 <code>CmxDataSet.fromJSON(snapshot)</code> 直接还原。</li>
+    <li><strong>通用</strong>：一张表服务所有版本化单据，加新单据无需建表。</li>
+  </ul>
+  <h4>方案 B：每层影子表（<code>store:"shadow"</code>，需强查询/追溯时）</h4>
+  <p>每层物理表 <code>&lt;t&gt;</code> 配一张 <code>&lt;t&gt;_hist</code>，列 = 原表列 + 版本维度列（由 §4 DDL 引擎按元数据自动生成）：</p>
+  <pre><span class="kw">CREATE TABLE</span> cv_header_hist (
+    _hist_id   <span class="kw">BIGINT PRIMARY KEY</span>,       <span class="cm">-- 历史行主键</span>
+    _rev_no    <span class="kw">INT NOT NULL</span>,             <span class="cm">-- 属于该单第几版</span>
+    _op        <span class="kw">VARCHAR</span>(16),              <span class="cm">-- I/U/D（本行在这版的动作）</span>
+    _valid_from <span class="kw">TIMESTAMPTZ NOT NULL</span>,    <span class="cm">-- 该版生效时点（时序双时区间）</span>
+    _valid_to  <span class="kw">TIMESTAMPTZ</span>,              <span class="cm">-- NULL = 当前有效</span>
+    id BIGINT <span class="kw">NOT NULL</span>, upper_id BIGINT, line_no INT, <span class="cm">/* ...原表全部业务列... */</span>
+    _actor_id  <span class="kw">VARCHAR</span>(64)
+);</pre>
+  <div class="tbl"><table>
+    <thead><tr><th>维度</th><th>A · JSONB 快照</th><th>B · 影子表</th></tr></thead>
+    <tbody>
+      <tr><td>建表</td><td>1 张通用表（零维护）</td><td>每层 1 张（DDL 引擎自动建）</td></tr>
+      <tr><td>取整版数据</td><td>直接（<code>fromJSON</code>）</td><td>需按 rev 拼各层</td></tr>
+      <tr><td>按列/行 SQL 追溯</td><td>弱（JSONB 内查）</td><td>强（原生列）</td></tr>
+      <tr><td>时序查询（某时刻）</td><td>需自解析</td><td>原生 <code>valid_from/to</code></td></tr>
+      <tr><td>存储/写入成本</td><td>低（一行一版）</td><td>高（各层各行）</td></tr>
+      <tr><td>回滚</td><td>极简（整包还原）</td><td>需逐层重建</td></tr>
+      <tr><td><strong>推荐</strong></td><td><strong>默认</strong></td><td>需报表/合规级追溯时叠加</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6A.3 字段级变更明细（<code>diff:true</code>，审计增强）</h3>
+  <p>除整版快照外，可同时落<strong>字段级变更明细</strong>（回答"这版到底改了什么"），复用 §6.3 changeset + 现成 <code>cmx_audit_log</code> 语义：</p>
+  <pre><span class="kw">CREATE TABLE</span> cmx_doc_change (
+    id BIGINT <span class="kw">PRIMARY KEY</span>, rev_id BIGINT <span class="kw">NOT NULL</span>,  <span class="cm">-- → cmx_doc_revision.id</span>
+    root_id BIGINT, layer <span class="kw">VARCHAR</span>(100),          <span class="cm">-- 层表名 cv_header/cv_acc_line</span>
+    row_id BIGINT, op <span class="kw">VARCHAR</span>(8),                 <span class="cm">-- I/U/D</span>
+    field <span class="kw">VARCHAR</span>(100),                         <span class="cm">-- 变更字段（U 逐字段一行）</span>
+    old_value <span class="kw">JSONB</span>, new_value <span class="kw">JSONB</span>,           <span class="cm">-- 旧值→新值</span>
+    actor_id <span class="kw">VARCHAR</span>(64), created_at <span class="kw">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> now()
+);</pre>
+  <ul>
+    <li><strong>数据来源</strong>：<code>merge</code> 模式前端 changeset 已含变更列（<code>updated.fields</code> 每键 = 一条 <code>U</code> 明细，<code>old_value</code> 从上版快照取）；<code>replace</code> 模式后端 diff 新旧快照生成。</li>
+    <li><strong>可审计</strong>：<code>SELECT field,old_value,new_value,actor_id,created_at FROM cmx_doc_change WHERE root_id=$1 AND field='total_dr'</code> → 某字段完整变更史（谁何时把金额从多少改成多少）。</li>
+  </ul>
+
+  <h3>6A.4 与保存链路（§6.4）咬合——快照在保存事务内产生</h3>
+  <div class="call key"><b class="lead">版本化不是独立步骤</b>而是嵌进 §6.4 的 <code>DocSaver</code> <strong>同一事务</strong>（保证"数据写了、版本也记了"原子一致，规避半保存）。</div>
+  <pre>DocSaver.save(changes/snapshot, saveMode):
+  txn = begin(db_id)
+  try:
+    ── 若 versioning.enabled ──
+    1. 读当前版(is_current=1)快照 → prevSnapshot（供 diff 与 old_value）
+    2. 按 §6.4 merge/replace 写主表各层（同事务）
+    3. 重新装配"保存后整单 DataSet"（内存现成，无需回查）
+    4. rev_no = prev.rev_no + 1
+       UPDATE cmx_doc_revision SET is_current=0 WHERE doc_file=? AND root_id=? AND is_current=1
+       INSERT cmx_doc_revision(... rev_no, is_current=1, op, snapshot=<span class="fn">encode</span>(整单), reason, actor, biz_status)
+    5. 若 store∈{shadow,both}：各层变更行按 _op/_rev_no 追加进 &lt;t&gt;_hist；旧当前行 _valid_to=now()
+    6. 若 diff：changeset 展开成 cmx_doc_change 明细（U 逐字段，old 从 prevSnapshot 取）
+    7. 可选：写一条 cmx_audit_log（operation="doc.save", target=root_id, details=摘要）
+    commit(txn)
+  except e: rollback(txn)   <span class="cm">// 数据与版本一起回滚，绝不半保存</span></pre>
+  <div class="grid2">
+    <div class="card"><h4>零拷贝复用</h4><p style="margin:6px 0">第 3 步"保存后整单 DataSet"就是内存里那棵树，<code>ColumnarCodec.encode</code> 直接产快照（与 §5.2 同序列化器、§7 借用式），<strong>不重查库、不重序列化</strong>。</p></div>
+    <div class="card"><h4>与维度解析（§5A）</h4><p style="margin:6px 0">快照存<strong>原始 id/code</strong>（不含解析 name），保持小且稳定；回看历史版走 §5A 解析显示——<strong>"当时值"或"现值"两种语义可选</strong>（要"当时名称"则快照连 <code>_disp</code> 一起存）。</p></div>
+  </div>
+
+  <h3>6A.5 查询 / 追溯 / 回滚 API（新增端点）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>方法</th><th>路径</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/doc/revisions?docFile&amp;rootId</code></td><td>列某单全部版本（rev_no/op/actor/created_at/biz_status/reason），倒序时间线</td></tr>
+      <tr><td>GET</td><td><code>/api/doc/revision?docFile&amp;rootId&amp;rev</code></td><td>取某历史版<strong>完整数据</strong>（返回该版 <code>snapshot</code> 列式包，前端 <code>fromJSON</code> 直接渲染）</td></tr>
+      <tr><td>GET</td><td><code>/api/doc/diff?docFile&amp;rootId&amp;from&amp;to</code></td><td>对比两版差异（读 <code>cmx_doc_change</code> 或现算两快照 diff）：逐层/逐行/逐字段 old→new</td></tr>
+      <tr><td>GET</td><td><code>/api/doc/changes?docFile&amp;rootId&amp;field?</code></td><td>字段级变更史（审计：谁何时把某字段从 X 改成 Y）</td></tr>
+      <tr><td>POST</td><td><code>/api/doc/restore</code></td><td><code>{docFile,rootId,rev}</code> 把某历史版<strong>恢复为新当前版</strong>（<code>op="restore"</code>，走 §6.4 <code>replace</code> 写回 + 追加新版，<strong>不删历史</strong>）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call warn"><b class="lead">回滚语义</b><code>restore</code> 不是"删掉后面版本回到过去"，而是"把旧版内容作为一个<strong>新版本</strong>写入"（op=restore）——历史完整不丢，可审计"谁在何时回滚到了第几版"。前端历史版查看直接 <code>ms.setDataSet(CmxDataSet.fromJSON(该版snapshot))</code> 只读渲染（复用全部可视化组件，零新增 UI 逻辑）。</div>
+
+  <h3>6A.6 版本化时序图</h3>
+  <div class="diagram">保存（versioning.enabled）
+   │  POST /api/doc/save { saveMode, changes/snapshot }
+   ▼
+DocSaver（begin txn）
+   │  ① 读 prevSnapshot(is_current=1)
+   │  ② 写主表各层（merge/replace，§6.4）
+   │  ③ encode(保存后整单) → snapshot
+   │  ④ rev_no+1；旧版 is_current=0；INSERT cmx_doc_revision(is_current=1)
+   │  ⑤ (shadow) 各层 _hist 追加；(diff) cmx_doc_change 逐字段；(audit) cmx_audit_log
+   │  commit(txn)  ← 数据+版本原子一致
+   ▼
+追溯：GET /revisions（时间线）→ /revision?rev（取某版）→ ms.setDataSet(fromJSON) 只读回看
+      GET /diff?from&amp;to（版本对比）   POST /restore（旧版→新当前版，历史不丢）</div>
+
+  <h3>6A.7 通用性、可扩展性、性能</h3>
+  <div class="grid2">
+    <div class="card"><h4>通用 · 可扩展</h4><ul style="margin:0">
+      <li>一套机制服务所有单据；<code>cmx_doc_revision/cmx_doc_change</code> 是<strong>通用表</strong>（按 <code>doc_file+root_id</code> 区分），加新单据零建表。</li>
+      <li><code>shadow</code> 影子表由 §4 DDL 引擎按元数据自动生成/加列（additive）。</li>
+      <li>新增单据只需在 <code>docMeta.versioning</code> 打开开关选粒度/存储；保留策略/diff/原因必填都是声明式参数。</li>
+    </ul></div>
+    <div class="card"><h4>性能</h4><ul style="margin:0">
+      <li>关闭时<strong>零开销</strong>；开启时快照复用内存 DataSet + §7 借用序列化，<strong>不重查库</strong>。</li>
+      <li>快照存 JSONB（PG 原生、可 GIN 索引）；<code>is_current</code> 索引让"取当前版"O(1)。</li>
+      <li>历史读写与主表<strong>物理分离</strong>，不拖慢联机主表热路径。</li>
+      <li>保留策略（<code>keep/days</code>）定期归档清理超期版本，控制增长。</li>
+    </ul></div>
+  </div>
+  <div class="call ok"><b class="lead">落地优先级（§11 阶段 4.5）</b>先做 <strong>A·JSONB 快照 + restore + revisions/revision 查询</strong>（复用列式包与保存事务，改动最小即得"可记录/可查询/可回滚/可追溯整版"）→ 需字段级审计时开 <code>diff</code>（<code>cmx_doc_change</code>）→ 需报表级 SQL 追溯/temporal 时再上 <code>shadow</code> 影子表。</div>
+
+  <!-- 7 -->
+  <h2 id="s7"><span class="n">7</span>后端零拷贝（约束 A）</h2>
+  <p>现状：<code>axum::Json</code> 每次 <code>serde_json::to_vec</code> 新分配 <code>Vec&lt;u8&gt;</code>；无 <code>Cow</code>、无 <code>rkyv/arrow</code>；仅 <code>Arc&lt;Schema&gt;</code>（模型级共享）与 <code>bytes::Bytes</code>（下载用）。因此"零拷贝"是<strong>渐进增强</strong>，分三层：</p>
+  <div class="grid2">
+    <div class="card"><h4>7.1 Schema / 元数据（立即可得）</h4>
+      <ul style="margin:0"><li><code>Arc&lt;Schema&gt;</code> 全程共享：同层所有行、同定义跨请求共用一个 <code>Arc</code>；<code>OnceLock/DashMap</code> 建「<code>docFile+version → Arc&lt;Schema&gt;[]</code>」缓存。</li><li>列名用 <code>Arc&lt;str&gt;</code>/<code>&amp;'static</code>，序列化借用而非克隆。</li></ul>
+    </div>
+    <div class="card"><h4>7.2 值层（中等）</h4>
+      <ul style="margin:0"><li><code>SmolStr</code> 短串内联（状态码/币种/编码不堆分配）。</li><li><strong>借用式序列化</strong>：列式编码走 <code>RowsRef/RowRef</code> 式借用序列化器（<code>rds.rs</code> 已有先例），<code>rows:[[…]]</code> 由 <code>serialize_seq</code> 流式吐 <code>&amp;DataValue</code>，不物化中间 <code>Vec</code>。</li><li><code>Bytes/BytesMut</code> 复用响应缓冲。</li></ul>
+    </div>
+  </div>
+  <h4>7.3 传输零拷贝（进阶，可选）</h4>
+  <ul>
+    <li><strong>流式响应</strong>：大单据用 <code>axum</code> <code>Body::from_stream</code>，边组装边发（SSE 先例已在 <code>portal/handler.rs</code>）。</li>
+    <li><strong><code>rkyv</code>/Arrow IPC（远期）</strong>：真·零拷贝反序列化需引入新依赖，<strong>本方案默认不引入</strong>——「列式 JSON + msgpack + 压缩」已满足小包目标，性价比更高。</li>
+  </ul>
+  <div class="call key"><b class="lead">务实取舍</b>约束 A 的"尽量零拷贝"在本方案 = <strong>① <code>Arc&lt;Schema&gt;</code> 共享 + ② 借用式列式序列化 + ③ <code>Bytes</code> 复用/流式</strong>，全部在现有 <code>rds.rs</code>/<code>axum</code> 能力上叠加，不改数据面为 rkyv/arrow（避免伤筋动骨）。</div>
+
+  <!-- 8 -->
+  <h2 id="s8"><span class="n">8</span>传输小包（约束 B）</h2>
+  <p>现状：<em>行式 JSON、键名逐行重复、不跳 null、无压缩</em>（<code>CompressionLayer</code> 已编译未挂载）。四级递进、逐级叠乘：</p>
+  <div class="grid2">
+    <div class="card"><h4>8.1 一级：列式化（最大结构收益）</h4><p style="margin:6px 0">行式（每行重复 7+ 键名）→ 列式（键名 1 次 + 纯值数组）。键名开销从 O(行×列) 降到 O(列)。裸 JSON 常降 <strong>40%~60%</strong>。前端 <code>fromJSON</code> 原生支持，<strong>零前端改造</strong>。</p></div>
+    <div class="card"><h4>8.2 二级：跳 null + 稀疏优化</h4><p style="margin:6px 0">引入 <code>SKIP_NULL</code> 语义（稀疏列不占位）；保存侧 <code>updated</code> 只带变更字段。会计辅助行等稀疏结构收益显著。</p></div>
+    <div class="card"><h4>8.3 三级：MessagePack（二进制）</h4><p style="margin:6px 0">后端已用 <code>rmp-serde</code>（WASM 边界），扩到 HTTP 内容协商（<code>Accept: application/x-msgpack</code>）。免引号/逗号、变长整数，叠加列式再降 <strong>15%~30%</strong>。</p></div>
+    <div class="card"><h4>8.4 四级：HTTP 压缩（一行，最省力）</h4><p style="margin:6px 0"><code>tower-http</code> 的 <code>compression-full</code> <strong>已在依赖里</strong>，只需在 <code>main.rs</code> 中间件栈加 <code>CompressionLayer</code>（br/gzip）。对列式 JSON 通常再降 <strong>70%~85%</strong>——<strong>桌上最大最省力的杠杆</strong>。</p></div>
+  </div>
+  <h3>8.5 组合收益（示意）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>阶段</th><th>相对体积</th><th>手段</th></tr></thead>
+    <tbody>
+      <tr><td>现状（行式 JSON、无压缩）</td><td>100%</td><td><code>RowRef</code> 逐行键名</td></tr>
+      <tr><td>+ 列式</td><td>~50%</td><td><code>ColumnarCodec</code></td></tr>
+      <tr><td>+ 跳 null</td><td>~42%</td><td>稀疏优化</td></tr>
+      <tr><td>+ gzip/br</td><td><strong>~8%~12%</strong></td><td><code>CompressionLayer</code>（一行）</td></tr>
+      <tr><td>+ msgpack 替 JSON 再压</td><td>~6%~9%</td><td>内容协商</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call ok"><b class="lead">落地优先级</b>先挂 <code>CompressionLayer</code>（1 行、立竿见影）→ 再上列式编码（前端零改）→ 视需要加 msgpack。三者独立、可分期。</div>
+
+  <!-- 9 -->
+  <h2 id="s9"><span class="n">9</span>API 契约（新增端点）</h2>
+  <p>沿用现有 <code>ApiResp&lt;T&gt;</code> 信封（<code>{code,msg,data,pagination}</code>，camelCase）与 <code>db_id</code> HTTP 头选库。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>方法</th><th>路径</th><th>入参</th><th>出参 / 作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code>/api/doc/data</code></td><td><code>db_id</code>(头) + <code>?docFile&amp;domain&amp;app&amp;module&amp;rootId?&amp;filter?&amp;page?</code></td><td>列式主从包（§5.2）；<code>Accept</code> 协商 json/msgpack；响应经压缩中间件</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/doc/save</code></td><td><code>db_id</code>(头) + <code>{ docFile, saveMode, rootId?, layerModes?, changes?, snapshot? }</code></td><td>两模式（<code>merge</code> 增量 / <code>replace</code> 先删后插，§6.4）；事务内逐层执行；返回 <code>{ ok, mode, affected, idMap? }</code></td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/doc/meta</code></td><td><code>?docFile...</code></td><td>（可选）返回前端装配元数据：<code>schema</code>(嵌套) + <code>relations</code> + <code>aggregations</code> + 各层 <code>CmxColumnModel</code></td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/doc/revisions · /revision · /diff · /changes</code></td><td><code>?docFile&amp;rootId&amp;rev?&amp;from?&amp;to?&amp;field?</code></td><td>版本化（§6A.5）：版本时间线 / 取某版完整数据 / 两版对比 / 字段变更史</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/doc/restore</code></td><td><code>{ docFile, rootId, rev }</code></td><td>把某历史版恢复为新当前版（op=restore，历史不丢，§6A.5）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call key"><code>/api/doc/meta</code> 让前端<strong>一次</strong>取到「层级 schema + 关系 + 聚合 + 列模型」，直接喂 <code>new CmxMasterSlave({...})</code> 与各网格 <code>setColumnModel</code>，把 §5.3 的 <code>docSchema/docRelations/docAggregations/columnModel</code> 全部由后端从定义生成，<strong>前端零硬编码</strong>。</div>
+
+  <!-- 10 -->
+  <h2 id="s10"><span class="n">10</span>关键数据结构对照（后端 ⇄ 前端孪生）</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>维度</th><th>后端 <code>cmx-core</code></th><th>前端 <code>cmx-data-comp</code></th><th>契合点</th></tr></thead>
+    <tbody>
+      <tr><td>数据集</td><td><code>DataSet{ id, schema:Arc&lt;Schema&gt;, rows, inserted/updated/deleted }</code></td><td><code>CmxDataSet{ datasetId, _rows, _index, _cursor }</code></td><td>id + 扁平行 + 变更语义</td></tr>
+      <tr><td>行</td><td><code>Row{ values:Vec&lt;DataValue&gt;, children:HashMap }</code></td><td><code>CmxRowSet{ ...fields, _children, _ds }</code></td><td>扁平值 + 按名子集</td></tr>
+      <tr><td>结构</td><td><code>Schema{ id, fields, index_map }</code></td><td><code>_columns</code> + <code>columnKeys</code></td><td>列定义 + O(1) 名→序</td></tr>
+      <tr><td>主从</td><td><code>Row.children</code>（嵌套 DataSet）</td><td><code>row._children</code>（嵌套 CmxDataSet）</td><td>递归主从树</td></tr>
+      <tr><td>身份</td><td><code>values[pk]</code>（id）</td><td><code>row.id</code>（+ <code>_index</code> Map）</td><td><code>id</code> 主键</td></tr>
+      <tr><td>父链</td><td>物理列 <code>upper_id</code></td><td><code>relations.childKey</code>（装配成 <code>_children</code>）</td><td><code>child.upper_id===parent.id</code></td></tr>
+      <tr><td>列式序列化</td><td><code>ColumnarCodec</code>（新增，借用式）</td><td><code>exportColumnar()/fromJSON()</code>（已有）</td><td><code>{columns, rows:[[…]], childRows}</code></td></tr>
+      <tr><td>变更</td><td><code>inserted/updated/deleted</code> 三池</td><td><code>ChangeSetCollector</code>（新增，订阅事件）</td><td>changeset 协议对齐三池</td></tr>
+      <tr><td>零拷贝</td><td><code>Arc&lt;Schema&gt;</code> 共享</td><td><code>CmxDataSetView</code> 引用投影</td><td>各自层面的零拷贝</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- 11 -->
+  <h2 id="s11"><span class="n">11</span>落地顺序（MVP 优先）</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>阶段</th><th>内容</th><th>满足</th></tr></thead>
+    <tbody>
+      <tr><td><strong>0（先做）</strong></td><td>挂 <code>CompressionLayer</code>（1 行）；<code>ColumnarCodec</code> 列式编码 + <code>GET /api/doc/data</code>（先 JSON）；前端 <code>fromJSON→ms.setDataSet</code> 装配</td><td>装载 + 显示 + 小包一级/四级</td></tr>
+      <tr><td>1</td><td><code>GET /api/doc/meta</code>（定义→schema/relations/aggregations/列模型）；前端零硬编码装配</td><td>定义驱动前端模型</td></tr>
+      <tr><td>1.5</td><td><strong>L0 维度解析</strong>（§5A.3）：<code>collectRefDicts</code> + 复用 <code>POST /api/dict/batch-data</code> 整典缓存 + 列显示模板 <code>id→name</code>；后端字典缓存底座</td><td>引用列显示 name，零后端 JOIN</td></tr>
+      <tr><td>2</td><td><code>ChangeSetCollector</code> + <code>POST /api/doc/save</code>（<code>merge</code> 增量优先）；<code>saveMode=replace</code> 先删后插作为第二模式</td><td>编辑回存 · 双模式</td></tr>
+      <tr><td>3</td><td>跳 null + msgpack 内容协商；<code>Arc&lt;Schema&gt;</code> 缓存 + 借用式序列化 + <code>Bytes</code> 复用</td><td>小包二/三级 + 零拷贝</td></tr>
+      <tr><td>4</td><td><code>upper_id</code> 索引增强；大单据流式响应；回存后按 <code>idMap</code> 回填</td><td>性能与一致性收尾</td></tr>
+      <tr><td>4.5</td><td><strong>单据版本化</strong>（§6A）：<code>versioning</code> 开关 + <code>cmx_doc_revision</code>（JSONB 快照，复用保存事务与列式包）+ <code>revisions/revision/restore</code>；再按需 <code>diff</code>(<code>cmx_doc_change</code>) 与 <code>shadow</code> 影子表</td><td>可记录/可查询/可追溯/可审计</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call ok">阶段 0 即可跑通「装载→显示」闭环且立享压缩；阶段 2 补齐「回存」；零拷贝与 msgpack 作为增强分期上。</div>
+
+  <!-- 12 -->
+  <h2 id="s12"><span class="n">12</span>风险与护栏</h2>
+  <div class="call danger"><b class="lead">1 · <code>upper_id</code> 非 DB 外键</b>删父不会 DB 级联，<code>DocSaver</code> 必须应用层保证「子先删/连带删」（§6.4），否则留孤儿。</div>
+  <div class="call danger"><b class="lead">2 · 前端无脏标记（坑 A）</b>changeset 完全依赖 <code>ChangeSetCollector</code> 正确订阅事件；<strong>聚合回写</strong>（<code>aggregate</code> 改 <code>toField</code>）也会触发 <code>row-changed</code>，需甄别「用户改」vs「聚合改」——建议聚合写用 <code>row[key]=v</code> 直写（不经 <code>set</code>、不进 changeset），或在收集器按来源打标。</div>
+  <div class="call danger"><b class="lead">3 · <code>cmx-tabulator</code> 回写死支</b><code>_onCellEdited</code> 判 <code>this._ds.set</code>（<code>CmxDataSet</code> 无 <code>set</code>，只有 <code>CmxRowSet.set</code>），若用 Tabulator 作可编辑主从视图，编辑不回模型。→ 主从可编辑场景<strong>优先 <code>cmx-revo-grid</code></strong>。</div>
+  <div class="call danger"><b class="lead">4 · id 生成</b>新增行 id 由前端临时生成（<code>r&lt;base36&gt;</code>）还是后端雪花？建议<strong>后端生成</strong>、保存后回 <code>idMap</code> 前端回填，避免临时 id 泄漏进 <code>upper_id</code>。</div>
+  <div class="call danger"><b class="lead">5 · 大树内存</b>整单大树全量装载。超大单据用根层分页（<code>filter/page</code> 作用于 L1）+ 子层按需（选中父行再拉子——可扩展为「懒下钻」，<code>DocLoader</code> 支持 <code>depth</code> 参数）。</div>
+  <div class="call danger"><b class="lead">6 · 维度解析一致性（§5A）</b>L2 伴生宽表的 name 会因字典改名过期——按业务语义选懒刷/批刷/快照三策略之一，勿默认"永远实时"。L0 前端缓存需版本协商失效，避免旧 name 长驻。<code>_disp</code> 表的 <code>DELETE</code>/UPSERT 必须与主表回存<strong>同事务同拓扑序</strong>，否则显示值与主数据不一致。</div>
+  <div class="call danger"><b class="lead">7 · 版本化开销与增长（§6A）</b>仅对开 <code>versioning</code> 的单据生效，务必默认关闭、按需开启。快照与主表回存<strong>同事务</strong>——快照写失败必须回滚主数据，绝不"数据成功、版本丢失"。JSONB 快照随版本累积增长，必须配 <code>retention</code>（keep/days）归档清理；高频保存单据慎开 <code>shadow</code>（写放大）。历史/影子表与主表物理分离，勿让版本写入拖慢联机热路径。</div>
+
+  <!-- 13 -->
+  <h2 id="s13"><span class="n">13</span>关键文件索引</h2>
+  <div class="grid2">
+    <div class="card"><h4>前端（<code>packages/cmx-data-comp/src/</code>）</h4>
+      <ul style="margin:0;font-size:13.4px">
+        <li><code>lib/cmx-data-set.js</code> — <code>CmxDataSet</code>（<code>exportColumnar/fromJSON/createView</code>）</li>
+        <li><code>lib/cmx-row-set.js</code> — <code>CmxRowSet</code>（<code>set/_children</code>）</li>
+        <li><code>lib/cmx-master-slave.js</code> — <code>CmxMasterSlave</code></li>
+        <li><code>lib/cmx-data-set-view.js</code> — 零拷贝视图</li>
+        <li><code>components/cmx-revo-grid.js</code> — 网格绑定/回写</li>
+        <li><code>components/cmx-ui5-form.js</code> — 表单绑定</li>
+        <li><code>lib/cmx-field-schema.js</code> / <code>lib/cmx-doc-meta.js</code></li>
+      </ul>
+    </div>
+    <div class="card"><h4>后端（<code>cmx-container/crates/</code>）</h4>
+      <ul style="margin:0;font-size:13.4px">
+        <li><code>cmx-core/.../dataset/rds.rs</code> — <code>DataSet/Row</code></li>
+        <li><code>cmx-core/.../dataset/mod.rs</code> — <code>Schema</code>；<code>builder.rs</code></li>
+        <li><code>cmx-core/.../cell.rs</code> — <code>DataValue</code></li>
+        <li><code>cmx-core/.../meta/table.rs</code> — <code>TableDefine/ColumnDefine</code></li>
+        <li><code>cmx-api/.../portal/model_center.rs</code> — <code>compile_doc/deploy</code></li>
+        <li><code>cmx-metadata/ddl/postgres.rs</code> + <code>executor.rs</code></li>
+        <li><code>cmx-database/transaction/api.rs</code> — <code>query_sql/事务</code></li>
+        <li><code>cmx-database/executor/mod.rs</code> — <code>convert_postgres_rows</code></li>
+        <li><code>web-server/src/main.rs</code> — 挂 <code>CompressionLayer</code> 处</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px"><h4>元数据 / 数据 / 参考文档</h4>
+    <ul style="margin:0;font-size:13.4px">
+      <li><code>data/meta/definitions/base/base_doc_meta_v1.json</code> — <code>documentLevelFields</code>（<code>id/upper_id/line_no</code>）</li>
+      <li><code>data/meta/definitions/fi/cmxfico/gl/cmxfico_doc_meta_v1.json</code> — 4 层单据定义</li>
+      <li><code>data/fact/fi/cmxfico/gl/cmxfico_voucher_1000000007.json</code> — 真实 <code>upper_id</code> 树</li>
+      <li><code>docs/表定义JSON解析与DDL生成开发文档.md</code>、<code>docs/模型中心-数据库初始化与模块部署台账设计.md</code></li>
+      <li><code>packages/cmx-data-comp/docs/dct-doc-meta-model.md</code>、<code>skill-generate-master-slave-page.md</code></li>
+    </ul>
+  </div>
+
+  <!-- 14 -->
+  <h2 id="s14"><span class="n">14</span>查漏补缺：单据生命周期与横切关注点</h2>
+  <p>§1–§13 覆盖了「装载→模型→编辑→回存→维度解析→版本化」主链路。最后一轮审视发现：真实 ERP 单据还有一批<strong>横切关注点</strong>，数条<strong>直接影响正确性</strong>（不做会错），另一些是<strong>必须明确的设计约定</strong>。好消息——经核对源码，所需后端能力<strong>大多已存在</strong>，方案只需「串联 + 声明」。</p>
+
+  <h3>14.1 【正确性】单据状态机约束保存/编辑（<code>voucherStatusFlow</code>）</h3>
+  <div class="call danger">
+    <b class="lead">过账的凭证绝不能再改——主链路 §6.4 却没读状态机</b>
+    单据定义已有 <code>voucherStatusFlow.states</code>（每状态 <code>editable</code>：<code>draft.editable:true</code>、<code>audited/posted/reversed.editable:false</code>）+ <code>transitions</code>（<code>action/from/to/guard</code>）。§6.4 <code>DocSaver</code> 完全没用它，漏了就是数据事故。
+  </div>
+  <ul>
+    <li><strong>保存前置校验</strong>：<code>DocSaver</code> 保存前读当前 <code>stateField</code>（如 <code>doc_status</code>），查 <code>states[当前].editable</code>；<code>false</code> 则拒绝保存（除非合法状态流转）。</li>
+    <li><strong>状态流转是独立动作</strong>：审核/过账/反冲走专门端点 <code>POST /api/doc/transition { docFile, rootId, action }</code>，后端校验 <code>from==当前态</code> + <code>action</code> 合法 + 跑 <code>guard</code>（权限+业务条件），通过才改状态（版本化开启则记 <code>op=transition</code> 版本）。</li>
+    <li><strong>前端联动</strong>：装载时据 <code>editable</code> 决定可编辑性（<code>ms.setEditable(false)</code> 已就绪）；不可编辑态只读 + 只显可用流转按钮。叠加字段级 <code>edit.editableWhen/readonlyWhen</code>（已有）做到列级锁定。</li>
+  </ul>
+
+  <h3>14.2 【正确性】后端二次校验（<code>validationRules</code>，前端校验不可信）</h3>
+  <div class="call danger">
+    <b class="lead">前端校验可被绕过，后端目前无表达式求值器</b>
+    单据有 <code>validationRules</code>（"凭证本位币借贷必须平衡""记账期间未打开"，带 <code>expression/message</code>）。前端有 <code>formula-eval.js</code>，但改请求直发可绕过；经核对<strong>后端没有对应求值器</strong>——真缺口。
+  </div>
+  <ul>
+    <li><strong>后端求值器（新增）</strong>：实现与前端 <code>formula-eval</code> <strong>语义对齐</strong>的安全求值器（同套操作符/函数白名单），<code>DocSaver</code> 保存前对 <code>validationRules</code> 逐条在<strong>保存后整单 DataSet</strong>上求值，任一 <code>severity:error</code> 不通过则回滚 + 返回 <code>message</code>。</li>
+    <li><strong>双端一套规则</strong>：前后端共用同一份 <code>validationRules</code>（元数据驱动）——前端即时反馈、后端最终把关，不重复定义。规则在内存 DataSet 求值，代价极低。</li>
+  </ul>
+
+  <h3>14.3 【正确性】并发控制（乐观锁 / 悲观锁，防覆盖）</h3>
+  <div class="call danger">
+    <b class="lead">两人同编辑，后保存者静默覆盖前者</b>
+    §6.4 目前无并发保护。经核对后端<strong>已具备</strong> <code>SELECT ... FOR UPDATE</code> 悲观锁能力。
+  </div>
+  <div class="grid2">
+    <div class="card"><h4>乐观锁（默认，联机编辑）</h4><p style="margin:6px 0">主表加 <code>row_version INT</code>（或复用 <code>update_time</code>）；<code>merge</code> 走 <code>UPDATE ... WHERE id=$1 AND row_version=$expected</code>，<code>rows_affected=0</code> ⇒ 冲突，回滚返回「单据已被他人修改，请刷新」。装载下发 <code>row_version</code>，保存带回。</p></div>
+    <div class="card"><h4>悲观锁（强占用）</h4><p style="margin:6px 0">编辑前 <code>POST /api/doc/lock</code> → 根行 <code>FOR UPDATE</code> 或写 <code>cmx_doc_lock</code>（actor+过期）；他人只读。<code>replace</code> 整树覆盖<strong>建议强制悲观锁</strong>，避免冲掉他人改动。</p></div>
+  </div>
+
+  <h3>14.4 【正确性】软删除 vs 物理删除（<code>delete_flag</code>）</h3>
+  <div class="call danger">
+    <b class="lead">物理 DELETE 与系统逻辑删除约定冲突、破坏审计追溯</b>
+    base 已有 <code>delete_flag</code>（逻辑删除）。§6.4 的 <code>DELETE</code>/<code>replace</code> 写物理删——删了就查不到，破坏版本化/审计。
+  </div>
+  <ul>
+    <li><strong>单据设置 <code>deletePolicy</code></strong>（<code>docMeta</code>）：<code>soft</code>（默认，<code>UPDATE SET delete_flag=1</code>）| <code>hard</code>（物理删）。</li>
+    <li><strong>软删语义</strong>：删除改为标记；<code>DocLoader</code> 一律带 <code>WHERE delete_flag=0</code>。删除进版本历史（<code>op=delete</code>），可追溯可恢复。<code>replace</code> 软删时把"不在 snapshot 的旧行"标删而非物理清空。</li>
+  </ul>
+
+  <h3>14.5 【约定】单号生成（<code>doc_no</code> 谁生成、防重、按段流水）</h3>
+  <ul>
+    <li><strong>后端生成（保存时）</strong>：单号后端在保存事务内生成（前端占位），避免临时号泄漏与并发重号。</li>
+    <li><strong>规则元数据化</strong>：<code>docMeta.numbering { field:"doc_no", pattern:"PZ-{entity}-{yyyymm}-{seq:6}", scope:["entity_id","fiscal_period_id"], resetBy:"month" }</code>——声明式前缀/变量/流水位/分段/重置。</li>
+    <li><strong>并发防重</strong>：从 DB 序列或 <code>cmx_doc_seq(scope_key,next_val)</code> <code>UPDATE ... RETURNING</code> 原子自增；单号列唯一索引兜底。<code>numbering.assignOn:"save"|"transition:audit"</code> 控制"草稿临时号、过账才正式号"。</li>
+  </ul>
+
+  <h3>14.6 【约定】数据权限（行级 who 能看/改哪些单据）</h3>
+  <div class="call warn"><b class="lead">已就绪</b>后端已有 <code>CmxSvrContext</code>/<code>SVRContext</code>（含 <code>tenant_id</code>、<code>has_permission/require_permission</code>）+ 权限中间件 + <code>init_dml.sql</code> 里的 <code>gl:voucher:add/audit/post/delete</code> 权限点。</div>
+  <ul>
+    <li><strong>装载注入范围过滤</strong>：<code>DocLoader</code> 从 <code>CmxSvrContext</code> 取用户数据范围（组织/公司/租户），自动给根层 SQL 加 <code>WHERE entity_id = ANY($allowedOrgs)</code>。<strong>不信前端传的过滤</strong>——后端强制注入。</li>
+    <li><strong>操作权限</strong>：保存/删除/流转前 <code>ctx.require_permission("gl:voucher:edit")</code>。</li>
+    <li><strong>审计 actor</strong>：§6A 版本/审计的 <code>actor_id/actor_name</code> 从 <code>CmxSvrContext</code> 取（不信前端），保证追溯真实。<code>app_id/tenant_id</code> 作隐式过滤维度。</li>
+  </ul>
+
+  <h3>14.7 【约定】附件与大字段（<code>attach_count</code> 背后的本体）</h3>
+  <ul>
+    <li><strong>附件与数据解耦</strong>：单据行只存<strong>附件引用</strong>（<code>file_id</code>/<code>storage_key</code>，指向对象存储——系统已有 <code>cmx-storage</code> crate），不存二进制本体（否则包爆炸，违背 §8）。</li>
+    <li><strong>装载</strong>：只带 <code>file_id</code> + 元信息，本体按需懒加载（点开才 <code>GET /api/storage/{file_id}</code>）。<strong>回存</strong>：附件先独立上传拿 <code>file_id</code>，再随单据行存引用；删除按策略级联。</li>
+  </ul>
+
+  <h3>14.8 【约定】统一错误契约 & 部分失败语义</h3>
+  <ul>
+    <li><strong>单据错误码族</strong>（<code>ApiResp.code</code> 非 0）：<code>DOC_VALIDATION_FAILED</code>（带 <code>details:[{layer,rowId,field,message}]</code>）、<code>DOC_STATE_LOCKED</code>、<code>DOC_VERSION_CONFLICT</code>、<code>DOC_PERMISSION_DENIED</code>、<code>DOC_LOCK_HELD</code>——前端精准提示/高亮出错单元格。</li>
+    <li><strong>保存原子性</strong>：全或无（单事务），无"头存了明细没存"。<strong>批量装载部分失败</strong>：借鉴现成 <code>get_definitions_batch</code> 的 <code>{items, errors}</code>——成功照返、失败进 <code>errors[]</code>，不因一张坏单整批失败。</li>
+  </ul>
+
+  <h3>14.9 其余待明确点</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>关注点</th><th>要点</th></tr></thead>
+    <tbody>
+      <tr><td><strong>幂等提交</strong></td><td>保存带 <code>clientRequestId</code>，后端去重，防网络重试造成重复单据</td></tr>
+      <tr><td><strong>懒下钻装载</strong></td><td>§12 的 <code>depth</code> 参数；超大单据"选中父行再拉子层"，配 <code>GET /api/doc/children?parentId&amp;layer</code></td></tr>
+      <tr><td><strong>计算字段回存边界</strong></td><td>聚合/派生列（§6.2 上卷、§5A 派生 name）是"读时计算"，回存剔除，不写回主表（除非显式物化列）</td></tr>
+      <tr><td><strong>时区与精度</strong></td><td><code>TIMESTAMPTZ</code> 存 UTC 按用户时区展示；金额用 <code>NUMERIC</code> 不用 float（已是 <code>DECIMAL→NUMERIC</code>）</td></tr>
+      <tr><td><strong>导入/导出</strong></td><td>Excel 导入走 <code>replace</code> 批量 + 后端校验；导出复用列式包 → xlsx</td></tr>
+      <tr><td><strong>打印/报表快照</strong></td><td>打印用当前版或指定历史版快照（§6A），保证"打出来的就是那一版"</td></tr>
+      <tr><td><strong>DDL 变更与存量</strong></td><td>加列/改列后（§4 additive）存量行新列 NULL/默认；JSONB 版本快照天然兼容新旧列</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>14.10 增补的落地优先级</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>阶段</th><th>增补内容</th><th>归属</th></tr></thead>
+    <tbody>
+      <tr><td><strong>随 §6.4 保存链路一并做</strong></td><td>§14.1 状态机 <code>editable</code> 拦截 + §14.3 乐观锁 + §14.4 软删 + §14.6 数据权限注入 + §14.8 错误码</td><td>正确性刚需</td></tr>
+      <tr><td>紧随其后</td><td>§14.2 后端校验求值器（与前端 <code>formula-eval</code> 对齐）</td><td>正确性</td></tr>
+      <tr><td>按需</td><td>§14.5 单号 + §14.7 附件解耦 + §14.9 幂等/懒下钻</td><td>业务完备性</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call key">
+    <b class="lead">总结</b>
+    主链路（§1–§6A）解决"数据怎么流、怎么存版本"；§14 补齐"单据作为业务对象的生命周期约束（状态/校验/并发/权限/单号/附件/删除）"。其中 <strong>§14.1 / 14.2 / 14.3 / 14.4 / 14.6 是上线前必须做的正确性项</strong>，且后端能力（状态机元数据、<code>FOR UPDATE</code>、<code>CmxSvrContext</code>、<code>delete_flag</code>）大多<strong>已就绪</strong>，主要是「读起来、串起来、声明起来」。
+  </div>
+
+  <!-- 15 -->
+  <h2 id="s15"><span class="n">15</span>配置驱动的可扩展机制：用配置适配个性化，而非改代码</h2>
+  <p>§14 的单号、校验、状态……在真实 ERP 里<strong>千变万化</strong>：A 单据借贷平衡、B 单据要调税务系统核验；甲公司单号按年重置、乙公司按月分段。<strong>若每种个性化都改代码，平台会被业务淹没。</strong> 本节确立贯穿全方案的<strong>架构原则</strong>：所有可变业务规则<strong>由元数据配置驱动 + 命名扩展点承接</strong>，新增/变更单据行为 = 改配置（多数）或注册一个命名扩展（少数），<strong>不动平台代码</strong>。</p>
+
+  <h3>15.0 核心张力与解法：三层表达力阶梯</h3>
+  <div class="call danger"><b class="lead">纯配置的陷阱</b>声明式配置能表达 80% 的规则，但剩下 20% 真正复杂的逻辑（调外部系统、多表事务、复杂算法）配置表达不了——硬塞会把配置退化成"图灵完备的丑陋 DSL"。<strong>正确解法是分层</strong>：按规则复杂度选表达层，每层都是配置声明，只是指向不同的执行器。</div>
+  <div class="tbl"><table>
+    <thead><tr><th>层</th><th>表达方式</th><th>覆盖</th><th>举例</th><th>谁执行</th></tr></thead>
+    <tbody>
+      <tr><td><strong>T1 声明式表达式</strong></td><td><code>formula-eval</code> 表达式字符串</td><td>~80%</td><td><code>"debit == credit"</code></td><td>内置求值器（前后端各一，语义对齐）</td></tr>
+      <tr><td><strong>T2 命名策略 + 参数</strong></td><td><code>{ strategy, params }</code></td><td>~15%</td><td><code>{strategy:"period_open", params:{...}}</code></td><td>平台内置策略库（参数化）</td></tr>
+      <tr><td><strong>T3 扩展点 → 服务/插件</strong></td><td><code>{ handler:"service:key" }</code></td><td>~5%</td><td><code>{handler:"service:gl.validateTax"}</code></td><td>服务编排 / WASM 插件（业务方实现）</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>T1</strong> 覆盖绝大多数「字段间算术/比较/逻辑」规则——纯配置字符串，零代码。前端 <code>formula-eval.js</code> 已支持 40+ 函数（<code>ROUND/IF/SUM/CONCAT/DATEADD/COALESCE</code>…），后端补一个<strong>语义对齐的孪生求值器</strong>即可（§14.2）。</li>
+    <li><strong>T2</strong> 覆盖「有固定模式但需参数化」的规则——平台预置一批<strong>命名策略</strong>（如"期间开闭校验""按段流水号"），配置只填策略名 + 参数。加新策略是平台演进（低频），用策略是配置（高频）。</li>
+    <li><strong>T3</strong> 覆盖「真正复杂、每家不同」的逻辑——配置里写 <code>handler</code> 指向<strong>命名扩展点</strong>（服务编排 <code>service_key</code> 或插件函数），业务方写任意逻辑。<strong>平台只认 handler 名，不关心里面干什么</strong>。</li>
+  </ul>
+  <div class="call key"><b class="lead">关键</b>三层<strong>都是"配置里声明"</strong>，区别只是 T1 声明表达式、T2 声明策略名、T3 声明 handler 名。业务复杂度上升时从 T1→T2→T3 平滑升级，<strong>平台核心代码不变</strong>。</div>
+
+  <h3>15.1 落点已就绪：命名扩展点注册表（<code>ServiceRegistry</code>）</h3>
+  <div class="call ok"><b class="lead">T3 的"命名扩展点"不需凭空造——后端已有现成宿主</b>
+    <ul style="margin:6px 0 0">
+      <li><code>GlobalServiceRegistry</code> / <code>ServiceRegistry</code>（<code>cmx-service</code>）：<code>service_key → ServiceDefinition</code>、<code>plugin_id → Vec&lt;service_key&gt;</code> 缓存——<strong>这就是扩展点注册表</strong>。</li>
+      <li>Orchestrator 服务编排：<code>POST /api/service/execute { service_key, input }</code> 按 key 执行编排 Flow。</li>
+      <li>WASM 插件：<code>{ plugin_id, function_name, input }</code> 调业务方沙箱逻辑。</li>
+    </ul>
+  </div>
+  <p>所以 T3 的 <code>handler:"service:gl.validateTax"</code> 落地 = 解析 <code>service:</code> 前缀 → 查 <code>ServiceRegistry</code> → <code>Orchestrator.execute("gl.validateTax", {doc, ctx})</code>。<code>handler:"plugin:acme.numbering"</code> 走插件调用。<strong>平台侧只需一个"handler 解析分发器"</strong>，把 <code>service:</code>/<code>plugin:</code>/<code>formula:</code>/<code>builtin:</code> 前缀路由到对应执行器。</p>
+
+  <h3>15.2 统一规则引擎：一套 <code>RuleSpec</code>，服务所有横切点</h3>
+  <p>单号/校验/状态/默认值/权限……表面各异，<strong>抽象后都是"在某时机、按某条件、执行某动作"</strong>。用统一 <code>RuleSpec</code> + 一个 <code>RuleEngine</code> 分发器承接全部：</p>
+  <pre><span class="cm">// 统一规则规格：单号/校验/状态/默认值/联动 全部复用</span>
+{
+  <span class="nm">"id"</span>: <span class="st">"voucher_balance_check"</span>,
+  <span class="nm">"on"</span>: <span class="st">"before_save"</span>,              <span class="cm">// 时机：before_save/after_save/before_transition/on_field_change/on_load</span>
+  <span class="nm">"when"</span>: <span class="st">"doc.total_dr > 0"</span>,       <span class="cm">// 条件（T1 表达式，可选；真则执行）</span>
+  <span class="nm">"do"</span>: {                           <span class="cm">// 动作：三层表达力择一</span>
+    <span class="nm">"tier"</span>: <span class="st">"formula"</span>,              <span class="cm">// "formula"(T1) | "strategy"(T2) | "handler"(T3)</span>
+    <span class="nm">"expr"</span>: <span class="st">"sum(lines.local_dr) == sum(lines.local_cr)"</span>,   <span class="cm">// T1</span>
+    <span class="nm">"message"</span>: <span class="st">"凭证本位币借贷必须平衡"</span>,
+    <span class="nm">"severity"</span>: <span class="st">"error"</span>             <span class="cm">// error 阻断 / warn 提示</span>
+  },
+  <span class="nm">"scope"</span>: <span class="st">"cv_header"</span>              <span class="cm">// 作用层（可选）</span>
+}</pre>
+  <ul>
+    <li><strong><code>on</code></strong>（时机）+ <strong><code>when</code></strong>（条件）+ <strong><code>do</code></strong>（动作）三段式，是所有横切规则的公共骨架。<code>do.tier</code> 选表达层。</li>
+    <li><strong><code>RuleEngine</code></strong>：在各生命周期钩子点（load/save/transition/field-change）收集命中 <code>on</code> 的规则，按 <code>when</code> 过滤，逐条 <code>do</code> 分发到 T1/T2/T3 执行器。<strong>一个引擎 + 一个分发器</strong>，把 §14 所有可变点统一——加规则 = 加一段 <code>RuleSpec</code> 配置。</li>
+  </ul>
+
+  <h3>15.3 各横切点如何落到这套机制（配置示例）</h3>
+  <h4>单号生成（§14.5）→ T2 命名策略为主，T3 兜底</h4>
+  <pre><span class="nm">"numbering"</span>: {
+  <span class="nm">"field"</span>:<span class="st">"doc_no"</span>, <span class="nm">"on"</span>:<span class="st">"transition:audit"</span>,   <span class="cm">// 审核时分配正式号</span>
+  <span class="nm">"do"</span>: { <span class="nm">"tier"</span>:<span class="st">"strategy"</span>, <span class="nm">"strategy"</span>:<span class="st">"segmented_sequence"</span>,
+          <span class="nm">"params"</span>:{ <span class="nm">"pattern"</span>:<span class="st">"PZ-{entity}-{yyyymm}-{seq:6}"</span>,
+                    <span class="nm">"scope"</span>:[<span class="st">"entity_id"</span>,<span class="st">"fiscal_period_id"</span>], <span class="nm">"resetBy"</span>:<span class="st">"month"</span> } }
+}
+<span class="cm">// 需调外部编码中心 → 换一行：</span>
+<span class="nm">"do"</span>: { <span class="nm">"tier"</span>:<span class="st">"handler"</span>, <span class="nm">"handler"</span>:<span class="st">"service:acme.docNumber"</span> }</pre>
+  <h4>数据校验（§14.2）→ T1 表达式为主，T3 接外部系统</h4>
+  <pre><span class="nm">"validationRules"</span>: [
+  { <span class="nm">"on"</span>:<span class="st">"before_save"</span>, <span class="nm">"do"</span>:{ <span class="nm">"tier"</span>:<span class="st">"formula"</span>, <span class="nm">"expr"</span>:<span class="st">"total_dr==total_cr"</span>, <span class="nm">"message"</span>:<span class="st">"借贷不平"</span>, <span class="nm">"severity"</span>:<span class="st">"error"</span> } },
+  { <span class="nm">"on"</span>:<span class="st">"before_save"</span>, <span class="nm">"do"</span>:{ <span class="nm">"tier"</span>:<span class="st">"strategy"</span>, <span class="nm">"strategy"</span>:<span class="st">"period_open"</span>, <span class="nm">"params"</span>:{...}, <span class="nm">"message"</span>:<span class="st">"期间未打开"</span> } },
+  { <span class="nm">"on"</span>:<span class="st">"before_post"</span>, <span class="nm">"do"</span>:{ <span class="nm">"tier"</span>:<span class="st">"handler"</span>, <span class="nm">"handler"</span>:<span class="st">"service:gl.taxValidate"</span> } }   <span class="cm">// 调税务系统</span>
+]</pre>
+  <p>借贷平衡（T1 纯表达式）、期间开闭（T2 平台策略）、税务核验（T3 外部服务）——<strong>三种复杂度同一套配置结构</strong>，各选其层。</p>
+  <h4>状态机（§14.1）→ 状态/流转/守卫全配置</h4>
+  <pre><span class="nm">"statusFlow"</span>: {
+  <span class="nm">"stateField"</span>: <span class="st">"doc_status"</span>,
+  <span class="nm">"states"</span>: [ {<span class="nm">"code"</span>:<span class="st">"draft"</span>,<span class="nm">"editable"</span>:<span class="kw">true</span>}, {<span class="nm">"code"</span>:<span class="st">"posted"</span>,<span class="nm">"editable"</span>:<span class="kw">false</span>} ],
+  <span class="nm">"transitions"</span>: [
+    { <span class="nm">"action"</span>:<span class="st">"post"</span>, <span class="nm">"from"</span>:<span class="st">"audited"</span>, <span class="nm">"to"</span>:<span class="st">"posted"</span>,
+      <span class="nm">"guard"</span>: [ { <span class="nm">"tier"</span>:<span class="st">"formula"</span>, <span class="nm">"expr"</span>:<span class="st">"total_dr==total_cr"</span> },          <span class="cm">// T1 条件守卫</span>
+                 { <span class="nm">"tier"</span>:<span class="st">"handler"</span>, <span class="nm">"handler"</span>:<span class="st">"service:gl.checkFundsPost"</span> } ],<span class="cm">// T3 复杂守卫</span>
+      <span class="nm">"permission"</span>: <span class="st">"gl:voucher:post"</span>,                                        <span class="cm">// 权限点(§14.6)</span>
+      <span class="nm">"effects"</span>: [ { <span class="nm">"tier"</span>:<span class="st">"handler"</span>, <span class="nm">"handler"</span>:<span class="st">"service:gl.postToLedger"</span> } ]<span class="cm">// 过账副作用(记账)</span>
+    }
+  ]
+}</pre>
+  <p>状态、可编辑性、流转条件、权限、副作用——<strong>全声明式</strong>。加一个"冲销"动作 = 加一段 <code>transitions</code> 配置；冲销逻辑复杂 = <code>effects</code> 指 handler。默认值/字段联动/数据权限注入同样复用 <code>RuleSpec</code>（<code>on:on_load/on_field_change</code> + <code>strategy:default_from_context/data_scope</code>）。</p>
+
+  <h3>15.4 配置的载体与治理</h3>
+  <div class="grid2">
+    <div class="card"><h4>载体（与定义同源）</h4><ul style="margin:0">
+      <li>所有 <code>RuleSpec</code>/<code>numbering</code>/<code>statusFlow</code>/<code>validationRules</code> 进<strong>单据定义元数据</strong>，复用 §3.6 <code>definitions::store</code> + §3.7 缓存 + §3.8 强类型投影——<strong>与单据定义同源、同版本、同部署</strong>。改规则走现成保存链路，无需发版。</li>
+      <li>随定义版本走（§6A 是<strong>数据</strong>版本，这里是<strong>定义</strong>版本），"改了校验规则"可追溯到定义版本。</li>
+    </ul></div>
+    <div class="card"><h4>治理</h4><ul style="margin:0">
+      <li><strong>设计器可视化</strong>：结构化 JSON → 可视化编辑（下拉选 <code>on</code>、表达式编辑器写 <code>expr</code>、策略选择器选 <code>strategy</code>、扩展点选择器从 <code>ServiceRegistry</code> 列 <code>service_key</code>）。业务顾问配规则，不写代码。</li>
+      <li><strong>扩展点契约</strong>：T3 handler 统一 I/O——入参 <code>{ doc:DataSet快照, row?, ctx:SvrContext, params }</code>，出参 <code>{ ok, message?, patch?, value? }</code>。业务按契约实现，平台按契约调用，双方解耦。</li>
+    </ul></div>
+  </div>
+
+  <h3>15.5 前后端一致：同一份配置，两端执行</h3>
+  <ul>
+    <li><strong>T1 表达式</strong>：前端 <code>formula-eval</code> 即时校验/联动（体验），后端孪生求值器最终把关（正确性）——<strong>同一份 <code>expr</code> 字符串</strong>两端各跑一遍，规则不重复定义。</li>
+    <li><strong>T2 策略 / T3 handler</strong>：默认后端权威执行（涉及库/外部系统）；纯 UI 类可前端也接一份。<strong>配置声明"什么规则"，前后端各自决定"在我这端跑不跑"</strong>——兑现 §14.2 的"双端一套规则"并推广到所有横切点。</li>
+  </ul>
+
+  <h3>15.6 为什么满足「通用 + 可扩展 + 不牺牲性能」</h3>
+  <div class="call key">
+    <b class="lead">三性兼得</b>
+    <strong>通用</strong>：一个 <code>RuleEngine</code> + 一套 <code>RuleSpec</code> 服务所有横切点，不为每种需求写专用代码。
+    <strong>可扩展</strong>：三层阶梯让简单规则纯配置（T1/T2）、复杂逻辑挂扩展点（T3），复杂度增长时<strong>平台核心零改动</strong>；扩展点复用现成 <code>ServiceRegistry</code>/编排/插件。
+    <strong>个性化即配置</strong>：不同单据/租户/场景 = 不同 <code>RuleSpec</code> 集合，随定义元数据走，改配置不发版。
+    <strong>不牺牲性能</strong>：T1/T2 在内存 DataSet 求值（数据已在手，§7 零拷贝复用），代价极低；仅 T3 外部调用有网络开销且只在少数规则用；规则集随定义缓存（§3.7）。
+  </div>
+
+  <h3>15.7 落地优先级</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>阶段</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>先做</strong></td><td><code>RuleEngine</code> 骨架 + T1 求值器（后端孪生 <code>formula-eval</code>）+ <code>RuleSpec</code> 的 <code>on/when/do</code> 三段式；把 §14.2 校验、§14.1 状态守卫先跑起来</td></tr>
+      <tr><td>紧随</td><td>T2 命名策略库（<code>segmented_sequence</code>/<code>period_open</code>/<code>data_scope</code>/<code>default_from_context</code> 等内置）+ 设计器可视化编辑</td></tr>
+      <tr><td>按需</td><td>T3 handler 分发器（<code>service:</code>/<code>plugin:</code> 前缀路由到 <code>ServiceRegistry</code>/编排/插件）+ 扩展点 I/O 契约</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call ok"><b class="lead">一句话</b>把 §14 每个"可变点"改造成"<code>RuleSpec</code> 配置 + 三层执行器"，平台提供<strong>引擎与内置策略</strong>，业务提供<strong>配置与少量扩展</strong>——个性化需求 99% 落配置、1% 落命名扩展，<strong>平台代码保持稳定</strong>。这才是能长期适配无穷业务变化的架构。</div>
+
+  <!-- 16 -->
+  <h2 id="s16"><span class="n">16</span>运行形态决策：Rust 原生 vs 后端 WASM</h2>
+  <p>一个常被问到的架构问题：这套方案是<strong>用 Rust 原生运行</strong>，还是<strong>编译成后端 WASM 运行</strong>？结论不是二选一，而是<strong>分层</strong>——<strong>平台引擎必须 Rust 原生，WASM 只承接 §15 的 T3 业务扩展点</strong>。这不是偏好，是被方案的两条硬约束（零拷贝、小包）和代码库的真实边界共同锁定的。</p>
+  <div class="call key"><b class="lead">结论先行</b>平台引擎（装载/回存/DDL/版本/校验求值器/内置策略）= <strong>Rust 原生</strong>；业务个性化扩展（§15 T3 的 handler）= <strong>WASM 插件</strong>。让每层跑在最适合它的运行时：核心引擎要极致性能 + 事务/内存直接访问 → 原生；业务扩展要隔离 + 热插拔、且不在热路径 → WASM。</div>
+
+  <h3>16.1 为什么主体必须 Rust 原生（而非编译成 WASM）</h3>
+  <h4>理由一：方案依赖的核心能力全部是 host 原生 crate</h4>
+  <p>经核对，<code>DocLoader</code>/<code>DocSaver</code> 要用的每一样东西都在宿主侧原生运行，<strong>没有一个是 wasm 目标</strong>：</p>
+  <div class="tbl"><table>
+    <thead><tr><th>能力</th><th>所在 crate</th><th>形态</th></tr></thead>
+    <tbody>
+      <tr><td>事务 <code>begin/commit</code>、连接池、<code>FOR UPDATE</code></td><td><code>cmx-database</code></td><td>host 原生</td></tr>
+      <tr><td>DDL 引擎、<code>create_or_upgrade_table</code></td><td><code>cmx-metadata</code></td><td>host 原生</td></tr>
+      <tr><td><code>DataSet</code>/<code>Arc&lt;Schema&gt;</code>/<code>ColumnarCodec</code></td><td><code>cmx-core</code></td><td>host 原生</td></tr>
+      <tr><td><code>query_sql → DataSet</code>、<code>convert_postgres_rows</code></td><td><code>cmx-database</code></td><td>host 原生</td></tr>
+    </tbody>
+  </table></div>
+  <p>WASM 沙箱<strong>够不到这些</strong>——没有数据库连接、没有文件系统（字典 JSON 在 <code>data/dict/entries</code>）、拿不到 <code>Arc&lt;Schema&gt;</code> 共享引用。编译成 WASM 等于自断双臂。</p>
+  <h4>理由二：WASM 边界直接违背方案的两条硬约束（最致命）</h4>
+  <div class="call danger">
+    <b class="lead">WASM 访问 DB 每次强制序列化 + 拷贝（真实代码 host_calls.rs）</b>
+    <pre style="margin:8px 0 0;border:0;padding:0;background:transparent"><span class="kw">let</span> bytes = rmp_serde::<span class="fn">to_vec</span>(&amp;request)?;       <span class="cm">// 序列化(拷贝)</span>
+<span class="cm">// ... 跨线性内存边界进 host ...</span>
+<span class="kw">let</span> response = rmp_serde::<span class="fn">from_slice</span>(&amp;result)?; <span class="cm">// 反序列化(拷贝)</span></pre>
+  </div>
+  <ul>
+    <li><strong>违背零拷贝（§7）</strong>：方案花大力气做 <code>Arc&lt;Schema&gt;</code> 共享 + 借用式序列化，而 WASM 边界<strong>强制每次进出全量序列化 + 内存拷贝</strong>——<code>Arc</code> 跨不过线性内存边界，零拷贝设计当场作废。</li>
+    <li><strong>违背小包 / 大单据（§8/§12）</strong>：插件/gRPC 消息有 <strong>4MB 上限</strong>（<code>cmx_plugin_data.proto</code> 明确注"大包建议 HTTP 模式"）。方案要支持大单据 + 版本快照，快到边界就爆。</li>
+  </ul>
+  <h4>理由三：WASM 无法真正参与 host 事务——破坏 §6.4/§6A 原子性</h4>
+  <p><code>txn_id</code> 只是个字符串跨边界传（<code>wasm_types/database.rs</code>），事务实体 <code>sqlx::Transaction</code> 在 host 侧。方案核心正确性保证——"主 + 各层明细 + 版本快照在<strong>同一事务</strong>内全或无"（§6.4、§6A、§14）——依赖直接持有事务句柄。WASM 侧拿不到，只能靠字符串来回传，跨多次 host_call 有一致性风险，且 §14.3 的 <code>FOR UPDATE</code> 悲观锁跨不过沙箱。</p>
+  <h4>理由四：热路径上多一层沙箱纯亏</h4>
+  <p>装载/回存是高频热路径。WASM 化平白加上：线性内存拷贝、序列化开销、沙箱调用开销、wasmtime（<code>39.0.1</code>）的 JIT/解释开销。方案追求的性能全被这层吃掉。</p>
+
+  <h3>16.2 WASM 该用在哪——正好是 §15 的 T3 扩展点</h3>
+  <p>现有架构本就是<strong>「host 原生引擎 + WASM 业务插件」</strong>分层（<code>cmx-plugin-demo</code> 是 <code>cdylib</code>/wasm，但 <code>cmx-service</code> 编排、<code>cmx-database</code> 数据在 host）。这个分层<strong>恰好是 §15 三层阶梯的物理落地</strong>：</p>
+  <div class="tbl"><table>
+    <thead><tr><th>§15 层</th><th>运行形态</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td><strong>T1 表达式求值</strong></td><td><strong>host 原生</strong>（后端孪生 <code>formula-eval</code>）</td><td>高频、在内存 DataSet 上跑，必须零开销</td></tr>
+      <tr><td><strong>T2 命名策略</strong></td><td><strong>host 原生</strong>（平台内置策略库）</td><td>平台代码，原生最快</td></tr>
+      <tr><td><strong>T3 业务扩展点</strong></td><td><strong>WASM 插件</strong> ✅</td><td>每家不同的个性化逻辑，需沙箱隔离、热插拔、独立部署</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>WASM 的价值在 T3 完美体现</strong>：业务方写的 <code>service:gl.taxValidate</code>（调税务系统）、<code>service:acme.docNumber</code>（特殊编码）这类<strong>个性化逻辑</strong>，正需要 WASM 的<strong>沙箱安全</strong>（第三方/租户代码不碰核心）、<strong>热插拔</strong>（不重启不发版上新规则，呼应 §15"改配置不发版"）、<strong>多租户隔离</strong>。而它们<strong>调用频率低</strong>（T3 只覆盖 ~5% 规则）、<strong>单次数据量小</strong>（传一行 + 校验结果，远小于 4MB），<strong>WASM 边界代价可接受</strong>。用 extism（<code>1.4</code>）+ 现成 <code>db_query</code>/<code>db_execute</code> host_call 即可。</p>
+
+  <h3>16.3 边界速查表</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>判据</th><th>Rust 原生</th><th>后端 WASM</th></tr></thead>
+    <tbody>
+      <tr><td>直接持有 <code>sqlx::Transaction</code> / 连接池</td><td>✅</td><td>❌（只能传 <code>txn_id</code> 字符串）</td></tr>
+      <tr><td><code>Arc&lt;Schema&gt;</code> 零拷贝共享</td><td>✅</td><td>❌（跨边界必拷贝）</td></tr>
+      <tr><td>大数据量（&gt;4MB 单据/快照）</td><td>✅</td><td>❌（消息上限）</td></tr>
+      <tr><td><code>FOR UPDATE</code> 悲观锁 / 直接文件访问</td><td>✅</td><td>❌</td></tr>
+      <tr><td>沙箱隔离第三方/租户代码</td><td>❌</td><td>✅</td></tr>
+      <tr><td>不发版热插拔业务逻辑</td><td>❌（要重编译）</td><td>✅</td></tr>
+      <tr><td>热路径性能（装载/回存）</td><td>✅ 极致</td><td>❌ 多层开销</td></tr>
+      <tr><td><strong>适配对象</strong></td><td><strong>平台引擎 + T1/T2</strong></td><td><strong>业务个性化 T3</strong></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>16.4 落地形态</h3>
+  <ul>
+    <li><strong><code>DocLoader</code>/<code>DocSaver</code>/<code>ColumnarCodec</code>/<code>RuleEngine</code>/T1 求值器/T2 策略库</strong> → 作为 <strong>host 原生服务</strong>落进 <code>cmx-biz</code>/<code>cmx-service</code>，直接用 <code>cmx-database</code>/<code>cmx-metadata</code>/<code>cmx-core</code>。</li>
+    <li><strong>T3 handler</strong> → 通过现成 <code>ServiceRegistry</code> + 服务编排 / extism 插件调用链路触达；I/O 走 §15.4 统一契约（入 <code>{doc快照, row?, ctx, params}</code>、出 <code>{ok, message?, patch?, value?}</code>），数据量天然小。</li>
+    <li><strong>迁移含义</strong>：若历史上有把这类数据处理放进 WASM 的尝试，应<strong>上移回 host 原生</strong>（与 <code>docs/node-to-rust-migration-cutover.md</code> 原生化方向一致）；WASM 保留给真正需要隔离/热插拔的业务扩展。</li>
+  </ul>
+  <div class="call key"><b class="lead">一句话</b>不是"原生还是 WASM"，而是"<strong>引擎原生、扩展 WASM</strong>"——核心走原生拿性能与事务/零拷贝，个性化走 WASM 拿隔离与热插拔，两者用 §15 的 <code>handler</code> 契约衔接。</div>
+
+  <div class="foot">本文件为设计稿，未创建/修改任何前后端执行代码。 · 业务单据数据全链路方案 v1 · 2026-07-03</div>
+</main>
+</div>
+
+<div class="backtop" id="backtop" title="回到顶部">↑</div>
+<script>
+  // Scroll-spy
+  const links = [...document.querySelectorAll('#toc a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+  document.querySelectorAll('main h2[id]').forEach(h => io.observe(h));
+
+  // Back to top
+  const bt = document.getElementById('backtop');
+  window.addEventListener('scroll', () => {
+    bt.classList.toggle('show', window.scrollY > 600);
+  });
+  bt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+</script>
+</body>
+</html>

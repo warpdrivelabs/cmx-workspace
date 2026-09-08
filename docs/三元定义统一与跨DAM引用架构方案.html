@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三元定义统一与跨 DAM 引用架构方案 · DCT / DOC / FLX</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:288px 1fr;max-width:1440px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .phase{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0}
+  .phase .ph-head{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .phase .ph-head .pno{background:var(--accent);color:#06080f;font-weight:800;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .phase .ph-head .pt{font-weight:700;font-size:15.5px}
+  .phase .ph-head .pw{margin-left:auto;color:var(--ink-dim);font-size:12.5px}
+  .phase .ph-body{padding:16px 20px}
+  .phase .ph-body .deliver{font-size:13px;color:var(--ink-dim);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .ascii{font-family:var(--mono);font-size:12.2px;line-height:1.5;white-space:pre;color:#9ec1ff;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:18px;overflow-x:auto}
+  .ref{font-family:var(--mono);font-size:11.8px;color:var(--ink-dim)}
+  .tag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:8px;vertical-align:middle}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:30px 0}
+  .footnote{color:var(--ink-dim);font-size:12.5px;margin-top:8px}
+  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin:16px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .three>div{padding:16px 18px}
+  .three>div:not(:last-child){border-right:1px solid var(--line)}
+  .three h4{margin-top:0}
+  .three .em{font-family:var(--mono);font-size:20px;font-weight:800;letter-spacing:.05em}
+  @media(max-width:1100px){.three{grid-template-columns:1fr}.three>div{border-right:0;border-bottom:1px solid var(--line)}}
+  .drn{font-family:var(--mono);font-size:12.6px;background:#0e1a30;border:1px solid #274a86;border-radius:6px;padding:2px 8px;color:#9ec1ff;white-space:nowrap}
+  .lgd{display:flex;gap:20px;flex-wrap:wrap;margin:12px 0;font-size:12.6px;color:var(--ink-dim)}
+  .lgd span{display:inline-flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= TOC ================= -->
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#bg"><span class="n">1</span>背景与目标</a>
+  <a href="#naming"><span class="n">2</span>三元命名：DCT / DOC / FLX</a>
+  <a href="#asis"><span class="n">3</span>现状盘点与四类断裂</a>
+  <a class="sub" href="#asis-tree">3.1 DAM 存储现状</a>
+  <a class="sub" href="#asis-ref">3.2 引用欠限定（核心病灶）</a>
+  <a class="sub" href="#asis-dup">3.3 拷贝式复用</a>
+  <a href="#concept"><span class="n">4</span>统一概念模型</a>
+  <a href="#drn"><span class="n">5</span>DRN 跨 DAM 引用标识</a>
+  <a class="sub" href="#drn-grammar">5.1 语法与解析</a>
+  <a class="sub" href="#drn-import">5.2 imports 显式依赖</a>
+  <a class="sub" href="#drn-visibility">5.3 可见性与导出</a>
+  <a href="#registry"><span class="n">6</span>统一注册表与解析服务</a>
+  <a href="#arch"><span class="n">7</span>分层架构</a>
+  <a href="#depgraph"><span class="n">8</span>依赖图与真实引用</a>
+  <a href="#governance"><span class="n">9</span>引用治理与诊断</a>
+  <a href="#api"><span class="n">10</span>后端 API 设计</a>
+  <a href="#migration"><span class="n">11</span>迁移路线</a>
+  <a href="#decisions"><span class="n">12</span>待决策点</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX 平台架构方案</div>
+  <h1>三元定义统一与跨 DAM 引用架构</h1>
+  <div class="sub">把 数据字典（DCT）、业务单据（DOC）、弹性组合（FLX）三类定义统筹为一套元数据体系，并解决跨 域/应用/模块（DAM）的互联引用。</div>
+  <div class="meta">
+    <span class="chip b">状态：设计草案（评审用）</span>
+    <span class="chip">日期：2026-07-10</span>
+    <span class="chip g">运行时引擎不改</span>
+    <span class="chip w">存储/解析层演进</span>
+    <span class="chip p">向前兼容</span>
+  </div>
+</header>
+
+<!-- ============ 1 背景 ============ -->
+<section id="bg">
+  <h2 class="sec"><span class="num">01</span>背景与目标</h2>
+  <p class="lead">平台已有三类元数据定义，各自独立演进，缺少统一模型与跨 DAM 引用能力。本方案把它们统筹为一套体系。</p>
+
+  <div class="three">
+    <div>
+      <div class="em" style="color:var(--accent2)">DCT</div>
+      <h4>数据字典定义</h4>
+      <p class="footnote">主数据/参照值目录。存 <code>dictionaryTables</code>；被单据/弹性组合以 <code>refDict</code> 引用。例：科目、成本中心、币种。</p>
+    </div>
+    <div>
+      <div class="em" style="color:var(--accent)">DOC</div>
+      <h4>业务单据定义</h4>
+      <p class="footnote">事实表 + 主从结构 + 状态机 + 校验。存 <code>voucherTables</code>/<code>voucherStatusFlow</code>/<code>validationRules</code>。例：总账凭证。</p>
+    </div>
+    <div>
+      <div class="em" style="color:var(--purple)">FLX</div>
+      <h4>弹性组合定义</h4>
+      <p class="footnote">在单据事实表上，按上下文（锚点）决定列的编辑/显示/计算/校验。例：科目→辅助核算。</p>
+    </div>
+  </div>
+
+  <h3>目标</h3>
+  <ol>
+    <li><b>统一模型</b>：三类定义共享一套「表 / 字段集 / 字段」词汇与校验，消除三端命名/属性分裂。</li>
+    <li><b>跨 DAM 引用</b>：一个应用的单据/弹性组合，能安全引用<strong>另一个域/应用/模块</strong>的字典或单据——今天做不到。</li>
+    <li><b>单一事实源</b>：字典、单据列各存一份；FLX 引用而非拷贝（承接 <span class="ref">flexible-combination-overlay-design.md</span>）。</li>
+    <li><b>可治理</b>：引用可解析、可诊断、可视化依赖图；断引用/循环/越权引用在保存期拦截。</li>
+    <li><b>不破坏运行时</b>：JS/Rust 引擎、grid/form 联动、缓存零改动；旧档案继续可用。</li>
+  </ol>
+</section>
+
+<!-- ============ 2 命名 ============ -->
+<section id="naming">
+  <h2 class="sec"><span class="num">02</span>三元命名：DCT / DOC / FLX</h2>
+  <p class="lead">你提到「CTX 缩写不一定合适」。确实——现有代码里 <code>CTX</code>（context）指的是「弹性组合字段端」，但它和 DCT/DOC 不在一个语义层级（一个是"上下文"，两个是"定义类型"）。建议正名。</p>
+
+  <table>
+    <thead><tr><th>候选</th><th>展开</th><th>评价</th></tr></thead>
+    <tbody>
+      <tr><td><code>CTX</code></td><td>Context</td><td>现状。与 DCT/DOC 不同维度（上下文 vs 定义类型），易误解；语义偏"运行时"。</td></tr>
+      <tr><td class="status"><span class="dot have"></span><b>FLX</b></td><td>Flexible combination</td><td><b>推荐</b>。直译"弹性"，与 DCT/DOC 同为"定义类型"三字母，辨识度高。</td></tr>
+      <tr><td><code>CMB</code></td><td>Combination</td><td>次选。强调"组合"，但弱化了"弹性/上下文"这一核心特征。</td></tr>
+      <tr><td><code>OVL</code></td><td>Overlay</td><td>贴合 overlay 设计，但对业务人员偏技术黑话。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <div class="t">命名结论</div>
+    三类定义统一记为 <b>DCT（数据字典）· DOC（业务单据）· FLX（弹性组合）</b>，统称 <b>元定义（MetaDef）</b>。<br>
+    代码内 <code>kind</code> 枚举：<code>DCT | DOC | FLX</code>；存储根 <code>meta/definitions</code>（DCT/DOC）与 <code>meta/flexible-combination</code>（FLX）本方案 §6 统一为单一 <code>meta/defs</code> 根下按 <code>kind</code> 分。
+  </div>
+</section>
+
+<!-- ============ 3 现状 ============ -->
+<section id="asis">
+  <h2 class="sec"><span class="num">03</span>现状盘点与四类断裂</h2>
+
+  <h3 id="asis-tree">3.1 DAM 存储现状</h3>
+  <p>DAM = <b>D</b>omain / <b>A</b>pplication / <b>M</b>odule 三级寻址。存储按 <code>&lt;root&gt;/&lt;domain&gt;/&lt;app&gt;/&lt;module&gt;/&lt;file&gt;</code> 落盘（源自 <span class="ref">dam/store.rs · DAM_TREE_ROOTS</span>）：</p>
+  <div class="ascii">meta/definitions/                       meta/flexible-combination/
+├─ base/                                └─ fi/cmxfico/gl/
+│   ├─ base_dct_meta_v1.json               ├─ account.json        (FLX)
+│   └─ base_doc_meta_v1.json               ├─ trade.json          (FLX)
+├─ fi/cmxfico/gl/                          └─ travel-expense.json (FLX)
+│   ├─ gl_md_dct_meta_v1.json  (DCT)
+│   ├─ gl_md_doc_meta_v1.json  (DOC)     ← DCT/DOC 与 FLX 分处两个存储根（不一致 ①）
+│   └─ …
+├─ fi/sap/sap_gl/  fi/ebs/ebs_gl/  fi/kingdee/kingdee_gl/  fi/yonyou/yonyou_gl/   （多套 ERP 各一份 DCT/DOC）</div>
+  <div class="lgd">
+    <span><span class="dot partial"></span>断裂①：FLX 与 DCT/DOC 存储根不同，工具/API 各写一套</span>
+  </div>
+
+  <h3 id="asis-ref">3.2 引用欠限定 —— 核心病灶</h3>
+  <p>三类定义之间的<strong>每一种引用都缺 DAM 限定</strong>，全靠"同应用同模块"的隐式约定解析。这就是"跨应用引用做不到"的根因：</p>
+
+  <table>
+    <thead><tr><th>引用</th><th>出现处</th><th>现状写法</th><th>携带的 DAM</th><th>问题</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>字段引字典 <code>refDict</code></td>
+        <td>DOC 列 / FLX 字段</td>
+        <td><code>"refDict":"cost_center"</code></td>
+        <td class="status"><span class="dot gap"></span>无</td>
+        <td>裸 code，只能在<strong>当前模块</strong>找同名字典</td>
+      </tr>
+      <tr>
+        <td>弹性组合引单据 <code>docRef</code></td>
+        <td>FLX 档案</td>
+        <td><code>{domain,module,file}</code></td>
+        <td class="status"><span class="dot partial"></span>缺 app</td>
+        <td><code>account.json</code> 的 docRef <strong>没有 app 段</strong>，跨应用即断</td>
+      </tr>
+      <tr>
+        <td>引基础字段集 <code>baseDctMetaRef</code></td>
+        <td>DCT/DOC 顶层</td>
+        <td><code>{file}</code></td>
+        <td class="status"><span class="dot gap"></span>无</td>
+        <td>只有文件名，约定落在 <code>base/</code> 根</td>
+      </tr>
+      <tr>
+        <td>扩展维度绑定 <code>ext_dim*</code></td>
+        <td>DOC 事实表</td>
+        <td>注释"由 gl_ext_dimension 绑定"</td>
+        <td class="status"><span class="dot gap"></span>无</td>
+        <td>纯注释，无可解析引用</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <div class="t">病灶</div>
+    引用是<strong>裸标识 + 隐式同域同应用同模块</strong>。因此："不同应用、模块间互相引用的字典/单据"在当前模型里<strong>无法表达</strong>——不是没实现，是<strong>标识符里根本没有存放目标 DAM 的位置</strong>。
+  </div>
+
+  <h3 id="asis-dup">3.3 拷贝式复用（量化）</h3>
+  <p>因为无法安全引用，现有做法是<strong>拷贝</strong>。以 <code>account.json</code>（FLX，1305 行）为实证：</p>
+  <div class="grid2">
+    <div class="card tight">
+      <h4>FLX 规则 = DOC 事实表逐列深拷贝</h4>
+      <p class="footnote"><code>fi-cash</code> 规则的 20 列（<code>entry_id, amount, direction, profit_center_id … ext_dim5, remark</code>）与 <code>voucher_detail</code> 物理表<strong>逐列 id/顺序/类型全同</strong>。根因：<code>_docColumnToField</code> 的 <code>JSON.parse(JSON.stringify(col))</code>。</p>
+    </div>
+    <div class="card tight">
+      <h4>FLX 维度 = DCT 字典重复</h4>
+      <p class="footnote">10 个字典维度（<code>gl_account/cost_center/…</code>）在 <code>gl_md_dct_meta_v1.json</code> 均有定义，FLX 又各抄一份 dict 取数块（≈300 行）。</p>
+    </div>
+  </div>
+  <div class="lgd">
+    <span><span class="dot partial"></span>断裂②：引用欠限定</span>
+    <span><span class="dot partial"></span>断裂③：拷贝式复用→快照漂移</span>
+    <span><span class="dot partial"></span>断裂④：三端字段属性/命名分裂（P7/P8 已部分统一）</span>
+  </div>
+</section>
+
+<!-- ============ 4 概念模型 ============ -->
+<section id="concept">
+  <h2 class="sec"><span class="num">04</span>统一概念模型</h2>
+  <p class="lead">三类定义共享同一套底层词汇，各自只加"专有上层结构"。这样引用、校验、编译可复用一套内核。</p>
+
+  <div class="ascii">                          ┌─────────────────────────────────────────────┐
+                          │            共享内核（三端统一）              │
+                          │  Field ── FieldSet ── Table                 │
+                          │  （P7 字段键统一 / P8 CmxColumnModel 已落）  │
+                          └─────────────────────────────────────────────┘
+             ┌───────────────────────┼────────────────────────┐
+             ▼                       ▼                        ▼
+     ┌───────────────┐       ┌───────────────┐        ┌────────────────────┐
+     │      DCT       │       │      DOC       │        │        FLX          │
+     │  dictionary-   │       │  voucherTables │        │  anchor(锚点) →     │
+     │  Tables        │       │  + statusFlow  │        │  detail(overlay)    │
+     │  + dictMeta    │       │  + validation  │        │  引用 DOC 列 + 增量 │
+     │                │       │  + schema(主从)│        │                     │
+     └───────┬───────┘       └───────┬───────┘        └─────────┬──────────┘
+             │  refDict               │  refDict / ext_dim        │ docRef / ref
+             │◄──────────────────────┼───────────────────────────┘
+             │                        │
+             └── 都通过 DRN 跨 DAM 解析（§5）───────────────────────────────►</div>
+
+  <table>
+    <thead><tr><th>层</th><th>共享？</th><th>内容</th><th>已就绪</th></tr></thead>
+    <tbody>
+      <tr><td><b>Field 字段</b></td><td class="status"><span class="dot have"></span>三端共享</td><td>id/name/caption、dataType、dimType、edit、display、约束、治理</td><td>P7 键统一 / cmx-field-schema.js</td></tr>
+      <tr><td><b>FieldSet 字段集</b></td><td class="status"><span class="dot have"></span>三端共享</td><td>可复用字段组，跨表/跨定义引用（base 字段集已在用）</td><td>CmxMetaFieldSet</td></tr>
+      <tr><td><b>Table 表</b></td><td class="status"><span class="dot have"></span>三端共享</td><td>dictionaryTables / voucherTables 统一为 Table + 角色标记</td><td>CmxMetaTable</td></tr>
+      <tr><td>DCT 专有</td><td class="status"><span class="dot new"></span>—</td><td>dictMeta（层级/取数/help 布局）</td><td>—</td></tr>
+      <tr><td>DOC 专有</td><td class="status"><span class="dot new"></span>—</td><td>statusFlow 状态机 / validationRules / voucherSchema 主从</td><td>—</td></tr>
+      <tr><td>FLX 专有</td><td class="status"><span class="dot new"></span>—</td><td>anchor 锚点匹配 / detail overlay / groups 分组</td><td>engine 已就绪</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 5 DRN ============ -->
+<section id="drn">
+  <h2 class="sec"><span class="num">05</span>DRN —— 跨 DAM 引用标识</h2>
+  <p class="lead">核心新增。把所有裸引用升级为一个<strong>可跨 DAM 定位、可版本化、可解析</strong>的统一资源名：<b>DRN（Definition Resource Name）</b>。</p>
+
+  <h3 id="drn-grammar">5.1 语法与解析</h3>
+  <div class="mono-block"><span class="c"># DRN 完整形态</span>
+<span class="k">drn</span>:<span class="a">&lt;domain&gt;</span>/<span class="a">&lt;app&gt;</span>/<span class="a">&lt;module&gt;</span>/<span class="a">&lt;kind&gt;</span>/<span class="a">&lt;name&gt;</span>[@<span class="a">&lt;version&gt;</span>][#<span class="a">&lt;table&gt;</span>[.<span class="a">&lt;field&gt;</span>]]
+
+<span class="c"># 例：跨应用引用——总账应用的弹性组合，引用「共享主数据应用」的成本中心字典</span>
+<span class="s">drn:fi/shared-md/masterdata/DCT/cost_center@1</span>
+
+<span class="c"># 例：定位到单据某表某列（FLX overlay 的 ref 目标）</span>
+<span class="s">drn:fi/cmxfico/gl/DOC/gl_md_doc_meta#voucher_detail.cashflow_item_id</span>
+
+<span class="c"># 简写：省略段 = 继承"当前定义所在 DAM"（兼容旧的裸 code）</span>
+<span class="s">cost_center</span>                    <span class="c">→ drn:{当前domain}/{当前app}/{当前module}/DCT/cost_center</span>
+<span class="s">DCT/cost_center</span>                <span class="c">→ 当前 DAM 下的 DCT</span>
+<span class="s">../shared-md/masterdata/DCT/cost_center   → 相对：换 app/module，同 domain</span></div>
+
+  <table>
+    <thead><tr><th>段</th><th>必填</th><th>省略时</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>domain</code></td><td>—</td><td>继承当前</td><td>业务域，如 <code>fi</code></td></tr>
+      <tr><td><code>app</code></td><td>—</td><td>继承当前</td><td>应用，如 <code>cmxfico</code>/<code>shared-md</code>。<b>这是今天 docRef 缺失的段</b></td></tr>
+      <tr><td><code>module</code></td><td>—</td><td>继承当前</td><td>模块，如 <code>gl</code></td></tr>
+      <tr><td><code>kind</code></td><td>是*</td><td>按上下文推断</td><td><code>DCT|DOC|FLX|BASE</code></td></tr>
+      <tr><td><code>name</code></td><td>是</td><td>—</td><td>定义逻辑名（去掉 <code>_v&lt;n&gt;</code> 后缀）</td></tr>
+      <tr><td><code>@version</code></td><td>—</td><td>default 版本</td><td>对齐现有多版本（<code>_v2</code>）机制</td></tr>
+      <tr><td><code>#table.field</code></td><td>—</td><td>整份定义</td><td>深链到表/列，供 overlay <code>ref</code> 用</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <div class="t">与现有存储零冲突</div>
+    DRN 是<strong>标识层</strong>，直接映射现有落盘路径 <code>&lt;root&gt;/&lt;domain&gt;/&lt;app&gt;/&lt;module&gt;/&lt;name&gt;_v&lt;version&gt;.json</code>。裸 code 是"全部段继承当前"的退化 DRN——<strong>旧档案不改即为合法 DRN</strong>。
+  </div>
+
+  <h3 id="drn-import">5.2 imports —— 显式声明跨 DAM 依赖</h3>
+  <p>为避免"引用散落在深处、无法总览一个定义依赖谁"，每个定义顶层增加可选 <code>imports</code>，把跨 DAM 依赖<strong>提前声明并起别名</strong>（类比代码的 import）：</p>
+  <div class="mono-block"><span class="c">// gl_md_doc_meta（DOC）顶层</span>
+{
+  <span class="a">"imports"</span>: [
+    { <span class="a">"alias"</span>: <span class="s">"cc"</span>,   <span class="a">"drn"</span>: <span class="s">"drn:fi/shared-md/masterdata/DCT/cost_center@1"</span> },
+    { <span class="a">"alias"</span>: <span class="s">"cur"</span>,  <span class="a">"drn"</span>: <span class="s">"drn:fi/shared-md/masterdata/DCT/currency"</span> }
+  ],
+  <span class="a">"voucherTables"</span>: [{
+    <span class="a">"tableName"</span>: <span class="s">"voucher_detail"</span>,
+    <span class="a">"fields"</span>: [
+      { <span class="a">"id"</span>: <span class="s">"cost_center_id"</span>, <span class="a">"refDict"</span>: <span class="s">"@cc"</span> },   <span class="c">// 用别名引用跨应用字典</span>
+      { <span class="a">"id"</span>: <span class="s">"currency_id"</span>,    <span class="a">"refDict"</span>: <span class="s">"@cur"</span> }
+    ]
+  }]
+}</div>
+  <p class="footnote"><code>@cc</code> = 引用 imports 里别名 <code>cc</code>。裸 <code>cost_center</code> 仍合法（本地）。别名让"这个单据依赖哪些外部定义"在顶层一目了然，也是依赖图（§8）与打包/迁移的数据来源。</p>
+
+  <h3 id="drn-visibility">5.3 可见性与导出（防止越权引用）</h3>
+  <p>跨应用引用一旦可行，就必须治理"谁能被谁引用"。每个定义（或其中的表/字典）声明可见性：</p>
+  <table>
+    <thead><tr><th>visibility</th><th>可被谁引用</th><th>典型场景</th></tr></thead>
+    <tbody>
+      <tr><td><code>private</code></td><td>仅本模块内</td><td>模块内部技术表</td></tr>
+      <tr><td><code>app</code></td><td>同应用跨模块</td><td>应用内共享</td></tr>
+      <tr><td><code>domain</code></td><td>同域跨应用</td><td>域内主数据（如 fi 域共享科目）</td></tr>
+      <tr><td class="status"><span class="dot have"></span><code>public</code></td><td>全平台</td><td>公共字典（币种、国家）</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="t">解析期校验</div>
+    解析 DRN 时，若目标 <code>visibility</code> 不覆盖引用方所在 DAM → 报 <code>REF_VISIBILITY_DENIED</code>（error）。默认 <code>public</code>（兼容现状：现在所有引用都是隐式全可见），可按需收紧。
+  </div>
+</section>
+
+<!-- ============ 6 注册表 ============ -->
+<section id="registry">
+  <h2 class="sec"><span class="num">06</span>统一注册表与解析服务</h2>
+  <p class="lead">三类定义共用一个 <b>MetaDef 注册表</b> 与一个 <b>DRN 解析器</b>——这是"统筹考虑"的落点。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>统一存储根</h4>
+      <p>把 <code>meta/definitions</code>（DCT/DOC）与 <code>meta/flexible-combination</code>（FLX）收敛为单一根 <code>meta/defs</code>，按 <code>kind</code> 区分（消除断裂①）：</p>
+      <div class="ascii">meta/defs/
+└─ &lt;domain&gt;/&lt;app&gt;/&lt;module&gt;/
+   ├─ DCT/&lt;name&gt;_v&lt;n&gt;.json
+   ├─ DOC/&lt;name&gt;_v&lt;n&gt;.json
+   └─ FLX/&lt;name&gt;_v&lt;n&gt;.json</div>
+      <p class="footnote">DAM_TREE_ROOTS 只需把两根合一。旧路径保留读兼容（软链/回退）。</p>
+    </div>
+    <div class="card">
+      <h4>MetaDef 注册表（索引）</h4>
+      <p>启动/保存时扫描，建立 <code>DRN → {path, kind, version, visibility, exports, updatedAt}</code> 索引。提供：</p>
+      <ul>
+        <li><code>resolve(drn, fromDam)</code> → 定义句柄（+ 可见性校验）</li>
+        <li><code>resolveField(drn#t.f)</code> → 具体列（overlay 编译用）</li>
+        <li><code>listByKind/DAM</code> → 编辑器下拉数据源</li>
+        <li><code>dependents(drn)</code> / <code>dependencies(drn)</code> → 依赖图</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>解析流程</h3>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>归一化</b>：裸 code / 别名 / 相对 DRN → 绝对 DRN（补全继承段、展开 <code>@alias</code>、解析 <code>..</code>）。</div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>版本选择</b>：无 <code>@version</code> → 取该逻辑名的 default 版本（对齐现有多版本机制）。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>可见性校验</b>：目标 visibility 是否覆盖引用方 DAM，否则 <code>REF_VISIBILITY_DENIED</code>。</div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>命中缓存 / 读盘</b>：按 path 读定义（复用现有 <code>loadMetaBatch</code> 批量 + base 字段集去重）。</div></div>
+    <div class="step"><div class="badge">5</div><div class="body"><b>深链</b>：若含 <code>#table.field</code>，展开字段集后定位到列，返回列句柄。</div></div>
+  </div>
+
+  <div class="callout key">
+    <div class="t">双端一致的关键</div>
+    解析器与 overlay 编译层放<strong>服务端一处</strong>（Rust <span class="ref">cmx-model/store.rs</span> 或 Node 保存链路）。JS 与 Rust 两套运行时引擎收到的都是<strong>已解析、已展开</strong>的定义 → 天然一致，不必各写一遍解析逻辑。
+  </div>
+</section>
+
+<!-- ============ 7 分层架构 ============ -->
+<section id="arch">
+  <h2 class="sec"><span class="num">07</span>分层架构</h2>
+  <div class="ascii">┌──────────────────────────────────────────────────────────────────────┐
+│  编辑层  CMXPortalManager（DCT编辑器 · DOC编辑器 · FLX弹性组合管理）  │
+│          统一：DRN 下拉选择器 · imports 面板 · 依赖图视图              │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                 │ REST /api/defs/*
+┌───────────────────────────────▼──────────────────────────────────────┐
+│  服务层                                                                │
+│  ┌────────────────┐  ┌──────────────────┐  ┌───────────────────────┐  │
+│  │ MetaDef 注册表 │  │  DRN 解析器      │  │ Overlay 编译器        │  │
+│  │ DRN→path 索引  │─▶│ 归一/版本/可见性 │─▶│ DOC列⊕FLX增量→inline  │  │
+│  └────────────────┘  └──────────────────┘  └───────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐ │
+│  │ 引用治理：断引用 / 循环 / 越权 / 悬空 诊断（保存期拦截）          │ │
+│  └──────────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                 │ 已解析·已展开的定义
+┌───────────────────────────────▼──────────────────────────────────────┐
+│  存储层  meta/defs/&lt;domain&gt;/&lt;app&gt;/&lt;module&gt;/&lt;kind&gt;/&lt;name&gt;_v&lt;n&gt;.json      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                 │ 运行时消费（不变）
+┌───────────────────────────────▼──────────────────────────────────────┐
+│  运行时（零改动）  FlexibleCombinationEngine(JS/Rust) · CmxColumnModel │
+│                    · cmx-revo-grid / cmx-ui5-form 联动 · 缓存          │
+└──────────────────────────────────────────────────────────────────────┘</div>
+  <div class="callout">
+    <div class="t">改动边界</div>
+    <b>新增</b>：DRN 解析器、MetaDef 注册表、引用治理。<b>演进</b>：存储根合一、overlay 编译器（承接上一方案）。<b>不动</b>：运行时引擎、视图联动、缓存、字段 schema。
+  </div>
+</section>
+
+<!-- ============ 8 依赖图 ============ -->
+<section id="depgraph">
+  <h2 class="sec"><span class="num">08</span>依赖图与真实引用</h2>
+  <p class="lead">用真实档案画出统一后的引用关系。左侧为现状（同 DAM 内隐式、跨 DAM 断裂），右侧为目标（DRN 显式跨 DAM）。</p>
+
+  <h3>现状（fi/cmxfico/gl 内，全部隐式同 DAM）</h3>
+  <div class="ascii">  FLX account            DOC gl_md_doc_meta        DCT gl_md_dct_meta
+  ├ docRef ───────────▶ voucher_header/entry/detail
+  │  (缺 app 段)         ├ refDict:"cost_center" ─┐  (裸 code)
+  ├ dimensions{}         ├ refDict:"gl_account" ──┼─▶ dictionaryTables{
+  │  (拷贝 DCT 10 份)    ├ refDict:"currency" ────┘     cost_center,gl_account,
+  ├ fi-cash.fields       └ ext_dim1..5 ("由 gl_ext        currency,… }
+  │  (拷贝 voucher_detail   _dimension 绑定"—注释)
+  │   20 列)             base_doc_meta ◀─ baseDocMetaRef{file}  (仅文件名)
+  └ 全部靠"同域同应用同模块"约定解析；跨应用无法表达</div>
+
+  <h3>目标（DRN 显式，可跨 DAM）</h3>
+  <div class="ascii">  <span style="color:#d6b4ff">FLX</span> drn:fi/cmxfico/gl/FLX/account
+   ├ docRef:  <span style="color:#9ec1ff">drn:fi/cmxfico/gl/DOC/gl_md_doc_meta@1</span>          ← 补全 app 段
+   ├ detail.ref: <span style="color:#9ec1ff">drn:…/DOC/gl_md_doc_meta#voucher_detail.cashflow_item_id</span>
+   │             + over:{edit:{required:true}}              ← 引用+增量，不拷贝
+   └ dimensions: 引用 DCT，不再拷贝
+
+  <span style="color:#9ec1ff">DOC</span> drn:fi/cmxfico/gl/DOC/gl_md_doc_meta
+   ├ imports: [{alias:"cc", drn:<span style="color:#86efac">drn:fi/shared-md/masterdata/DCT/cost_center</span>}]  ← 跨应用！
+   ├ voucher_detail.cost_center_id.refDict: "@cc"
+   └ baseDocMetaRef: <span style="color:#86efac">drn:base/_/_/BASE/base_doc_meta@1</span>
+
+  <span style="color:#86efac">DCT</span> drn:fi/shared-md/masterdata/DCT/cost_center   (visibility: domain)
+   └ 一份定义，被 fi 域下 cmxfico/其他应用共享引用</div>
+
+  <div class="callout key">
+    <div class="t">这就解决了你的核心诉求</div>
+    "不同应用、模块间互相引用的字典/单据"——通过 <code>imports</code> + DRN 显式表达：<code>fi/cmxfico/gl</code> 的单据引用 <code>fi/shared-md/masterdata</code> 的字典，解析器按 DRN 定位、按 visibility 授权、按依赖图校验。
+  </div>
+</section>
+
+<!-- ============ 9 治理 ============ -->
+<section id="governance">
+  <h2 class="sec"><span class="num">09</span>引用治理与诊断</h2>
+  <p>跨 DAM 引用打开后，治理是安全网。复用现有 <span class="ref">flexible-combination-validator</span> + <span class="ref">_clientDiagnostics</span> 框架，新增引用类诊断码：</p>
+  <table>
+    <thead><tr><th>code</th><th>级别</th><th>触发</th></tr></thead>
+    <tbody>
+      <tr><td><code>REF_TARGET_NOT_FOUND</code></td><td class="status"><span class="dot gap"></span>error</td><td>DRN 解析不到目标定义</td></tr>
+      <tr><td><code>REF_FIELD_NOT_FOUND</code></td><td class="status"><span class="dot gap"></span>error</td><td>深链 <code>#table.field</code> 的列不存在（单据删列）</td></tr>
+      <tr><td><code>REF_VISIBILITY_DENIED</code></td><td class="status"><span class="dot gap"></span>error</td><td>目标可见性不覆盖引用方 DAM（越权引用）</td></tr>
+      <tr><td><code>REF_CYCLE</code></td><td class="status"><span class="dot gap"></span>error</td><td>DRN 依赖成环（A→B→A）</td></tr>
+      <tr><td><code>REF_MISSING_IMPORT</code></td><td class="status"><span class="dot partial"></span>warn</td><td>用了跨 DAM 裸 DRN 但未在 imports 声明（可自动补）</td></tr>
+      <tr><td><code>REF_VERSION_FLOATING</code></td><td class="status"><span class="dot partial"></span>warn</td><td>跨应用引用未钉版本，default 漂移有风险</td></tr>
+      <tr><td><code>REF_DANGLING_ON_TARGET_CHANGE</code></td><td class="status"><span class="dot partial"></span>warn</td><td>被引用定义变更，下游 overlay 可能失配（依赖图广播）</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="t">变更影响分析</div>
+    因为有 <code>dependents(drn)</code>，修改一个被广泛引用的公共字典时，可在保存前列出<strong>所有下游 DOC/FLX</strong>，提示影响范围——这是拷贝式模型永远做不到的。
+  </div>
+</section>
+
+<!-- ============ 10 API ============ -->
+<section id="api">
+  <h2 class="sec"><span class="num">10</span>后端 API 设计</h2>
+  <p>在现有 <code>/api/definitions/*</code> 与 <code>/api/flexible-combination/*</code> 之上收敛出统一的 <code>/api/defs/*</code>（旧路由保留代理）：</p>
+  <table>
+    <thead><tr><th>方法 · 路由</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill get">GET</span><code>/api/defs/list?kind&domain&app&module&visibleFrom</code></td><td>按 DAM/kind 列定义；<code>visibleFrom</code> 过滤可引用项（编辑器下拉）</td></tr>
+      <tr><td><span class="pill get">GET</span><code>/api/defs/resolve?drn&from</code></td><td>解析单个 DRN → 定义（含可见性校验、版本选择）</td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/defs/batch</code></td><td>批量解析 DRN 列表 + base 去重（复用 loadMetaBatch）</td></tr>
+      <tr><td><span class="pill get">GET</span><code>/api/defs/compile?drn&anchor</code></td><td>FLX：解析+overlay 编译→运行时 inline（运行页调用）</td></tr>
+      <tr><td><span class="pill get">GET</span><code>/api/defs/deps?drn&direction</code></td><td>依赖图：<code>dependencies</code>/<code>dependents</code>（可视化 + 影响分析）</td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/defs/validate</code></td><td>保存前全量校验（结构 + 引用治理 §9）</td></tr>
+      <tr><td><span class="pill put">PUT</span><code>/api/defs/&lt;drn&gt;</code></td><td>保存（写库前跑 validate；overlay 存储形态）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 11 迁移 ============ -->
+<section id="migration">
+  <h2 class="sec"><span class="num">11</span>迁移路线</h2>
+  <p class="lead">每步独立可验证、可回退；运行时全程零改动。</p>
+
+  <div class="phase">
+    <div class="ph-head"><div class="pno">1</div><div class="pt">DRN 解析器 + 注册表（读侧）</div><div class="pw">地基 · 低风险</div></div>
+    <div class="ph-body">
+      实现归一化/版本/可见性/深链解析；建 DRN 索引。裸 code = 退化 DRN → 现有档案<strong>零改动即合法</strong>。
+      <div class="deliver">验证：对现有全部定义建索引，逐一 resolve 现有引用，结果与当前隐式解析一致。</div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="ph-head"><div class="pno">2</div><div class="pt">存储根合一 meta/defs</div><div class="pw">低风险</div></div>
+    <div class="ph-body">
+      DAM_TREE_ROOTS 两根合一，按 kind 分子目录；旧路径读兼容。
+      <div class="deliver">验证：新旧路径双读一致；编辑器列表无缺项。</div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="ph-head"><div class="pno">3</div><div class="pt">imports + 可见性 + 引用治理</div><div class="pw">中风险</div></div>
+    <div class="ph-body">
+      顶层 <code>imports</code> 与 <code>visibility</code> 落地；§9 诊断码接入保存链路；补 <code>@alias</code> 展开。
+      <div class="deliver">验证：构造跨应用引用/越权/断引用/成环用例，断言拦截。</div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="ph-head"><div class="pno">4</div><div class="pt">Overlay 编译器（承接上一方案）</div><div class="pw">中风险</div></div>
+    <div class="ph-body">
+      FLX <code>ref/use/pick</code> 编译：DOC 列 ⊕ FLX 增量 → inline；DCT 维度引用替代拷贝。
+      <div class="deliver">验证：<code>account.json</code> 转 overlay，<code>/compile</code> 结果与现状 diff 等价。</div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="ph-head"><div class="pno">5</div><div class="pt">编辑器统一：DRN 选择器 + 依赖图</div><div class="pw">中风险</div></div>
+    <div class="ph-body">
+      三个编辑器共用「DRN 跨 DAM 选择器」（按 visibility 过滤）、imports 面板、依赖图视图。
+      <div class="deliver">验证：在 FLX 编辑器里跨应用选一个字典，保存、编译、运行页联动通。</div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="ph-head"><div class="pno">6</div><div class="pt">存量批量迁移</div><div class="pw">中风险 · 可选</div></div>
+    <div class="ph-body">
+      工具识别"与 DOC/DCT 逐键相等"的拷贝字段 → 折叠为 DRN 引用 + overlay；抽取共享字典到 <code>shared-md</code> 应用。
+      <div class="deliver">验证：迁移前后 <code>/compile</code> 输出逐键相等（除逻辑列补回物理类型）。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 决策 ============ -->
+<section id="decisions">
+  <h2 class="sec"><span class="num">12</span>待决策点</h2>
+  <ol>
+    <li><b>缩写正名</b>：<code>CTX → FLX</code> 是否采纳？涉及代码枚举/文档/存储根命名统一。</li>
+    <li><b>存储根合一</b>：<code>meta/defs</code> 单根 vs 保留双根仅加 DRN 标识层？前者更干净、迁移成本略高。</li>
+    <li><b>编译时机</b>：FLX overlay 读时展开（存 overlay，保 SSOT，推荐）vs 存时展开（存 inline，省运行时）。</li>
+    <li><b>可见性默认值</b>：默认 <code>public</code>（兼容现状）还是默认 <code>app</code>（更安全，但需给存量补导出声明）？</li>
+    <li><b>跨应用版本策略</b>：跨 DAM 引用是否<strong>强制钉版本</strong>（<code>@n</code>）以防 default 漂移？建议公共主数据强制、模块内可浮动。</li>
+    <li><b>共享主数据落点</b>：是否新建 <code>shared-md</code> 应用承载跨应用公共字典（币种/国家/科目），还是就近留在 <code>cmxfico</code> 并开 <code>domain</code> 可见性？</li>
+  </ol>
+  <div class="callout key">
+    <div class="t">一句话总结</div>
+    把三类定义统一到<strong>「共享内核 Field/FieldSet/Table + 各自专有上层」</strong>，把所有引用升级为<strong>「DRN 跨 DAM 标识 + imports 显式依赖 + visibility 授权」</strong>，用<strong>「统一注册表 + 解析器 + overlay 编译器」</strong>在服务端一处落地——DCT/DOC/FLX 从"三套并行、靠拷贝和同名约定"变成"一套体系、按 DRN 互联"。运行时不变，旧档案兼容。
+  </div>
+  <p class="footnote">关联：<span class="ref">flexible-combination-overlay-design.md</span>（FLX overlay 细节）· <span class="ref">dct-doc-meta-model.md</span>（DCT/DOC 模型）· <span class="ref">P7 三端字段键统一</span> · <span class="ref">P8 CmxColumnModel</span>。</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>

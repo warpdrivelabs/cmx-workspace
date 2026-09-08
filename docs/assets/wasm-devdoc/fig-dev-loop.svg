@@ -1,0 +1,71 @@
+<svg viewBox="0 0 820 384" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ag5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+  <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <filter id="s5" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="384" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="30" y="30" font-size="15" font-weight="700" fill="#0f172a">开发闭环时序 · 从脚手架到热替换（ABAP「改完即生效」体验）</text>
+<rect x="0" y="46" width="820" height="60" fill="#fffbeb" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/>
+<rect x="0" y="106" width="820" height="60" fill="#f5f3ff" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/>
+<rect x="0" y="166" width="820" height="60" fill="#ecfeff" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/>
+<rect x="0" y="226" width="820" height="60" fill="#ecfdf5" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="12" y="76" font-size="10" font-weight="700" fill="#92400e">开发者</text>
+<text x="12" y="136" font-size="10" font-weight="700" fill="#5b21b6">构建服务</text>
+<text x="12" y="196" font-size="10" font-weight="700" fill="#155e75">运行时</text>
+<text x="12" y="256" font-size="10" font-weight="700" fill="#065f46">平台/数据</text>
+
+<g filter="url(#s5)"><rect x="44" y="55" width="120" height="42" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="104" y="73" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">① 脚手架</text>
+<text x="104" y="88" font-size="9" fill="#92400e" text-anchor="middle" opacity="0.85">createPlugin 模板</text>
+<g filter="url(#s5)"><rect x="180" y="55" width="120" height="42" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="240" y="73" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">② 编码</text>
+<text x="240" y="88" font-size="9" fill="#92400e" text-anchor="middle" opacity="0.85">rust-analyzer 补全</text>
+<g filter="url(#s5)"><rect x="320" y="115" width="128" height="42" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="384" y="133" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">③ 编译 wasm</text>
+<text x="384" y="148" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">wasm32-wasip1</text>
+<g filter="url(#s5)"><rect x="464" y="115" width="120" height="42" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="524" y="133" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">④ doc scan</text>
+<text x="524" y="148" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">API 文档</text>
+<g filter="url(#s5)"><rect x="44" y="175" width="120" height="42" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="104" y="193" font-size="10.5" font-weight="700" fill="#155e75" text-anchor="middle">⑤ 本地调试</text>
+<text x="104" y="208" font-size="9" fill="#155e75" text-anchor="middle" opacity="0.85">CodeLLDB attach</text>
+<g filter="url(#s5)"><rect x="180" y="175" width="128" height="42" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="244" y="193" font-size="10.5" font-weight="700" fill="#155e75" text-anchor="middle">⑥ 断点/单步</text>
+<text x="244" y="208" font-size="9" fill="#155e75" text-anchor="middle" opacity="0.85">DWARF 变量</text>
+<g filter="url(#s5)"><rect x="600" y="115" width="120" height="42" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="660" y="133" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">⑦ 签名打包</text>
+<text x="660" y="148" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">Ed25519 ZIP</text>
+<g filter="url(#s5)"><rect x="320" y="235" width="128" height="42" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="384" y="253" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑧ deploy</text>
+<text x="384" y="268" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">校验→落注册表</text>
+<g filter="url(#s5)"><rect x="464" y="235" width="128" height="42" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="528" y="253" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑨ 生命周期事件</text>
+<text x="528" y="268" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">集群广播</text>
+<g filter="url(#s5)"><rect x="600" y="175" width="120" height="42" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="660" y="193" font-size="10.5" font-weight="700" fill="#155e75" text-anchor="middle">⑩ 池失效</text>
+<text x="660" y="208" font-size="9" fill="#155e75" text-anchor="middle" opacity="0.85">unload_module</text>
+<g filter="url(#s5)"><rect x="600" y="235" width="120" height="42" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="660" y="253" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑪ 生效</text>
+<text x="660" y="268" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">下次调用新版</text>
+
+<line x1="164" y1="76" x2="180" y2="76" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="300" y1="76" x2="380" y2="115" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="448" y1="136" x2="464" y2="136" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="384" y1="157" x2="120" y2="175" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#a5)"/>
+<text x="250" y="166" font-size="9" fill="#64748b" font-style="italic">调试期直跑</text>
+<line x1="164" y1="196" x2="180" y2="196" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="308" y1="196" x2="600" y2="130" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#a5)"/>
+<text x="450" y="172" font-size="9" fill="#64748b" font-style="italic">调试通过 → 发布</text>
+<line x1="660" y1="157" x2="420" y2="235" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="592" y1="256" x2="528" y2="256" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="660" y1="217" x2="660" y2="235" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+<line x1="528" y1="245" x2="600" y2="190" stroke="#64748b" stroke-width="1.4" marker-end="url(#a5)"/>
+
+<text x="30" y="360" font-size="11" fill="#64748b">全程无需重启平台：⑧⑨⑩⑪ 构成「发布→广播→池失效→下次调用命中新版」的热替换链，对标 ABAP Activate 的「改完即生效」。</text>
+</svg>

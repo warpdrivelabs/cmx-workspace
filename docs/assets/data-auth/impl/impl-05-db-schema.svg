@@ -1,0 +1,94 @@
+<svg viewBox="0 0 820 512" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+  </marker>
+  <filter id="sh5" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.09"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="512" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">数据库表结构　6 张 cmx_dataauth_* 表 · 无外键（索引替代）· 幂等 DDL · db-per-tenant（表内不带 tenant 列）</text>
+
+<!-- policy -->
+<g filter="url(#sh5)"><rect x="30" y="52" width="246" height="206" rx="9" fill="#eef2ff" stroke="#6366f1"/></g>
+<rect x="30" y="52" width="246" height="26" rx="9" fill="#6366f1" fill-opacity="0.22"/>
+<text x="42" y="70" font-size="11.5" font-weight="700" fill="#3730a3">cmx_dataauth_policy</text>
+<text x="42" y="94" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">PK id  BIGINT IDENTITY</text>
+<text x="42" y="110" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">name           varchar</text>
+<text x="42" y="126" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">resource_kind  varchar</text>
+<text x="42" y="142" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">action         varchar</text>
+<text x="42" y="158" font-size="9.3" fill="#9333ea" font-family="ui-monospace,Menlo,Consolas,monospace">source  inline|decisionTable</text>
+<text x="42" y="174" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">constraint_json jsonb</text>
+<text x="42" y="190" font-size="9.3" fill="#64748b" font-family="ui-monospace,Menlo,Consolas,monospace">  ↑ 约束 AST 模板 / 决策体</text>
+<text x="42" y="206" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">priority       int</text>
+<text x="42" y="222" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">effect  permit|deny</text>
+<text x="42" y="238" font-size="9.3" fill="#3730a3" font-family="ui-monospace,Menlo,Consolas,monospace">enabled bool · created/updated</text>
+
+<!-- grant -->
+<g filter="url(#sh5)"><rect x="288" y="52" width="246" height="172" rx="9" fill="#fffbeb" stroke="#f59e0b"/></g>
+<rect x="288" y="52" width="246" height="26" rx="9" fill="#f59e0b" fill-opacity="0.22"/>
+<text x="300" y="70" font-size="11.5" font-weight="700" fill="#92400e">cmx_dataauth_grant</text>
+<text x="300" y="94" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">PK id  BIGINT IDENTITY</text>
+<text x="300" y="110" font-size="9.3" fill="#b45309" font-family="ui-monospace,Menlo,Consolas,monospace">policy_id  → policy.id（逻辑）</text>
+<text x="300" y="126" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">subject_type USER|ROLE</text>
+<text x="300" y="142" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">subject_id   varchar</text>
+<text x="300" y="158" font-size="9.3" fill="#b45309" font-family="ui-monospace,Menlo,Consolas,monospace">dim_key    org|proj|cost</text>
+<text x="300" y="174" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">dim_values jsonb 根值集</text>
+<text x="300" y="190" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">inherit    bool</text>
+<text x="300" y="206" font-size="9.3" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">created_at · updated_at</text>
+
+<!-- relation_tuple -->
+<g filter="url(#sh5)"><rect x="546" y="52" width="244" height="138" rx="9" fill="#ecfdf5" stroke="#10b981"/></g>
+<rect x="546" y="52" width="244" height="26" rx="9" fill="#10b981" fill-opacity="0.22"/>
+<text x="558" y="70" font-size="11.5" font-weight="700" fill="#065f46">cmx_dataauth_relation_tuple</text>
+<text x="558" y="94" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">PK id  BIGINT IDENTITY</text>
+<text x="558" y="110" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">object_kind  voucher</text>
+<text x="558" y="126" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">object_id    RX1</text>
+<text x="558" y="142" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">relation     viewer</text>
+<text x="558" y="158" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">subject_kind user</text>
+<text x="558" y="174" font-size="9.3" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">subject_id · created_at</text>
+<text x="558" y="210" font-size="9" fill="#065f46">ReBAC：object #relation @ subject</text>
+
+<!-- dimension_value -->
+<g filter="url(#sh5)"><rect x="30" y="300" width="246" height="130" rx="9" fill="#ecfeff" stroke="#06b6d4"/></g>
+<rect x="30" y="300" width="246" height="26" rx="9" fill="#06b6d4" fill-opacity="0.22"/>
+<text x="42" y="318" font-size="11.5" font-weight="700" fill="#155e75">cmx_dataauth_dimension_value</text>
+<text x="42" y="342" font-size="9.3" fill="#0e7490" font-family="ui-monospace,Menlo,Consolas,monospace">PK (dim_key, dim_value)</text>
+<text x="42" y="358" font-size="9.3" fill="#155e75" font-family="ui-monospace,Menlo,Consolas,monospace">parent_value  层级父 id</text>
+<text x="42" y="374" font-size="9.3" fill="#155e75" font-family="ui-monospace,Menlo,Consolas,monospace">label         显示名</text>
+<text x="42" y="390" font-size="9.3" fill="#155e75" font-family="ui-monospace,Menlo,Consolas,monospace">depth         int</text>
+<text x="42" y="414" font-size="9" fill="#0e7490">层级维度树 → WITH RECURSIVE 展开源</text>
+
+<!-- mask_rule -->
+<g filter="url(#sh5)"><rect x="288" y="300" width="246" height="158" rx="9" fill="#fdf2f8" stroke="#db2777"/></g>
+<rect x="288" y="300" width="246" height="26" rx="9" fill="#db2777" fill-opacity="0.22"/>
+<text x="300" y="318" font-size="11.5" font-weight="700" fill="#9d174d">cmx_dataauth_mask_rule</text>
+<text x="300" y="342" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">PK id  BIGINT IDENTITY</text>
+<text x="300" y="358" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">resource_kind  varchar</text>
+<text x="300" y="374" font-size="9.3" fill="#be185d" font-family="ui-monospace,Menlo,Consolas,monospace">column_name（避保留字）</text>
+<text x="300" y="390" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">mask_type FULL|PARTIAL|HASH</text>
+<text x="300" y="406" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">partial_pattern varchar</text>
+<text x="300" y="422" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">condition_expr  FEEL</text>
+<text x="300" y="438" font-size="9.3" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">min_role  豁免角色</text>
+
+<!-- audit_log -->
+<g filter="url(#sh5)"><rect x="546" y="300" width="244" height="158" rx="9" fill="#f8fafc" stroke="#64748b"/></g>
+<rect x="546" y="300" width="244" height="26" rx="9" fill="#64748b" fill-opacity="0.20"/>
+<text x="558" y="318" font-size="11.5" font-weight="700" fill="#334155">cmx_dataauth_audit_log</text>
+<text x="558" y="342" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">PK id  varchar(uuid)</text>
+<text x="558" y="358" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">user_id       varchar</text>
+<text x="558" y="374" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">resource_kind varchar</text>
+<text x="558" y="390" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">action · effect</text>
+<text x="558" y="406" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">constraint_json jsonb</text>
+<text x="558" y="422" font-size="9.3" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">backend · created_at</text>
+<text x="558" y="446" font-size="9" fill="#64748b">决策审计（写入非致命）</text>
+
+<!-- logical links -->
+<line x1="288" y1="112" x2="276" y2="108" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a5)"/>
+<line x1="300" y1="150" x2="200" y2="326" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a5)"/>
+<text x="150" y="290" font-size="8.8" fill="#94a3b8">dim_key→维度树</text>
+
+<text x="40" y="484" font-size="10.5" fill="#334155">主键 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">BIGINT GENERATED BY DEFAULT AS IDENTITY</tspan> + <tspan font-family="ui-monospace,Menlo,Consolas,monospace">INSERT ... RETURNING id</tspan>；老库平滑升级用 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">ADD COLUMN IF NOT EXISTS source</tspan>。</text>
+<text x="40" y="502" font-size="10.5" fill="#64748b">禁外键 → 索引替代（policy 按 resource_kind+action；grant 按 subject；tuple 按 object_kind+relation+subject；audit 按 created_at/user）。</text>
+</svg>

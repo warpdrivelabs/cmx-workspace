@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDM 落地 · cmx 平台能力缺口分析与补充方案</title>
+<style>
+  :root{
+    --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fb; --card:#ffffff;
+    --code-bg:#0f1524; --code-ink:#d6def0;
+    --mdm:#4338ca; --mdm-soft:#eef0fe; --mdm-line:#c7ccf6;
+    --be:#2f6fed; --fe:#c65d21; --form:#1f8a56;
+    --have:#1f8a56; --have-bg:#e8f6ee; --have-line:#bfe3cd;
+    --half:#8a6d1f; --half-bg:#faf3df; --half-line:#e8d9a8;
+    --new:#b4433a; --new-bg:#fbecea; --new-line:#f0c3bd;
+    --gold:#a9781a; --gold-bg:#faf3df; --accent:#4338ca;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.72;font-size:15px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#141a33 0%,#25235c 45%,#3a1f52 100%);color:#fff;padding:62px 24px 50px}
+  header.hero .inner{max-width:1160px;margin:0 auto}
+  header.hero h1{margin:0 0 14px;font-size:33px;letter-spacing:.3px;line-height:1.24}
+  header.hero .tag{display:inline-block;background:rgba(124,110,255,.2);color:#c9c2ff;
+       border:1px solid rgba(124,110,255,.42);padding:3px 13px;border-radius:999px;font-size:12.5px;margin-bottom:18px}
+  header.hero p.lead{font-size:16.5px;color:#c7cbdd;max-width:900px;margin:8px 0}
+  header.hero .meta{margin-top:22px;font-size:13px;color:#96a0bc;line-height:1.9}
+  header.hero .meta b{color:#e2e5f2;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 14px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc .part{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--mdm);margin:14px 0 6px;text-transform:uppercase}
+  nav.toc .part:first-of-type{margin-top:0}
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:44px}
+  nav.toc li{margin:5px 0;break-inside:avoid;font-size:13.6px}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--mdm);border-bottom-color:var(--mdm)}
+  nav.toc .nn{display:inline-block;min-width:26px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+  section{margin:0 0 46px}
+  h2{font-size:23px;margin:50px 0 14px;padding-top:14px;border-top:3px solid var(--mdm);display:inline-block}
+  h2 .n{color:var(--mdm);font-weight:800;margin-right:10px}
+  h3{font-size:17.5px;margin:28px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:10px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.pk{color:#e57ab0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.2px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.3px;letter-spacing:.2px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.2px;font-weight:700;white-space:nowrap}
+  .pill.have{background:var(--have-bg);color:var(--have)}
+  .pill.half{background:var(--half-bg);color:var(--half)}
+  .pill.new{background:var(--new-bg);color:var(--new)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.verdict{background:var(--mdm-soft);border-color:var(--mdm-line)}.callout.verdict .h{color:var(--mdm)}
+  .callout.have{background:var(--have-bg);border-color:var(--have-line)}.callout.have .h{color:var(--have)}
+  .callout.half{background:var(--half-bg);border-color:var(--half-line)}.callout.half .h{color:var(--half)}
+  .callout.new{background:var(--new-bg);border-color:var(--new-line)}.callout.new .h{color:var(--new)}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}.callout.note .h{color:var(--be)}
+  .callout.gold{background:var(--gold-bg);border-color:#e8d9a8}.callout.gold .h{color:var(--gold)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  .box.tint{background:var(--mdm-soft);border-color:var(--mdm-line)}
+  .box.have{background:var(--have-bg);border-color:var(--have-line)}
+  .box.half{background:var(--half-bg);border-color:var(--half-line)}
+  .box.new{background:var(--new-bg);border-color:var(--new-line)}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  ol.tight{margin:8px 0;padding-left:22px}ol.tight li{margin:5px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.2px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--mdm);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .lede{font-size:16px;color:var(--muted)}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:4px}
+  .b-be{background:#e7efff;color:var(--be)}.b-fe{background:#fbeadd;color:var(--fe)}.b-form{background:#e4f4ea;color:var(--form)}
+  .en{color:var(--muted);font-style:italic;font-size:13.3px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:800;line-height:1.1}
+  .kpi.have .v{color:var(--have)}.kpi.half .v{color:var(--half)}.kpi.new .v{color:var(--new)}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .partband{margin:56px 0 8px;padding:14px 20px;border-radius:12px;background:linear-gradient(100deg,#25235c,#3a1f52);color:#fff}
+  .partband .pt{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#c9c2ff;font-weight:700}
+  .partband .pnn{font-size:20px;font-weight:800;margin-top:2px}
+  .partband .pd{font-size:13px;color:#c7cbdd;margin-top:4px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:14px 0;font-size:12.6px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .dot.have{background:var(--have)}.dot.half{background:var(--half)}.dot.new{background:var(--new)}
+  .filecite{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.6px;color:var(--muted)}
+  @media(max-width:860px){.grid2,.grid3,.kpis{grid-template-columns:1fr}nav.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="inner">
+    <span class="tag">能力缺口分析 · 基于真实代码勘探 · 只出方案不动代码</span>
+    <h1>MDM 落地 · cmx 平台能力缺口分析与补充方案<br><span style="font-size:19px;font-weight:500;color:#c9c2ff">照《企业主数据管理平台方案》开发，后端 / 前端 / 表单还需补什么</span></h1>
+    <p class="lead">
+      本文承接《企业主数据管理平台（MDM）设计方案》，回答一个工程问题：<b>照那份方案在既有 cmx 平台上开发 MDM，三条线（后端服务、前端组件、表单录入）分别还差什么</b>。
+      结论基于对 cmx 代码库的<b>三路并行只读勘探</b>（后端 crate / 前端组件 / 表单录入），每条判定尽量落到真实 <code>file:line</code>。
+      所有能力按<b>三态</b>标注：<span class="pill have">已有</span>可直接复用、<span class="pill half">半成品</span>需补齐、<span class="pill new">新造</span>零基础须开发。
+    </p>
+    <p class="meta">
+      <b>勘探范围</b>　cmx-container/crates（后端）· packages/cmx-data-comp（前端）· native-pages/html-pages（表单）<br>
+      <b>核心结论</b>　地基约 70% 可复用 &nbsp;|&nbsp; 真新造 = 后端 3 件 + 前端 3 件 &nbsp;|&nbsp; <b>关键更正</b>　cmx-agg 至今零代码，须从"复用"移入"前置新造"
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录 · Contents</h4>
+  <div class="part">导言</div>
+  <ol>
+    <li><span class="nn">00</span><a href="#exec">执行摘要 · 能力三态总账</a></li>
+  </ol>
+  <div class="part">第一部分 · 后端服务缺口</div>
+  <ol>
+    <li><span class="nn">01</span><a href="#be-reuse">三段式范式复用（cmx-mdm 三 crate）</a></li>
+    <li><span class="nn">02</span><a href="#be-code">编码引擎（新造①）</a></li>
+    <li><span class="nn">03</span><a href="#be-match">匹配合并存活引擎（新造②）</a></li>
+    <li><span class="nn">04</span><a href="#be-xref">交叉引用与分发事件（新造③）</a></li>
+    <li><span class="nn">05</span><a href="#be-agg">cmx-agg 层次汇总（前置新造）</a></li>
+    <li><span class="nn">06</span><a href="#be-have">可直接复用清单</a></li>
+  </ol>
+  <div class="part">第二部分 · 前端组件缺口</div>
+  <ol>
+    <li><span class="nn">07</span><a href="#fe-have">可复用组件盘点</a></li>
+    <li><span class="nn">08</span><a href="#fe-dup">查重候选组件（新造）</a></li>
+    <li><span class="nn">09</span><a href="#fe-diff">字段级红线 diff 组件（新造）</a></li>
+    <li><span class="nn">10</span><a href="#fe-inbox">流程待办 / 审批台（新造）</a></li>
+    <li><span class="nn">11</span><a href="#fe-steward">数据管家评审工作台（组合）</a></li>
+  </ol>
+  <div class="part">第三部分 · 表单与录入缺口</div>
+  <ol>
+    <li><span class="nn">12</span><a href="#fm-status">现状诊断：录入范式与已有地基</a></li>
+    <li><span class="nn">13</span><a href="#fm-assemble">实体元数据→表单一键装配（补强）</a></li>
+    <li><span class="nn">14</span><a href="#fm-widgets">控件补缺 + 校验就地定位</a></li>
+    <li><span class="nn">15</span><a href="#fm-multiview">多视图分区 + 主从表单</a></li>
+  </ol>
+  <div class="part">第四部分 · 补充路线图</div>
+  <ol>
+    <li><span class="nn">16</span><a href="#rm-matrix">缺口优先级矩阵</a></li>
+    <li><span class="nn">17</span><a href="#rm-align">与 MDM M0–M7 的对齐</a></li>
+    <li><span class="nn">18</span><a href="#rm-risk">风险与关键路径</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 00 ============ -->
+<section id="exec">
+  <h2><span class="n">00</span>执行摘要 · 能力三态总账</h2>
+  <p class="lede">一句话：cmx 的地基比预期厚——建模、治理流、任务中心、表单渲染器、字段控件、主从树、四区外壳全部就绪；MDM 真正要新造的收敛到<b>后端 3 个领域引擎 + 前端 3 个专用组件</b>，外加一个被上份方案误列为"复用"、实则零代码的<b>前置依赖 cmx-agg</b>。</p>
+
+  <div class="legend">
+    <span><span class="dot have"></span><b>已有</b>　成熟 landed，直接复用或配置接入</span>
+    <span><span class="dot half"></span><b>半成品</b>　有基础，需补齐才能撑 MDM</span>
+    <span><span class="dot new"></span><b>新造</b>　代码零基础，须从头开发</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi have"><div class="v">~70%</div><div class="l">能力已有<br>可复用地基</div></div>
+    <div class="kpi new"><div class="v">6</div><div class="l">真新造件<br>后端3 + 前端3</div></div>
+    <div class="kpi half"><div class="v">6</div><div class="l">半成品<br>需补齐</div></div>
+    <div class="kpi new"><div class="v">1</div><div class="l">前置依赖<br>cmx-agg 零代码</div></div>
+  </div>
+
+  <h3>0.1 三态总账（一屏看全）</h3>
+  <table>
+    <thead><tr><th style="width:20%">条线</th><th style="width:28%"><span class="pill have">已有·直接复用</span></th><th style="width:26%"><span class="pill half">半成品·补齐</span></th><th><span class="pill new">新造·零基础</span></th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>后端服务</b><br><span class="en">backend</span></td>
+        <td>三段式 crate 范式 · cmx-flow 治理流(7crate) · cmx-job 任务中心(SSE/HA) · ZmcDataSet · 列级校验 · CmxErrCode · bigint 铸号 · compile/deploy 管线</td>
+        <td>metaKind:MDM 分流(机械扩展) · 事件持久化 outbox(仅内存总线)</td>
+        <td>① 编码引擎 · ② 匹配合并存活引擎 · ③ 交叉引用/源系统映射 · <b>cmx-agg 层次汇总(前置)</b></td>
+      </tr>
+      <tr>
+        <td><b>前端组件</b><br><span class="en">frontend</span></td>
+        <td>数据表格 revo-grid(冻结/操作列/内联编辑) · 树表 tabulator · 主从树 CmxMasterSlave · lookup(combo-box/dict-select) · 消息对话框 · 源适配器 · 四区外壳</td>
+        <td>列头精筛(靠外置 filter-bar)</td>
+        <td>① 查重候选 UI · ② 字段级红线 diff · ③ 流程待办/审批台</td>
+      </tr>
+      <tr>
+        <td><b>表单录入</b><br><span class="en">forms</span></td>
+        <td>元数据驱动表单 cmx-ui5-form(39处实测) · 字段类型注册表(表单/表格双端) · 输入控件全家桶 · 字段级校验红框 · 新建/编辑态 · 必填只读默认值</td>
+        <td>实体meta→表单一键装配路径 · grid录入侧violations定位单元格 · 多视图分部门审批编排</td>
+        <td>switch/multiselect 两控件 · 变更请求 old→new 红线态</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout gold">
+    <div class="h">🏅 最重要的一条更正（相对上份 MDM 方案）</div>
+    上份方案 §20 把「层间汇总」列为<b>复用 cmx-agg</b>。经代码核实：<b><code>cmx-agg</code> 至今零代码</b>——全库 <code>grep cmx-agg/cmx_agg/rollup/topo_sort/AggRule</code> 仅命中设计文档，Cargo.toml workspace 无此成员；现存唯一 rollup 是 RPT <code>expand.rs:447 rollup_cells()</code>，硬编码于报表浮动行、非中立声明式引擎。<b>因此 cmx-agg 必须从「复用」移入「前置新造」</b>。MDM 分级域（成本中心/组织树小计上卷）若要用，须先把它建出来。这是「70% 复用」说法里唯一被高估的部分。
+  </div>
+
+  <h3>0.2 六个真新造件一览</h3>
+  <div class="grid3">
+    <div class="box new"><h4><span class="badge b-be">后端①</span>编码引擎</h4>段序列(常量/属性/流水/日期/校验位) + 原子铸号 + 按受控组织生效。现有仅 PK 铸号(pk52)，非业务编码。</div>
+    <div class="box new"><h4><span class="badge b-be">后端②</span>匹配合并存活</h4>分块/比较器/双阈值/字段级存活。全库零 levenshtein/jaro/soundex，是最难的核心。</div>
+    <div class="box new"><h4><span class="badge b-be">后端③</span>交叉引用+分发</h4>xref/value-map 零命中；事件仅进程内总线无持久化。须建 outbox + delta。</div>
+    <div class="box new"><h4><span class="badge b-fe">前端①</span>查重候选 UI</h4>录入时「疑似重复候选+匹配分」列表。前端完全空白。</div>
+    <div class="box new"><h4><span class="badge b-fe">前端②</span>红线 diff</h4>变更请求字段级 old→new 对比展示。仅有算 delta 的纯函数，无展示 UI。</div>
+    <div class="box new"><h4><span class="badge b-fe">前端③</span>待办/审批台</h4>「我的待办/审批收件箱」。cmx-flow 后端 M4 就绪，缺前端消费页。</div>
+  </div>
+</section>
+
+<!-- ============ PART I BAND ============ -->
+<div class="partband">
+  <div class="pt">Part I</div>
+  <div class="pnn">第一部分 · 后端服务缺口</div>
+  <div class="pd">照抄三段式范式即可起步，真新造集中在三个领域引擎 + 一个前置依赖</div>
+</div>
+
+<!-- ============ 01 ============ -->
+<section id="be-reuse">
+  <h2><span class="n">01</span>三段式范式复用 <span class="en">cmx-mdm mirrors the pattern</span></h2>
+  <p>好消息先行：MDM 的后端骨架<b>几乎零风险</b>——DCT/DOC/RPT 三个领域已把「model + store-pg + api」三段式范式跑通且完全一致，MDM 照抄一份 <code>cmx-mdm-*</code> 即可。</p>
+
+  <h3>1.1 现有三段式范式（已验证一致）</h3>
+  <table>
+    <thead><tr><th style="width:12%">领域</th><th style="width:30%">crate 群（cmx-container/crates/libs/）</th><th>关键子模块</th></tr></thead>
+    <tbody>
+      <tr><td><b>DCT</b></td><td><code>cmx-dct-model</code> · <code>cmx-dct-store-pg</code> · <code>cmx-dct-api</code></td><td>write/resolve/hierarchy/import_export/query</td></tr>
+      <tr><td><b>DOC</b></td><td><code>cmx-doc-model</code> · <code>cmx-doc-store-pg</code> · <code>cmx-doc-api</code></td><td>meta/formula/sql_builder/saver(80KB)/loader/zmc_loader</td></tr>
+      <tr><td><b>RPT</b></td><td><code>cmx-rpt-model</code> · <code>cmx-rpt-store-pg</code> · <code>cmx-rpt-api</code> + <code>cmx-rpt-formula</code></td><td>compute/expand/float_crud/ops/rpt_job + 公式引擎</td></tr>
+      <tr><td><b>flow</b></td><td>7 crate：model/bpmn/engine/store-pg/def/api/demo</td><td>最重领域，MDM 治理流直接复用它</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 web-server 合并机制（破环设计）</h3>
+<pre><code><span class="cmt">// crates/web/web-server/src/routes.rs:26-32 —— 各领域 module .merge 进来</span>
+api_routes()
+    .merge(ReportModule.routes()).merge(FlowModule.routes())
+    .merge(DocModule.routes()).merge(DctModule.routes())
+    .merge(JobModule.routes()).merge(ModelModule.routes())
+    <span class="cmt">// ↑ MDM 新造只需： .merge(MdmModule.routes())</span>
+
+<span class="cmt">// ModuleRoutes trait: crates/libs/cmx-api/src/routes/traits.rs:11-21</span>
+<span class="cmt">// 方法 routes()/prefix()/module_name()；cmx-api 不反向依赖领域 crate（破环）</span></code></pre>
+
+  <div class="callout have">
+    <div class="h">✅ MDM 后端起步 = 新 crate + 一行 merge（低风险）</div>
+    新建 <code>cmx-mdm-{model,store-pg,api}</code> 三 crate，<code>MdmModule impl ModuleRoutes</code>，<code>routes.rs</code> 加 <code>.merge(MdmModule.routes())</code>，路由前缀 <code>/api/mdm/*</code>。这套「新 api crate 镜像 + 一行合并」在 cmx-flow-api、cmx-rpt-api 已各做过一次，是熟路。<b>定义→编译→建表→台账全管线也现成</b>（见 §06），MDM 定义 JSON 走同一 <code>compile</code>+<code>deploy</code> 管线，只要 compile 认识 MDM 元数据即可。
+  </div>
+
+  <h3>1.3 metaKind:MDM 分流（半成品·机械扩展）</h3>
+<pre><code><span class="cmt">// cmx-model-meta/src/definitions/store.rs:164-169 —— 现在只认三种</span>
+<span class="kw">match</span> meta_kind {
+    <span class="str">"DCT"</span> =&gt; Some(base_dct_meta_ref),
+    <span class="str">"DOC"</span> =&gt; Some(base_doc_meta_ref),
+    <span class="str">"RPT"</span> =&gt; Some(base_rpt_meta_ref),
+    <span class="cmt">// MDM =&gt; Some(base_mdm_meta_ref),   ← 加这一分支</span>
+    _   =&gt; None,
+}
+<span class="cmt">// 顶层键恒为 moduleMeta（非 dctMeta/mdmMeta）；compile.rs 同样加一 MDM 分支</span></code></pre>
+  <p class="en">代码里 metaKind 真正落地的是 DCT/DOC/RPT 三种（FLX 走独立 flexible_combination 路径）；MDM 无任何代码，加分流是机械扩展、低风险。</p>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="be-code">
+  <h2><span class="n">02</span>编码引擎 <span class="pill new">新造①</span> <span class="en">the coding engine</span></h2>
+  <p>MDM 的业务编码（供应商码、物料码）由规则生成，防一物多码/一码多物。<b>代码核实：cmx 现无任何业务编码能力</b>。</p>
+
+  <div class="callout new">
+    <div class="h">🔴 缺口证据：现有只有 PK 铸号，不是业务编码</div>
+    <code>grep code_rule|流水号|number_range|serial|生成编号</code> 命中全部是<b>数据库主键铸号</b>（<code>cmx-doc-store-pg/saver.rs:1133 mint_ids_for_changeset</code>、<code>cmx-dct-model/lib.rs:279</code>、<code>cmx-utils next_pk_id</code>）——即「给新增行分配 bigint 主键」，<b>不是</b>「按前缀+日期+流水段+校验位生成可读业务编码」。PG 原生 <code>nextval</code> 还被当默认值主动剥离（<code>cmx-metadata/executor.rs:620</code>）。→ <b>编码引擎从零新造。</b>
+  </div>
+
+  <h3>2.1 要新造什么</h3>
+  <table>
+    <thead><tr><th style="width:26%">构件</th><th style="width:14%">工作量</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>段引擎（6 种段）</td><td>中</td><td>常量/属性取值/流水号/日期/校验位/分隔符，声明式 JSON（对应 MDM 方案 §15.1）</td></tr>
+      <tr><td>原子铸号（并发安全）</td><td>小</td><td><code>md_serial</code> 表 + <code>INSERT…ON CONFLICT DO UPDATE…RETURNING</code> 行锁；可参照 pk52 的并发经验</td></tr>
+      <tr><td>按受控组织+条件选规则</td><td>中</td><td>金蝶机制：orgScope 命中 + condition 求值；<b>务必处理"无组织上下文"兜底</b></td></tr>
+      <tr><td>三铁律落地</td><td>小</td><td>永不回收(作废置 frozen 不释放号段)、内码≠外码、规则版本化</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout have">
+    <div class="h">✅ 可借力：pk52 铸号的并发经验直接迁移</div>
+    编码引擎的原子流水号分配，与既有 <code>cmx-utils/id/pk52.rs</code>（52 位 JS 安全整数、原子序列+时间戳、全局单例 <code>next_pk_id</code>）是同类问题。<b>并发安全的实现模式可直接迁移</b>，只是把"全局单调"换成"按规则+重置键分组"。这不是纯从零——地基的并发经验可用。
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="be-match">
+  <h2><span class="n">03</span>匹配合并存活引擎 <span class="pill new">新造②</span> <span class="en">match · merge · survivorship — the hard one</span></h2>
+  <p>这是 MDM 的心脏，也是<b>全部缺口里最难的一件</b>。生产黄金记录的分块→比较→裁决→合并存活流水线，cmx 代码里零基础。</p>
+
+  <div class="callout new">
+    <div class="h">🔴 缺口证据：零相似度算法</div>
+    <code>grep dedup|fuzzy|similar|soundex|查重|去重|相似</code> 命中全是无关项：<code>Vec::dedup()</code> 集合去重、SQL <code>DISTINCT ON</code> 取最新版、名称 <code>LIKE</code> 模糊查询、flow 抄送去重、cmx-rust-sheet 的 xlsx 样式表去重。<b>全库零 levenshtein / jaro-winkler / soundex / metaphone</b>，无任何记录级匹配/相似度/存活规则。→ <b>整条流水线从零新造。</b>
+  </div>
+
+  <h3>3.1 要新造什么（四阶段）</h3>
+  <div class="dag">分块 Clustering  →  比较 Comparison  →  裁决 Decision  →  合并存活 Merge+Survivorship
+  多簇键(音近+分词    编辑距离/换位/     双阈值三向        结构re-parent +
+  +子串,防NULL巨簇)   音近,分级非布尔    (auto/review/no)  字段级cell存活
+  ─────────────────────────────────────────────────────────────────────
+  工作量:中          工作量:中(可选AI高) 工作量:小        工作量:大(企业级最耗时)</div>
+
+  <table>
+    <thead><tr><th style="width:24%">构件</th><th style="width:14%">难度</th><th>说明（对应 MDM 方案 §16）</th></tr></thead>
+    <tbody>
+      <tr><td>分块 Clustering</td><td>中</td><td>多簇键(Soundex/Metaphone/前N字符/税号)带优先级；护栏：NULL 巨簇、簇大小上限 500、子簇拆分并行</td></tr>
+      <tr><td>比较器 Comparison</td><td>中</td><td>编辑距离/字符换位/音近/精确；可插拔、返回分级结果(0-100%)非布尔</td></tr>
+      <tr><td>三向裁决</td><td>小</td><td>双阈值：≥automerge 自动、match~automerge 人工评审、&lt;match 保留；组内全过护栏</td></tr>
+      <tr><td>合并+字段级存活</td><td><b>大</b></td><td>结构合并 re-parent 子实体、victim 置 merged 可 unmerge；逐字段存活(源优先/最新/最全/质量分)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout half">
+    <div class="h">🟡 可借力：cmx-job 承接批量匹配、cmx-rust 生态可自研算法</div>
+    ① <b>批量匹配作业</b>直接接 <b>cmx-job 任务中心</b>（SSE 进度/暂停停止/持久化恢复/多实例 HA 全齐，<code>cmx-job-core/store-pg/api</code> 已 landed），黄金记录流水线作为一个 <code>JobHandler</code> 即可获得进度/HA/崩溃恢复；② 分块/比较算法可在 <b>cmx-rust 生态</b>自研（Rust crate 生态有成熟 strsim 等），或引入 crate。<b>引擎逻辑本身仍是净新造</b>，但运行框架（作业调度）现成。
+  </div>
+
+  <div class="callout note">
+    <div class="h">💡 落地建议：M4 从精确匹配起步，模糊/AI 后置</div>
+    存活规则"企业级规模下极难"（数十源×数百属性）。建议第一版只做<b>精确匹配（税号/统一社会信用代码相等）+ 单一存活策略（源优先）</b>，先把「查重识别一物多码 + 自动/人工分流」闭环跑通，再逐步加模糊/AI 匹配与字段级存活。分块的护栏（NULL 巨簇、簇大小上限）必须第一版就有。
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="be-xref">
+  <h2><span class="n">04</span>交叉引用与分发事件 <span class="pill new">新造③</span> <span class="en">xref &amp; delta distribution</span></h2>
+  <p>黄金记录要「被消费」——跨系统 ID 映射（Key Mapping）与增量分发（delta）。前者零基础，后者有内存总线雏形但缺持久化。</p>
+
+  <div class="grid2">
+    <div class="box new"><h4>🔴 交叉引用 md_xref —— 零命中</h4>
+      <code>grep xref|source_system|key_mapping|external_id|golden_record|survivor</code> <b>完全零命中</b>。DRN 是定义引用寻址，非跨系统 ID 映射。<br>
+      <b>要新造</b>：<code>md_xref</code>(源系统,源ID)→内码 + <code>md_value_map</code> 值映射。这是注册型 MDM「运行时组装视图」+ 合并回灌 + unmerge 的地基（MDM 方案 §11.3/§14.2）。
+    </div>
+    <div class="box half"><h4>🟡 分发事件 —— 仅内存总线</h4>
+      存在进程内 <code>EventBus</code>（<code>cmx-traits/event_bus/bus.rs:18</code> publish/subscribe，tokio spawn 异步，<b>无持久化</b>），web-server 启动初始化 <code>GlobalEventBus</code>（<code>main.rs:135</code>），当前唯一消费者是 job 失败告警。RPT 有 <code>cr_report_op_log</code> 但那是报表协同编辑专用。<br>
+      <b>要新造</b>：内存总线之上补<b>持久化 outbox + delta token + 重投递</b>（MDM 方案 §19）。
+    </div>
+  </div>
+
+  <h3>4.1 要新造什么</h3>
+  <table>
+    <thead><tr><th style="width:24%">构件</th><th style="width:12%">状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>md_xref 交叉引用表</td><td><span class="pill new">新造</span></td><td>(源系统,源引用)→内码，Active/Inactive；一内码对多源</td></tr>
+      <tr><td>md_value_map 值映射</td><td><span class="pill new">新造</span></td><td>跨系统代码调和（物料组 01↔01-200）</td></tr>
+      <tr><td>md_event_log 事件日志</td><td><span class="pill new">新造</span></td><td>BIGSERIAL 单调序号=delta 游标；规范模型快照</td></tr>
+      <tr><td>delta token 契约</td><td><span class="pill new">新造</span></td><td>按(消费者×实体×版本)定界；28 天全量兜底</td></tr>
+      <tr><td>分发执行（批量/重试）</td><td><span class="pill have">复用</span></td><td>接 cmx-job 任务中心；失败告警复用现有 job.failed 通道</td></tr>
+      <tr><td>内存事件总线</td><td><span class="pill half">半成品</span></td><td>EventBus 作实时推送地基，补持久化即可</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="be-agg">
+  <h2><span class="n">05</span>cmx-agg 层次汇总 <span class="pill new">前置新造</span> <span class="en">the "already-planned" gap</span></h2>
+  <p class="lede">这一节单列，因为它是本次勘探最重要的更正：<b>cmx-agg 至今零代码，却在上份 MDM 方案里被当成"复用"。</b></p>
+
+  <div class="callout new">
+    <div class="h">🔴 铁证：cmx-agg 全库零代码</div>
+    ① <code>find -iname "*cmx-agg*"</code> → 零目录；② <code>grep cmx-agg|cmx_agg</code> 遍历全部 .rs/.toml → <b>零命中</b>；③ Cargo.toml workspace 成员<b>无</b> cmx-agg。它只活在两处设计文档里，且都标注为未来新造：<br>
+    · <code>统一建模平台-RPT范式推广到DOC与DCT方案.html:406</code> — 标「<b>唯一新造</b>」<br>
+    · <code>企业主数据管理平台(MDM)设计方案.html:1203</code> — 标「<b>规划中</b>」，却在能力对照里写"复用 cmx-agg"<br>
+    现存唯一 rollup 是 <code>cmx-rpt-store-pg/expand.rs:447 rollup_cells()</code>——硬编码于 RPT 报表浮动行小计，<b>非</b>中立、声明式(<code>{from,to,field,agg}</code>)、拓扑排序、三方共享的引擎。
+  </div>
+
+  <h3>5.1 MDM 是否需要它？——分域而定</h3>
+  <table>
+    <thead><tr><th style="width:22%">MDM 域</th><th style="width:16%">是否需汇总</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>组织人员域</td><td><span class="pill half">建议有</span></td><td>组织树按父节点汇总下属数量/编制小计</td></tr>
+      <tr><td>财务域（成本中心/科目）</td><td><span class="pill half">建议有</span></td><td>成本中心树小计上卷、科目表汇总</td></tr>
+      <tr><td>物料/客商域</td><td><span class="pill have">可暂缺</span></td><td>多为查找维度，层间汇总用得少</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="h">💡 两条落地路径（择一）</div>
+    <b>路径 A（推荐·彻底）</b>：把 cmx-agg 作为<b>前置依赖</b>建出来——中立 crate，<code>AggRule{from,to,field,toField,agg}</code>/<code>topo_sort</code>/<code>rollup</code>，拓扑排序+逐层重算+环检测，与前端 <code>CmxMasterSlave.addAggregation</code>（已存在，<code>cmx-master-slave.js:206</code>）语义对齐，一份声明两端读。DCT/DOC/RPT/MDM 四方共享，一劳永逸。<br>
+    <b>路径 B（权宜·不通用）</b>：MDM 分级域先借用/复制 RPT 的 <code>expand.rs rollup</code> 逻辑，快但不通用、留技术债。<br>
+    <b>结论</b>：若 MDM 一期就含组织/成本中心域，建议走 A，把 cmx-agg 排进 M7 之前；若一期只做客商/物料，可暂缓。<b>无论如何，方案文档不能把它算作"已有复用"。</b>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="be-have">
+  <h2><span class="n">06</span>可直接复用清单 <span class="en">what's ready to reuse</span></h2>
+  <p>这些是 MDM 后端的「白拿」——成熟 landed、经真机验证，MDM 零改或配置化接入。</p>
+
+  <table>
+    <thead><tr><th style="width:22%">能力</th><th style="width:34%">位置（file:line）</th><th>MDM 怎么用</th></tr></thead>
+    <tbody>
+      <tr><td><b>ZmcDataSet 零拷贝读</b></td><td><code>cmx-infra/cmx-database-pg/zmcdataset.rs</code>；<code>connection/mod.rs:114</code></td><td>MDM 查黄金记录/层次直接用惰性列式二进制编码</td></tr>
+      <tr><td><b>DataValue 强类型写</b></td><td><code>connection/mod.rs:55 execute_with_datavalues</code></td><td>MDM 落库走 $1,$2 占位强类型绑定</td></tr>
+      <tr><td><b>落库前列级校验</b></td><td><code>cmx-biz/validation/mod.rs:1-124</code></td><td>type/length/precision/nullable，规范源=定义 JSON；MDM 承接字段天然纳入</td></tr>
+      <tr><td><b>CmxErrCode 错误码库</b></td><td><code>cmx-biz/errcode/mod.rs:17</code></td><td>类型/超长/非空/唯一/外键，三层码；MDM 直接复用</td></tr>
+      <tr><td><b>bigint 后端铸号</b></td><td><code>cmx-utils/id/pk52.rs</code>；<code>id/mod.rs:92</code></td><td>md_golden.id 内码用 pk52（&lt;2^53 前端零改）</td></tr>
+      <tr><td><b>cmx-job 任务中心</b></td><td><code>cmx-job-core/store-pg/api</code>（M1+M2+M3）</td><td>批量匹配/黄金记录流水线/分发作为 JobHandler，得 SSE/HA/恢复</td></tr>
+      <tr><td><b>cmx-flow 治理流</b></td><td>7 crate（会签/定时器/子流程/抄送转签）</td><td>MDM 变更请求审批直接复用，见 §17 后续</td></tr>
+      <tr><td><b>compile/deploy 管线</b></td><td><code>cmx-model-deploy/compile.rs:316/493/526</code></td><td>MDM 定义 JSON 走同一编译→建表→台账管线</td></tr>
+      <tr><td><b>tokio-postgres 并行驱动</b></td><td><code>cmx-database-pg</code>(deadpool 池/多源)</td><td>MDM 多源匹配并发查询</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout have">
+    <div class="h">✅ 后端缺口小结</div>
+    <b>白拿（9 项）</b>：三段式范式 · ZmcDataSet · DataValue · 列级校验 · CmxErrCode · pk52 · cmx-job · cmx-flow · compile/deploy。<b>真新造（3+1）</b>：编码引擎 · 匹配合并存活 · 交叉引用+分发 · <u>cmx-agg（前置）</u>。<b>半成品补齐（2）</b>：metaKind:MDM 分流（机械）· 事件持久化 outbox。后端工程重心 = 三个领域引擎 + cmx-agg，其余皆复用或机械扩展。
+  </div>
+</section>
+
+<!-- ============ PART II BAND ============ -->
+<div class="partband">
+  <div class="pt">Part II</div>
+  <div class="pnn">第二部分 · 前端组件缺口</div>
+  <div class="pd">组件库比预期成熟——表格/树/主从/lookup/对话框全有，真新造只有三个 MDM 专用件</div>
+</div>
+
+<!-- ============ 07 ============ -->
+<section id="fe-have">
+  <h2><span class="n">07</span>可复用组件盘点 <span class="en">the component library is thick</span></h2>
+  <p>勘探纠正了一个预判：<b>cmx 前端组件库比想象成熟得多</b>。真正的可视组件在 <code>packages/cmx-data-comp/src/components/</code>（24 个主组件 + ignite/spreadjs 子目录），MDM 需要的表格/树/主从/lookup/对话框/表单基本都在。</p>
+
+  <h3>7.1 MDM 可直接复用的组件</h3>
+  <table>
+    <thead><tr><th style="width:20%">组件（tag）</th><th style="width:14%">能力</th><th>MDM 用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>cmx-revo-grid</code></td><td><span class="pill have">已有</span></td><td>主力数据表格：<b>列冻结左/右 + 操作列(actions) + 内联编辑 + 合计行 + 多选</b>（近期 commit 57ce537 正是"操作列+列冻结"）</td></tr>
+      <tr><td><code>cmx-tabulator</code></td><td><span class="pill have">已有</span></td><td>树形表格 treegrid + 表头排序/筛选/分页</td></tr>
+      <tr><td><code>cmx-web-treeview</code></td><td><span class="pill have">已有</span></td><td>纯树视图（组织树/科目树/分类树）</td></tr>
+      <tr><td><code>CmxMasterSlave</code></td><td><span class="pill have">已有</span></td><td>N 层递归主从树 + <code>addAggregation</code> + <code>_cascade</code>(16 层环保护)；主数据+多子表</td></tr>
+      <tr><td><code>cmx-combo-box</code></td><td><span class="pill have">已有</span></td><td>lookup 选值：list/tree/grid 三弹层 + <b>远端分页搜索</b></td></tr>
+      <tr><td><code>cmx-dict-select</code></td><td><span class="pill have">已有</span></td><td>字典 lookup：MRU 最近选过 + 边输边搜 + help 弹层（分类/分组树/grid）</td></tr>
+      <tr><td><code>cmx-ui5-form</code></td><td><span class="pill have">已有</span></td><td>元数据驱动表单渲染器（详见 Part III）</td></tr>
+      <tr><td><code>cmx-message-dialog</code></td><td><span class="pill have">已有</span></td><td>三级别(info/warn/error)+confirm+light/dark 主题+帮助中心桥</td></tr>
+      <tr><td><code>cmx-doc-source</code>/<code>cmx-dct-source</code></td><td><span class="pill have">已有</span></td><td>声明式源适配器（<code>apiPath</code> 绑定 + changeset 保存）；MDM 镜像出 <code>cmx-mdm-source</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout have">
+    <div class="h">✅ 现成起步点：portal.dct.data-editor 是最接近 MDM 数据维护的工作台</div>
+    <code>native-pages/sources/portal/dct/data-editor.js</code>——「元数据驱动、平级分页/树形左树右表、行内编辑、changeset 保存」，是<b>离 MDM 数据维护最近的现成四区工作台</b>。MDM 起步可直接改造它：把 <code>/api/dct/*</code> 换成 <code>/api/mdm/*</code>、DictView 换成 MdmEntityView。四区外壳机制（explorer/content/property/model + <code>cmx-native-pages-host</code> 每区独立 shadowRoot）也现成（<code>workspace-native-pages.js</code>）。
+  </div>
+
+  <h3>7.2 已有四区工作台实例（可参照）</h3>
+  <table>
+    <thead><tr><th style="width:26%">工作台</th><th>explorer / content / property</th></tr></thead>
+    <tbody>
+      <tr><td>报表设计/应用工作台</td><td>类别·列表 / 报表画布 / 属性（双工作台范式，MDM 设计台+应用台可参照）</td></tr>
+      <tr><td>流程设计工作台</td><td>定义列表 / bpmn 画布 / 节点属性（MDM 审批流设计复用）</td></tr>
+      <tr><td>任务中心 <code>portal.job.monitor</code></td><td>集群概览 / 活跃·历史 tab / 作业属性（MDM 分发/匹配作业监控复用）</td></tr>
+      <tr><td><b>字典数据维护</b> <code>portal.dct.data-editor</code></td><td>元数据驱动数据维护（MDM 起步直接改造）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="fe-dup">
+  <h2><span class="n">08</span>查重候选组件 <span class="pill new">新造①</span> <span class="en">duplicate candidates UI</span></h2>
+  <p>录入主数据时实时弹「疑似重复候选 + 匹配分」，让用户选"用已有/仍新建"。这是 MDM 防一物多码的前端关口，<b>cmx 完全没有</b>。</p>
+
+  <div class="callout new">
+    <div class="h">🔴 缺口证据：前端零查重 UI</div>
+    全前端 <code>grep 查重|疑似重复|相似度|匹配分|candidate|similarity</code> 无任何真实 UI 命中——命中全是误报（megasheet 字体 dedupe、FLC 规则打分 score、vite dedupe）。→ <b>查重候选列表全新造。</b>
+  </div>
+
+  <h3>8.1 要新造什么</h3>
+  <div class="grid2">
+    <div class="box new"><h4>组件 <code>cmx-dup-candidates</code></h4>
+      录入表单/grid 触发（失焦或提交前）→ 调后端 <code>/api/mdm/records/find-duplicates</code>（§18）→ 展示候选列表：每行<b>候选记录关键字段 + 匹配分 + 决策标签</b>（自动合并/建议评审/非重复）。用户操作：用此候选 / 忽略继续新建。
+    </div>
+    <div class="box have"><h4>可借力的现成件</h4>
+      <b>结果列表</b>可用 <code>cmx-revo-grid</code> 渲染候选（带匹配分列、操作列"选用"）；<b>弹层宿主</b>用 <code>cmx-floating-dialog</code>；<b>分数徽章</b>用 <code>cmx-status-tag</code>。<b>新造的只是"查重交互逻辑 + 候选卡片编排"</b>，底层展示组件都有。
+    </div>
+  </div>
+  <p class="en">工作量：中。核心是交互编排（何时触发、如何呈现分数、如何一键选用），底层表格/弹层/徽章复用。</p>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="fe-diff">
+  <h2><span class="n">09</span>字段级红线 diff 组件 <span class="pill new">新造②</span> <span class="en">old→new redline</span></h2>
+  <p>变更请求（Change Order）审批时，审批人要看<b>字段级 old→new 红线对比</b>——改了哪些字段、从什么改成什么。cmx 无此展示组件。</p>
+
+  <div class="callout new">
+    <div class="h">🔴 缺口证据：只有算 delta 的纯函数，无展示 UI</div>
+    唯一 diff 相关是 <code>src/lib/field-override.js:84 diffOverride(baseField,editedField)</code>——但它是「定义编辑器算覆盖增量」的<b>纯函数逻辑</b>，非字段级 old→new <b>红线展示 UI</b>。全前端无 change-request 变更对比展示组件。→ <b>红线 diff 组件新造。</b>
+  </div>
+
+  <h3>9.1 要新造什么</h3>
+  <div class="grid2">
+    <div class="box new"><h4>组件 <code>cmx-field-diff</code></h4>
+      输入 <code>md_cr_item.field_deltas</code>（<code>{field:{old,new}}</code>，MDM 方案 §14.3）→ 渲染字段级对比：变更字段高亮，old 删除线/红、new 绿；未变字段可折叠。支持视图分组（财务/采购视图分区展示）。审批台/评审台内嵌。
+    </div>
+    <div class="box have"><h4>可借力的现成件</h4>
+      <b>数据结构现成</b>：后端 <code>md_cr_item.field_deltas</code> 已是字段级 delta（方案已设计）；前端 <code>field-override.js diffOverride</code> 的算 delta 逻辑可参照。<b>键值展示</b>可用 <code>cmx-desc-list</code>。<b>新造的是红线视觉呈现</b>。
+    </div>
+  </div>
+  <p class="en">工作量：中偏小。数据契约已定（field_deltas），主要是红线视觉与视图分组呈现。</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="fe-inbox">
+  <h2><span class="n">10</span>流程待办 / 审批台 <span class="pill new">新造③</span> <span class="en">approval inbox</span></h2>
+  <p>MDM 变更请求走 cmx-flow 审批，审批人需要「我的待办 / 审批收件箱」。<b>引擎后端就绪，前端缺消费页</b>——这是"半个缺口"。</p>
+
+  <div class="callout new">
+    <div class="h">🔴 缺口证据：设计器有，运行时任务台无</div>
+    <b>有</b>：<code>portal.flow.design-workbench</code> bpmn 四区<b>设计器</b>（画流程/发布/版本）。<b>无</b>：业务流程「我的待办/审批收件箱/任务列表 + 审批操作」页。<code>grep 待办|审批中心|task-inbox|my-tasks</code> 命中全是 AI agent-console（AI 工具审批，非业务流）。cmx-flow 引擎 <b>M4 任务/抄送/转签后端已就绪</b>，缺前端消费。→ <b>审批台前端新造。</b>
+  </div>
+
+  <h3>10.1 要新造什么</h3>
+  <div class="grid2">
+    <div class="box new"><h4>工作台 <code>portal.mdm.approval</code>（或通用 flow 待办台）</h4>
+      explorer=待办分类(待我审/我发起/抄送我/已办)；content=任务列表(变更请求摘要+紧急度)；property=选中任务详情(内嵌 §09 红线 diff)+审批操作(通过/驳回/退回/转签，带意见)。调 cmx-flow 运行态端点。
+    </div>
+    <div class="box have"><h4>可借力的现成件</h4>
+      <b>后端全就绪</b>：cmx-flow-api 运行态端点（instances/tasks/cc/transfer）+ M4 候选人认领；<b>四区外壳</b>现成；<b>列表</b>用 revo-grid、<b>操作对话框</b>用 message-dialog+confirm、<b>红线</b>用 §09。<b>新造的是"任务台编排 + 审批操作接线"</b>——比从零造引擎轻得多。
+    </div>
+  </div>
+  <div class="callout note">
+    <div class="h">💡 通用价值：这个待办台不止 MDM 用</div>
+    审批待办台是 cmx-flow 的<b>通用运行时前端缺口</b>——报表审批、单据审批、任何走 cmx-flow 的业务都需要它。建议做成<b>通用 flow 待办台</b>而非 MDM 专用，MDM 只是第一个消费者。这样投入产出比最高。
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="fe-steward">
+  <h2><span class="n">11</span>数据管家评审工作台 <span class="pill half">组合已有+新造</span> <span class="en">steward workbench</span></h2>
+  <p>数据管家（Data Steward）评审匹配队列、处理合并/链接请求——这是 §08 查重候选与 §16 匹配引擎的人工兜底入口。它不是全新组件，而是<b>把已有四区外壳 + 新造件组合</b>。</p>
+
+  <h3>11.1 组合方式</h3>
+  <div class="dag">数据管家评审工作台 portal.mdm.steward（四区外壳复用）
+┌──────────────┬─────────────────────────────┬──────────────────┐
+│ explorer     │ content                     │ property         │
+│ 评审队列分类  │ 匹配组列表(疑似重复+分数)     │ 选中组详情       │
+│ ·待评审匹配组 │ ·每组成员记录并排           │ ·成员字段对比    │
+│ ·待处理合并请求│ ·合并预览(存活后黄金记录)    │ ·合并/链接/拆分  │
+│ ·已处理       │                             │ ·unmerge 还原    │
+└──────────────┴─────────────────────────────┴──────────────────┘
+   复用四区外壳      新造:匹配组并排+合并预览      复用:desc-list+操作按钮</div>
+
+  <table>
+    <thead><tr><th style="width:30%">构成</th><th style="width:14%">状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>四区外壳 + 队列列表</td><td><span class="pill have">复用</span></td><td>native-pages 四区 + revo-grid</td></tr>
+      <tr><td>匹配组成员并排 + 合并预览</td><td><span class="pill new">新造</span></td><td>展示同组多条记录、存活后黄金记录预览（与 §08 查重候选共用底层）</td></tr>
+      <tr><td>合并/链接/拆分(unmerge) 操作</td><td><span class="pill new">新造</span></td><td>调后端 <code>/api/mdm/merge-requests</code>；操作确认用 message-dialog</td></tr>
+      <tr><td>字段级存活来源展示</td><td><span class="pill half">复用+扩展</span></td><td>desc-list 展示每字段取值来源与理由</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout have">
+    <div class="h">✅ 前端缺口小结</div>
+    <b>白拿</b>：表格(冻结/操作列/内联编辑) · 树/树表 · 主从树 · lookup(combo-box/dict-select) · 消息对话框 · 源适配器 · 四区外壳 · data-editor 起步点。<b>真新造（3）</b>：查重候选 UI · 红线 diff · 流程待办/审批台（建议做成通用）。<b>组合件（1）</b>：数据管家评审台（外壳复用+新造匹配预览）。<b>补强（1）</b>：revo-grid 列头精筛。前端工程重心明显小于后端——三个专用组件底层展示件都能复用，主要是交互编排。
+  </div>
+</section>
+
+<!-- ============ PART III BAND ============ -->
+<div class="partband">
+  <div class="pt">Part III</div>
+  <div class="pnn">第三部分 · 表单与录入缺口</div>
+  <div class="pd">地基比预期厚——已有生产级元数据驱动表单渲染器，真缺口只是补强与两个专用态</div>
+</div>
+
+<!-- ============ 12 ============ -->
+<section id="fm-status">
+  <h2><span class="n">12</span>现状诊断 <span class="en">the entry paradigm — thicker than expected</span></h2>
+  <p class="lede">这是勘探最反直觉的一节：<b>cmx 已有一个生产级、元数据驱动的表单渲染器 <code>cmx-ui5-form</code>（1402 行，~39 处实测），且表单与表格共享同一套字段类型注册表。</b>「缺通用表单渲染器」的预判被推翻。</p>
+
+  <h3>12.1 cmx 今天的录入范式：双范式并存、共享元数据栈</h3>
+  <table>
+    <thead><tr><th style="width:22%">范式</th><th style="width:16%">载体</th><th>今天谁在用</th></tr></thead>
+    <tbody>
+      <tr><td><b>表格直编</b>（主范式）</td><td><code>cmx-revo-grid</code> editable + 行内单元格编辑器</td><td>DOC 业务单据（<code>doc-loader.js:147</code> N 层 grid）、DCT 字典数据（<code>data-editor.js:9</code>）</td></tr>
+      <tr><td><b>元数据驱动表单</b>（已成熟）</td><td><code>cmx-ui5-form</code> 从 CmxColumnModel 自动渲染</td><td>DCT/DOC 属性详情页、salesOrder、fico-ws-content 等 ~39 处</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout have">
+    <div class="h">✅ 已有地基（远超预期）</div>
+    <ul class="tight" style="margin-top:4px">
+      <li><b>表单渲染器</b> <code>cmx-ui5-form.js:379</code> <code>setColumnModel</code>→<code>CmxColumnAdapter.toCmxFormGrouped</code> 把列元数据转表单字段树，声明式 <code>data-cmx-model-id</code>。</li>
+      <li><b>字段级校验红框就地显示</b> <code>cmx-ui5-form.js:539 validate()</code>：读 required/requiredWhen/validate，失败字段 <code>value-state=Negative + value-state-message</code>（<code>:592</code>）——<b>这正是 MDM 要的"哪个字段红框+错误消息"</b>。</li>
+      <li><b>新建/编辑态 + 必填/只读/默认值</b> 全齐：<code>setEditable(:642)</code>、required→label 加 *、addRow 默认值（status/sort_no/parent_id，<code>data-editor.js:576</code>）。</li>
+      <li><b>共享字段类型注册表</b> <code>registerFieldType(name,{form,grid})</code>——表单+表格双端零代码扩展，同一 dict-select/date/number 编辑器两处复用。</li>
+      <li><b>输入控件全家桶</b>：cmx-text/number/date/datetime-input + dict-select + combo-box。</li>
+      <li><b>专业错误展示</b> <code>presentDocError/describeDocError</code>（<code>cmx-doc-error-presenter.js:87</code>）三类错误→专业对话框+帮助码。</li>
+      <li><b>主从表单</b> <code>CmxMasterSlave</code>（salesOrder = head 表单 + items grid + foot 表单同协调器）。</li>
+    </ul>
+  </div>
+
+  <h3>12.2 离 MDM 七个硬需求的真实距离</h3>
+  <table>
+    <thead><tr><th style="width:30%">MDM 硬需求</th><th style="width:12%">距离</th><th>差在哪</th></tr></thead>
+    <tbody>
+      <tr><td>1. 元数据驱动表单</td><td><span class="pill have">很近</span></td><td>渲染器已有；缺"实体meta→CmxColumnModel"直达路径（今天要页面 JS 手搓）</td></tr>
+      <tr><td>2. 字段级校验就地红框</td><td><span class="pill half">近/中</span></td><td>表单侧达标；grid 录入侧是弹窗逐行明细，"后端 violations→定位到具体单元格红框"未打通</td></tr>
+      <tr><td>3. 多视图分区表单（分部门审批）</td><td><span class="pill half">中</span></td><td>tab 分区有(<code>cmx-view-tabs</code>)；"每视图独立提交/分部门审批"要接 cmx-flow，缺编排</td></tr>
+      <tr><td>4. 新建/编辑态、必填只读默认值</td><td><span class="pill have">很近</span></td><td>齐</td></tr>
+      <tr><td>5. 维度字段字典 lookup</td><td><span class="pill have">达标</span></td><td><code>cmx-dict-select</code>（分级/分类/分组+MRU），表单/grid 双端</td></tr>
+      <tr><td>6. 变更请求 old→new 红线</td><td><span class="pill new">远</span></td><td>零基础（见 §09）</td></tr>
+      <tr><td>7. 主从表单（主+多子表）</td><td><span class="pill have">近</span></td><td><code>CmxMasterSlave</code> 成熟，salesOrder 已实测</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🎯 表单侧真缺口收敛为三条</div>
+    七个硬需求里 <b>四个很近/达标（1/4/5/7）</b>、<b>两个补强（2/3）</b>、<b>一个远（6，即红线，已归 §09）</b>。所以表单侧净新造极少，主要是<b>补强</b>：① 实体meta→表单一键装配（§13）；② 控件补缺 + grid 校验定位（§14）；③ 多视图分区+分部门审批编排（§15）。
+  </div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section id="fm-assemble">
+  <h2><span class="n">13</span>实体元数据→表单一键装配 <span class="pill half">补强</span> <span class="en">meta→form autowiring</span></h2>
+  <p>今天用 <code>cmx-ui5-form</code> 要页面 JS 手搓 CmxColumnModel。MDM 有大量实体、每实体几十字段，手搓不可持续——需要<b>从实体定义 JSON 自动生成 CmxColumnModel 再喂表单</b>的直达路径。</p>
+
+  <h3>13.1 要补什么</h3>
+  <div class="dag">现状：实体定义JSON ──(页面JS手搓)──→ CmxColumnModel ──→ cmx-ui5-form
+补强：实体定义JSON ──[新增装配器]──────────→ CmxColumnModel ──→ cmx-ui5-form
+              md_entity_type.fields[]        自动映射:              (现成)
+              (dataType/length/nullable/       type→字段类型
+               ref/viewGroup/required)         ref→dict-select
+                                              viewGroup→分区
+                                              nullable→required</div>
+
+  <table>
+    <thead><tr><th style="width:30%">构件</th><th style="width:12%">状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>meta→ColumnModel 装配器</td><td><span class="pill half">补强</span></td><td>参照 <code>init-page-models.js</code> 的 isRequiredCol 推断逻辑；把 DCT/DOC meta 的字段映射规则推广到 MDM，做成通用装配函数</td></tr>
+      <tr><td>cmx-ui5-form 渲染</td><td><span class="pill have">已有</span></td><td>零改</td></tr>
+      <tr><td>字段类型映射表</td><td><span class="pill have">已有</span></td><td>registerFieldType 注册表现成，只需补齐映射规则</td></tr>
+    </tbody>
+  </table>
+  <p class="en">这不是新造组件，是补一个"元数据→列模型"的通用装配层（DCT/DOC 已各有局部实现，抽通用即可）。工作量：小-中。</p>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="fm-widgets">
+  <h2><span class="n">14</span>控件补缺 + 校验就地定位 <span class="pill half">补强</span> <span class="en">two widgets + grid-side error anchoring</span></h2>
+
+  <h3>14.1 两个字段控件补缺</h3>
+  <div class="grid2">
+    <div class="box half"><h4>🟡 switch/toggle 开关</h4>
+      现状：布尔只有 <code>checkbox</code>（ui5-checkbox），<code>_createEditor</code> 无 switch 分支（<code>cmx-ui5-form.js:1134</code>）。MDM 若有"启用/停用""是否默认"等开关字段需补。<b>补法</b>：<code>registerFieldType('switch',...)</code> 注册一个，回退 ui5-switch 即可。工作量：小。
+    </div>
+    <div class="box half"><h4>🟡 multiselect 多选</h4>
+      现状：<code>cmx-field-schema.js:217</code> 枚举里列了 <code>multiselect</code>，但 <code>_createEditor</code> 无实现——<b>声明未落地</b>。MDM 若有"适用组织(多选)""标签(多值)"需补。<b>补法</b>：注册 multiselect 字段类型 + tokenizer 控件。工作量：小-中。
+    </div>
+  </div>
+
+  <h3>14.2 grid 录入侧校验定位到单元格</h3>
+  <div class="callout half">
+    <div class="h">🟡 打通"后端 violations → grid 具体单元格红框"</div>
+    现状：DOC/DCT grid 录入的校验错误走 <code>presentDocError</code> <b>弹窗逐行明细</b>（"第 1 行 XX 超长"，<code>cmx-doc-error-presenter.js:112</code>），<b>不是</b>"那个单元格红框就地提示"。表单侧 <code>cmx-ui5-form</code> 已有就地红框能力，但 grid 侧未打通。<br>
+    <b>要补</b>：把后端结构化 <code>violations[{row,table,column,code}]</code> 映射回 <code>cmx-revo-grid</code> 对应单元格并高亮（revo-grid 已有单元格样式能力）。MDM 大表录入体验的关键补强。工作量：中。
+  </div>
+
+  <h3>14.3 列头精筛（可选补强）</h3>
+  <p><code>cmx-revo-grid</code> 无内建列头筛选器，靠外置 <code>cmx-filter-bar</code>+<code>cmx-doc-query</code> 构造查询。MDM 大表（供应商/物料动辄上万）精筛可能要增强列头筛选。<code>cmx-tabulator</code> 有原生 headerFilter 可参照。工作量：中，<b>非阻塞，按需</b>。</p>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="fm-multiview">
+  <h2><span class="n">15</span>多视图分区 + 主从表单 <span class="pill half">编排补强</span> <span class="en">multi-view &amp; master-detail</span></h2>
+
+  <h3>15.1 多视图分区表单（财务/采购视图分部门审批）</h3>
+  <div class="callout half">
+    <div class="h">🟡 组件都在，缺"分区+分部门审批"一体化编排</div>
+    MDM 的供应商有财务视图（付款条件/税务）、采购视图（采购组织/评级），要分区展示且<b>可分部门并行审批</b>（SAP Field Groups 范式）。<br>
+    <b>已有</b>：<code>cmx-view-tabs</code> 分页签（acctws 资产/负债/权益分区已实测）；<code>cmx-ui5-form</code> 可绑不同 model 分区渲染。<br>
+    <b>要补</b>：把"视图分区"与 <code>md_cr_item.view_group</code>（后端已设计，方案 §14.3）+ cmx-flow 分部门审批<b>串成一体</b>——某视图字段改动只路由到对应部门审批。这是编排层，组件现成。工作量：中。
+  </div>
+
+  <h3>15.2 主从表单（主数据 + 多地址/多银行子表）</h3>
+  <div class="callout have">
+    <div class="h">✅ 基本达标：CmxMasterSlave 已支撑</div>
+    供应商主 + 多收发货地址 + 多银行账户，是"主表单 + 多个可增删子 grid"模式。<code>CmxMasterSlave</code>（N 层递归 + 聚合 + 级联）已成熟，<code>salesOrder.html</code> 的 head 表单 + items grid + foot 表单同协调器<b>已实测此模式</b>。MDM 直接复用，几乎零补强。
+  </div>
+
+  <div class="callout have">
+    <div class="h">✅ 表单/录入缺口小结</div>
+    <b>白拿</b>：元数据驱动表单渲染器 · 字段控件全家桶 · 字段级校验红框 · lookup · 新建/编辑态 · 主从表单 · 专业错误展示。<b>真新造（1）</b>：变更请求红线态（已并入 §09）。<b>补强（5）</b>：meta→表单一键装配 · switch/multiselect 两控件 · grid 校验定位单元格 · 列头精筛(可选) · 多视图分部门审批编排。表单侧几乎无从零新造——地基已厚，全是"补强+编排"。
+  </div>
+</section>
+
+<!-- ============ PART IV BAND ============ -->
+<div class="partband">
+  <div class="pt">Part IV</div>
+  <div class="pnn">第四部分 · 补充路线图</div>
+  <div class="pd">缺口优先级、与 MDM M0–M7 对齐、关键路径与风险</div>
+</div>
+
+<!-- ============ 16 ============ -->
+<section id="rm-matrix">
+  <h2><span class="n">16</span>缺口优先级矩阵 <span class="en">priority matrix</span></h2>
+  <p>把全部真新造 + 补强件按「对 MDM 的阻塞度 × 工作量」排优先级。阻塞度＝没有它 MDM 能不能跑最小闭环。</p>
+
+  <table>
+    <thead><tr><th style="width:26%">缺口件</th><th style="width:8%">条线</th><th style="width:10%">类型</th><th style="width:12%">阻塞度</th><th style="width:12%">工作量</th><th>优先级</th></tr></thead>
+    <tbody>
+      <tr><td><b>cmx-mdm 三段 crate + metaKind 分流</b></td><td><span class="badge b-be">后端</span></td><td><span class="pill have">复用</span></td><td>阻塞(地基)</td><td>小</td><td><b>P0</b> 必须最先</td></tr>
+      <tr><td><b>编码引擎</b></td><td><span class="badge b-be">后端</span></td><td><span class="pill new">新造①</span></td><td>阻塞(新建即需码)</td><td>中</td><td><b>P0</b></td></tr>
+      <tr><td><b>匹配合并存活引擎</b></td><td><span class="badge b-be">后端</span></td><td><span class="pill new">新造②</span></td><td>核心价值</td><td><b>大(最难)</b></td><td><b>P1</b> 分期(先精确)</td></tr>
+      <tr><td><b>治理流接 cmx-flow</b></td><td><span class="badge b-be">后端</span></td><td><span class="pill have">复用</span></td><td>阻塞(审批)</td><td>中(接线)</td><td><b>P1</b></td></tr>
+      <tr><td>meta→表单一键装配</td><td><span class="badge b-form">表单</span></td><td><span class="pill half">补强</span></td><td>阻塞(录入)</td><td>小-中</td><td><b>P1</b></td></tr>
+      <tr><td>流程待办/审批台(通用)</td><td><span class="badge b-fe">前端</span></td><td><span class="pill new">新造③</span></td><td>阻塞(审批消费)</td><td>中</td><td><b>P1</b></td></tr>
+      <tr><td>查重候选 UI</td><td><span class="badge b-fe">前端</span></td><td><span class="pill new">新造①</span></td><td>核心价值(防重)</td><td>中</td><td><b>P2</b></td></tr>
+      <tr><td>红线 diff 组件</td><td><span class="badge b-fe">前端</span></td><td><span class="pill new">新造②</span></td><td>变更审批体验</td><td>中-小</td><td><b>P2</b></td></tr>
+      <tr><td>交叉引用 + 分发事件</td><td><span class="badge b-be">后端</span></td><td><span class="pill new">新造③</span></td><td>消费侧(可后置)</td><td>中</td><td><b>P2</b></td></tr>
+      <tr><td>数据管家评审台</td><td><span class="badge b-fe">前端</span></td><td><span class="pill half">组合</span></td><td>匹配人工兜底</td><td>中</td><td><b>P2</b></td></tr>
+      <tr><td><b>cmx-agg 层次汇总</b></td><td><span class="badge b-be">后端</span></td><td><span class="pill new">前置</span></td><td>仅分级域需</td><td>中</td><td><b>P2/P3</b> 看域</td></tr>
+      <tr><td>switch/multiselect 控件</td><td><span class="badge b-form">表单</span></td><td><span class="pill half">补强</span></td><td>按字段需</td><td>小</td><td><b>P3</b></td></tr>
+      <tr><td>grid 校验定位单元格</td><td><span class="badge b-form">表单</span></td><td><span class="pill half">补强</span></td><td>体验优化</td><td>中</td><td><b>P3</b></td></tr>
+      <tr><td>多视图分部门审批编排</td><td><span class="badge b-form">表单</span></td><td><span class="pill half">补强</span></td><td>高级治理</td><td>中</td><td><b>P3</b></td></tr>
+      <tr><td>列头精筛</td><td><span class="badge b-fe">前端</span></td><td><span class="pill half">补强</span></td><td>大表体验</td><td>中</td><td><b>P3</b> 可选</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="h">💡 读矩阵的三个要点</div>
+    ① <b>P0/P1 里真新造只有"编码引擎 + 匹配(先精确) + 待办台"三件</b>，其余是复用/接线/补强——最小可用 MDM 的净新造工作量可控。② <b>匹配引擎是唯一的"大"</b>，且是核心价值，建议独立分期、先精确后模糊。③ <b>cmx-agg 优先级取决于一期是否含组织/成本中心域</b>——含则提前到 P2，不含可缓到 P3。
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="rm-align">
+  <h2><span class="n">17</span>与 MDM M0–M7 的对齐 <span class="en">align with the MDM roadmap</span></h2>
+  <p>上份 MDM 方案给了 M0–M7 路线图。这里标出每期<b>需要哪些缺口件先就绪</b>，把"补什么"钉到"何时补"。</p>
+
+  <table class="mile">
+    <thead><tr><th style="width:8%">MDM 期</th><th style="width:28%">该期交付（MDM 方案）</th><th>依赖的缺口件（本方案）</th></tr></thead>
+    <tbody>
+      <tr><td>M0</td><td>metaKind:MDM 定义层 + 样例域定义</td><td><span class="pill have">复用</span> metaKind 分流(§01.3，机械)</td></tr>
+      <tr><td>M1</td><td>数据底座三段 crate + compile + 装载 + 列级校验</td><td><span class="pill have">复用</span> 三段范式/ZmcDataSet/校验/compile(§01/§06) + <span class="pill half">补强</span> meta→表单装配(§13)</td></tr>
+      <tr><td>M2</td><td><b>编码引擎</b></td><td><span class="pill new">新造①</span> 编码引擎(§02)</td></tr>
+      <tr><td>M3</td><td>治理流接 cmx-flow + 决策表路由</td><td><span class="pill have">复用</span> cmx-flow(§06) + <span class="pill new">新造③</span> 待办/审批台(§10) + <span class="pill new">新造②</span> 红线 diff(§09)</td></tr>
+      <tr><td>M4</td><td><b>匹配合并存活</b> + 交叉引用</td><td><span class="pill new">新造②</span> 匹配引擎(§03) + <span class="pill new">新造③</span> 交叉引用(§04)</td></tr>
+      <tr><td>M5</td><td>数据管家工作台（匹配评审）</td><td><span class="pill new">新造①</span> 查重候选 UI(§08) + <span class="pill half">组合</span> 评审台(§11)</td></tr>
+      <tr><td>M6</td><td>分发订阅 + 事件 + 接任务中心</td><td><span class="pill half">补齐</span> 事件持久化 outbox(§04) + <span class="pill have">复用</span> cmx-job(§06)</td></tr>
+      <tr><td>M7</td><td>多域扩展 + 层次汇总 + RDM</td><td><span class="pill new">前置</span> cmx-agg(§05) + <span class="pill half">补强</span> switch/multiselect(§14)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🎯 对齐结论：缺口件恰好铺满 M0–M7，无遗漏无错配</div>
+    每期依赖的缺口件都已在本方案定位并给出复用/新造/补强判定。<b>M2 编码、M3 待办台+红线、M4 匹配+交叉引用</b>是三个新造密集期；M0/M1/M6 以复用为主；M7 才需要 cmx-agg（若一期不含分级域可更晚）。<b>照此推进，"照 MDM 方案开发"的每一步都有明确的能力就绪前置。</b>
+  </div>
+</section>
+
+<!-- ============ 18 ============ -->
+<section id="rm-risk">
+  <h2><span class="n">18</span>风险与关键路径 <span class="en">risks &amp; critical path</span></h2>
+
+  <h3>18.1 关键路径</h3>
+  <div class="dag">P0 ──────────→ P1 ──────────────────→ P2 ─────────→ P3
+cmx-mdm三段    编码引擎 + cmx-flow接线    匹配(模糊/AI)   控件补强
++metaKind分流  + meta→表单 + 待办台       + 查重UI+评审台  + 多视图审批
++ 匹配(精确)   ← 最小可用 MDM 闭环在此     + 交叉引用分发   + cmx-agg(若需)
+─────────────────────────────────────────────────────────────
+关键路径瓶颈：匹配合并存活引擎（唯一的"大"，建议独立小组、先精确后模糊）</div>
+
+  <h3>18.2 五个风险点</h3>
+  <ul class="tight">
+    <li><b>cmx-agg 被误当"已有"（最需纠正）</b>：上份方案 §20 把层间汇总列为"复用 cmx-agg"，实则零代码。<b>务必在排期时把它算作新造/前置</b>，否则低估工作量。若一期含组织/成本中心域，它是隐藏关键路径。</li>
+    <li><b>匹配合并存活是唯一的"大"且最难</b>：存活规则企业级规模极难。<b>缓解</b>：M4 严格先做精确匹配+单一存活闭环，模糊/AI/字段级存活后置；分块护栏（NULL 巨簇、簇大小上限 500）第一版必须有，否则性能雪崩。</li>
+    <li><b>待办/审批台是"半个缺口"但阻塞审批闭环</b>：cmx-flow 引擎 M4 后端已就绪，纯缺前端消费页。<b>缓解</b>：做成<b>通用 flow 待办台</b>（报表/单据/MDM 共用），一次投入多处收益，别做成 MDM 专用。</li>
+    <li><b>grid 录入校验定位是体验债不是功能债</b>：不打通也能用（弹窗逐行明细可用），但大表录入体验差。<b>缓解</b>：可放 P3，不阻塞最小闭环。</li>
+    <li><b>组件三产物同步坑（megasheet 内核）</b>：若 MDM 用到电子表格式录入，改内核要同步 demo IIFE / vendor ESM / portal dist 三产物（<code>cmx-模块独立化方案.html:591</code>）。但 MDM 主范式是 revo-grid + ui5-form，<b>大概率不碰 megasheet</b>，风险低。</li>
+  </ul>
+
+  <div class="callout gold">
+    <div class="h">🏅 一页纸总结</div>
+    照《企业主数据管理平台方案》在 cmx 上开发，<b>地基约 70% 可复用</b>——三段式范式、cmx-flow 治理流、cmx-job 任务中心、ZmcDataSet、列级校验、CmxErrCode、bigint 铸号、compile/deploy 管线、<b>元数据驱动表单渲染器、字段控件全家桶、lookup、主从树、四区外壳</b>全部就绪。<b>真新造只有六件</b>：后端(编码引擎 · 匹配合并存活 · 交叉引用+分发) + 前端(查重候选 UI · 红线 diff · 通用待办审批台)。<b>一个关键更正</b>：cmx-agg 层次汇总至今零代码，必须从"复用"移入"前置新造"。<b>关键路径瓶颈</b>是匹配合并存活引擎（唯一的"大"，先精确后模糊分期）。其余皆为复用、接线或补强——<b>"照方案开发"在 cmx 上是低-中风险、路径清晰的工程。</b>
+  </div>
+</section>
+
+<div class="foot">
+  MDM 落地 · cmx 平台能力缺口分析与补充方案 · 承接《企业主数据管理平台(MDM)设计方案》· 基于三路并行只读代码勘探 · 只出方案不动代码 · Apache-2.0 · 2026
+</div>
+
+</div>
+</body>
+</html>

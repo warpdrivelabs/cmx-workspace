@@ -1,0 +1,103 @@
+<svg viewBox="0 0 820 560" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ag3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+  <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <filter id="s3" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="560" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">目标总体架构：开发态（左）→ 编译发布（中）→ 运行态（右）一体闭环</text>
+
+<!-- 开发态 -->
+<g filter="url(#s3)"><rect x="30" y="56" width="228" height="470" rx="12" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="144" y="80" font-size="13" font-weight="700" fill="#92400e" text-anchor="middle">① 开发态（浏览器）</text>
+<rect x="46" y="94" width="196" height="66" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+<text x="144" y="118" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">code-server + CMX 扩展</text>
+<text x="144" y="137" font-size="10" fill="#b45309" text-anchor="middle">rust-analyzer · CodeLLDB</text>
+<text x="144" y="151" font-size="10" fill="#b45309" text-anchor="middle">脚手架/发布/调试命令</text>
+<rect x="46" y="170" width="196" height="60" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+<text x="144" y="192" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">插件工程（Rust）</text>
+<text x="144" y="210" font-size="10" fill="#b45309" text-anchor="middle">handlers/ 纯逻辑（可单测）</text>
+<text x="144" y="223" font-size="10" fill="#b45309" text-anchor="middle">extism/ 适配 + #[plugin_fn]</text>
+<rect x="46" y="240" width="196" height="56" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+<text x="144" y="262" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">元数据/编排/种子</text>
+<text x="144" y="280" font-size="10" fill="#b45309" text-anchor="middle">metadata / servicedata / seed</text>
+<rect x="46" y="306" width="196" height="60" rx="9" fill="#eff6ff" stroke="#60a5fa"/>
+<text x="144" y="328" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">★ 新：Dev Sandbox 隔离</text>
+<text x="144" y="346" font-size="10" fill="#1d4ed8" text-anchor="middle">按开发者/租户工作区</text>
+<text x="144" y="359" font-size="10" fill="#1d4ed8" text-anchor="middle">PTY 终端流 + LSP 直连</text>
+<rect x="46" y="376" width="196" height="60" rx="9" fill="#eff6ff" stroke="#60a5fa"/>
+<text x="144" y="398" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">★ 新：调试编排</text>
+<text x="144" y="416" font-size="10" fill="#1d4ed8" text-anchor="middle">cmx-debug 会话 + DWARF</text>
+<text x="144" y="429" font-size="10" fill="#1d4ed8" text-anchor="middle">断点/单步/变量透传</text>
+<rect x="46" y="446" width="196" height="66" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+<text x="144" y="468" font-size="11.5" font-weight="700" fill="#92400e" text-anchor="middle">AI 开发助手（.agents）</text>
+<text x="144" y="486" font-size="10" fill="#b45309" text-anchor="middle">wasm-plugin-developer skill</text>
+<text x="144" y="500" font-size="10" fill="#b45309" text-anchor="middle">编排/元数据/文档 生成</text>
+
+<!-- 编译发布 -->
+<g filter="url(#s3)"><rect x="296" y="56" width="228" height="470" rx="12" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="410" y="80" font-size="13" font-weight="700" fill="#5b21b6" text-anchor="middle">② 编译 · 签名 · 注册</text>
+<rect x="312" y="94" width="196" height="72" rx="9" fill="#eff6ff" stroke="#60a5fa"/>
+<text x="410" y="116" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">★ 新：Build Service</text>
+<text x="410" y="134" font-size="10" fill="#1d4ed8" text-anchor="middle">cargo build --target</text>
+<text x="410" y="147" font-size="10" fill="#1d4ed8" text-anchor="middle">wasm32-wasip1 --release</text>
+<text x="410" y="160" font-size="10" fill="#1d4ed8" text-anchor="middle">隔离沙箱 · 缓存 · 流式日志</text>
+<rect x="312" y="176" width="196" height="52" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="410" y="197" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">cmx-cli doc scan</text>
+<text x="410" y="215" font-size="10" fill="#6d28d9" text-anchor="middle">#[plugin_fn] → API 文档</text>
+<rect x="312" y="238" width="196" height="52" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="410" y="259" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">Ed25519 签名</text>
+<text x="410" y="277" font-size="10" fill="#6d28d9" text-anchor="middle">wasm + manifest → 签名 ZIP</text>
+<rect x="312" y="300" width="196" height="52" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="410" y="321" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">POST /api/plugin/deploy</text>
+<text x="410" y="339" font-size="10" fill="#6d28d9" text-anchor="middle">校验签名 → 落 DB 注册表</text>
+<rect x="312" y="362" width="196" height="52" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="410" y="383" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">生命周期事件</text>
+<text x="410" y="401" font-size="10" fill="#6d28d9" text-anchor="middle">REINSTALLED → 集群广播</text>
+<rect x="312" y="424" width="196" height="52" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="410" y="445" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">池失效（热替换）</text>
+<text x="410" y="463" font-size="10" fill="#6d28d9" text-anchor="middle">unload_module → 下次重实例化</text>
+<text x="410" y="500" font-size="10" fill="#7c3aed" text-anchor="middle">无需重启平台进程</text>
+
+<!-- 运行态 -->
+<g filter="url(#s3)"><rect x="562" y="56" width="228" height="470" rx="12" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="676" y="80" font-size="13" font-weight="700" fill="#155e75" text-anchor="middle">③ 运行态（宿主）</text>
+<rect x="578" y="94" width="196" height="72" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+<text x="676" y="116" font-size="11.5" font-weight="700" fill="#155e75" text-anchor="middle">cmx-runtime · Extism</text>
+<text x="676" y="134" font-size="10" fill="#0e7490" text-anchor="middle">实例池 · fuel/内存/超时</text>
+<text x="676" y="148" font-size="10" fill="#0e7490" text-anchor="middle">深度+环检测护栏</text>
+<text x="676" y="161" font-size="10" fill="#0e7490" text-anchor="middle">spawn_blocking 执行</text>
+<rect x="578" y="176" width="196" height="86" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+<text x="676" y="198" font-size="11.5" font-weight="700" fill="#155e75" text-anchor="middle">host 能力（依赖反转）</text>
+<text x="676" y="216" font-size="10" fill="#0e7490" text-anchor="middle">log · db(事务) · cache</text>
+<text x="676" y="230" font-size="10" fill="#0e7490" text-anchor="middle">iam · plugin/service-call</text>
+<text x="676" y="246" font-size="10" fill="#1d4ed8" text-anchor="middle">★ 新增 http 出站（带白名单）</text>
+<rect x="578" y="272" width="196" height="86" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+<text x="676" y="294" font-size="11.5" font-weight="700" fill="#155e75" text-anchor="middle">触发面（多入口）</text>
+<text x="676" y="312" font-size="10" fill="#0e7490" text-anchor="middle">HTTP /api/service/call</text>
+<text x="676" y="326" font-size="10" fill="#0e7490" text-anchor="middle">编排 DAG func/switch 节点</text>
+<text x="676" y="340" font-size="10" fill="#1d4ed8" text-anchor="middle">★ 事件订阅 · ★ 定时 job</text>
+<text x="676" y="353" font-size="10" fill="#0e7490" text-anchor="middle">plugin→plugin / RPC</text>
+<rect x="578" y="368" width="196" height="66" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+<text x="676" y="390" font-size="11.5" font-weight="700" fill="#155e75" text-anchor="middle">CMX 业务平台</text>
+<text x="676" y="408" font-size="10" fill="#0e7490" text-anchor="middle">流程/规则/报表/数据权限</text>
+<text x="676" y="422" font-size="10" fill="#0e7490" text-anchor="middle">经 host 能力回调</text>
+<g filter="url(#s3)"><rect x="578" y="444" width="196" height="66" rx="9" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="676" y="466" font-size="11.5" font-weight="700" fill="#065f46" text-anchor="middle">数据 / IAM / 缓存</text>
+<text x="676" y="484" font-size="10" fill="#047857" text-anchor="middle">PostgreSQL · Redis</text>
+<text x="676" y="498" font-size="10" fill="#047857" text-anchor="middle">租户隔离</text>
+
+<!-- 阶段箭头 -->
+<line x1="258" y1="150" x2="296" y2="150" stroke="#64748b" stroke-width="1.8" marker-end="url(#a3)"/>
+<line x1="524" y1="150" x2="562" y2="150" stroke="#64748b" stroke-width="1.8" marker-end="url(#a3)"/>
+<text x="277" y="142" font-size="9.5" fill="#64748b" text-anchor="middle">发布</text>
+<text x="543" y="142" font-size="9.5" fill="#64748b" text-anchor="middle">加载</text>
+<!-- 调试回环 -->
+<line x1="562" y1="200" x2="258" y2="406" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#ar3)"/>
+<text x="410" y="300" font-size="9.5" fill="#b91c1c" font-style="italic" transform="rotate(-24,410,300)">调试回环：attach DWARF · 断点透传</text>
+</svg>

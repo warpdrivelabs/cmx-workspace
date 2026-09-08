@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>简要说明 4/4 · 如何结合主数据</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--fg:#1c2530;--muted:#5a6b7b;--border:#d9dee5;
+  --accent:#0a6ed1;--accent2:#7c5cf0;--accent-soft:#e9f2fc;--ok:#178a5a;--warn:#b25f00;--err:#c9364a;
+  --code-bg:#0f1729;--code-fg:#d8e4f5;--chip:#edf3fa;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0c111d;--card:#151c2c;--fg:#dfe6f0;--muted:#8fa0b4;--border:#28324a;
+  --accent:#4d9eff;--accent2:#a58bff;--accent-soft:#15243c;--ok:#3ecf8e;--warn:#f0a35e;--err:#ff7a8a;
+  --code-bg:#0a0f1c;--code-fg:#d8e4f5;--chip:#1b2740}
+}
+body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.75;font-size:15px}
+.wrap{max-width:1000px;margin:0 auto;padding:0 26px 70px}
+.hero{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border-radius:0 0 18px 18px;padding:38px 26px 34px}
+.hero .kicker{font-size:12.5px;letter-spacing:2px;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:27px;font-weight:700;letter-spacing:.5px}
+.hero p{margin-top:10px;font-size:14.5px;opacity:.92;max-width:760px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:2px 12px;font-size:12px;margin-right:8px;vertical-align:2px}
+h2{border-left:4px solid var(--accent);padding-left:12px;margin:40px 0 14px;font-size:20px}
+h3{margin:22px 0 8px;font-size:16px}
+p{margin:8px 0}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;font-size:13.5px}
+th{background:var(--chip);text-align:left;padding:9px 12px;font-size:13px}
+td{padding:7px 12px;border-top:1px solid var(--border);vertical-align:top}
+td code,p code,li code{background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:Consolas,Menlo,monospace;font-size:12.8px;color:var(--accent)}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow:auto;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;margin:12px 0}
+pre .c{color:#7d8db0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:14px 0}
+.fbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:13px;text-align:center}
+.fbox b{color:var(--accent)}
+.fa{display:flex;align-items:center;color:var(--accent);font-weight:700;font-size:13px}
+.tip,.warn{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13.8px;border:1px solid}
+.tip{background:var(--accent-soft);border-color:var(--accent)}
+.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:var(--warn)}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a{color:var(--accent);text-decoration:none;margin-right:16px}
+footer a:hover{text-decoration:underline}
+ul{padding-left:22px}li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="kicker">CMX 本体平台（cmx-ontology :8097）× CMX 主数据平台（cmx-mdm :8095）</div>
+  <h1><span class="badge">简要说明 4/4</span>如何结合主数据</h1>
+  <p>分工一句话：MDM 负责<b>治理与发放</b>（申请→审批→落字典），本体负责<b>关联与消费</b>（把主数据变成可被业务对象引用、可被图谱钻取的参照对象）。四条通路已内置。</p>
+</div>
+<div class="wrap">
+
+<h2>一、定位与总体流向</h2>
+<div class="flow">
+  <div class="fbox"><b>MDM 变更申请</b><br><span class="muted">录单 → 审批</span></div><div class="fa">→</div>
+  <div class="fbox"><b>MDM 字典/主数据表</b><br><span class="muted">业务库落库</span></div><div class="fa">→① DCT 导入<br>② Funnel 同步→</div>
+  <div class="fbox"><b>本体参照对象</b><br><span class="muted">Reference Object</span></div><div class="fa">←③ 引用←</div>
+  <div class="fbox"><b>业务对象 + 关系</b><br><span class="muted">订单↔客户↔物料</span></div><div class="fa">→④ 动作→</div>
+  <div class="fbox"><b>审批流/报表</b><br><span class="muted">flowengine/report</span></div>
+</div>
+<p class="muted">主数据在本体侧建议以「参照对象类型」存在（code 主键 + name 标题，status=active），业务对象经 LinkType 引用它，不复制治理职责。</p>
+
+<h2>二、通路 ①：DCT 字典一键导入（一次性接入）</h2>
+<p>把一个 MDM 字典变成本体参照对象类型，字典项直接物化为对象：</p>
+<pre>curl -s -X POST http://127.0.0.1:8097/api/onto/v1/import/dct \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{ "apiName":"Currency","displayName":"币种",
+        "items":[ {"code":"USD","name":"美元"},
+                  {"code":"CNY","name":"人民币"},
+                  {"code":"EUR","name":"欧元"} ] }'
+<span class="c"># 返回 {"objectType":"Currency","seededItems":3}
+# 自动得到：主键=code、标题=name 的参照类型；字典项即对象，可直接进对象集查询/过滤</span></pre>
+<div class="tip">适合币种/凭证类型/行业分类等<b>低频变化</b>的字典。字典变了需要重新导入（幂等 upsert）。</div>
+
+<h2>三、通路 ②：Funnel 持续同步（推荐主通道）</h2>
+<p>面向<b>业务库里的主数据表/字典表</b>：配一条源映射，之后随时触发全量同步——读源 → 映射校验 → 合格 upsert 成对象，违规行进隔离区。</p>
+<h3>第一步：建目标对象类型 + 源映射</h3>
+<pre><span class="c"># 目标类型（主数据参照对象）</span>
+curl -s -X POST .../api/onto/v1/object-types \
+  -d '{"apiName":"MdmCustomer","displayName":"主数据客户","primaryKey":"id",
+       "titleProperty":"name","status":"active",
+       "properties":[{"apiName":"id","baseType":"string"},
+                     {"apiName":"name","baseType":"string"},
+                     {"apiName":"region","baseType":"string"}]}'
+
+<span class="c"># 源映射：指向业务库里的主数据源表</span>
+curl -s -X POST .../api/onto/v1/funnel/mappings \
+  -H "Content-Type: application/json" -H "X-API-Key: ..." \
+  -d '{ "objectType":"MdmCustomer",
+        "sourceQuery":"SELECT cust_id, cust_name, region_code FROM md_customer",
+        "keyColumns":["cust_id"],
+        "titleColumn":"cust_name",
+        "propertyMap":[ {"source":"cust_id","property":"id"},
+                        {"source":"cust_name","property":"name"},
+                        {"source":"region_code","property":"region"} ],
+        "required":["name"] }'</pre>
+<h3>第二步：触发同步 + 查看结果</h3>
+<pre>curl -s -X POST .../api/onto/v1/funnel/sync/MdmCustomer -d '{}'
+<span class="c"># → {"read":4,"written":3,"quarantined":1,"mode":"full"}</span>
+
+curl -s ".../api/onto/v1/funnel/quarantine?objectType=MdmCustomer"   <span class="c"># 违规行+原因</span>
+curl -s ".../api/onto/v1/funnel/pipeline-status/MdmCustomer"          <span class="c"># 抽取/映射/索引三段状态</span></pre>
+<div class="tip">同步是<b>幂等 upsert</b>：源表改一行再同步即覆盖，天然适合"MDM 审批落库后刷新本体"的节奏。多列主键用 <code>keyColumns</code> 多列（以 | 拼接）。</div>
+
+<h2>四、通路 ③：业务单据关联（DOC 导入 + docType）</h2>
+<ul>
+  <li>对象类型可挂 <code>docType</code>（业务单据类型引用），标明"本对象对应哪种 MDM 单据"。</li>
+  <li><code>POST /import/doc</code> 把主从实体图（头/行）批量导入为对象类型 + 组合关系——已有业务模型不用手工重画。</li>
+</ul>
+
+<h2>五、通路 ④：动作 ↔ 治理审批流</h2>
+<ul>
+  <li>本体动作的副作用支持 <code>startBusinessProcess</code>（对接 cmx-flowengine）——在对象工作台对主数据对象执行动作即可<b>发起/参与 MDM 变更审批</b>。</li>
+  <li>内置模板 <code>objectApprove</code>（对象审批）、<code>consolClose</code>（一个动作同时起审批流 + 算报表）可从设计工作台「从模板创建」直接拿来改。</li>
+  <li>执行留痕：<code>/action-logs</code> 审计，副作用经发件箱可靠投递（失败可查 <code>/action-outbox</code>）。</li>
+</ul>
+
+<h2>六、推荐落地配方（六步）</h2>
+<div class="card">
+  <b>1.</b> MDM 治理保持不变（申请→审批→落字典/主数据表）<br>
+  <b>2.</b> 低频字典用 <b>DCT 导入</b>一次接入；<br>
+  <b>3.</b> 高频主数据用 <b>Funnel 源映射</b>接入（指向业务库表）；<br>
+  <b>4.</b> 建业务对象类型，用 <b>LinkType 引用</b>主数据参照对象（如 订单→客户、凭证→科目）；<br>
+  <b>5.</b> 外部定时（操作系统 cron / 门户定时任务）在审批高峰后调 <b>sync 端点</b>刷新本体（当前同步为同步执行的全量模式，无内置调度）；<br>
+  <b>6.</b> 对需要治理的操作定义<b>动作</b>：FEEL 校验 + 乐观锁写回 + 起审批流。
+</div>
+
+<h2>七、现状边界（如实告知）</h2>
+<div class="warn">
+  <ul>
+    <li>Funnel 同步为 <b>M1 全量同步</b>（同步执行、长任务雏形，增量/异步调度在路线图上）；大表建议错峰调用。</li>
+    <li>无自动调度：需要外部定时器触发 <code>/funnel/sync/{type}</code>。</li>
+    <li>DCT 导入是快照式：字典更新后需重新调用。</li>
+    <li><code>sourceQuery</code> 会真实执行调用方配置的 SQL——<b>仅限可信管理员配置</b>，建议只配 SELECT。</li>
+    <li>本体 → MDM 的回写通路暂未内置（单向：MDM → 本体）。</li>
+  </ul>
+</div>
+
+<footer>
+  <b>相关文档：</b>
+  <a href="20260907_本体平台_简要说明_本体如何设计.html">简要 1/4 · 本体如何设计</a>
+  <a href="20260907_本体平台_简要说明_如何使用.html">简要 2/4 · 如何使用</a>
+  <a href="20260907_本体平台_简要说明_如何增加对象.html">简要 3/4 · 如何增加对象</a>
+  <a href="20260907_本体平台_详细说明.html">完整详细说明</a>
+  <p style="margin-top:8px">CMX 企业门户 · 本体平台说明文档 · 2026-09-07 · 示例取自 e2e（p1_doc_dct_import.sh / o3_funnel.sh）真实通过用例</p>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:flowable="http://flowable.org/bpmn"
+                  xmlns:cmx="http://cmx.io/bpmn"
+                  targetNamespace="http://cmx.io/flow/created"
+                  id="defs_escalation_flow">
+  <bpmn:process id="escalation_flow" name="限时升级审批" isExecutable="true">
+    <bpmn:startEvent id="s" name="发起"/>
+    <bpmn:userTask id="apply" name="发起申请" cmx:candidates="initiator"/>
+    <bpmn:businessRuleTask id="grade" name="决策表定级" flowable:decisionRef="approval_matrix"/>
+    <bpmn:userTask id="mgr" name="经理审批" cmx:candidates="role(manager)"/>
+    <bpmn:serviceTask id="remind" name="发催办通知" flowable:delegateExpression="${notifyDelegate}"/>
+    <bpmn:userTask id="boss" name="上级升级审批" cmx:candidates="initiatorLeader"/>
+    <bpmn:intermediateCatchEvent id="wait_ext" name="等外部系统回执" cmx:correlationVar="orderId">
+      <bpmn:messageEventDefinition messageRef="verdictReceived"/>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="done" name="完成"/>
+    <bpmn:boundaryEvent id="mgr_timer1" attachedToRef="mgr" cancelActivity="false">
+      <bpmn:timerEventDefinition><bpmn:timeDuration>PT20S</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="mgr_timer2" attachedToRef="mgr">
+      <bpmn:timerEventDefinition><bpmn:timeDuration>PT30S</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="apply"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="apply" targetRef="grade"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="grade" targetRef="mgr"/>
+    <bpmn:sequenceFlow id="f4" sourceRef="mgr" targetRef="wait_ext"/>
+    <bpmn:sequenceFlow id="f5" sourceRef="boss" targetRef="wait_ext"/>
+    <bpmn:sequenceFlow id="f6" sourceRef="wait_ext" targetRef="done"/>
+    <bpmn:sequenceFlow id="f7" sourceRef="remind" targetRef="done"/>
+    <bpmn:sequenceFlow id="mgr_timer1_out" sourceRef="mgr_timer1" targetRef="remind"/>
+    <bpmn:sequenceFlow id="mgr_timer2_out" sourceRef="mgr_timer2" targetRef="boss"/>
+  </bpmn:process>
+</bpmn:definitions>

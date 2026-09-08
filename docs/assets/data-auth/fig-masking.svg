@@ -1,0 +1,51 @@
+<svg viewBox="0 0 820 330" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <filter id="s10" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="330" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">列脱敏（Column Masking）· 与行过滤正交，在投影层单独执行</text>
+
+<!-- 三种脱敏类型 -->
+<g filter="url(#s10)">
+<rect x="30" y="56" width="226" height="196" rx="11" fill="#fdf2f8" stroke="#db2777"/>
+<rect x="296" y="56" width="226" height="196" rx="11" fill="#fdf2f8" stroke="#db2777"/>
+<rect x="562" y="56" width="226" height="196" rx="11" fill="#fdf2f8" stroke="#db2777"/>
+</g>
+<text x="143" y="82" font-size="13" font-weight="700" fill="#9d174d" text-anchor="middle">FULL</text>
+<text x="143" y="102" font-size="11.5" fill="#9d174d" text-anchor="middle">完整遮蔽</text>
+<rect x="46" y="112" width="194" height="30" rx="6" fill="#ffffff" stroke="#f9a8d4"/>
+<text x="143" y="131" font-size="11.5" fill="#831843" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">身份证: ********</text>
+<text x="46" y="164" font-size="11" fill="#9d174d">触发条件：role &lt; 指定等级</text>
+<text x="46" y="184" font-size="11" fill="#9d174d">适用：身份证号/银行卡</text>
+<text x="46" y="204" font-size="11" fill="#9d174d">税号/合同金额（敏感）</text>
+<text x="46" y="228" font-size="11" fill="#9d174d" font-weight="700">da_mask_rule.mask_type:</text>
+<text x="46" y="246" font-size="11" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">"FULL"</text>
+
+<text x="409" y="82" font-size="13" font-weight="700" fill="#9d174d" text-anchor="middle">PARTIAL</text>
+<text x="409" y="102" font-size="11.5" fill="#9d174d" text-anchor="middle">部分脱敏（模式）</text>
+<rect x="312" y="112" width="194" height="30" rx="6" fill="#ffffff" stroke="#f9a8d4"/>
+<text x="409" y="131" font-size="11.5" fill="#831843" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">手机: 138****5678</text>
+<text x="312" y="164" font-size="11" fill="#9d174d">pattern: "{3}****{4}"</text>
+<text x="312" y="184" font-size="11" fill="#9d174d">适用：手机号/姓名（留</text>
+<text x="312" y="204" font-size="11" fill="#9d174d">首尾字符）</text>
+<text x="312" y="228" font-size="11" fill="#9d174d" font-weight="700">condition_expr (FEEL):</text>
+<text x="312" y="246" font-size="11" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">user.grade &lt; 5</text>
+
+<text x="675" y="82" font-size="13" font-weight="700" fill="#9d174d" text-anchor="middle">HASH / 令牌化</text>
+<text x="675" y="102" font-size="11.5" fill="#9d174d" text-anchor="middle">不可逆哈希 / 令牌</text>
+<rect x="578" y="112" width="194" height="30" rx="6" fill="#ffffff" stroke="#f9a8d4"/>
+<text x="675" y="131" font-size="11.5" fill="#831843" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">工资: ██████ (token)</text>
+<text x="578" y="164" font-size="11" fill="#9d174d">hmac-sha256(value, key)</text>
+<text x="578" y="184" font-size="11" fill="#9d174d">支持分析统计但不可</text>
+<text x="578" y="204" font-size="11" fill="#9d174d">逆向获得原值</text>
+<text x="578" y="228" font-size="11" fill="#9d174d" font-weight="700">mask_type:</text>
+<text x="578" y="246" font-size="11" fill="#9d174d" font-family="ui-monospace,Menlo,Consolas,monospace">"HASH"</text>
+
+<text x="40" y="282" font-size="11" fill="#64748b">义务（obligation）：Decision 返回 masks=[("id_card","FULL"),("salary","HASH")] 列表。Obligation 执行器在 API 响应序列化时逐字段替换，不影响数据库存储原值。</text>
+<text x="40" y="302" font-size="11" fill="#64748b">condition_expr 为 FEEL 表达式，可用主体属性（user.grade/user.role）做动态判断，相同字段对不同身份呈现不同敏感度。</text>
+</svg>

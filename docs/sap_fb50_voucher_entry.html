@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAP 会计凭证输入界面（FB50 录入总账凭证）— 仿真示意</title>
+<style>
+  :root{
+    --sapgray:#f0f0f0; --sapblue:#0a6ed1; --sapline:#c6c6c6; --sapfield:#fff;
+    --sapfieldb:#8c8c8c; --saphead:#e8edf2; --saplabel:#333; --reqbg:#fffdf0;
+    --reqborder:#e0b400; --green:#107e3e; --red:#bb0000;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#cdd3da;font-family:"Segoe UI","Microsoft YaHei",Tahoma,sans-serif;font-size:12px;color:#1d2d3e;padding:18px}
+  .win{max-width:1080px;margin:0 auto;border:1px solid #5a6b7d;border-radius:4px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.25);background:var(--sapgray)}
+  /* 标题栏 */
+  .titlebar{background:linear-gradient(#5a7a9c,#3f5b78);color:#fff;display:flex;align-items:center;gap:8px;padding:5px 10px;font-weight:600;font-size:12.5px}
+  .titlebar .logo{background:#fff;color:#0a6ed1;font-weight:800;border-radius:3px;padding:1px 6px;letter-spacing:1px;font-size:11px}
+  .titlebar .sp{flex:1}
+  .titlebar .winbtn{width:16px;height:14px;border:1px solid #cdd6e0;border-radius:2px;display:inline-block;text-align:center;line-height:12px;font-size:10px;background:#dfe6ee;color:#33425a}
+  /* 菜单栏 */
+  .menubar{background:#dfe3e8;border-bottom:1px solid var(--sapline);padding:3px 8px;display:flex;gap:16px;color:#33425a}
+  .menubar span{cursor:default}
+  /* 工具栏 */
+  .toolbar{background:#eef1f4;border-bottom:1px solid var(--sapline);padding:4px 8px;display:flex;align-items:center;gap:4px}
+  .tcmd{background:#0a6ed1;color:#fff;border:0;border-radius:3px;padding:3px 6px;font-size:11px}
+  .ibtn{width:22px;height:22px;border:1px solid #bcc4cd;border-radius:3px;background:linear-gradient(#fff,#eef1f4);display:inline-flex;align-items:center;justify-content:center;color:#33597a;font-size:12px}
+  .toolbar .okfield{height:22px;border:1px solid var(--sapfieldb);width:120px;border-radius:2px;background:#fff;margin-right:6px}
+  .toolbar .sp{flex:1}
+  /* 屏幕标题 */
+  .screenttl{background:#cfd8e0;border-bottom:1px solid var(--sapline);padding:6px 12px;font-weight:700;font-size:13px;color:#22344a;display:flex;align-items:center;gap:8px}
+  .screenttl .light{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-weight:600;font-size:12px}
+  .dot{width:13px;height:13px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+  .dot.g{background:radial-gradient(circle at 35% 30%,#5fdc8a,#107e3e)}
+  /* 主体 */
+  .body{padding:12px 14px;background:#f4f6f8}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--sapline);margin-bottom:10px}
+  .tab{padding:5px 14px;background:#dfe3e8;border:1px solid var(--sapline);border-bottom:0;border-radius:4px 4px 0 0;color:#33425a;font-size:12px}
+  .tab.active{background:#fff;font-weight:700;color:#0a6ed1}
+  /* 抬头区 */
+  .hdr{background:#fff;border:1px solid var(--sapline);border-radius:4px;padding:12px 14px;margin-bottom:12px}
+  .hgrid{display:grid;grid-template-columns:auto 150px auto 150px auto 150px;gap:7px 10px;align-items:center}
+  .lbl{color:var(--saplabel);text-align:right;white-space:nowrap}
+  .lbl.req::after{content:" *";color:var(--red);font-weight:700}
+  .fld{height:22px;border:1px solid var(--sapfieldb);border-radius:2px;background:var(--sapfield);display:flex;align-items:center;padding:0 6px;font-size:12px}
+  .fld.req{background:var(--reqbg);border-color:var(--reqborder)}
+  .fld.ro{background:#eef1f4;color:#555}
+  .fld .ph{color:#999}
+  .fld.wide{grid-column:span 3}
+  .seg{display:flex;align-items:center;gap:5px}
+  .drop::after{content:"▾";margin-left:auto;color:#7a8aa0}
+  /* 行项目区 */
+  .itemsbox{background:#fff;border:1px solid var(--sapline);border-radius:4px}
+  .itemsbar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--sapline);background:#eef1f4}
+  .itemsbar b{font-size:12.5px;color:#22344a}
+  table{border-collapse:collapse;width:100%;font-size:12px}
+  th{background:var(--saphead);border:1px solid var(--sapline);padding:5px 7px;text-align:left;color:#26384f;font-weight:700;white-space:nowrap}
+  td{border:1px solid var(--sapline);padding:0;white-space:nowrap}
+  td .cell{height:24px;display:flex;align-items:center;padding:0 7px}
+  td input{all:unset;height:24px;width:100%;padding:0 7px;font-size:12px}
+  td.num .cell,td.num input{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
+  tr:nth-child(even) td{background:#f7f9fc}
+  td.rownum{background:#eef1f4;text-align:center;color:#7a8aa0;width:30px}
+  .dc{font-weight:700}
+  .dc.s{color:#0a6ed1} .dc.h{color:#bb0000}
+  /* 合计条 */
+  .totbar{display:flex;align-items:center;gap:18px;padding:8px 12px;border-top:1px solid var(--sapline);background:#eef4fb;font-size:12.5px}
+  .totbar .t{display:flex;gap:6px;align-items:center}
+  .totbar .amt{font-weight:700;font-variant-numeric:tabular-nums}
+  .totbar .bal{margin-left:auto;font-weight:700;color:var(--green)}
+  /* 状态栏 */
+  .statusbar{background:#dfe3e8;border-top:1px solid var(--sapline);padding:4px 10px;display:flex;align-items:center;gap:8px;color:#33425a;font-size:11.5px}
+  .statusbar .ok{color:#107e3e;font-weight:700}
+  .legend{max-width:1080px;margin:12px auto 0;color:#3a4a5d;font-size:11.5px;line-height:1.6;background:#fff;border:1px solid var(--sapline);border-radius:6px;padding:10px 14px}
+  .legend code{background:#eef1f4;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Consolas,monospace;color:#084a8f}
+  .legend b{color:#0a6ed1}
+</style>
+</head>
+<body>
+
+<div class="win">
+  <!-- 标题栏 -->
+  <div class="titlebar">
+    <span class="logo">SAP</span>
+    <span>录入总账凭证：公司代码 1000</span>
+    <span class="sp"></span>
+    <span class="winbtn">—</span><span class="winbtn">▢</span><span class="winbtn">✕</span>
+  </div>
+  <!-- 菜单栏 -->
+  <div class="menubar">
+    <span>凭证(D)</span><span>编辑(E)</span><span>转到(G)</span><span>其他(A)</span><span>设置(S)</span><span>环境(N)</span><span>系统(Y)</span><span>帮助(H)</span>
+  </div>
+  <!-- 工具栏 -->
+  <div class="toolbar">
+    <input class="okfield" value="/nFB50" readonly>
+    <span class="ibtn">✓</span>
+    <span class="ibtn" title="保存">💾</span>
+    <span class="ibtn">⮌</span><span class="ibtn">⮎</span>
+    <span class="ibtn">📋</span>
+    <span class="sp"></span>
+    <button class="tcmd">树视图</button>
+    <button class="tcmd">公司代码</button>
+    <button class="tcmd">暂存</button>
+    <button class="tcmd">模拟</button>
+    <button class="tcmd">过账</button>
+  </div>
+  <!-- 屏幕标题 + 借贷平衡灯 -->
+  <div class="screenttl">
+    录入总账凭证：公司代码 1000（中国石油股份）
+    <span class="light"><span class="dot g"></span>借贷平衡</span>
+  </div>
+
+  <div class="body">
+    <!-- 选项卡 -->
+    <div class="tabs">
+      <div class="tab active">基本数据</div>
+      <div class="tab">明细</div>
+      <div class="tab">货币</div>
+    </div>
+
+    <!-- 抬头区 -->
+    <div class="hdr">
+      <div class="hgrid">
+        <span class="lbl req">公司代码</span><div class="fld ro">1000　中国石油股份</div>
+        <span class="lbl req">凭证日期</span><div class="fld req">2026.06.15</div>
+        <span class="lbl">参考</span><div class="fld">FP2026060015</div>
+
+        <span class="lbl">凭证类型</span><div class="fld seg drop">DR　客户发票</div>
+        <span class="lbl req">过账日期</span><div class="fld req">2026.06.15</div>
+        <span class="lbl">期间</span><div class="fld ro">6</div>
+
+        <span class="lbl">公司代码货币</span><div class="fld seg drop">CNY　人民币</div>
+        <span class="lbl">凭证编号</span><div class="fld ro"><span class="ph">内部分配</span></div>
+        <span class="lbl">总分类账</span><div class="fld seg drop">0L　主分类账</div>
+
+        <span class="lbl">抬头文本</span><div class="fld wide">江苏销售-6月成品油批发收入（含13%销项税）</div>
+        <span class="lbl">交叉公司代码号</span><div class="fld ro"><span class="ph"></span></div>
+      </div>
+    </div>
+
+    <!-- 行项目区 -->
+    <div class="itemsbox">
+      <div class="itemsbar">
+        <b>行项目</b>
+        <span class="ibtn">＋</span><span class="ibtn">✕</span><span class="ibtn">⤴</span><span class="ibtn">Σ</span>
+        <span style="color:#7a8aa0">　共 3 行</span>
+      </div>
+      <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>状态</th>
+            <th>总账科目</th>
+            <th>科目说明</th>
+            <th>借/贷</th>
+            <th>凭证货币金额</th>
+            <th>本位币金额</th>
+            <th>税码</th>
+            <th>成本中心</th>
+            <th>利润中心</th>
+            <th>段</th>
+            <th>分配</th>
+            <th>文本</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rownum">1</td>
+            <td><div class="cell">🟢</div></td>
+            <td><div class="cell"><code>1122000</code></div></td>
+            <td><div class="cell">应收账款—国内</div></td>
+            <td><div class="cell"><span class="dc s">借 S</span></div></td>
+            <td class="num"><div class="cell">1,130,000.00</div></td>
+            <td class="num"><div class="cell">1,130,000.00</div></td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell">CC-JS-NJ</div></td>
+            <td><div class="cell">PC-JSSALE</div></td>
+            <td><div class="cell">MARKETING</div></td>
+            <td><div class="cell">C-SINOPEC</div></td>
+            <td><div class="cell">应收成品油款</div></td>
+          </tr>
+          <tr>
+            <td class="rownum">2</td>
+            <td><div class="cell">🟢</div></td>
+            <td><div class="cell"><code>6001000</code></div></td>
+            <td><div class="cell">主营业务收入—成品油</div></td>
+            <td><div class="cell"><span class="dc h">贷 H</span></div></td>
+            <td class="num"><div class="cell">1,000,000.00</div></td>
+            <td class="num"><div class="cell">1,000,000.00</div></td>
+            <td><div class="cell">J1</div></td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell">PC-JSSALE</div></td>
+            <td><div class="cell">MARKETING</div></td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell">成品油销售收入</div></td>
+          </tr>
+          <tr>
+            <td class="rownum">3</td>
+            <td><div class="cell">🟢</div></td>
+            <td><div class="cell"><code>2221010</code></div></td>
+            <td><div class="cell">应交税费—销项税</div></td>
+            <td><div class="cell"><span class="dc h">贷 H</span></div></td>
+            <td class="num"><div class="cell">130,000.00</div></td>
+            <td class="num"><div class="cell">130,000.00</div></td>
+            <td><div class="cell">J1</div></td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell">PC-JSSALE</div></td>
+            <td><div class="cell">MARKETING</div></td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell">销项税额13%</div></td>
+          </tr>
+          <!-- 空行(可录入) -->
+          <tr>
+            <td class="rownum">4</td>
+            <td><div class="cell"></div></td>
+            <td><div class="cell"><span class="ph" style="color:#bbb">　</span></div></td>
+            <td><div class="cell"></div></td><td><div class="cell"></div></td>
+            <td class="num"><div class="cell"></div></td><td class="num"><div class="cell"></div></td>
+            <td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td>
+            <td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <!-- 合计/平衡 -->
+      <div class="totbar">
+        <span class="t">借方合计 <span class="amt">1,130,000.00</span> CNY</span>
+        <span class="t">贷方合计 <span class="amt">1,130,000.00</span> CNY</span>
+        <span class="bal">● 差额 0.00　借贷平衡，可过账</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="statusbar">
+    <span class="ok">✓ 凭证 1000000015 可以过账</span>
+    <span style="margin-left:auto">FB50 ▸ 中国石油股份(1000) ▸ 用户 ZHANGSAN ▸ INS</span>
+  </div>
+</div>
+
+<div class="legend">
+  <b>这是什么：</b>SAP <code>FB50</code>（录入总账凭证 / Enter G/L Account Document）单屏录入界面的仿真示意图。<br>
+  <b>对应表字段：</b>抬头区 → <code>BKPF</code>（公司代码 <code>BUKRS</code>、凭证日期 <code>BLDAT</code>、过账日期 <code>BUDAT</code>、凭证类型 <code>BLART</code>、参考 <code>XBLNR</code>、抬头文本 <code>BKTXT</code>、货币 <code>WAERS</code>）；
+  行项目区 → <code>BSEG</code>（科目 <code>HKONT</code>、借贷 <code>SHKZG</code>、金额 <code>WRBTR</code>/<code>DMBTR</code>、税码 <code>MWSKZ</code>、成本中心 <code>KOSTL</code>、利润中心 <code>PRCTR</code>、段 <code>SEGMENT</code>、分配 <code>ZUONR</code>、文本 <code>SGTXT</code>）；税行另存 <code>BSET</code>。<br>
+  <b>右上角绿灯 + 底部“差额 0.00”</b>＝ SAP 的借贷平衡校验，平衡后才允许“过账”。经典事务 <code>FB01</code>/<code>F-02</code> 为多屏录入，FB50 为单屏“Enjoy”界面。
+</div>
+
+</body>
+</html>

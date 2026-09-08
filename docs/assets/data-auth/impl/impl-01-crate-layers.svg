@@ -1,0 +1,71 @@
+<svg viewBox="0 0 820 502" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="up1" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="8" markerHeight="8" orient="0">
+    <path d="M0,10 L5,0 L10,10 z" fill="#64748b"/>
+  </marker>
+  <filter id="sh1" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="502" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="36" font-size="15" font-weight="700" fill="#0f172a">cmx-data-auth · 一芯多壳分层（独立 workspace，跨 ws path 复用基础设施）</text>
+
+<!-- server -->
+<g filter="url(#sh1)"><rect x="30" y="58" width="540" height="62" rx="10" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="46" y="82" font-size="13" font-weight="700" fill="#155e75">cmx-dataauth-server　·　壳</text>
+<text x="46" y="103" font-size="11" fill="#0e7490">独立可跑 bin　·　cmx-web-chassis ServiceSpec　·　端口 :8096　·　默认库 fico</text>
+
+<!-- app -->
+<g filter="url(#sh1)"><rect x="30" y="134" width="540" height="112" rx="10" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="46" y="158" font-size="13" font-weight="700" fill="#3730a3">cmx-dataauth-app　·　平台中立应用层（一芯）</text>
+<text x="46" y="180" font-size="10.8" fill="#4338ca" font-family="ui-monospace,Menlo,Consolas,monospace">engine::{decide · compile · enforce}　handlers（不绑 State）　dataauth_routes::&lt;S&gt;()</text>
+<text x="46" y="200" font-size="10.8" fill="#4338ca" font-family="ui-monospace,Menlo,Consolas,monospace">pep（PEP 中间件）　policy_source（D3 决策表源）　matcache（L3 物化缓存）</text>
+<text x="46" y="220" font-size="10.8" fill="#4338ca" font-family="ui-monospace,Menlo,Consolas,monospace">tenant / tenancy（db-per-tenant）　auth（JWT）　resp（ApiResp 信封）</text>
+<text x="46" y="238" font-size="10.5" fill="#6366f1">handler 不绑 State 提取器 → 路由对任意 state 泛型 S 成立（独立壳用 ::&lt;()&gt;）</text>
+
+<!-- store-pg -->
+<g filter="url(#sh1)"><rect x="30" y="260" width="540" height="70" rx="10" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="46" y="284" font-size="13" font-weight="700" fill="#92400e">cmx-dataauth-store-pg　·　持久化实现</text>
+<text x="46" y="305" font-size="10.8" fill="#b45309" font-family="ui-monospace,Menlo,Consolas,monospace">PgDataAuthStore（tokio-postgres）　PgDimensionExpander（WITH RECURSIVE）</text>
+<text x="46" y="323" font-size="10.8" fill="#b45309" font-family="ui-monospace,Menlo,Consolas,monospace">ddl.rs：6 张 cmx_dataauth_* 表（幂等 DDL，无外键）</text>
+
+<!-- core -->
+<g filter="url(#sh1)"><rect x="30" y="344" width="540" height="130" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="46" y="368" font-size="13" font-weight="700" fill="#5b21b6">cmx-dataauth-core　·　语义中立内核（芯）</text>
+<text x="46" y="390" font-size="10.8" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">subject（Subject/Resource/Action）　ir（Constraint AST）　eval（Decision）</text>
+<text x="46" y="410" font-size="10.8" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">pdp（compose 部分求值）　compiler（Sql / RowFilter / Es 三后端）</text>
+<text x="46" y="430" font-size="10.8" fill="#6d28d9" font-family="ui-monospace,Menlo,Consolas,monospace">def（DTO）　mask（脱敏）　expand（DimensionExpander trait）　store（trait）</text>
+<rect x="330" y="444" width="228" height="22" rx="11" fill="#ede9fe" stroke="#8b5cf6"/>
+<text x="444" y="459" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">零 DB · 零 cmx-* 依赖 · 可单测/可 wasm</text>
+
+<!-- depends-on arrows (dependent points up to dependency) -->
+<line x1="300" y1="134" x2="300" y2="120" stroke="#64748b" stroke-width="1.6" marker-end="url(#up1)"/>
+<line x1="300" y1="260" x2="300" y2="246" stroke="#64748b" stroke-width="1.6" marker-end="url(#up1)"/>
+<line x1="300" y1="344" x2="300" y2="330" stroke="#64748b" stroke-width="1.6" marker-end="url(#up1)"/>
+<text x="312" y="130" font-size="9.5" fill="#64748b">depends on ▲</text>
+<text x="312" y="256" font-size="9.5" fill="#64748b">depends on ▲</text>
+<text x="312" y="340" font-size="9.5" fill="#64748b">depends on ▲</text>
+
+<!-- reuse side panel -->
+<g filter="url(#sh1)"><rect x="590" y="58" width="200" height="416" rx="11" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="690" y="80" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">跨 workspace path 复用</text>
+<rect x="604" y="94" width="172" height="150" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="616" y="114" font-size="11" font-weight="700" fill="#334155">../cmx-container</text>
+<text x="616" y="134" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-database-pg</text>
+<text x="616" y="152" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-core</text>
+<text x="616" y="170" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-web-chassis</text>
+<text x="616" y="188" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-web-monitor</text>
+<text x="616" y="206" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-service-base</text>
+<text x="616" y="228" font-size="9.5" fill="#94a3b8">基础设施 · 零业务耦合</text>
+<rect x="604" y="256" width="172" height="122" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="616" y="276" font-size="11" font-weight="700" fill="#334155">../cmx-rulesengine</text>
+<text x="616" y="296" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-rule-feel</text>
+<text x="616" y="314" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-rule-engine</text>
+<text x="616" y="332" font-size="10" fill="#475569" font-family="ui-monospace,Menlo,Consolas,monospace">cmx-rule-model</text>
+<text x="616" y="354" font-size="9.5" fill="#94a3b8">FEEL 脱敏门 · 决策表</text>
+<text x="616" y="371" font-size="9.5" fill="#94a3b8">仅 app 依赖，core 不碰</text>
+<text x="690" y="400" font-size="9.8" fill="#64748b" text-anchor="middle">407 crates · 离线 aliyun</text>
+<text x="690" y="418" font-size="9.8" fill="#64748b" text-anchor="middle">build/test/clippy 全绿</text>
+<text x="690" y="440" font-size="9.8" fill="#64748b" text-anchor="middle">对标 cmx-rulesengine</text>
+<text x="690" y="458" font-size="9.8" fill="#64748b" text-anchor="middle">「一芯多壳」骨架</text>
+</svg>

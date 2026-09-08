@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCT 数据字典 · 存储与加载服务方案（对标 DOC）</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;max-width:1480px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--ink-dim)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:6px}
+  .tag.new{background:#0e1a30;color:#9ec1ff;border-color:#274a86}
+  .tag.reuse{background:#0e2417;color:#86efac;border-color:#1f6f3f}
+  .kbd{font-family:var(--mono);font-size:12px;background:#0b0d14;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#c9d4ee}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .foot{color:var(--ink-dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line)}
+  a.ilink{color:var(--accent);text-decoration:none}a.ilink:hover{text-decoration:underline}
+  .num-badge{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);font-weight:700;font-size:12px;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#s0"><span class="n">§0</span>结论速览</a>
+  <a href="#s1"><span class="n">§1</span>现状盘点：三层字典世界</a>
+  <a href="#s2"><span class="n">§2</span>目标与非目标</a>
+  <a href="#s3"><span class="n">§3</span>DCT 与 DOC 元数据结构对比</a>
+  <a href="#s4"><span class="n">§4</span>存储方案</a>
+  <a class="sub" href="#s4-1">4.1 物理表：cf_* 字典表</a>
+  <a class="sub" href="#s4-2">4.2 扁平字典 vs 自分级字典</a>
+  <a class="sub" href="#s4-3">4.3 关系字典 · 有效期 · 停用</a>
+  <a class="sub" href="#s4-4">4.4 版本台账 · 种子数据</a>
+  <a href="#s5"><span class="n">§5</span>后端方案（cmx-container）</a>
+  <a class="sub" href="#s5-1">5.1 新增 cmx-biz/src/dct/</a>
+  <a class="sub" href="#s5-2">5.2 DctMetaView 解析</a>
+  <a class="sub" href="#s5-3">5.3 加载器：复用与差异</a>
+  <a class="sub" href="#s5-4">5.4 回存与自分级重算</a>
+  <a class="sub" href="#s5-5">5.5 handler 与路由</a>
+  <a href="#s6"><span class="n">§6</span>API 契约</a>
+  <a href="#s7"><span class="n">§7</span>前端方案（CMXPortalManager）</a>
+  <a class="sub" href="#s7-1">7.1 设计期：已就绪</a>
+  <a class="sub" href="#s7-2">7.2 运行期：新增 cmx-dct-source</a>
+  <a class="sub" href="#s7-3">7.3 字典栏位数据源</a>
+  <a href="#s8"><span class="n">§8</span>左树右表：自分级 &amp; 分类 CRUD</a>
+  <a class="sub" href="#s8-1">8.1 统一抽象：一个 UI 两种绑定</a>
+  <a class="sub" href="#s8-2">8.2 自分级字典（同表 parent_id）</a>
+  <a class="sub" href="#s8-3">8.3 分类字典（跨表 classifyRegistry）</a>
+  <a class="sub" href="#s8-4">8.4 后端：树 + 过滤 + 联动写</a>
+  <a class="sub" href="#s8-5">8.5 前端：统一左树右表组件</a>
+  <a class="sub" href="#s8-6">8.6 API 契约</a>
+  <a href="#s9"><span class="n">§9</span>复用 / 新增清单</a>
+  <a href="#s10"><span class="n">§10</span>落地阶段</a>
+  <a href="#s11"><span class="n">§11</span>关键决策与风险</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX 元数据平台 · 设计方案</div>
+  <h1>DCT 数据字典 · 存储与加载服务方案</h1>
+  <div class="sub">对标既有 DOC（业务单据）存储/加载服务，补齐 DCT（数据字典）在真实数据库上的落地/装载能力。后端 <code>cmx-container</code>，前端 <code>CMXPortalManager</code>。</div>
+  <div class="meta">
+    <span class="chip b">后端 cmx-container / Rust · axum</span>
+    <span class="chip b">前端 CMXPortalManager / Web Components</span>
+    <span class="chip g">复用 DOC 零拷贝列式管线</span>
+    <span class="chip p">对标 /api/doc/* → /api/dct/*</span>
+    <span class="chip w">状态：设计</span>
+  </div>
+</header>
+
+<!-- ============ §0 结论速览 ============ -->
+<section id="s0">
+  <h2 class="sec"><span class="num">§0</span>结论速览</h2>
+  <p class="lead">DCT 的"定义"与"建表"其实<strong>已经存在大半</strong>，缺的是<strong>面向真实 <code>cf_*</code> 字典表的存储回写与零拷贝装载服务</strong> —— 即 DOC 侧 <code>/api/doc/data/*</code> + <code>/api/doc/save</code> + <code>/api/doc/meta</code> 的 DCT 对等物。本方案把这块补齐，几乎是把 <code>doc/</code> 这套管线机械地"复刻 + 降维"（字典是扁平/自分级，不是多层主从），最大化复用。</p>
+
+  <div class="grid3">
+    <div class="card tight">
+      <div class="status"><span class="dot have"></span>已就绪</div>
+      <p style="margin:8px 0 0;font-size:13.5px">设计期<strong>定义 JSON</strong>（<code>/api/definitions/*</code>，已识别 <code>baseDctMetaRef</code>）、<strong>建表编译器</strong>（<code>compile_dct</code>→<code>TableDefine</code>→<code>PgTableDefineExecutor</code>）、<strong>部署台账</strong>（<code>cmx_model_module.dct_version/dct_status</code>）、前端<strong>定义编辑器</strong>（<code>portal-definition-manager</code>）。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot partial"></span>部分存在</div>
+      <p style="margin:8px 0 0;font-size:13.5px">旧的 <code>/api/dict/*</code> 检索引擎 —— 但它读写的是 <strong>JSON 文件</strong>（<code>data/dict/entries/*.json</code>），不是 <code>cf_*</code> 物理表；含 CJK 模糊检索、多字典 JOIN、SCD 停旧启新。保留、后期桥接。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot gap"></span>缺口（本方案）</div>
+      <p style="margin:8px 0 0;font-size:13.5px"><strong>DB 支撑的 DCT 数据服务</strong>：<code>/api/dct/meta</code>、<code>/api/dct/data/*</code>（六驱动×内存×传输 + children + stream）、<code>/api/dct/save[/batch]</code>、可选 <code>/api/dct/revision*</code>，以及新 crate 模块 <code>cmx-biz/src/dct/</code>。</p>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <div class="t">一句话</div>
+    DOC 装的是"一棵单据树"（batch→header→line→aux，靠 <code>upper_id</code> 外键逐层下钻）；DCT 装的是"一批相互独立的字典表"（<code>cf_client</code>、<code>cf_gl_account</code>…），每张要么<strong>扁平分页</strong>、要么<strong>自分级成树</strong>（<code>parent_id</code> 自引用）。<strong>SQL 生成、零拷贝列式编码、msgpack 出口、事务回存全部照抄 DOC；只有"层级遍历"从"跨表 BFS"降为"单表 flat / 自引用 tree"。</strong>
+  </div>
+  <div class="callout">
+    <div class="t">本次追加需求 → §8</div>
+    "<strong>左树右表</strong>：左侧一棵树、右侧一张表、右表随左树选中节点刷新、可 CRUD" 有两种绑定来源、同一套实现：① <b>自分级字典</b>（同表 <code>parent_id</code> 自引用，本次需求）；② <b>分类字典</b>（<code>classifyRegistry</code> 跨表，上一版）。两者右表过滤都归约成加载器<strong>已有</strong>的 <code>WHERE fk = ANY($ids)</code>（<code>parent_scope</code>）谓词，前端<strong>同一个组件</strong>按配置区分。<strong>不新增端点</strong>，只在 <code>DctMetaView</code>/<code>DctQuery</code>/<code>DctSaver</code> 做小增量。详见 <a class="ilink" href="#s8">§8 左树右表</a>。
+  </div>
+</section>
+
+<!-- ============ §1 现状盘点 ============ -->
+<section id="s1">
+  <h2 class="sec"><span class="num">§1</span>现状盘点：三层字典世界</h2>
+  <p class="lead">代码库里"字典/DCT"一词横跨三个互不相同的层。设计前必须分清，避免重复造轮子，也避免把"文件检索引擎"误当成"数据库存储"。</p>
+  <div class="legend">
+    <span><span class="dot have"></span> 已就绪可用</span>
+    <span><span class="dot partial"></span> 存在但非本目标</span>
+    <span><span class="dot new"></span> 本方案新增</span>
+    <span><span class="dot gap"></span> 当前缺口</span>
+  </div>
+  <table>
+    <thead><tr><th>层</th><th>是什么</th><th>存储介质</th><th>入口</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>A. 设计期定义</b></td>
+        <td>DCT 元数据 JSON（<code>dictionaryTables[]</code> + <code>dictMeta</code> + <code>fields</code>），跨 DAM 引用 <code>base_dct_meta_v1.json</code></td>
+        <td>磁盘 JSON<br><code>data/meta/definitions/&lt;d&gt;/&lt;a&gt;/&lt;m&gt;/*.json</code></td>
+        <td><code>/api/definitions/*</code><br><code>definitions::store</code></td>
+        <td><span class="status"><span class="dot have"></span>已就绪</span></td>
+      </tr>
+      <tr>
+        <td><b>B. 建表 / 部署</b></td>
+        <td><code>compile_dct(doc,base)</code> → 每个 <code>dictionaryTable</code> 一张 <code>TableDefine</code> → 建 <code>cf_*</code> 到目标库；台账记 <code>dct_version/dct_status</code></td>
+        <td>PostgreSQL DDL<br>（<code>PgTableDefineExecutor</code>）</td>
+        <td><code>/api/model/deploy*</code><br><code>model_center.rs</code></td>
+        <td><span class="status"><span class="dot have"></span>已就绪</span></td>
+      </tr>
+      <tr>
+        <td><b>C₁. 旧检索引擎</b></td>
+        <td>字典条目检索：CJK 模糊、层级 parent/ancestor、多字典 JOIN、SCD 停旧启新</td>
+        <td>磁盘 JSON<br><code>data/dict/entries/*.json</code></td>
+        <td><code>/api/dict/*</code><br><code>cmx-model/src/dict/</code></td>
+        <td><span class="status"><span class="dot partial"></span>文件版</span></td>
+      </tr>
+      <tr>
+        <td><b>C₂. DB 数据服务</b></td>
+        <td><strong>读写 <code>cf_*</code> 真实字典表</strong>：装载（扁平/自分级树）、零拷贝列式 + msgpack、回存、可选版本化</td>
+        <td>PostgreSQL <code>cf_*</code> 表<br>（sqlx / tokio-postgres）</td>
+        <td><code>/api/dct/*</code><br><code>cmx-biz/src/dct/</code></td>
+        <td><span class="status"><span class="dot gap"></span><b>缺口</b></span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="t">关键区分</div>
+    B 层已经把字典表<strong>建出来了</strong>（空表），但今天<strong>没有任何服务往 <code>cf_*</code> 里读写数据</strong>。旧的 C₁（<code>/api/dict/*</code>）读的是另一套 JSON 文件，与 <code>cf_*</code> 物理表<strong>无连接</strong>。DOC 侧则早已闭环（<code>cv_*</code> 表有 <code>/api/doc/data</code> 装、<code>/api/doc/save</code> 存）。本方案 = 给 DCT 补上 C₂ 这一环，与 B 层的建表衔接、与 DOC 的 C₂ 对称。</div>
+</section>
+
+<!-- ============ §2 目标 ============ -->
+<section id="s2">
+  <h2 class="sec"><span class="num">§2</span>目标与非目标</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0;color:#86efac">✔ 目标（In Scope）</h4>
+      <ul>
+        <li><b>DCT 显示元数据服务</b> <code>GET /api/dct/meta</code> —— 返回字典目录（各字典表的 code/名称/kind/是否自分级/列 caption·类型），供前端通用页动态建表。</li>
+        <li><b>DCT 数据装载</b> <code>/api/dct/data/*</code> —— 复刻 DOC 的六种"驱动×内存×传输"组合 + 懒下钻 children + 真流式 stream，读 <code>cf_*</code> 表。</li>
+        <li><b>DCT 数据回存</b> <code>/api/dct/save[/batch]</code> —— merge/replace 双模式、审计列服务端强填、乐观锁；自分级字典保存后<strong>服务端重算</strong> <code>full_path/level_no/is_leaf</code>（可选重建闭包表）。</li>
+        <li><b>后端 crate 模块</b> 新增 <code>cmx-biz/src/dct/</code>，镜像 <code>doc/</code>。</li>
+        <li><b>前端运行期数据源</b> <code>cmx-dct-source.js</code> + 字典栏位数据源，接入 grid / 主从。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0;color:#fca5a5">✘ 非目标（Out of Scope）</h4>
+      <ul>
+        <li><b>不重写设计期定义编辑器</b> —— <code>portal-definition-manager</code> 已支持 DCT，沿用。</li>
+        <li><b>不重写建表/部署</b> —— <code>compile_dct</code> + <code>model deploy</code> 已就绪，本服务只<strong>消费</strong>其产物（<code>cf_*</code> 表）。</li>
+        <li><b>不删除旧 <code>/api/dict/*</code></b> —— 仍被 AI 工具、弹性组合依赖；本期并行，后期可把其数据源从 JSON 文件切到 <code>/api/dct/data</code>（见 §11）。</li>
+        <li><b>本期不做 CJK 模糊检索</b> —— 新服务先落地 DB 级精确/glob/范围过滤；模糊检索留作增强或暂用旧引擎。</li>
+        <li><b>不改 <code>cmx-database</code> / <code>cmx-database-pg</code> / <code>cmx-rowsource</code></b> —— 直接复用其零拷贝能力。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §3 结构对比 ============ -->
+<section id="s3">
+  <h2 class="sec"><span class="num">§3</span>DCT 与 DOC 元数据结构对比</h2>
+  <p class="lead">这是整套方案的"降维"依据。DOC 是一棵有序主从树；DCT 是一组平行的字典表，个别自分级。理解这点，加载器/保存器/元数据视图的差异就都推得出来。</p>
+  <table>
+    <thead><tr><th style="width:16%">维度</th><th>DOC（业务单据）</th><th>DCT（数据字典）</th></tr></thead>
+    <tbody>
+      <tr><td><b>顶层键</b></td><td><code>moduleMeta</code> / <code>baseDocMetaRef</code> / <code>voucherSchema</code> / <code>voucherTables[]</code> / <code>voucherStatusFlow</code> / <code>validationRules</code></td><td><code>moduleMeta</code>(<code>metaKind:"DCT"</code>) / <code>baseDctMetaRef</code> / <code>dictionaryTableConventions</code> / <code>dictionaryTables[]</code></td></tr>
+      <tr><td><b>结构骨架</b></td><td><code>voucherSchema.schema</code>：嵌套层数组（L1→L2→L3…），<code>relations</code> 定义父子键（默认 <code>upper_id</code>）</td><td>无跨表层级；<code>dictionaryTables[]</code> 是<strong>平铺</strong>的字典集合（cmxfico 35 张），彼此独立</td></tr>
+      <tr><td><b>单表描述</b></td><td>每项 = 一层表：<code>{tableName, level, levelName, fields[], documentFieldSets[]}</code></td><td>每项 = 一张字典：<code>{dictMeta{…}, fields[], *FieldSet, codeRule, uniqueKeys}</code></td></tr>
+      <tr><td><b>表元信息</b></td><td>层的 <code>level/levelName/parentTable</code></td><td><code>dictMeta.{dictCode, dictName, dictKind, selfHierarchy, tableName, idField, codeField, labelField, parentField, codeLength}</code></td></tr>
+      <tr><td><b>层级/树</b></td><td><strong>跨表</strong>：batch→header→acc_line→aux_line，每层新表</td><td><strong>表内自引用</strong>：仅 <code>selfHierarchy=true</code> 的字典（cmxfico 3/35，如 <code>cf_gl_account</code>）用 <code>parent_id</code> + 物化路径 <code>full_path</code></td></tr>
+      <tr><td><b>字典分类</b></td><td>—</td><td><code>dictKind</code> 五类：<code>BUSINESS</code>(业务主数据) / <code>CLASSIFY</code>(分类枚举) / <code>GROUP</code>(分组，常自分级) / <code>RELATION</code>(关系) / <code>ENUM</code></td></tr>
+      <tr><td><b>base 复用</b></td><td><code>documentFieldSets</code> 引 <code>base_doc_meta</code> 的 <code>fieldSets</code></td><td><code>baseDctMetaRef.fieldSets[]</code> + 表级 <code>baseFieldSet/hierarchyFieldSet/auditFieldSet/effectiveFieldSet/disableFieldSet/systemFieldSet</code></td></tr>
+      <tr><td><b>物理表名</b></td><td><code>cv_*</code>（cv_batch / cv_header…）</td><td><code>cf_*</code>（cf_client / cf_gl_account…）</td></tr>
+      <tr><td><b>装载单位</b></td><td>一张单据的<strong>整棵树</strong>（一次多层）</td><td>一张字典表的<strong>一页 / 整棵自分级树</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>base_dct_meta_v1.json 提供的通用 fieldSet</h3>
+  <p>各字典表按需引用（物理建表时与自身 <code>fields</code> 合并）。这决定了 <code>cf_*</code> 表的通用列，也决定加载/保存要认哪些审计/有效期/停用/系统列。</p>
+  <div class="grid2">
+    <div class="card tight">
+      <table style="margin:0">
+        <tbody>
+          <tr><td><code>dictionaryCommonFields</code></td><td>id·code·name·sort_no·status（有 id 主键版）</td></tr>
+          <tr><td><code>dictionaryCommonNoIDFields</code></td><td>code 作主键版（无代理键）</td></tr>
+          <tr><td><code>dictionaryHierarchyFields</code></td><td>parent_id·full_path·level_no·is_leaf（自分级）</td></tr>
+          <tr><td><code>dictionaryHierarchyNoIDFields</code></td><td>parent_code 版</td></tr>
+          <tr><td><code>dictionaryAuditFields</code></td><td>create_by/time·update_by/time</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card tight">
+      <table style="margin:0">
+        <tbody>
+          <tr><td><code>dictionaryScopeFields</code></td><td>scope_type·entity_id（组织隔离）</td></tr>
+          <tr><td><code>dictionaryEffectiveFields</code></td><td>effective_from·effective_to（有效期）</td></tr>
+          <tr><td><code>dictionaryDisableFields</code></td><td>disabled_reason·disabled_time</td></tr>
+          <tr><td><code>dictionarySystemFields</code></td><td>is_system（系统预置）</td></tr>
+          <tr><td><code>hierarchyClosureFields</code></td><td>dict_code·ancestor_id·descendant_id·depth（闭包表）</td></tr>
+          <tr><td><code>relationCommonFields</code></td><td>关系字典双方 id/code/name 冗余列</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §4 存储方案 ============ -->
+<section id="s4">
+  <h2 class="sec"><span class="num">§4</span>存储方案</h2>
+  <p class="lead">存储层的表结构<strong>已由 B 层（<code>compile_dct</code> + 部署）建立</strong>。本节明确本服务读写的表形态、自分级两种树形维护策略、以及可选的版本/种子机制 —— 不新增建表逻辑，只规定"服务如何用这些表"。</p>
+
+  <h3 id="s4-1">4.1 物理表：cf_* 字典表</h3>
+  <p>每个 <code>dictionaryTable</code> → 一张 <code>cf_&lt;dictCode&gt;</code> 表，列 = <code>base fieldSet 合并列</code> + 该表 <code>fields[]</code>。例：</p>
+  <div class="mono-block"><span class="c">-- 由 compile_dct → PgTableDefineExecutor 建立（本服务只读写，不建表）</span>
+<span class="k">cf_client</span>        <span class="c">(id, code, name, sort_no, status, logical_system, system_id, client_role, …)</span>
+<span class="k">cf_gl_account</span>    <span class="c">(id, code, name, …, parent_id, full_path, level_no, is_leaf,  -- selfHierarchy</span>
+                  <span class="c">coa_id, acct_group_code, pl_bs_flag, …, create_by, create_time, …)</span>
+<span class="k">cf_comp_unit</span>     <span class="c">(id, code, name, …, scope_type, entity_id, effective_from, effective_to, …)</span></div>
+  <div class="callout">
+    <div class="t">命名/坐标约定（与 DOC 一致）</div>
+    <code>schema.id == tableName</code>（沿用 cmxfico 约定）。字典定位坐标 = <code>{domain, application, module, file, dict}</code>：前四者定位<strong>定义文件</strong>（哪套字典元数据），<code>dict</code> = <code>dictCode</code> 定位<strong>其中哪张字典表</strong>。目标库由请求头 <code>db_id</code> 决定（多库支持，复用 <code>get_db_id_from_header</code>）。
+  </div>
+
+  <h3 id="s4-2">4.2 扁平字典 vs 自分级字典</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0">扁平字典 <span class="tag">selfHierarchy=false · 32/35</span></h4>
+      <p>就是一张普通表。装载 = 单表分页查询（可带过滤/排序/游标）。<strong>直接复用</strong> <code>build_layer_select(layer, lq, <b>None</b>)</code>（无 parent_scope 分支）。回存 = 单表 UPSERT/DELETE。等价于"DOC 的一层，去掉子层下钻"。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">自分级字典 <span class="tag">selfHierarchy=true · 3/35</span></h4>
+      <p>表内 <code>parent_id</code> 自引用成树（<code>cf_gl_account</code>、<code>cf_fs_version</code>、<code>cf_cons_org</code>）。三种装载模式：</p>
+      <ul style="margin-bottom:0">
+        <li><b>整树</b>：查全表 → 按 <code>parent_id</code> 组装森林（或按物化路径 <code>full_path</code> 排序直出）。</li>
+        <li><b>懒下钻</b>：<code>WHERE parent_id = ANY($ids)</code> —— <strong>直接复用</strong> <code>build_layer_select</code> 的 <code>parent_scope</code> 分支，把 child_key 设为该表 <code>parentField</code>（自引用）。</li>
+        <li><b>祖先/子树</b>：走闭包表 <code>cf_&lt;dict&gt;_closure</code>（<code>dict_code/ancestor_id/descendant_id/depth</code>）做深度查询。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout key">
+    <div class="t">关键复用点</div>
+    自分级字典的"懒下钻"与 DOC 的"子层下钻"在 SQL 层<strong>完全同构</strong> —— 都是 <code>WHERE &lt;child_key&gt; = ANY($parent_ids)</code>。区别仅是 DOC 的 child_key 指向<strong>父表</strong>的 id，DCT 自分级的 child_key（<code>parent_id</code>）指向<strong>本表</strong>的 id。故 <code>sql_builder::build_layer_select</code> 一字不改即可服务两者。
+  </div>
+
+  <h3 id="s4-3">4.3 树维护：物化路径为主，闭包表可选</h3>
+  <table>
+    <thead><tr><th>策略</th><th>列</th><th>读</th><th>写</th><th>取舍</th></tr></thead>
+    <tbody>
+      <tr><td><b>物化路径</b>（默认）</td><td><code>full_path</code>·<code>level_no</code>·<code>is_leaf</code></td><td>子树 = <code>full_path LIKE '$path.%'</code>；排序天然</td><td>移动子树需批量改 <code>full_path</code></td><td>零额外表，读简单；深移动写放大</td></tr>
+      <tr><td><b>闭包表</b>（可选，深层用）</td><td><code>cf_&lt;dict&gt;_closure</code></td><td>祖先/后代/depth 精确 O(1) join</td><td>增删节点维护闭包行</td><td>查询强，多一张表 + 维护成本</td></tr>
+    </tbody>
+  </table>
+  <p>两套字段 base 都已提供（<code>dictionaryHierarchyFields</code> / <code>hierarchyClosureFields</code>）。<b>默认只用物化路径</b>；仅当某字典明确需要频繁祖先链查询时，才在其定义里挂闭包表。<strong>写路径统一由服务端保存器重算</strong>（见 §5.4），前端不传这些派生列。</p>
+
+  <h4>有效期 · 停用 · 组织范围 · SCD</h4>
+  <p>装载默认按有效性过滤（<code>status=1</code> 且 <code>effective_from ≤ asOf &lt; effective_to</code>），可用 <code>includeInactive</code>/<code>asOf</code> 覆盖 —— 沿用旧引擎语义，但下推到 SQL <code>WHERE</code>。"停旧启新"（deactivate/supersede）由保存器实现：停旧行置 <code>status=0</code>+<code>effective_to</code>，启新行分配代理键 + <code>effective_from</code>，与旧 <code>dict::write</code> 语义一致，只是落 DB 而非 JSON。
+
+  <h3 id="s4-4">4.4 版本台账（可选） · 种子数据</h3>
+  <div class="grid2">
+    <div class="card tight">
+      <h4 style="margin-top:0">版本化 <span class="tag new">Phase 后期</span></h4>
+      <p>镜像 <code>cmx_doc_revision</code> 建 <code>cmx_dct_revision</code>（<code>dict_file, dict_code, root_id, rev_no, is_current, op, snapshot(JSONB), …</code>），保存器在事务内 append 快照。字典变更频率低，可后置。</p>
+    </div>
+    <div class="card tight">
+      <h4 style="margin-top:0">种子数据 <span class="tag reuse">已有台账位</span></h4>
+      <p>部署台账 <code>cmx_model_module</code> 已含 <code>seed_version/seed_status</code>。初始字典项（如国家、货币枚举）可作 seed 由部署流程灌入；本服务负责其后的增删改查。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §5 后端 ============ -->
+<section id="s5">
+  <h2 class="sec"><span class="num">§5</span>后端方案（cmx-container）</h2>
+  <p class="lead">核心动作：把 <code>cmx-biz/src/doc/</code> 复刻为 <code>cmx-biz/src/dct/</code>，把 <code>handlers/portal/doc.rs</code> 复刻为 <code>dct.rs</code>，在 <code>portal/mod.rs</code> 挂 <code>/api/dct/*</code> 路由。绝大部分是"改名 + 降维"，底层管线（SQL 生成、零拷贝编码、事务、两种驱动）原样复用。</p>
+
+  <h3 id="s5-1">5.1 新增 cmx-biz/src/dct/ —— 镜像 doc/</h3>
+  <table>
+    <thead><tr><th>doc/ 文件</th><th>dct/ 对应</th><th>改动幅度</th></tr></thead>
+    <tbody>
+      <tr><td><code>meta.rs</code> · <code>DocMetaView</code></td><td><code>meta.rs</code> · <code>DctMetaView</code></td><td><span class="dot new"></span> 解析 <code>dictionaryTables</code>/<code>dictMeta</code> 而非 <code>voucherSchema</code>（见 5.2）</td></tr>
+      <tr><td><code>cache.rs</code></td><td><code>cache.rs</code></td><td><span class="dot have"></span> 改名即可（key 加 <code>dict</code> 维度）</td></tr>
+      <tr><td><code>query.rs</code> · <code>DocQuery</code></td><td><code>query.rs</code> · <code>DctQuery</code></td><td><span class="dot partial"></span> 由"多层 map"降为"单字典 + mode(flat/tree/subtree)"</td></tr>
+      <tr><td><code>sql_builder.rs</code></td><td>—（<b>直接复用 doc 的</b>）</td><td><span class="dot have"></span> <code>build_layer_select</code> 无需 fork</td></tr>
+      <tr><td><code>loader.rs</code> · <code>DocLoader</code></td><td><code>loader.rs</code> · <code>DctLoader</code></td><td><span class="dot partial"></span> 去掉跨表 BFS；保留单表 + 自引用下钻</td></tr>
+      <tr><td><code>zmc_loader.rs</code>（tokio）</td><td><code>zmc_loader.rs</code></td><td><span class="dot partial"></span> 同上降维，编码调用不变</td></tr>
+      <tr><td><code>zmc_loader_sqlx.rs</code></td><td><code>zmc_loader_sqlx.rs</code></td><td><span class="dot partial"></span> 同上</td></tr>
+      <tr><td><code>saver.rs</code> · <code>DocSaver</code></td><td><code>saver.rs</code> · <code>DctSaver</code></td><td><span class="dot new"></span> 单表回存 + 自分级派生列重算 + SCD（见 5.4）</td></tr>
+      <tr><td><code>revision.rs</code></td><td><code>revision.rs</code>（可选）</td><td><span class="dot new"></span> <code>cmx_dct_revision</code></td></tr>
+      <tr><td><code>rule.rs</code>/<code>formula.rs</code></td><td>按需（字典校验较轻）</td><td><span class="dot partial"></span> 先做 uniqueKeys/codeRule 校验</td></tr>
+      <tr><td><code>mod.rs</code></td><td><code>mod.rs</code></td><td><span class="dot have"></span> 导出 + <code>pub mod dct;</code> 入 <code>lib.rs</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="s5-2">5.2 DctMetaView 解析</h3>
+  <p>解析入口对齐 DOC 的 <code>DocMetaView::parse(doc, base)</code>：读定义 JSON + 其 base fieldset，产出强类型只读视图。降维后骨架：</p>
+  <div class="mono-block"><span class="k">pub struct</span> <span class="f">DctMetaView</span> {
+    <span class="a">module_code</span>: String,
+    <span class="a">version</span>: u64,
+    <span class="a">dictionaries</span>: Vec&lt;<span class="f">DictView</span>&gt;,   <span class="c">// 平铺，不是层树</span>
+}
+<span class="k">pub struct</span> <span class="f">DictView</span> {
+    <span class="a">dict_code</span>: String, <span class="a">dict_name</span>: String, <span class="a">dict_kind</span>: DictKind,
+    <span class="a">table_name</span>: String,                          <span class="c">// cf_*</span>
+    <span class="a">self_hierarchy</span>: bool,
+    <span class="a">id_field</span>: String, <span class="a">code_field</span>: String, <span class="a">label_field</span>: String,
+    <span class="a">parent_field</span>: Option&lt;String&gt;,                 <span class="c">// 自分级时 = parent_id</span>
+    <span class="a">columns</span>: Vec&lt;<span class="f">ColumnView</span>&gt;,               <span class="c">// base fieldSet 合并列 + 自身 fields，复用 doc::ColumnView</span>
+    <span class="a">unique_keys</span>: Vec&lt;Vec&lt;String&gt;&gt;,
+    <span class="a">code_rule</span>: Option&lt;Value&gt;,
+    <span class="a">hierarchy</span>: Option&lt;<span class="f">HierarchySpec</span>&gt;,       <span class="c">// {path_field, level_field, leaf_field, closure_table?}</span>
+    <span class="a">schema</span>: Arc&lt;Schema&gt;,                          <span class="c">// cmx-core 物理 schema，喂 sql_builder</span>
+}</div>
+  <p><code>ColumnView</code>、<code>Schema</code>、<code>map_field_type</code>、base fieldSet 展开逻辑<strong>全部复用 doc 侧</strong>（<code>base_dct_meta</code> 的 <code>fieldSets</code> 与 <code>base_doc_meta</code> 结构同形）。<code>/api/dct/meta</code> 投影镜像 <code>project_doc_meta</code>，输出 <code>{ metaCode, version, dictionaries:[{dictCode,dictName,dictKind,tableName,selfHierarchy,idField,codeField,labelField,parentField,columns[],uniqueKeys,hierarchy}] }</code>。可带 <code>?dict=</code> 只投影一张。</p>
+  <div class="callout">
+    <div class="t">定义读取零改动</div>
+    <code>definitions::store</code> 的 <code>infer_base_file</code> <strong>已经</strong>按 <code>metaKind</code> 分流 —— <code>DCT→baseDctMetaRef.file</code>。<code>resolve_dct_meta()</code> 只是把 <code>resolve_doc_meta()</code> 的 <code>DocMetaView::parse</code> 换成 <code>DctMetaView::parse</code>，读定义/读 base/缓存三步骨架照抄。
+  </div>
+
+  <h3 id="s5-3">5.3 加载器：复用与差异</h3>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>解析坐标</b> → <code>resolve_dct_meta(d,a,m,file)</code> 得 <code>Arc&lt;DctMetaView&gt;</code>，定位 <code>DictView</code>（by <code>dict</code>）。<span class="tag reuse">骨架复用</span></div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>按 mode 生成 SQL</b>：<code>flat</code> → <code>build_layer_select(dict_as_layer, lq, None)</code>；<code>tree</code>(整树) → 同上取全量后组装；<code>children</code> → <code>build_layer_select(…, Some((parent_field, ids)))</code>；<code>subtree/ancestors</code> → 闭包表 join。<span class="tag reuse">sql_builder 复用</span></div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>执行 + 零拷贝编码</b>：tokio 走 <code>query_sql_zmc_with_datavalues</code> → <code>ZmcDataSet::encode_columnar_binary</code>；自分级 tree 用 <code>ZmcChildGroup</code> 挂子行（与 DOC 子层同机制，parent-id 记字符串，编码期分桶）。<span class="tag reuse">rowsource 复用</span></div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>出口</b>：msgpack 信封 <code>encode_envelope_ok</code> 或 JSON 列式 <code>encode_columnar_json</code>；大扁平字典走 <code>tokio-zmc-stream</code> 分帧。<span class="tag reuse">出口复用</span></div></div>
+  </div>
+  <p><b>唯一实质差异</b>：DOC 加载器有一段"用 <code>meta.child_layers()</code> 跨表向下 BFS"的循环；DCT 扁平字典<strong>没有这段</strong>，自分级字典把它替换为"对<strong>同一张表</strong>按 <code>parent_id</code> 自引用下钻"。数据访问方法（<code>DatabaseManager</code> 两种驱动）、参数绑定、类型分派全部不变。</p>
+
+  <h3 id="s5-4">5.4 回存与自分级重算</h3>
+  <p><code>DctSaver::save(mm, db_id, dict_view, mode, changes, ctx)</code> 镜像 <code>DocSaver</code>：</p>
+  <ul>
+    <li><b>merge</b>：按 changeset <code>{inserted[], updated[], deleted[]}</code> 逐行 UPSERT/UPDATE/DELETE；审计列（<code>create_by/time·update_by/time</code>）服务端强填；乐观锁以 <code>update_time</code> baseline，冲突返 409。<span class="tag reuse">apply_audit_* / 多值 SQL 复用</span></li>
+    <li><b>replace</b>：删该字典（或指定子树）后批量插入快照。</li>
+    <li><b>自分级重算</b> <span class="tag new">DCT 特有</span>：insert/move 后，服务端按 <code>parent_id</code> 链重算受影响节点的 <code>full_path/level_no/is_leaf</code>（有闭包表则同事务重建其行）。前端<strong>不传</strong>这些派生列，避免不一致。</li>
+    <li><b>codeRule / uniqueKeys 校验</b>：保存前校验编码 pattern、唯一键；失败带字段级 <code>Violation</code> 返回。</li>
+    <li><b>SCD 停旧启新</b>：<code>/api/dct/&lt;dict&gt;/supersede</code> 等价语义落 DB（见 §4.3）。</li>
+  </ul>
+  <p>事务经 <code>mm.get_transaction_context().begin_with_guard(db_id)</code>；批量 <code>/api/dct/save/batch</code> 支持 <code>atomic</code>。</p>
+
+  <h3 id="s5-5">5.5 handler 与路由</h3>
+  <p>新增 <code>crates/libs/cmx-api/src/handlers/portal/dct.rs</code>，在 <code>portal/mod.rs</code> 声明 <code>pub mod dct;</code> 并挂路由（紧邻 doc 路由块，端点命名规则完全一致）：</p>
+  <div class="mono-block"><span class="c">// portal/mod.rs —— 镜像 doc 路由块</span>
+.route(<span class="s">"/dct/meta"</span>, get(dct::dct_meta))
+.route(<span class="s">"/dct/data/sqlx-dataset-json"</span>,  get(dct::dct_data_sqlx_dataset_json).post(…))
+.route(<span class="s">"/dct/data/tokio-zmc-msgpack"</span>,   get(dct::dct_data_tokio_zmc_msgpack).post(…))  <span class="c">// 主用</span>
+.route(<span class="s">"/dct/data/sqlx-zmc-msgpack"</span>,    get(…).post(…))
+.route(<span class="s">"/dct/data/tokio-zmc-json"</span>,      get(…).post(…))
+.route(<span class="s">"/dct/data/sqlx-zmc-json"</span>,       get(…).post(…))
+.route(<span class="s">"/dct/data/children"</span>,           post(dct::dct_children))       <span class="c">// 自分级懒下钻</span>
+.route(<span class="s">"/dct/data/tokio-zmc-stream"</span>,    get(dct::dct_data_stream).post(…))
+.route(<span class="s">"/dct/save"</span>,       post(dct::dct_save))
+.route(<span class="s">"/dct/save/batch"</span>, post(dct::dct_save_batch))
+<span class="c">// 可选后期：/dct/revisions · /dct/revision · /dct/restore</span></div>
+  <div class="callout key">
+    <div class="t">分层纪律（与 doc.rs 一致）</div>
+    handler 层负责"读定义 + 解析 <code>DctMetaView</code>（带缓存）"；<code>cmx-biz</code> 的 <code>DctLoader/DctSaver</code> 只收<strong>已解析的强类型 meta</strong>，<strong>不依赖</strong> <code>definitions</code> 存储。<code>db_id</code> 从头解析，DB 管理器复用 <code>get_default_db_manager()</code>(sqlx) / <code>get_default_pg_db_manager()</code>(tokio)。白名单 <code>dev-local.toml</code> 已含 <code>/api/dct</code>? —— <b>需补</b>：当前仅 <code>/api/dict</code> 在白名单，落地时添加 <code>"/api/dct"</code>。
+  </div>
+</section>
+
+<!-- ============ §6 API ============ -->
+<section id="s6">
+  <h2 class="sec"><span class="num">§6</span>API 契约</h2>
+  <p class="lead">统一 <code>ApiResp</code> 信封 <code>{code,msg,data}</code>（msgpack 端点为二进制信封）。请求头 <code>Authorization: Bearer &lt;token&gt;</code> + <code>db_id</code>。字典坐标走 query，富查询走 POST body。</p>
+
+  <h3>元数据</h3>
+  <table>
+    <thead><tr><th>端点</th><th>参数</th><th>返回</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill get">GET</span><code>/api/dct/meta</code></td><td>query: <code>domain,application,module,file</code>，可选 <code>dict</code></td><td><code>{ metaCode, version, dictionaries:[{dictCode, dictName, dictKind, tableName, selfHierarchy, idField, codeField, labelField, parentField, columns[], uniqueKeys, hierarchy }] }</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>数据装载（每个 GET 便捷 + POST 富查询）</h3>
+  <table>
+    <thead><tr><th>端点</th><th>驱动×内存×传输</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill get">GET</span><span class="pill post">POST</span><code>/api/dct/data/tokio-zmc-msgpack</code></td><td>tokio · 零拷贝 · msgpack</td><td><b>主用</b>：真实 DB 零拷贝装载</td></tr>
+      <tr><td><span class="pill get">GET</span><span class="pill post">POST</span><code>/api/dct/data/sqlx-dataset-json</code></td><td>sqlx · 全拷贝 · JSON</td><td>老链路 / 调试友好</td></tr>
+      <tr><td><span class="pill get">GET</span><span class="pill post">POST</span><code>/api/dct/data/{sqlx-zmc-msgpack, tokio-zmc-json, sqlx-zmc-json}</code></td><td>其余三组合</td><td>补齐驱动×内存×传输</td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/dct/data/children</code></td><td>—</td><td>自分级懒下钻：<code>{dict, parentIds:[…]}</code></td></tr>
+      <tr><td><span class="pill get">GET</span><span class="pill post">POST</span><code>/api/dct/data/tokio-zmc-stream</code></td><td>tokio · 流式 · 分帧二进制</td><td>超大扁平字典 O(1 行) 内存</td></tr>
+    </tbody>
+  </table>
+  <h4>POST body：<code>DctQuery</code></h4>
+  <div class="mono-block">POST /api/dct/data/tokio-zmc-msgpack?domain=fi&amp;application=cmxfico&amp;module=gl&amp;file=cmxfico_dct_meta_v1.json
+Headers: { Authorization: Bearer …, db_id: &lt;库&gt;, Accept: application/x-msgpack }
+{
+  <span class="a">"dict"</span>: <span class="s">"gl_account"</span>,          <span class="c">// 哪张字典表</span>
+  <span class="a">"mode"</span>: <span class="s">"tree"</span>,                <span class="c">// flat | tree | subtree</span>
+  <span class="a">"filter"</span>: { <span class="a">"status"</span>: { <span class="a">"$eq"</span>: 1 }, <span class="a">"acct_group_code"</span>: { <span class="a">"$in"</span>: [<span class="s">"AS"</span>,<span class="s">"LB"</span>] } },
+  <span class="a">"orderBy"</span>: [<span class="s">"sort_key"</span>, <span class="s">"code"</span>],
+  <span class="a">"limit"</span>: 500, <span class="a">"cursor"</span>: null,
+  <span class="a">"ancestorId"</span>: null,           <span class="c">// subtree 模式定位</span>
+  <span class="a">"includeInactive"</span>: false, <span class="a">"asOf"</span>: <span class="s">"2026-07-11"</span>
+}</div>
+  <p>返回列式包（自分级 tree 含 <code>childRows</code> 按层 id 键），前端 <code>decodeMsgpack</code> → <code>CmxDataSet</code>。</p>
+
+  <h3>回存</h3>
+  <table>
+    <thead><tr><th>端点</th><th>body</th><th>返回</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill post">POST</span><code>/api/dct/save</code></td><td>query <code>…&amp;dict=gl_account</code>；body <code>{ saveMode:"merge"|"replace", changes | snapshot }</code></td><td><code>{ ok, mode, affected, updatedAt:[{id,updateTime}] }</code>（自分级另返重算后的 path/level）</td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/dct/save/batch</code></td><td><code>{ atomic?:true, items:[{dict, saveMode, changes}] }</code></td><td>逐项 <code>BatchOutcome</code></td></tr>
+    </tbody>
+  </table>
+  <div class="mono-block"><span class="c">// changes 结构（镜像 DOC）</span>
+{
+  <span class="a">"saveMode"</span>: <span class="s">"merge"</span>,
+  <span class="a">"changes"</span>: {
+    <span class="a">"cf_gl_account"</span>: {
+      <span class="a">"inserted"</span>: [{ <span class="a">"id"</span>:<span class="s">"new-1"</span>, <span class="a">"fields"</span>:{ code:<span class="s">"100101"</span>, name:<span class="s">"库存现金"</span>, parent_id:<span class="s">"1001"</span> } }],
+      <span class="a">"updated"</span>:  [{ <span class="a">"id"</span>:<span class="s">"1001"</span>, <span class="a">"fields"</span>:{ name:<span class="s">"现金"</span> }, <span class="a">"baseline"</span>:<span class="s">"2026-07-01T10:00:00Z"</span> }],
+      <span class="a">"deleted"</span>:  [<span class="s">"1003"</span>]
+    }
+  }
+}</div>
+</section>
+
+<!-- ============ §7 前端 ============ -->
+<section id="s7">
+  <h2 class="sec"><span class="num">§7</span>前端方案（CMXPortalManager）</h2>
+  <p class="lead">前端分两半：<b>设计期</b>（编辑字典元数据定义）已经就绪；<b>运行期</b>（读写真实字典数据）需要新增一个数据源模块，与 <code>cmx-doc-source.js</code> 对称。HTTP/鉴权/msgpack 解码基础设施全部现成。</p>
+
+  <h3 id="s7-1">7.1 设计期：已就绪，沿用</h3>
+  <ul>
+    <li><code>portal-definition-manager.js</code>（<code>data-kind="DCT"</code>）—— 统一的 DOC/DCT 定义编辑器，三区工作台：explorer（文件列表）/ content（<code>dictionaryTables</code> + 字段编辑 + 五类字典 tab）/ property（inspector）。走 <code>/api/definitions/{list,config,batch,default}</code>。</li>
+    <li>菜单 <code>cluster-datasource-menu-node.js</code> 已注册"数据字典 / 业务单据 / 弹性组合"tab。</li>
+    <li><b>无需改动</b> —— 这套负责"字典长什么样"，本方案负责"字典里的数据"。</li>
+  </ul>
+
+  <h3 id="s7-2">7.2 运行期：新增 cmx-dct-source.js（镜像 cmx-doc-source.js）</h3>
+  <p>在 <code>packages/cmx-data-comp/src/lib/</code> 新增，与 <code>cmx-doc-source.js</code> 对称。<code>CmxDCTMeta</code>（<code>cmx-dct-meta.js</code>，<code>tableProp:'dictionaryTables'</code>）<strong>已存在</strong>，直接复用。</p>
+  <table>
+    <thead><tr><th>doc 侧（已有）</th><th>dct 侧（新增）</th><th>端点</th></tr></thead>
+    <tbody>
+      <tr><td><code>loadDocData(host, def)</code></td><td><code>loadDctData(host, def)</code></td><td><code>/api/dct/data/*</code>（binary→<code>tokio-zmc-msgpack</code>）</td></tr>
+      <tr><td><code>saveDocData(host, def, payload)</code></td><td><code>saveDctData(host, def, payload)</code></td><td><code>/api/dct/save</code></td></tr>
+      <tr><td><code>loadDocDataStream()</code></td><td><code>loadDctDataStream()</code></td><td><code>/api/dct/data/tokio-zmc-stream</code></td></tr>
+      <tr><td><code>ChangeSetCollector</code></td><td>复用（同一个类）</td><td>—</td></tr>
+      <tr><td><code>buildDocQuery()</code>(cmx-doc-query.js)</td><td><code>buildDctQuery()</code></td><td>构造 <code>DctQuery</code>（dict/mode/filter…）</td></tr>
+      <tr><td>msgpack 解码 <code>decodeMsgpack</code></td><td>复用</td><td><code>globalThis.__cmxDataComp</code></td></tr>
+    </tbody>
+  </table>
+  <p><code>def</code> 参数在 doc 的 <code>{domain,application,module,file,filter,limit,depth,dbId,binary,query,signal}</code> 基础上加一个 <code>dict</code>（字典 code）与 <code>mode</code>。返回同构 <code>{ dsMap, pkg }</code>。</p>
+
+  <h3 id="s7-3">7.3 字典栏位数据源与 grid 接入</h3>
+  <ul>
+    <li>通用字典表页：调 <code>GET /api/dct/meta?dict=</code> 动态建 grid 列（caption/类型/主键），再 <code>loadDctData</code> 灌数据；自分级字典用 <code>mode:'tree'</code> 接 <code>CmxMasterSlave</code> / 树形 grid，展开时调 <code>/api/dct/data/children</code> 懒加载。</li>
+    <li>栏位下拉/搜索：现有 <code>cmx-dict-data-source.js</code> 打的是<strong>旧</strong> <code>/api/dict/&lt;code&gt;/search</code>（文件版）。新增 <code>createDbDictDataSource</code> 变体指向 <code>/api/dct/data</code>（DB 版，带 filter），逐步替换。</li>
+  </ul>
+  <div class="callout">
+    <div class="t">基础设施零改动</div>
+    <code>api-client.js</code> 已处理 token（<code>localStorage.cmx_access_token</code> → <code>Bearer</code>）、<code>{code,msg,data}</code> 信封拆封、401 跳登录、全局 <code>fetch</code> 拦截。msgpack 解码经 <code>globalThis.__cmxDataComp.decodeMsgpack</code>（<code>@msgpack/msgpack</code>）。新数据源直接复用，无需碰这些。
+  </div>
+</section>
+
+<!-- ============ §8 左树右表 ============ -->
+<section id="s8">
+  <h2 class="sec"><span class="num">§8</span>左树右表：自分级 &amp; 分类字典的编辑与查询</h2>
+  <p class="lead"><strong>左侧一棵树、右侧一张表、右表随左树选中节点刷新、可直接 CRUD</strong> —— 这是字典维护里最常用的一种界面形态。它有<strong>两种绑定来源</strong>，但<strong>是同一个 UI、同一套后端谓词</strong>：① <b>自分级字典</b>（一张表内 <code>parent_id</code> 自引用，左树右表是<u>同一张字典</u>）；② <b>分类字典</b>（<code>classifyRegistry</code>，左树是分类字典、右表是被它分类的<u>另一张目标字典</u>）。本节先讲①（本次需求），再讲②（承接上一版），最后给统一的后端/前端/契约。</p>
+
+  <h3 id="s8-1">8.1 统一抽象：一个 UI，两种绑定，同一条谓词</h3>
+  <p>把两种形态抽象到一起，实现上只有"过滤列是谁""树和表是不是同一张"两个参数不同，其余全共用：</p>
+  <table>
+    <thead><tr><th style="width:14%">维度</th><th>① 自分级字典 <span class="tag">本次需求</span></th><th>② 分类字典 <span class="tag">上一版 §8</span></th></tr></thead>
+    <tbody>
+      <tr><td><b>左树</b></td><td>字典<strong>自己</strong>（<code>selfHierarchy=true</code>，如 <code>cf_gl_account</code>）</td><td><strong>分类字典</strong>（<code>classifyDict</code>，如 <code>account_category</code>）</td></tr>
+      <tr><td><b>右表</b></td><td><strong>同一张字典</strong>（展开选中节点的下级）</td><td><strong>另一张目标字典</strong>（<code>targetDict</code>，如 <code>gl_account</code>）</td></tr>
+      <tr><td><b>过滤列</b></td><td>本表 <code>parentField</code>（<code>parent_id</code>）</td><td>目标表 <code>bindField</code>（外键）</td></tr>
+      <tr><td><b>过滤谓词</b></td><td colspan="2" style="text-align:center"><code>WHERE &lt;过滤列&gt; = ANY($选中节点及其子树 id 集)</code> —— <strong>完全相同</strong></td></tr>
+      <tr><td><b>范围</b></td><td>直接子级 或 整棵子树（<code>deep</code>）</td><td>该分类 或 含子类（<code>inheritUp</code>）</td></tr>
+      <tr><td><b>新建默认</b></td><td>新行 <code>parent_id</code> = 左树选中节点</td><td>新行 <code>bindField</code> = 左树选中分类</td></tr>
+      <tr><td><b>"移动"</b></td><td>改 <code>parent_id</code>（+ 服务端重算 <code>full_path</code>）</td><td>改 <code>bindField</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <div class="t">这就是为什么代价极低</div>
+    两种形态的右表过滤 <code>WHERE fk = ANY($ids)</code>，和加载器<strong>早已存在</strong>的子层下钻 <code>parent_scope</code> 分支（§5.3）<strong>是同一个形状</strong>。前端也是<strong>同一个左树右表组件</strong>，只是配置"过滤列 = <code>parent_id</code> 还是 <code>bindField</code>、右表 = 本字典还是目标字典"。所以本次自分级需求，<strong>后端几乎零新增</strong>（自分级装载 §4.2 已在方案里），主要是前端组件 + 一个可选的"deep 子树"参数。
+  </div>
+
+  <h3 id="s8-2">8.2 自分级字典：同表 parent_id（本次需求）</h3>
+  <p>目标：<code>selfHierarchy=true</code> 的字典（cmxfico 里 <code>cf_gl_account</code>/<code>cf_fs_version</code>/<code>cf_cons_org</code>，gl_md 里 <code>acct_entity</code>/<code>gl_account</code>/<code>cost_center</code>/… 多张），左树展示层级，右表展示<strong>选中节点的下级</strong>，可增删改查。</p>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0">装载（读）</h4>
+      <ul>
+        <li><b>左树</b>：<code>loadDctData({dict, mode:'tree'})</code> 装整棵（物化路径 <code>full_path</code> 排序直出森林），或大树时 <code>mode:'children'</code> 惰性展开。<span class="tag reuse">§4.2 已有</span></li>
+        <li><b>右表</b>：选中节点 → <code>{dict, mode:'children', parentIds:[节点id], deep:false}</code> → 后端 <code>WHERE parent_id = ANY($ids)</code>。<span class="tag reuse">parent_scope 复用</span></li>
+        <li><b>deep 开关</b>：<code>deep:true</code> 时右表显<strong>整棵子树</strong>（不只直接子级），后端用 <code>full_path LIKE '$path.%'</code> 或闭包表。<span class="tag new">query 小增量</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">CRUD（写）</h4>
+      <ul>
+        <li><b>新增</b>：右表加行，<code>parent_id</code> <strong>默认 = 左树当前选中节点</strong>；保存时服务端算 <code>full_path/level_no/is_leaf</code>（父的 <code>is_leaf</code> 置 0）。<span class="tag reuse">§5.4 重算</span></li>
+        <li><b>编辑</b>：普通列走 changes；改 <code>code</code> 且被引用时按 <code>uniqueKeys</code>/引用完整性校验。</li>
+        <li><b>删除</b>：叶子直接删；非叶需选策略（禁删 / 级联 / 提升子级到祖父）—— 见 §8 风险。</li>
+        <li><b>移动</b>：拖拽子树到另一节点 = 改 <code>parent_id</code> + 服务端<strong>批量重算子树 <code>full_path</code></strong>（事务内，注意写放大 R2）。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="mono-block"><span class="c">// 右表：装"1001 流动资产"节点的直接下级科目</span>
+POST /api/dct/data/tokio-zmc-msgpack?...&amp;file=cmxfico_dct_meta_v1.json
+{
+  <span class="a">"dict"</span>: <span class="s">"gl_account"</span>,
+  <span class="a">"mode"</span>: <span class="s">"children"</span>,
+  <span class="a">"parentIds"</span>: [<span class="s">"1001"</span>],   <span class="c">// 左树选中节点 id（自引用 parent_id 过滤）</span>
+  <span class="a">"deep"</span>: false,           <span class="c">// true=整棵子树(full_path LIKE)；false=仅直接下级</span>
+  <span class="a">"orderBy"</span>: [<span class="s">"sort_key"</span>, <span class="s">"code"</span>], <span class="a">"limit"</span>: 500
+}
+<span class="c">// 新增子节点：parent_id 默认填左树选中节点，full_path/level_no/is_leaf 由服务端算</span>
+POST /api/dct/save?...&amp;dict=gl_account
+{ <span class="a">"saveMode"</span>:<span class="s">"merge"</span>, <span class="a">"changes"</span>:{ <span class="a">"cf_gl_account"</span>:{
+    <span class="a">"inserted"</span>:[{ <span class="a">"id"</span>:<span class="s">"new-1"</span>, <span class="a">"fields"</span>:{ code:<span class="s">"100101"</span>, name:<span class="s">"库存现金"</span>, <span class="a">"parent_id"</span>:<span class="s">"1001"</span> } }]
+} } }</div>
+  <div class="callout warn">
+    <div class="t">与 §4.2 的关系</div>
+    §4.2 已经把"自分级字典怎么装载/存储"（物化路径 vs 闭包表、children 懒下钻、派生列服务端重算）讲透了。本节<strong>不重复</strong>那些，只补"<strong>左树右表这个界面形态</strong>怎么用那套能力"：左树=整树装载、右表=<code>children</code> 过滤、CRUD=§5.4 保存器 + <code>parent_id</code> 默认值。唯一新增是右表的 <code>deep</code>（子树 vs 直接子级）开关。
+  </div>
+
+  <h3 id="s8-3">8.3 分类字典：跨表 classifyRegistry / groupRegistry</h3>
+  <p>形态②：左树是<strong>分类字典</strong>（如"科目类别""伙伴分类"），右表是<strong>被它分类的另一张目标字典</strong>，选中分类节点 → 右表只显归属该分类（含子类）的数据。这套关系<strong>元数据里已声明</strong>，不需发明新约定。</p>
+  <div class="callout key">
+    <div class="t">约定已经在元数据里了</div>
+    <code>gl_md_dct_meta_v1.json</code> 顶层<strong>已声明</strong> <code>classifyRegistry[]</code> 与 <code>groupRegistry[]</code>，把"哪张分类字典 × 过滤哪张目标字典 × 靠哪个绑定列"讲得一清二楚。服务/前端只需<strong>消费</strong>这两个注册表。
+  </div>
+  <div class="mono-block"><span class="c">// gl_md_dct_meta_v1.json 顶层（真实存在）</span>
+<span class="a">"classifyRegistry"</span>: [
+  { <span class="a">"classifyMeta"</span>: {
+      <span class="a">"classifyCode"</span>: <span class="s">"account_category"</span>, <span class="a">"classifyName"</span>: <span class="s">"科目类别"</span>,
+      <span class="a">"targetDict"</span>:  <span class="s">"gl_account"</span>,        <span class="c">// 右侧网格：被过滤的目标字典</span>
+      <span class="a">"classifyDict"</span>: <span class="s">"account_category"</span>,  <span class="c">// 左侧树：分类字典（自分级则成树）</span>
+      <span class="a">"bindField"</span>:   <span class="s">"account_type"</span>,      <span class="c">// 目标表上的外键列（存所属分类 code/id）</span>
+      <span class="a">"multiAttr"</span>: false,  <span class="c">// 单选归类（一条数据一个分类）</span>
+      <span class="a">"leafOnly"</span>:  false,  <span class="c">// 是否只能归到叶子分类</span>
+      <span class="a">"inheritUp"</span>: true    <span class="c">// 选父类时是否含所有子类数据（子树过滤）</span>
+  } }
+],
+<span class="a">"groupRegistry"</span>: [
+  { <span class="a">"groupMeta"</span>: {
+      <span class="a">"groupSchemeCode"</span>: <span class="s">"report_group"</span>, <span class="a">"targetDict"</span>: <span class="s">"gl_account"</span>,
+      <span class="a">"groupDict"</span>: <span class="s">"report_group_dict"</span>,
+      <span class="a">"multiValue"</span>: true,                 <span class="c">// 多对多：一条数据进多个分组</span>
+      <span class="a">"relationTable"</span>: <span class="s">"dict_group_rel"</span>,  <span class="c">// 中间关系表</span>
+      <span class="a">"inheritDown"</span>: true
+  } }
+]</div>
+  <table>
+    <thead><tr><th>字段</th><th>含义</th><th>驱动的行为</th></tr></thead>
+    <tbody>
+      <tr><td><code>classifyDict</code></td><td>左树用哪张<strong>分类字典</strong>（<code>dictKind=CLASSIFY</code>，常 <code>selfHierarchy=true</code>）</td><td>左侧调 <code>/api/dct/data</code> <code>mode:'tree'</code> 装该字典（即 §8.2 的左树能力）</td></tr>
+      <tr><td><code>targetDict</code></td><td>右表用哪张<strong>目标业务字典</strong></td><td>右侧调 <code>/api/dct/data</code> 装该字典，带分类过滤</td></tr>
+      <tr><td><code>bindField</code></td><td>目标表上存"所属分类"的<strong>外键列</strong></td><td>过滤谓词 <code>WHERE bindField = ANY($categoryIds)</code></td></tr>
+      <tr><td><code>inheritUp</code></td><td>选父分类是否连带其子分类的数据</td><td>true → 先展开分类子树取 id 集合，再 ANY 过滤（同 §8.2 的 <code>deep</code>）</td></tr>
+      <tr><td><code>leafOnly</code> / <code>multiAttr</code></td><td>只能归叶子 / 是否多分类</td><td>写校验：非叶报错 / multiAttr→走 group 关系表</td></tr>
+    </tbody>
+  </table>
+  <h4>多对多分组（groupRegistry，形态②的变体）</h4>
+  <p>一条数据可进<strong>多个</strong>分组，经中间关系表 <code>dict_group_rel</code>（<code>relationCommonFields</code>：分组节点 × 业务数据双向冗余）。右表过滤 = <code>JOIN 关系表 WHERE group_id = ANY(...)</code>；写 = 增删关系行（<code>groupChanges</code>）。这是唯一需要"新 JOIN 分支"的形态，其余都复用 <code>parent_scope</code> 谓词。后置实现。</p>
+  <div class="callout danger">
+    <div class="t">样例数据存在不一致 —— 落地前需对齐</div>
+    抽查 <code>gl_md_dct_meta_v1.json</code> 发现 registry 与实际表<strong>对不齐</strong>，实现时以"表结构 + registry 语义"为准并修数据：<br>
+    ① <code>classifyMeta.classifyDict="partner_category_dict"</code>，但实际字典 <code>dictCode</code> 是 <code>partner_category</code>（后缀 <code>_dict</code> 多余）；<br>
+    ② <code>account_category</code> 的 <code>bindField="account_type"</code>，但 <code>gl_account</code> 的 <code>fields</code> 里<strong>没有</strong> <code>account_type</code> 列（有 <code>account_category_code</code>）——绑定列名需校正；<br>
+    ③ <code>groupRegistry.relationTable="dict_group_rel"</code> <strong>未</strong>作为 <code>dictionaryTable</code> 声明（不会被 <code>compile_dct</code> 建出），多对多形态<strong>需先补关系表定义</strong>（可复用 <code>relationCommonFields</code>）。
+  </div>
+
+  <h3 id="s8-4">8.4 后端：树 + 过滤 + 联动写（两形态统一）</h3>
+  <p>不新增独立端点——复用 §5/§6 的 <code>/api/dct/meta</code> 与 <code>/api/dct/data/*</code>，右表过滤统一走 <code>parent_scope</code> 谓词，只做小增量：</p>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>解析 registry</b> —— <code>DctMetaView</code> 增 <code>classifiers: Vec&lt;ClassifyView&gt;</code> / <code>groups: Vec&lt;GroupView&gt;</code>，从顶层 <code>classifyRegistry</code>/<code>groupRegistry</code> 解析。<code>/api/dct/meta</code> 投影加 <code>classifiers[]</code>（自分级形态无需 registry，前端从 <code>selfHierarchy=true</code> 直接判定）。<span class="tag new">meta 增量·仅分类形态</span></div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>左树装载</b> —— 对左树字典（自分级形态=本字典；分类形态=<code>classifyDict</code>）调既有装载 <code>mode:'tree'</code>（物化路径森林）。<strong>零新代码</strong>。<span class="tag reuse">§4.2 复用</span></div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>右表过滤</b> —— <code>DctQuery</code>：自分级形态用 <code>{mode:'children', parentIds, deep}</code>（过滤列=<code>parentField</code>）；分类形态用 <code>classifyFilter:{classifyCode, categoryIds, inheritUp}</code>（过滤列=<code>bindField</code>）。<strong>两者服务端都归约成</strong> <code>build_layer_select(layer, lq, Some((过滤列, 展开后的 id 集)))</code>。<code>deep</code>/<code>inheritUp</code> 时先用物化路径 <code>full_path LIKE</code> 展开子树。<span class="tag reuse">parent_scope 复用</span></div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>联动写（CRUD）</b> —— <code>DctSaver</code>：自分级形态新行默认 <code>parent_id</code>=左树选中 + 服务端重算 <code>full_path/level_no/is_leaf</code>（§5.4）；分类形态新行默认 <code>bindField</code>=左树选中分类（<code>leafOnly</code> 校验非叶报错）；多对多改为增删 <code>dict_group_rel</code>。<span class="tag new">saver 增量</span></div></div>
+  </div>
+
+  <h3 id="s8-5">8.5 前端：统一左树右表组件</h3>
+  <p>新增一个<strong>通用组件</strong> <code>cmx-dict-tree-table</code>（左树右表 + CRUD），<strong>一套组件覆盖两种形态</strong>，靠配置区分；联动全走既有数据源（<code>cmx-dct-source.js</code> §7.2、<code>CmxMasterSlave</code>、<code>decodeMsgpack</code>、<code>api-client</code> 全现成，本组件是"编排"非"新管线"）：</p>
+  <table>
+    <thead><tr><th>配置</th><th>自分级形态</th><th>分类形态</th></tr></thead>
+    <tbody>
+      <tr><td><code>treeDict</code>（左树）</td><td>= 本字典</td><td>= <code>classifyDict</code></td></tr>
+      <tr><td><code>tableDict</code>（右表）</td><td>= 本字典（同一张）</td><td>= <code>targetDict</code></td></tr>
+      <tr><td><code>filterField</code></td><td><code>parent_id</code></td><td><code>bindField</code></td></tr>
+      <tr><td>右表请求</td><td><code>{dict:tableDict, mode:'children', parentIds:[节点id], deep}</code></td><td><code>{dict:tableDict, classifyFilter:{classifyCode, categoryIds:[节点id], inheritUp}}</code></td></tr>
+      <tr><td>新建默认</td><td>行 <code>parent_id</code>=选中节点</td><td>行 <code>bindField</code>=选中分类</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>进入</b>：<code>GET /api/dct/meta?dict=&lt;dict&gt;</code>；<code>selfHierarchy=true</code> → 自分级形态；有 <code>classifiers[]</code> → 分类形态（多维度时顶部下拉切换）。</li>
+    <li><b>联动</b>：左树选中节点 → 取 <code>id</code>（<code>deep</code>/<code>inheritUp</code> 由后端展开子树）→ 刷新右表。</li>
+    <li><b>右表 CRUD</b>：既有 grid 编辑 + <code>ChangeSetCollector</code> → <code>saveDctData</code>；"移动"= 改 <code>parent_id</code>/<code>bindField</code>（或拖拽到左树节点）。</li>
+  </ul>
+  <div class="mono-block"><span class="c">┌─ cmx-dict-tree-table（自分级形态：左树右表同一张 gl_account）───────┐</span>
+<span class="c">│</span>  总账科目（自分级）              [☑含子树 deep] [+新增] [保存]  <span class="c">│</span>
+<span class="c">├──────────────┬─────────────────────────────────────────────────┤</span>
+<span class="c">│</span> ▾ 1 资产      <span class="c">│</span>  code    name        余额方向  末级  ...  <span class="c">← 右表：选中节点的下级</span>
+<span class="c">│</span>   ▾ 1001 流动 <span class="c">│</span>  100101  库存现金     借       是         <span class="c">   WHERE parent_id</span>
+<span class="c">│</span>     100101 <span class="c">│</span>  100201  银行存款     借       是         <span class="c">     = ANY([1001])</span>
+<span class="c">│</span>     100201 <span class="c">│</span>  [+ 新建行 → parent_id 默认=1001 流动资产]     <span class="c">│</span>
+<span class="c">│</span> ▸ 2 负债      <span class="c">│</span>                                                 <span class="c">│</span>
+<span class="c">└─ 左树:gl_account (mode=tree) ───┴───────────────────────────────┘</span>
+
+<span class="c">┌─ cmx-dict-tree-table（分类形态：左树 account_category × 右表 gl_account）┐</span>
+<span class="c">│</span>  科目类别 ▾ (classifier 切换)     [☑含子类 inheritUp] [+新增] [保存] <span class="c">│</span>
+<span class="c">├──────────────┬─────────────────────────────────────────────────┤</span>
+<span class="c">│</span> ▾ 资产        <span class="c">│</span>  code    name        币种   状态   ...  <span class="c">← 右表：gl_account</span>
+<span class="c">│</span>   ▾ 流动资产   <span class="c">│</span>  100101  库存现金     CNY    启用        <span class="c">   WHERE bindField</span>
+<span class="c">│</span>     现金     <span class="c">│</span>  100201  银行存款     CNY    启用        <span class="c">     = ANY(子树ids)</span>
+<span class="c">│</span> ▸ 负债        <span class="c">│</span>  [+ 新建行 → bindField 默认=当前分类]         <span class="c">│</span>
+<span class="c">└─ 左树:account_category (mode=tree) ─┴───────────────────────────┘</span></div>
+
+  <h3 id="s8-6">8.6 API 契约（增量）</h3>
+  <table>
+    <thead><tr><th>端点</th><th>增量</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill get">GET</span><code>/api/dct/meta</code></td><td>返回体加 <code>classifiers:[{classifyCode, classifyName, classifyDict, targetDict, bindField, multiAttr, leafOnly, inheritUp}]</code> 与 <code>groups:[{groupSchemeCode, groupDict, relationTable, multiValue}]</code>；自分级形态无需——前端读 <code>selfHierarchy/parentField</code> 即可</td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/dct/data/*</code></td><td><code>DctQuery</code>：自分级右表用 <code>mode:'children'</code> + <code>parentIds</code> + <code>deep</code>（§8.2）；分类右表用 <code>classifyFilter</code>（见下）；左树装载都是普通 <code>mode:'tree'</code></td></tr>
+      <tr><td><span class="pill post">POST</span><code>/api/dct/save</code></td><td>自分级 &amp; 单属性分类无需改（<code>parent_id</code>/<code>bindField</code> 都是普通列，走 changes）；多对多 body 加 <code>groupChanges:{ add:[{targetId,groupId}], remove:[…] }</code> 写关系表</td></tr>
+    </tbody>
+  </table>
+  <div class="mono-block"><span class="c">// 分类右表：装"资产类"下所有科目（含子类）</span>
+POST /api/dct/data/tokio-zmc-msgpack?...&amp;file=gl_md_dct_meta_v1.json
+{
+  <span class="a">"dict"</span>: <span class="s">"gl_account"</span>,
+  <span class="a">"mode"</span>: <span class="s">"flat"</span>,
+  <span class="a">"classifyFilter"</span>: {
+    <span class="a">"classifyCode"</span>: <span class="s">"account_category"</span>,
+    <span class="a">"categoryIds"</span>: [<span class="s">"1"</span>],       <span class="c">// 左树选中"资产"节点 id</span>
+    <span class="a">"inheritUp"</span>: true          <span class="c">// 后端用分类字典物化路径展开子树，再 WHERE bindField = ANY(展开集)</span>
+  },
+  <span class="a">"orderBy"</span>: [<span class="s">"code"</span>], <span class="a">"limit"</span>: 500
+}</div>
+</section>
+
+<!-- ============ §9 复用/新增 ============ -->
+<section id="s9">
+  <h2 class="sec"><span class="num">§9</span>复用 / 新增清单</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0;color:#86efac">原样复用（不 fork）</h4>
+      <ul>
+        <li><code>definitions::store</code> —— 已识别 <code>baseDctMetaRef</code></li>
+        <li><code>doc::sql_builder::build_layer_select</code> —— 扁平/自引用同构</li>
+        <li><code>doc::ColumnView</code> · <code>map_field_type</code> · base fieldSet 展开</li>
+        <li><code>cmx-rowsource</code> · <code>ZmcDataSet</code> 编码（columnar_binary/json）· <code>ZmcChildGroup</code></li>
+        <li><code>cmx-database</code>(sqlx) + <code>cmx-database-pg</code>(tokio) 两驱动 + 零拷贝/流式查询</li>
+        <li><code>ColumnarCodec</code> · <code>encode_envelope_ok</code> · 流式分帧</li>
+        <li>建表/部署：<code>compile_dct</code> · <code>PgTableDefineExecutor</code> · <code>cmx_model_module</code></li>
+        <li>前端 <code>api-client.js</code> · <code>decodeMsgpack</code> · <code>CmxDCTMeta</code> · <code>ChangeSetCollector</code> · <code>portal-definition-manager</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0;color:#9ec1ff">新增</h4>
+      <ul>
+        <li><b>后端</b> <code>cmx-biz/src/dct/</code>：<code>meta.rs</code>(DctMetaView + <code>ClassifyView</code>/<code>GroupView</code>) · <code>query.rs</code>(DctQuery + <code>classifyFilter</code>) · <code>loader.rs</code> · <code>zmc_loader.rs</code> · <code>zmc_loader_sqlx.rs</code> · <code>saver.rs</code> · <code>cache.rs</code> · <code>mod.rs</code>；<code>lib.rs</code> 加 <code>pub mod dct;</code></li>
+        <li><b>后端</b> <code>cmx-api/src/handlers/portal/dct.rs</code> + <code>mod.rs</code> 路由 + <code>pub mod dct;</code></li>
+        <li><b>后端</b>（分类形态②）多对多 JOIN 关系表生成分支 + <code>groupChanges</code> 写关系表；补 <code>dict_group_rel</code> 表定义</li>
+        <li><b>配置</b> <code>dev-local.toml</code>/<code>dev.toml</code> 白名单加 <code>"/api/dct"</code></li>
+        <li><b>存储</b>（可选后期）<code>cmx_dct_revision</code> 迁移；自分级闭包表 <code>cf_&lt;dict&gt;_closure</code>（按需）</li>
+        <li><b>前端</b> <code>cmx-data-comp</code>：<code>cmx-dct-source.js</code> · <code>buildDctQuery</code>（含 <code>classifyFilter</code>）；<code>createDbDictDataSource</code> 变体</li>
+        <li><b>前端</b> 通用组件 <code>cmx-dict-tree-table</code>（左树右表 + CRUD；一套组件覆盖"自分级同表"与"分类跨表"两形态，编排既有数据源）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout key">
+    <div class="t">工作量画像</div>
+    后端 ≈ 复刻 <code>doc/</code>（~11 文件）并降维，SQL/编码/事务/驱动零改；前端 ≈ 复刻 <code>cmx-doc-source.js</code> 一个文件 + query 构造。<strong>新逻辑集中在两处</strong>：DctMetaView 解析 <code>dictionaryTables</code>、DctSaver 的自分级派生列重算。其余是机械镜像。
+  </div>
+</section>
+
+<!-- ============ §10 阶段 ============ -->
+<section id="s10">
+  <h2 class="sec"><span class="num">§10</span>落地阶段</h2>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>元数据打通</b> —— <code>DctMetaView::parse</code> + <code>resolve_dct_meta</code> + <code>GET /api/dct/meta</code>；前端 <code>CmxDCTMeta</code> 动态建列。<span class="tag">可独立联调</span></div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>扁平装载</b> —— <code>DctLoader</code> flat + <code>tokio-zmc-msgpack</code> + <code>sqlx-dataset-json</code>；前端 <code>loadDctData</code> 灌 grid。覆盖 32/35 字典。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>自分级装载 + 左树右表 UI</b> —— <code>DctLoader</code> tree/children/subtree（物化路径优先，右表 <code>deep</code> 子树开关）；前端 <code>cmx-dict-tree-table</code> 组件：左树整装、右表按 <code>parent_id</code> 过滤选中节点下级、CRUD（新行默认 <code>parent_id</code>=选中节点）。覆盖 <code>gl_account</code> 等自分级字典。<span class="tag new">本次需求</span></div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>回存</b> —— <code>DctSaver</code> merge/replace + 审计列 + 乐观锁 + 自分级重算（<code>full_path/level_no/is_leaf</code>）+ codeRule/uniqueKeys 校验；<code>/api/dct/save[/batch]</code> + 前端 <code>ChangeSetCollector</code>。</div></div>
+    <div class="step"><div class="badge">5</div><div class="body"><b>分类形态（跨表）</b> —— 解析 <code>classifyRegistry</code> → meta 加 <code>classifiers[]</code>；右表 <code>classifyFilter</code> 复用同一 <code>parent_scope</code> 过滤；<strong>同一个</strong> <code>cmx-dict-tree-table</code> 组件换配置（左树=<code>classifyDict</code>、过滤列=<code>bindField</code>）即可。<span class="tag">承接上一版</span></div></div>
+    <div class="step"><div class="badge">6</div><div class="body"><b>补全组合与流式</b> —— 其余四个 data 端点 + <code>tokio-zmc-stream</code>；SCD 停旧启新。</div></div>
+    <div class="step"><div class="badge">7</div><div class="body"><b>可选</b> —— 多对多分组（形态②，补 <code>dict_group_rel</code> + JOIN 分支）；版本化 <code>cmx_dct_revision</code>；闭包表；把旧 <code>/api/dict/*</code> 数据源桥接到 <code>/api/dct/data</code>。</div></div>
+  </div>
+  <div class="callout warn">
+    <div class="t">构建约定</div>
+    <code>cmx-container</code> 下用 <span class="kbd">rtk cargo build</span> / <span class="kbd">rtk cargo check</span>（见 <code>.claude/CLAUDE.md</code>）。错误用 <code>thiserror</code>（<code>DctError</code> 独立模块），禁裸 <code>unwrap()</code>，日志用 <code>tracing</code>，依赖走 workspace <code>workspace = true</code>。
+  </div>
+</section>
+
+<!-- ============ §11 决策 ============ -->
+<section id="s11">
+  <h2 class="sec"><span class="num">§11</span>关键决策与风险</h2>
+  <div class="card">
+    <h4 style="margin-top:0">已定决策</h4>
+    <table style="margin:0">
+      <tbody>
+        <tr><td><b>D1</b></td><td>DCT 数据服务读写 <strong><code>cf_*</code> 物理表</strong>（B 层部署产物），<strong>不</strong>走旧 <code>data/dict/entries/*.json</code>。与 DOC 的 <code>cv_*</code> 对称。</td></tr>
+        <tr><td><b>D2</b></td><td>端点、模块、命名<strong>逐一对标 DOC</strong>（<code>/api/doc/*</code>→<code>/api/dct/*</code>，<code>doc/</code>→<code>dct/</code>），最大复用、最低认知负担。</td></tr>
+        <tr><td><b>D3</b></td><td>自分级树<strong>默认物化路径</strong>（base 已含 <code>full_path/level_no/is_leaf</code>）；闭包表仅按需挂载。派生列一律<strong>服务端重算</strong>。</td></tr>
+        <tr><td><b>D4</b></td><td>旧 <code>/api/dict/*</code> 检索引擎<strong>本期保留并行</strong>（AI 工具、弹性组合仍依赖），不删；后期桥接。</td></tr>
+        <tr><td><b>D5</b></td><td><code>sql_builder</code> <strong>不 fork</strong>，扁平字典与自分级下钻共用 <code>build_layer_select</code>。</td></tr>
+        <tr><td><b>D6</b></td><td><strong>左树右表</strong>是一个统一形态：自分级（同表 <code>parent_id</code>）与分类（跨表 <code>bindField</code>，消费既有 <code>classifyRegistry</code>）共用<strong>同一前端组件 + 同一 <code>parent_scope</code> 谓词</strong>，<strong>不新增端点</strong>，只在 meta/query/saver 做增量。</td></tr>
+        <tr><td><b>D7</b></td><td><strong>先做自分级 + 单属性分类</strong>（<code>parent_id</code>/<code>bindField</code> 都是普通列，走 changes，覆盖绝大多数场景）；多对多分组（<code>groupRegistry</code> + JOIN 关系表）后置，需先补 <code>dict_group_rel</code> 表定义。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">待确认 / 风险</h4>
+    <table style="margin:0">
+      <tbody>
+        <tr><td><b>Q1</b></td><td><b>关系字典（RELATION）</b>装载形态：是当普通两列冗余表（走 flat），还是需要 JOIN 双方名称？建议先 flat（<code>relationCommonFields</code> 已冗余 name），JOIN 留增强。</td></tr>
+        <tr><td><b>Q2</b></td><td><b>旧引擎的 CJK 模糊检索</b>是否需求？新服务先做 DB 精确/glob/范围；若前端下拉强依赖模糊，短期仍走 <code>/api/dict</code>，或后端加 <code>ILIKE</code>/pg_trgm。</td></tr>
+        <tr><td><b>Q3</b></td><td><b>子树展开（<code>deep</code>/<code>inheritUp</code>）放哪</b>：后端展开（前端只传选中节点 id，推荐，逻辑内聚）还是前端传全子树 id 集？建议后端，用物化路径 <code>full_path LIKE</code> 一次取全集。自分级与分类形态同此。</td></tr>
+        <tr><td><b>Q4</b></td><td><b>右表默认范围</b>：自分级右表默认显<strong>直接子级</strong>还是<strong>整棵子树</strong>（<code>deep</code>）？分类右表默认<strong>仅本类</strong>还是<strong>含子类</strong>（<code>inheritUp</code>）？"未分类/未挂靠"数据是否加虚拟节点（<code>WHERE fk IS NULL</code>）浏览？需产品确认交互。</td></tr>
+        <tr><td><b>R1</b></td><td><b>组织范围/多租户</b>：<code>scope_type/entity_id</code> 过滤需 handler 拿到当前组织上下文；DOC 侧 data handler 目前基本忽略身份，DCT 若要按组织隔离需显式下推，别遗漏。</td></tr>
+        <tr><td><b>R2</b></td><td><b>自分级移动子树</b>写放大：物化路径下移动深子树会批量改 <code>full_path</code>；大字典（如科目表）需在事务内做，注意锁范围。</td></tr>
+        <tr><td><b>R3</b></td><td><b>seed 与运行期写冲突</b>：<code>is_system=1</code> 系统预置项禁删、部分禁改，保存器需校验。</td></tr>
+        <tr><td><b>R4</b></td><td><b>自分级删除策略</b>：删非叶节点如何处理其子树——禁删（有子级报错）/ 级联删 / 子级提升到祖父？默认<strong>禁删非叶</strong>最安全；级联/提升需产品确认并在保存器实现（含 <code>full_path</code> 重算）。</td></tr>
+        <tr><td><b>R5</b></td><td><b>样例元数据不一致</b>（见 §8.3 红框）：<code>classifyDict</code> 后缀 <code>_dict</code> 对不上 dictCode、<code>bindField</code> 列在目标表不存在、<code>dict_group_rel</code> 未声明为表。落地前需修数据 + 加 registry 校验（引用的 dict/列必须存在）。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    方案对标既有实现：后端 DOC = <code>cmx-container/crates/libs/cmx-biz/src/doc/</code> + <code>cmx-api/.../portal/doc.rs</code>；前端 DOC = <code>CMXPortalManager</code> + <code>packages/cmx-data-comp/src/lib/cmx-doc-source.js</code>。DCT 定义/建表/部署已就绪（<code>definitions::store</code> · <code>model_center::compile_dct</code> · <code>cmx_model_module</code>），本方案补齐 <code>cf_*</code> 物理表的存储回写与零拷贝装载服务。定义样例见 <code>data/meta/definitions/**/*_dct_meta_*.json</code> 与 <code>base/base_dct_meta_v1.json</code>。
+  </div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: cmx_portal_manager
+title: CMX 企业门户管理器（Portal Manager）
+scope:
+    - CMXPortalManager/
+source_files: []
+depends_on: []
+related_to:
+    - path: shared_packages

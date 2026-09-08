@@ -1,0 +1,51 @@
+<svg viewBox="0 0 820 424" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/>
+  </marker>
+  <filter id="s6" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="424" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">约束 AST：四种权限范型的公共“残差”表示</text>
+
+<!-- 左：enum 清单 -->
+<g filter="url(#s6)"><rect x="30" y="58" width="316" height="332" rx="11" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="46" y="84" font-size="12.5" font-weight="700" fill="#334155">enum Constraint</text>
+<text x="46" y="116" font-size="11.5" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">True / False</text>
+<text x="46" y="118" font-size="10" fill="#94a3b8"> </text>
+<text x="220" y="116" font-size="10.5" fill="#64748b">全放行 / 全拒绝</text>
+<text x="46" y="150" font-size="11.5" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">And(cs) · Or(cs) · Not(c)</text>
+<text x="46" y="172" font-size="10.5" fill="#64748b">布尔组合（可任意嵌套）</text>
+<text x="46" y="206" font-size="11.5" fill="#5b21b6" font-family="ui-monospace,Menlo,Consolas,monospace">Cmp{ field, op, value }</text>
+<text x="46" y="228" font-size="10.5" fill="#64748b">op ∈ = ≠ &lt; ≤ &gt; ≥ like</text>
+<text x="46" y="262" font-size="11.5" fill="#155e75" font-family="ui-monospace,Menlo,Consolas,monospace">In{ field, values }</text>
+<text x="46" y="284" font-size="10.5" fill="#64748b">维度值集 / 层级展开落点</text>
+<text x="46" y="318" font-size="11.5" fill="#92400e" font-family="ui-monospace,Menlo,Consolas,monospace">Between{ field, lo, hi }</text>
+<text x="46" y="352" font-size="11.5" fill="#b91c1c" font-family="ui-monospace,Menlo,Consolas,monospace">Relation{ field, rel, subj }</text>
+<text x="46" y="374" font-size="10.5" fill="#64748b">Zanzibar 桥 → IN(子查询/ID集)</text>
+
+<!-- 右：实例树 -->
+<text x="410" y="84" font-size="12" font-weight="700" fill="#7e22ce">实例：dept∈{1001,1002} ∧ (owner=u42 ∨ status=public)</text>
+<g filter="url(#s6)">
+<rect x="560" y="104" width="96" height="38" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/>
+<rect x="430" y="196" width="150" height="40" rx="8" fill="#ecfeff" stroke="#06b6d4"/>
+<rect x="636" y="196" width="80" height="38" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/>
+<rect x="556" y="300" width="150" height="40" rx="8" fill="#ffffff" stroke="#a855f7"/>
+<rect x="716" y="300" width="150" height="40" rx="8" fill="#ffffff" stroke="#a855f7"/>
+</g>
+<text x="608" y="128" font-size="13" font-weight="700" fill="#5b21b6" text-anchor="middle">And</text>
+<text x="505" y="221" font-size="11.5" fill="#155e75" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">In(dept_id∈{…})</text>
+<text x="676" y="220" font-size="13" font-weight="700" fill="#5b21b6" text-anchor="middle">Or</text>
+<text x="631" y="324" font-size="11" fill="#7e22ce" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">Cmp(owner=u42)</text>
+<text x="791" y="324" font-size="11" fill="#7e22ce" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">Cmp(status=public)</text>
+<line x1="590" y1="142" x2="505" y2="196" stroke="#94a3b8" stroke-width="1.5"/>
+<line x1="626" y1="142" x2="676" y2="196" stroke="#94a3b8" stroke-width="1.5"/>
+<line x1="660" y1="234" x2="631" y2="300" stroke="#94a3b8" stroke-width="1.5"/>
+<line x1="692" y1="234" x2="791" y2="300" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="410" y="410" font-size="10.5" fill="#64748b">树可序列化为 JSON，落 da_policy；也可由 cmx-rulesengine 决策表输出。</text>
+</svg>

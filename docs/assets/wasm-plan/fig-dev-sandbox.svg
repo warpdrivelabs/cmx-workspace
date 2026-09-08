@@ -1,0 +1,31 @@
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <marker id="ab6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+  <filter id="s6" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="400" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">W5 · 开发者隔离拓扑：路径路由 + 每人工作区（worktree→容器渐进）</text>
+<g filter="url(#s6)"><rect x="40" y="64" width="150" height="60" rx="9" fill="#eef2ff" stroke="#6366f1"/></g>
+<text x="115" y="88" font-size="11.5" font-weight="700" fill="#3730a3" text-anchor="middle">Nginx 路由 + 认证</text>
+<text x="115" y="106" font-size="9.5" fill="#4338ca" text-anchor="middle">/codeserver/{dev}/</text>
+<g filter="url(#s6)"><rect x="250" y="58" width="230" height="46" rx="9" fill="#fffbeb" stroke="#f59e0b"/></g><text x="266" y="78" font-size="11" font-weight="700" fill="#92400e">开发者 A · 工作区</text><text x="266" y="94" font-size="9.5" fill="#b45309">独立 workspace + 配额</text><g filter="url(#s6)"><rect x="250" y="116" width="230" height="46" rx="9" fill="#fffbeb" stroke="#f59e0b"/></g><text x="266" y="136" font-size="11" font-weight="700" fill="#92400e">开发者 B · 工作区</text><text x="266" y="152" font-size="9.5" fill="#b45309">独立 workspace + 配额</text><g filter="url(#s6)"><rect x="250" y="174" width="230" height="46" rx="9" fill="#fffbeb" stroke="#f59e0b"/></g><text x="266" y="194" font-size="11" font-weight="700" fill="#92400e">租户 T · 共享区</text><text x="266" y="210" font-size="9.5" fill="#b45309">团队协作 + 命名空间</text>
+<g filter="url(#s6)"><rect x="540" y="86" width="120" height="60" rx="9" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="600" y="110" font-size="11" font-weight="700" fill="#5b21b6" text-anchor="middle">Build Service</text>
+<text x="600" y="128" font-size="9.5" fill="#6d28d9" text-anchor="middle">集中编译(W1)</text>
+<g filter="url(#s6)"><rect x="700" y="86" width="80" height="60" rx="9" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="740" y="110" font-size="11" font-weight="700" fill="#065f46" text-anchor="middle">注册表</text>
+<text x="740" y="128" font-size="9" fill="#047857" text-anchor="middle">按租户命名空间</text>
+<line x1="190" y1="94" x2="250" y2="81" stroke="#64748b" stroke-width="1.2" marker-end="url(#a6)"/>
+<line x1="190" y1="98" x2="250" y2="139" stroke="#64748b" stroke-width="1.2" marker-end="url(#a6)"/>
+<line x1="190" y1="102" x2="250" y2="197" stroke="#64748b" stroke-width="1.2" marker-end="url(#a6)"/>
+<line x1="480" y1="110" x2="540" y2="112" stroke="#64748b" stroke-width="1.3" marker-end="url(#a6)"/>
+<line x1="660" y1="116" x2="700" y2="116" stroke="#64748b" stroke-width="1.3" marker-end="url(#a6)"/>
+<g filter="url(#s6)"><rect x="40" y="238" width="740" height="140" rx="11" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="56" y="262" font-size="12" font-weight="700" fill="#334155">载体渐进（不必一步到位）</text>
+<text x="56" y="284" font-size="11" fill="#475569">· M0：沿用单 code-server（现状），先补认证 + 每人 git worktree 目录隔离 + /api/vscode/register 落 cmx_dev_workspace 表</text>
+<text x="56" y="305" font-size="11" fill="#475569">· M1：Nginx 按 {dev} 路径路由到每人 worktree 工作区；配额（磁盘/CPU）；构建下沉到集中 Build Service（不在编辑容器内 spawn）</text>
+<text x="56" y="326" font-size="11" fill="#475569">· M2：每开发者/租户一容器（可选 k8s），强隔离；与既有 db-per-tenant 一致——边界在路由，不进业务逻辑</text>
+<text x="56" y="352" font-size="11" fill="#64748b">· 运行态呼应：一插件一实例池 + 能力最小授予 + 生命周期事件带 app_id/租户，设计态与运行态隔离对称</text>
+</svg>

@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业主数据管理平台（MDM）设计方案 V2 · DCT 治理叠加层架构</title>
+<style>
+  :root{
+    --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fb; --card:#ffffff;
+    --code-bg:#0f1524; --code-ink:#d6def0;
+    --mdm:#4338ca; --mdm-soft:#eef0fe; --mdm-line:#c7ccf6;
+    --gold:#a9781a; --gold-bg:#faf3df;
+    --fin:#2f6fed; --party:#1f8a56; --mat:#c65d21; --org:#7c5cff; --ref:#0e8a8a;
+    --dct:#0e7c7b; --dct-soft:#dcf1f1; --dct-line:#9fd4d4;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --gap:#b4433a; --gap-bg:#fbecea;
+    --add:#8a6d1f; --add-bg:#faf3df; --accent:#4338ca;
+    --v1:#b4433a; --v1-bg:#fbecea; --v2:#1f8a56; --v2-bg:#e8f6ee;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.72;font-size:15px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#141a33 0%,#1e3a4a 45%,#0e4d4d 100%);color:#fff;padding:62px 24px 50px}
+  header.hero .inner{max-width:1160px;margin:0 auto}
+  header.hero h1{margin:0 0 14px;font-size:33px;letter-spacing:.3px;line-height:1.24}
+  header.hero .tag{display:inline-block;background:rgba(110,200,200,.2);color:#b8e6e6;
+       border:1px solid rgba(110,200,200,.42);padding:3px 13px;border-radius:999px;font-size:12.5px;margin-bottom:6px}
+  header.hero .tag.v1{background:rgba(180,67,58,.2);color:#f0c3bd;border-color:rgba(180,67,58,.42);margin-left:8px}
+  header.hero p.lead{font-size:16.5px;color:#c7cbdd;max-width:900px;margin:8px 0}
+  header.hero .meta{margin-top:22px;font-size:13px;color:#96a0bc;line-height:1.9}
+  header.hero .meta b{color:#e2e5f2;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 14px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc .part{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--mdm);margin:14px 0 6px;text-transform:uppercase}
+  nav.toc .part:first-of-type{margin-top:0}
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:44px}
+  nav.toc li{margin:5px 0;break-inside:avoid;font-size:13.6px}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--mdm);border-bottom-color:var(--mdm)}
+  nav.toc .nn{display:inline-block;min-width:26px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+  section{margin:0 0 46px}
+  h2{font-size:23px;margin:50px 0 14px;padding-top:14px;border-top:3px solid var(--mdm);display:inline-block}
+  h2 .n{color:var(--mdm);font-weight:800;margin-right:10px}
+  h3{font-size:17.5px;margin:28px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:10px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.pk{color:#e57ab0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.2px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.3px;letter-spacing:.2px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.2px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.gap{background:var(--gap-bg);color:var(--gap)}
+  .pill.add{background:var(--add-bg);color:var(--add)}
+  .pill.mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .pill.dct{background:var(--dct-soft);color:var(--dct)}
+  .pill.v1{background:var(--v1-bg);color:var(--v1)}
+  .pill.v2{background:var(--v2-bg);color:var(--v2)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.verdict{background:var(--mdm-soft);border-color:var(--mdm-line)}.callout.verdict .h{color:var(--mdm)}
+  .callout.gap{background:#fbecea;border-color:#f0c3bd}.callout.gap .h{color:var(--gap)}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}.callout.note .h{color:var(--fin)}
+  .callout.win{background:#e8f6ee;border-color:#bfe3cd}.callout.win .h{color:var(--keep)}
+  .callout.gold{background:var(--gold-bg);border-color:#e8d9a8}.callout.gold .h{color:var(--gold)}
+  .callout.dct{background:var(--dct-soft);border-color:var(--dct-line)}.callout.dct .h{color:var(--dct)}
+  .callout.v2fix{background:#fff5e6;border-color:#e8d9a8}.callout.v2fix .h{color:#a9781a}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  .box.tint{background:var(--mdm-soft);border-color:var(--mdm-line)}
+  .box.dct{background:var(--dct-soft);border-color:var(--dct-line)}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  ol.tight{margin:8px 0;padding-left:22px}ol.tight li{margin:5px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.2px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--mdm);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .lede{font-size:16px;color:var(--muted)}
+  .lead2{font-size:15.5px;color:#3a4451;margin:6px 0 4px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:4px}
+  .b-fin{background:#e7efff;color:var(--fin)}.b-party{background:#e4f4ea;color:var(--party)}
+  .b-mat{background:#fbeadd;color:var(--mat)}.b-org{background:#efeaff;color:var(--org)}
+  .b-ref{background:#dcf1f1;color:var(--ref)}.b-mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .b-dct{background:var(--dct-soft);color:var(--dct)}
+  .en{color:var(--muted);font-style:italic;font-size:13.3px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:800;color:var(--mdm);line-height:1.1}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .chain{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .chain .st{background:var(--card);border:1px solid var(--mdm-line);color:var(--mdm);border-radius:8px;padding:7px 13px;font-size:12.8px;font-weight:700}
+  .chain .ar{color:var(--muted);font-weight:700}
+  .partband{margin:56px 0 8px;padding:14px 20px;border-radius:12px;background:linear-gradient(100deg,#1e3a4a,#0e4d4d);color:#fff}
+  .partband .pt{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b8e6e6;font-weight:700}
+  .partband .pn{font-size:20px;font-weight:800;margin-top:2px}
+  .partband .pd{font-size:13px;color:#c7cbdd;margin-top:4px}
+  a.ref{color:var(--mdm);text-decoration:none;border-bottom:1px dashed var(--mdm-line)}
+  .v2mark{display:inline-block;background:var(--v2);color:#fff;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:4px;margin-left:6px;vertical-align:middle}
+  .strike{text-decoration:line-through;color:#999}
+  @media(max-width:860px){.grid2,.grid3,.grid4,.kpis{grid-template-columns:1fr}nav.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="inner">
+    <span class="tag">V2 · DCT 治理叠加层架构</span><span class="tag v1">纠正 V1 metaKind:MDM 误判</span>
+    <h1>企业主数据管理平台（MDM）设计方案 V2<br><span style="font-size:20px;font-weight:500;color:#b8e6e6">MDM 不是新 kind，而是 DCT 之上的治理叠加层 —— 充分复用既有字典建模底座</span></h1>
+    <p class="lead">
+      V2 的核心修正：<b>数据字典（DCT）定义本身就是主数据建模</b>。现有 cmxfico 已用 DCT 建了 32 张财务主数据表（<code>cf_gl_account</code>/<code>cf_bus_partner</code>…）证明这条路可行。
+      V2 据此把 MDM 定位为<b>独立新域</b>（<code>mdm/cmxmdm/mdm</code>），在 <code>data/meta/definitions/mdm/</code> 下自建 DCT 定义和物理表（前缀 <code>cm_</code>），<b>只用 base 公共 fieldSets，不碰 <code>fi/</code> 下的任何元数据</b>。
+      编码引擎引用独立方案 <code>cmx-code</code>（预留插入点，不在本次开发范围）。本方案承接 V1 业务蓝图（保留），重写技术架构与落地路径。
+    </p>
+    <p class="meta">
+      <b>V1→V2 关键修正</b>　废弃 metaKind:MDM · 废弃 md_golden · 废弃三段建表 crate · MDM 独立新域不碰 cmxfico · 编码引擎引用 cmx-code<br>
+      <b>勘探依据</b>　cmx-container 真实代码：cmx-dct 三 crate · compile/deploy 管线 · init_ddl 61 张骨架表 · cmxfico 32 张字典表(参考实例) · cmx-flow 治理引擎<br>
+      <b>性质</b>　只出方案不落地代码 &nbsp;|&nbsp; <b>对标</b>　SAP MDG · Oracle EDM · 用友 iUAP · 金蝶苍穹 · Informatica · Stibo · Reltio
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录 · Contents</h4>
+
+  <div class="part">导言 · V1→V2 架构修正</div>
+  <ol>
+    <li><span class="nn">00</span><a href="#exec">执行摘要 · V1 为什么错，V2 怎么改</a></li>
+    <li><span class="nn">00b</span><a href="#dct-truth">代码勘探铁证：DCT 即主数据建模底座</a></li>
+  </ol>
+
+  <div class="part">第一部分 · 业务方案 Business Blueprint（承接 V1）</div>
+  <ol>
+    <li><span class="nn">01</span><a href="#concept">主数据认知与边界</a></li>
+    <li><span class="nn">02</span><a href="#pain">现状痛点与建设价值</a></li>
+    <li><span class="nn">03</span><a href="#domains">主数据域全景 · 与 cmxfico 既有实现对照</a></li>
+    <li><span class="nn">04</span><a href="#governance">数据治理体系（两体系一工具·四定）</a></li>
+    <li><span class="nn">05</span><a href="#standard">标准与编码规则体系</a></li>
+    <li><span class="nn">06</span><a href="#lifecycle">主数据全生命周期</a></li>
+  </ol>
+
+  <div class="part">第二部分 · 应用方案 Application Blueprint</div>
+  <ol>
+    <li><span class="nn">07</span><a href="#capmap">能力全景与治理叠加层架构</a></li>
+    <li><span class="nn">08</span><a href="#styles">实现风格选型（四种风格）</a></li>
+    <li><span class="nn">09</span><a href="#quality">数据质量 · 匹配 · 合并 · 黄金记录</a></li>
+    <li><span class="nn">10</span><a href="#hierarchy">层次 · 分类 · 参考数据管理（DCT 已有树形）</a></li>
+    <li><span class="nn">11</span><a href="#integration">集成 · 分发 · 映射</a></li>
+    <li><span class="nn">12</span><a href="#benchmark">主流厂商对标与借鉴</a></li>
+  </ol>
+
+  <div class="part">第三部分 · 详细设计 Detailed Design（重写）</div>
+  <ol>
+    <li><span class="nn">13</span><a href="#model">核心架构：DCT 即建模底座 + MDM 治理叠加层</a></li>
+    <li><span class="nn">14</span><a href="#schema">治理叠加层表结构（废弃 md_golden）</a></li>
+    <li><span class="nn">15</span><a href="#codeengine">编码引擎：引用 cmx-code + 预留插入点（不在本次范围）</a></li>
+    <li><span class="nn">16</span><a href="#matchmerge">匹配合并与存活规则设计</a></li>
+    <li><span class="nn">17</span><a href="#statemachine">治理流程状态机与工作流（DCT status 扩展）</a></li>
+    <li><span class="nn">17b</span><a href="#arch">cmx-mdm 后端 crate 工程结构（三段式）</a></li>
+    <li><span class="nn">18</span><a href="#api">REST API 契约（复用 /api/dct + 新增 /api/mdm 治理层）</a></li>
+    <li><span class="nn">19</span><a href="#distribute">分发订阅与事件设计</a></li>
+  </ol>
+
+  <div class="part">第四部分 · cmx 平台落地 Realization（重写）</div>
+  <ol>
+    <li><span class="nn">20</span><a href="#realize">落地总纲：治理叠加层而非新 kind</a></li>
+    <li><span class="nn">21</span><a href="#gap">V2 缺口分析（基于 DCT 底座重新判定）</a></li>
+    <li><span class="nn">22</span><a href="#roadmap">分期路线图与风险（重排）</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 00 ============ -->
+<section id="exec">
+  <h2><span class="n">00</span>执行摘要 · V1 为什么错，V2 怎么改</h2>
+  <p class="lede">一句话：V1 把 MDM 当成继 DCT/DOC/FLX/RPT 之后的「第五种 metaKind」，要新建 <code>cmx-mdm</code> 三段 crate、建 <code>md_golden</code> 物理表——这是对 cmx 架构的根本误读。<b>真实情况是：DCT 字典定义本身就是元数据驱动的主数据建模，cmxfico 已经用它建了 32 张主数据表</b>。V2 把 MDM 重新定位为「DCT 之上的治理叠加层」，不建表、不造新 kind、不重复发明建模。</p>
+
+  <div class="callout v2fix">
+    <div class="h">🔧 V1 → V2 的七处根本修正</div>
+    <table style="margin:8px 0;background:transparent;border:none">
+      <thead><tr><th style="width:24%">V1 方案（错误）</th><th style="width:36%">为什么错</th><th>V2 修正</th></tr></thead>
+      <tbody>
+        <tr><td><span class="strike">新增 <code>metaKind:MDM</code></span></td><td>后端 kind 只有 DCT/DOC/RPT/BASE/SEED/MENU，无 MDM；主数据建模就是 DCT 的职责</td><td>不增 kind，主数据实体用 DCT 定义</td></tr>
+        <tr><td><span class="strike">新建 <code>cmx-mdm-{model,store-pg,api}</code> 建表</span></td><td>DCT 已是「定义 JSON → compile → 动态 CREATE TABLE」，每字典一张物理宽表</td><td>复用 DCT compile/deploy 建表机制</td></tr>
+        <tr><td><span class="strike"><code>md_golden</code> 黄金记录主表</span></td><td>黄金记录不是独立表，就是 DCT 物理表里「已发布」的行</td><td>DCT 表 + lifecycle_status 列 = 黄金记录</td></tr>
+        <tr><td><span class="strike"><code>md_entity_type</code>/<code>md_attr_def</code> 实体元数据</span></td><td>DCT 的 <code>dictMeta</code>+<code>fields[]</code> 已是完整实体建模</td><td>废弃，实体建模即 DCT 定义 JSON</td></tr>
+        <tr><td><span class="strike">改 cmxfico 的 cf_* 表加列</span></td><td><b>cmxfico 是财务模块自有的</b>，MDM 不应侵入；fi/ 下元数据不属于 MDM</td><td><b>MDM 独立新域</b>，在 mdm/cmxmdm/ 下自建表</td></tr>
+        <tr><td><span class="strike">md_code_rule/md_serial 编码引擎</span></td><td>编码是通用能力，不属于 MDM 专属；已有独立 cmx-code 方案</td><td>引用 cmx-code 方案，预留插入点，不在本次范围</td></tr>
+        <tr><td>cmx-agg 列为「复用」</td><td>V1 缺口文档已自查：cmx-agg 至今零代码，不在 workspace</td><td>纠正为「前置新造」，按域决定是否需要</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">0</div><div class="l">新增 metaKind<br>不造新 kind</div></div>
+    <div class="kpi"><div class="v">mdm/cmxmdm</div><div class="l">独立新域<br>自建 DCT 定义</div></div>
+    <div class="kpi"><div class="v">3</div><div class="l">cmx-mdm crate<br>model/store-pg/api</div></div>
+    <div class="kpi"><div class="v">cmx-code</div><div class="l">编码引擎引用<br>预留插入点</div></div>
+  </div>
+
+  <h3>V2 架构全景一图</h3>
+  <div class="dag">┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│   ┌──────────────────── MDM 治理叠加层（cmx-mdm 三段 crate）──────────────┐ │
+│   │  生命周期(草稿/发布/冻结) · 版本留痕 · 查重匹配合并存活                 │ │
+│   │  交叉引用(Key Mapping) · 值映射 · 分发订阅 · 事件日志(delta)          │ │
+│   │  变更请求(CR)→cmx-flow 审批 · 编码[预留 cmx-code 插入点,本次不开发]   │ │
+│   │  ★ 不建主数据表，治理事实存 md_* 表，主数据存 DCT 物理表               │ │
+│   └───────────────┬───────────────────────────────────┬──────────────────┘ │
+│                   │ lifecycle_status 等列(fieldSet)     │ (dict_code,record_id) │
+│   ┌───────────────▼───────────────────────────────────▼──────────────────┐ │
+│   │   DCT 主数据建模底座（MDM 独立新域 mdm/cmxmdm/mdm 自建定义）           │ │
+│   │   ★ 只用 base 公共 fieldSets，不碰 fi/ 下任何元数据                    │ │
+│   │   cm_supplier / cm_customer / cm_material / cm_gl_account / ...       │ │
+│   │   实体(dictMeta+fields) · 树形(parent_id/full_path/递归CTE) · 取值域  │ │
+│   │   唯一键(DB索引) · 生效期 · 组织隔离 · 导入导出 · 零拷贝装载           │ │
+│   │   ★ cmxfico 的 cf_* 表是财务模块自有，MDM 不动它们（参考实例）         │ │
+│   └───────────────┬───────────────────────────────────────────────────────┘ │
+│                   │ compile/deploy 动态建表(cm_*)                            │
+│   ┌───────────────▼───────────────────────────────────────────────────────┐ │
+│   │            cmx 平台骨架（init_ddl 61 张表，复用）                       │ │
+│   │  元数据台账 · IAM · cmx-flow 治理引擎 · compile/deploy · ZmcDataSet    │ │
+│   │  cmx-code 通用编码引擎(独立方案,MDM 预留插入点引用)                     │ │
+│   └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+   对标：SAP MDG · Oracle EDM/Product&Customer Hub · 用友 iUAP MDM · 金蝶苍穹 AMDM · Informatica</div>
+
+  <div class="callout gold">
+    <div class="h">🏅 贯穿全案的核心概念：黄金记录（Golden Record）</div>
+    来自各源系统的同一实物的多条记录，经<b>匹配（Match）</b>识别为同一对象、<b>合并（Merge）</b>成一条、由<b>存活规则（Survivorship）</b>逐字段选出最可信取值，形成一条<b>企业唯一权威记录</b>。在 V2 里，黄金记录不再是独立的 <code>md_golden</code> 表，而是 MDM 域 DCT 物理表里 <code>lifecycle_status='published'</code> 的那批行——它的建模、存储、查询全部复用 DCT 机制，MDM 只管「谁成为黄金记录、谁被合并、谁被分发」。
+  </div>
+</section>
+
+<!-- ============ 00b ============ -->
+<section id="dct-truth">
+  <h2><span class="n">00b</span>代码勘探铁证：DCT 即主数据建模底座</h2>
+  <p class="lede">这一节是 V2 架构修正的事实依据。结论来自对 cmx-container 全代码库的四路并行只读勘探，每条判定都落到真实 <code>file:line</code>。</p>
+
+  <h3>0b.1 DCT 定义 JSON 描述了什么 —— 一份完整的实体建模</h3>
+  <p>以 <code>data/meta/definitions/fi/cmxfico/gl/cmxfico_dct_meta_v3.json</code> 为例，每个 <code>dictionaryTables[]</code> 元素就是一个实体的完整建模：</p>
+  <pre><code>{
+  <span class="str">"dictMeta"</span>: {
+    <span class="str">"dictCode"</span>: <span class="str">"gl_account"</span>,           <span class="cmt">// 字典码 = 实体码</span>
+    <span class="str">"dictName"</span>: <span class="str">"总账科目"</span>,
+    <span class="str">"dictKind"</span>: <span class="str">"BUSINESS"</span>,            <span class="cmt">// 业务主数据 / CLASSIFY 分类 / GROUP 分组 / RELATION 关系</span>
+    <span class="str">"tableName"</span>: <span class="str">"cf_gl_account"</span>,       <span class="cmt">// 物理表名 → compile 后 CREATE TABLE</span>
+    <span class="str">"idField"</span>: <span class="str">"id"</span>, <span class="str">"codeField"</span>: <span class="str">"code"</span>, <span class="str">"labelField"</span>: <span class="str">"name"</span>,
+    <span class="str">"selfHierarchy"</span>: <span class="kw">true</span>,              <span class="cmt">// 树形字典 → 自动维护 parent_id/full_path/level_no/is_leaf</span>
+    <span class="str">"parentField"</span>: <span class="str">"parent_id"</span>,
+    <span class="str">"codeLength"</span>: <span class="nu">20</span>,
+    <span class="str">"codeRule"</span>: { <span class="str">"mode"</span>:<span class="str">"manual"</span>, <span class="str">"uniqueCheck"</span>:<span class="kw">true</span> }  <span class="cmt">// 编码规则(声明已就位,引擎未实现=V2要补)</span>
+  },
+  <span class="str">"fields"</span>: [                            <span class="cmt">// 本实体自有业务列</span>
+    { <span class="str">"name"</span>:<span class="str">"coa_id"</span>, <span class="str">"dataType"</span>:<span class="str">"bigint"</span>, <span class="str">"refDict"</span>:<span class="str">"coa"</span>, ... },  <span class="cmt">// 外键引用另一字典</span>
+    { <span class="str">"name"</span>:<span class="str">"account_type_code"</span>, <span class="str">"enumValues"</span>:[...], ... },    <span class="cmt">// 取值域</span>
+    { <span class="str">"name"</span>:<span class="str">"balance_direction"</span>, <span class="str">"dataType"</span>:<span class="str">"varchar"</span>, <span class="str">"fieldLength"</span>:<span class="nu">2</span>, <span class="str">"nullable"</span>:<span class="kw">false</span> }
+  ],
+  <span class="str">"baseFieldSet"</span>: <span class="str">"dictionaryCommonFields"</span>,    <span class="cmt">// 引入 id/code/name/sort_no/status 公共列</span>
+  <span class="str">"hierarchyFieldSet"</span>: <span class="str">"dictionaryHierarchyFields"</span>,<span class="cmt">// 引入 parent_id/full_path/level_no/is_leaf 层级列</span>
+  <span class="str">"auditFieldSet"</span>: <span class="str">"dictionaryAuditFields"</span>,     <span class="cmt">// 引入 create_by/time update_by/time</span>
+  <span class="str">"effectiveFieldSet"</span>: <span class="str">"dictionaryEffectiveFields"</span>,<span class="cmt">// 引入 effective_from/to 期间有效</span>
+  <span class="str">"uniqueKeys"</span>: [[<span class="str">"coa_id"</span>,<span class="str">"code"</span>]],            <span class="cmt">// 唯一键 → 编译为物理唯一索引</span>
+  <span class="str">"fieldSetOrder"</span>: [...]                        <span class="cmt">// 列合并/显示顺序</span>
+}</code></pre>
+  <p class="en">这就是一份完整的实体建模：列/类型/长度/取值域/外键/树形/唯一键/生效期/审计全在里面。compile 时（<code>cmx-model-deploy/src/compile.rs:316 compile_dct</code>）把它转成 <code>TableDefine</code>，再由 <code>cmx-metadata/executor.rs:411</code> 执行真实 <code>CREATE TABLE cf_gl_account(...)</code>。</p>
+
+  <h3>0b.2 cmxfico 用 DCT 建了 32 张表 —— 是 MDM 自建的「参考实例」</h3>
+  <p><span class="v2mark">V2 澄清</span> cmxfico 的 32 张 <code>cf_*</code> 表是<b>财务模块自有的主数据</b>，<b>MDM 不碰它们</b>。它们的价值是<b>证明「DCT 能建模主数据」这条路可行</b>——MDM 照同样方式在<b>自己的域</b>（<code>mdm/cmxmdm/mdm</code>）下自建独立的主数据表（前缀 <code>cm_</code>）。</p>
+  <div class="grid2">
+    <div class="box dct"><h4>cmxfico 财务域（参考实例，MDM 不动）</h4>
+      <ul class="tight" style="margin-top:4px">
+        <li><code>cf_gl_account</code> 总账科目（树形）</li>
+        <li><code>cf_bus_partner</code> 商业伙伴（客户+供应商合一）</li>
+        <li><code>cf_company</code> / <code>cf_cost_center</code> 公司/成本中心</li>
+        <li>……共 32 张，<b>属 fi/ 域，MDM 不使用</b></li>
+      </ul>
+    </div>
+    <div class="box tint"><h4>MDM 独立新域（V2 自建）<span class="v2mark">V2</span></h4>
+      <b>域路径</b>：<code>data/meta/definitions/mdm/cmxmdm/mdm/</code><br>
+      <b>物理表前缀</b>：<code>cm_</code>（如 <code>cm_supplier</code>/<code>cm_customer</code>/<code>cm_material</code>）<br>
+      <b>只用 base fieldSets</b>：dictionaryCommonFields / Hierarchy / Audit / Effective / Scope + 自定义业务列<br>
+      <b>不碰 fi/</b>：不引用 cmxfico 任何元数据<br>
+      <span class="en">MDM 是与财务并列的独立域，自带主数据定义和物理表。</span>
+    </div>
+  </div>
+
+  <h3>0b.3 后端根本没有 metaKind:MDM</h3>
+  <div class="callout dct">
+    <div class="h">🔬 全库勘探：kind 字面量统计</div>
+    在 <code>cmx-model-*</code> 全 crate 里 grep kind 字面量，频次为：<b>DCT×24 · DOC×19 · SEED×15 · MENU×13 · RPT×11 · BASE×9</b>。<code>"MDM"</code> 与 <code>"FLX"</code> 作为 kind 字面量<b>命中为 0</b>。<br>
+    <code>compile.rs:680-712</code> 的分发是 <code>match kind { "DOC"=>.., "RPT"=>.., _=>compile_dct }</code>——DCT 是<b>默认兜底分支</b>。主数据天然走 DCT，根本不需要也不存在 MDM 分支。<br>
+    <b>结论：V1 的「metaKind:MDM 分流」是凭空设计的，代码里没有任何承接点。</b>
+  </div>
+
+  <h3>0b.4 表清单总览的真相 —— init_ddl 只有骨架表</h3>
+  <p>回答你的第二个问题：<code>docs/sql/init/init_ddl.sql</code> 只有 <b>61 张平台骨架表</b>，<b>一行业务主数据表都没有</b>。</p>
+  <table>
+    <thead><tr><th style="width:24%">类别</th><th style="width:30%">代表表</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>系统基础表</b>（cmx_ 前缀）</td><td><code>cmx_domain</code>/<code>cmx_application</code>/<code>cmx_module</code>/<code>cmx_sys_datasource</code></td><td>域/应用/模块/数据源注册，平台骨架</td></tr>
+      <tr><td><b>元数据台账</b></td><td><code>cmx_meta_table_define</code>/<code>cmx_model_module</code>/<code>cmx_model_deploy_history</code></td><td>登记动态建出的业务表，非预定义</td></tr>
+      <tr><td><b>IAM/认证</b></td><td><code>cmx_user</code>/<code>cmx_role</code>/<code>cmx_permission</code>/<code>cmx_org</code>/<code>cmx_position</code></td><td>用户/角色/权限/组织/岗位（系统侧）</td></tr>
+      <tr><td><b>流程引擎</b></td><td><code>cmx_flow_definition</code>/<code>cmx_flow_instance</code>/<code>cmx_flow_task</code>…（11 张）</td><td>cmx-flow BPMN 引擎全套</td></tr>
+      <tr><td><b>插件/文件/审计</b></td><td><code>cmx_plugin</code>/<code>cmx_file_detail</code>/<code>cmx_audit_log</code></td><td>插件平台 + 文件存储 + 审计</td></tr>
+      <tr><td><b>主数据业务表</b></td><td><span class="en">（init_ddl 里完全没有）</span></td><td><code>cf_gl_account</code>/<code>cf_bus_partner</code> 等全部是 DCT 定义 → compile → 动态建表</td></tr>
+    </tbody>
+  </table>
+  <div class="callout note">
+    <div class="h">💡 直接回答：供应商/科目/分类是基础表还是业务自建？</div>
+    <b>全部是业务按需建表</b>。供应商 = <code>cf_bus_partner</code>（或新写一个 <code>cf_supplier</code> DCT 定义），科目 = <code>cf_gl_account</code>，分类 = 各 <code>dictKind:CLASSIFY</code> 的字典表。它们都通过 DCT 定义 JSON + compile/deploy 管线动态生成，登记进 <code>cmx_meta_table_define</code> 台账。init_ddl.sql 只管平台骨架，业务表一个都不预定义——这正是 cmx「模型中心 + 元数据驱动」架构的核心设计。
+  </div>
+</section>
+
+<!-- ============ PART I BAND ============ -->
+<div class="partband">
+  <div class="pt">Part I</div>
+  <div class="pn">第一部分 · 业务方案</div>
+  <div class="pd">建什么、谁负责、按什么标准、走什么流程 —— 业务蓝图承接 V1，补充与 cmxfico 既有实现对照</div>
+</div>
+
+<!-- ============ 01 ============ -->
+<section id="concept">
+  <h2><span class="n">01</span>主数据认知与边界 <span class="en">what master data is — and is not</span></h2>
+  <p>做主数据的第一步不是建库，而是<b>把「主数据」从其它数据里精确地切出来</b>。切错了边界，后面的治理、质量、分发全部落空。</p>
+
+  <h3>1.1 三类数据的界分</h3>
+  <table>
+    <thead><tr><th style="width:16%">数据类别</th><th style="width:26%">定义</th><th style="width:28%">典型例子</th><th>在 cmx 里的对应</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据</b><br><span class="en">Master Data</span></td><td>跨系统、跨流程共享的核心业务对象，描述「业务实体是谁/是什么」</td><td>客户、供应商、物料、会计科目、成本中心、组织、员工、银行</td><td><span class="pill dct">DCT dictKind:BUSINESS</span> 物理表 <code>cf_*</code></td></tr>
+      <tr><td><b>交易数据</b><br><span class="en">Transaction Data</span></td><td>描述某一时刻发生的业务活动，<b>引用</b>主数据</td><td>销售订单、采购单、会计凭证、发货单、付款单</td><td><span class="pill" style="background:#f1f6ff;color:#2f6fed">DOC 单据</span> 物理表 <code>cv_*</code></td></tr>
+      <tr><td><b>参考数据</b><br><span class="en">Reference Data</span></td><td>用于分类/取值约束的小型受控码表，主数据的「取值域」</td><td>国家、币种、计量单位、行业分类、税码、状态码</td><td><span class="pill dct">DCT dictKind:CLASSIFY/ENUM</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout note">
+    <div class="h">💡 V2 修正：三类数据在 cmx 里本就由 DCT/DOC 承载</div>
+    V1 把主数据当成需要「新 kind」的全新事物。但勘探表明：<b>主数据= DCT 的 BUSINESS 字典，交易数据= DOC 单据，参考数据= DCT 的 CLASSIFY/ENUM 字典</b>。三类数据的界分在 cmx 现有架构里早已清晰——这进一步证明 MDM 不需要新 kind，它只是给 DCT 主数据字典补上「治理能力」。
+  </div>
+
+  <h3>1.2 主数据的六个本质特征</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 唯一权威</h4>全企业对同一实体只有一条黄金记录，MDM 是它的 System of Record，其它系统是消费者。</div>
+    <div class="box"><h4>② 跨域共享</h4>被财务、供应链、销售、HR 多域反复引用，是各系统间的「连接键」。</div>
+    <div class="box"><h4>③ 相对稳定</h4>变化频率远低于交易数据，但一旦变（如客户改名/合并）影响面极大，须留痕。</div>
+    <div class="box"><h4>④ 结构复杂</h4>属性多、分组多、常带层次（组织树、科目表、物料分类），且多语言/多视图。</div>
+    <div class="box"><h4>⑤ 多源汇入</h4>常同时存在于 ERP、CRM、SRM、旧系统，天然产生重复与冲突，需匹配合并。</div>
+    <div class="box"><h4>⑥ 需要治理</h4>其价值来自「被信任」，因此必须有 Owner、有标准、有审批、有质量闭环。</div>
+  </div>
+
+  <h3>1.3 主数据的分层视图（与 DCT 分层同构）</h3>
+  <p>一条主数据在 MDM 内不是「一张扁平表」，而是分层组织的。这与 DCT 的 <code>dictMeta + fields + fieldSet</code> 分层建模天然同构：</p>
+  <div class="dag">主数据对象（如：供应商 = cf_bus_partner DCT 字典）
+  ├─ 标识层  id(内码) + code(外码) + status + lifecycle_status   ← dictionaryCommonFields + V2扩展列
+  ├─ 通用属性 name/简称/税号/统一社会信用…                        ← fields[] 自有业务列
+  ├─ 分组属性 财务视图(付款条件) · 采购视图(评级) · 物流视图(地址)  ← fields[] + viewGroup 分组(待补)
+  ├─ 层次归属 所属分类(parent_id 树) · 所属组织(scope_type/entity_id) ← hierarchyFieldSet + scopeFieldSet
+  └─ 关系     集团母子 · 客商合一                                  ← dictKind:RELATION 关系字典</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="pain">
+  <h2><span class="n">02</span>现状痛点与建设价值 <span class="en">why it always hurts</span></h2>
+  <p>几乎所有企业的主数据问题都能归到下面六条。方案的价值主张就是逐条对治它们。</p>
+
+  <h3>2.1 六大典型痛点</h3>
+  <table>
+    <thead><tr><th style="width:20%">痛点</th><th style="width:44%">表现与根因</th><th>后果</th></tr></thead>
+    <tbody>
+      <tr><td><b>一物多码</b><br><span class="en">duplicate codes</span></td><td>同一物料/供应商在不同系统、工厂、环节有多个编码；编码位数与分类口径不一</td><td>无法集中议价、成本虚高、库存失真、协同要大量人工转码</td></tr>
+      <tr><td><b>一码多物</b><br><span class="en">code reuse</span></td><td>编码复用、废弃码回收再用，同一编码在不同时间指向不同实物</td><td>历史数据错乱、审计追溯失败，比一物多码更隐蔽危险</td></tr>
+      <tr><td><b>标准不一致</b></td><td>部门间分类/属性/命名口径各行其是，缺统一标准</td><td>协同壁垒，合规与财务数据割裂，报表口径打架</td></tr>
+      <tr><td><b>质量回潮</b></td><td>做完主数据用一两年质量又退回原状——缺质量闭环：<b>发现不了、发现了不知找谁、改了不知对没对</b></td><td>投入打水漂，业务重新绕过主数据自建小表</td></tr>
+      <tr><td><b>重系统轻数据</b></td><td>先上系统后才发现底层基础数据未统筹设计</td><td>系统越多，数据裂缝越大，集成成本指数上升</td></tr>
+      <tr><td><b>责任真空</b></td><td>数据「谁都在用、没人负责」，没有 Owner 与认责机制</td><td>问题无人整改，标准无人维护</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 价值主张（对治关系）</h3>
+  <div class="grid2">
+    <div class="box tint"><h4>🎯 对业务的价值</h4><ul class="tight">
+      <li><b>降本</b>：消灭一物多码→采购集中议价、库存去冗余</li>
+      <li><b>提效</b>：一次维护多系统复用，免除跨系统人工转码</li>
+      <li><b>合规</b>：客商/科目口径统一，满足审计与监管报送</li>
+      <li><b>决策</b>：全域单一视图，报表口径一致可比</li>
+    </ul></div>
+    <div class="box tint"><h4>🛠 对 IT 的价值</h4><ul class="tight">
+      <li><b>解耦</b>：源系统只管消费，主数据集中生产</li>
+      <li><b>可控</b>：变更走审批留痕，可回溯可回滚</li>
+      <li><b>可扩</b>：新系统接入即订阅，边际成本递减</li>
+      <li><b>提质</b>：质量规则前置，脏数据进不来</li>
+    </ul></div>
+  </div>
+
+  <div class="callout gap">
+    <div class="h">⚠ 必须专门防范：一码多物（编码回收再用）</div>
+    多数方案只盯「一物多码」，却忽略反向的「一码多物」。它源于<b>废弃编码被回收重用</b>。铁律：<b>主数据编码一经启用永不回收、永不复用</b>，废弃走「冻结/归档」而非「删除后让号段可再分配」。V2 的编码引擎（§15）与生命周期（§06）把这条钉死为不可违反的约束。
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="domains">
+  <h2><span class="n">03</span>主数据域全景 · 与 cmxfico 既有实现对照 <span class="en">the domains × what cmx already has</span></h2>
+  <p>本方案覆盖四大域，以<b>财务域为主</b>，兼顾客商、物料、组织人员。<span class="v2mark">V2 新增</span> 每个域对照 cmxfico 既有 DCT 实现——证明大量主数据「已经建好表」，MDM 是给它们补治理。</p>
+
+  <div class="grid2">
+    <div class="box"><h4><span class="badge b-fin">财务域</span>（主）</h4>
+      <b>关键实体</b>：会计科目、成本中心、利润中心、往来单位、币种、财务组织、核算维度。<br>
+      <b>cmxfico 已建</b>：<code>cf_gl_account</code>·<code>cf_cost_center</code>·<code>cf_profit_ctr</code>·<code>cf_currency</code>·<code>cf_coa</code>·<code>cf_account_type</code>·<code>cf_acct_group</code> 等（DCT BUSINESS 字典，共 20+ 张）。<br>
+      <b>责任主体</b>：财务共享中心 / 集团财务部。
+    </div>
+    <div class="box"><h4><span class="badge b-party">客商域</span></h4>
+      <b>关键实体</b>：客户、供应商、业务伙伴 Business Partner、联系人、银行账户、地址。<br>
+      <b>cmxfico 已建</b>：<code>cf_bus_partner</code>（客户+供应商合一的 BP 模型，已对齐 SAP Party 概念）。<br>
+      <b>责任主体</b>：销售管理部（客户）/ 采购管理部（供应商）。<br>
+      <span class="en">最需要匹配合并——同一法人既是客户又是供应商。</span>
+    </div>
+    <div class="box"><h4><span class="badge b-mat">物料域</span></h4>
+      <b>关键实体</b>：物料/产品、物料分类、计量单位、规格、条码。<br>
+      <b>cmxfico 现状</b>：财务模块里物料只是 <code>account_type</code> 枚举值，<b>尚无独立 <code>cf_material</code></b>——属 MM 模块，待按需新建 DCT 定义。<br>
+      <b>责任主体</b>：供应链 / 技术部。
+    </div>
+    <div class="box"><h4><span class="badge b-org">组织人员域</span></h4>
+      <b>关键实体</b>：法人/公司、组织架构单元、部门、岗位、员工。<br>
+      <b>cmxfico 已建</b>：<code>cf_company</code>·<code>cf_comp_unit</code>·<code>cf_cons_org</code>（财务核算组织侧）；IAM 侧 <code>cmx_org</code>/<code>cmx_position</code> 管登录鉴权。<br>
+      <b>责任主体</b>：集团管控部 / HR。
+    </div>
+  </div>
+
+  <div class="callout dct">
+    <div class="h">🧬 关键建模决策：客商合一（BP 模型）已在 cmxfico 落地</div>
+    借鉴 SAP BP——同一法人可同时扮演客户、供应商、往来单位多个「角色」，共享一份标识与通用属性。勘探确认 cmxfico 的 <code>cf_bus_partner</code> <b>已经按此模型建模</b>（dictKind:BUSINESS，承载客户与供应商）。V1 方案里「Party ≠ Account 分离」的呼吁，在 cmx 里<b>已实现</b>，无需再造——这又是一条「MDM 不是新 kind」的证据。
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="governance">
+  <h2><span class="n">04</span>数据治理体系 <span class="en">two systems + one tool · the "four-definitions"</span></h2>
+  <p>主数据的价值来自「被信任」，而信任来自治理。业界共识：<b>制度/治理必须先于工具</b>（TIBCO EBX、DAMA-DMBOK 均强调），黄金记录非一劳永逸，无持续治理必然随时间劣化。</p>
+
+  <h3>4.1 治理总框架：两体系一工具</h3>
+  <div class="grid3">
+    <div class="box tint"><h4>① 标准体系 <span class="en">依据什么</span></h4>
+      <b>管理标准</b>（定义/分类/责任）、<b>应用标准</b>（分类标准·编码规则·属性描述规则·提报指南）、<b>集成服务标准</b>（分发接口与服务口径）。每条标准附「责任部门、审批流程、启停用日期」。→ §05
+    </div>
+    <div class="box tint"><h4>② 保障体系 <span class="en">谁负责</span></h4>
+      <b>数据 Owner / 数据管家（Steward）/ 认责人</b>三级角色 + MDM 委员会 + 考核指标（KPI）。核心是「<b>发现—分析—整改—验证</b>」质量闭环。→ 4.3/4.4
+    </div>
+    <div class="box tint"><h4>③ 管理工具 <span class="en">用什么</span></h4>
+      即本 MDM 平台。<span class="v2mark">V2</span> 工具 = DCT 建模底座（已有）+ cmx-mdm 治理叠加层（编码/生命周期/查重/分发）。工具是标准与保障体系的<b>技术承载</b>。
+    </div>
+  </div>
+
+  <h3>4.2 实施方法论：四定 + 四阶段</h3>
+  <div class="chain">
+    <span class="st">定岗责</span><span class="ar">·</span>
+    <span class="st">定标准</span><span class="ar">·</span>
+    <span class="st">定流程</span><span class="ar">·</span>
+    <span class="st">定平台</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:16%">阶段</th><th style="width:30%">工作</th><th>产出 / 验收</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 现状调研</b></td><td>各系统数据摸底、梳理属性字段、识别质量问题</td><td>现状评估报告、问题清单</td></tr>
+      <tr><td><b>② 方案设计</b></td><td>四定：定岗责、定标准、定流程、定平台</td><td>主数据管理体系设计文档（含本方案）</td></tr>
+      <tr><td><b>③ 系统实现</b></td><td>DCT 定义建模 + 期初数据清洗 + 治理层开发联调</td><td>可运行平台、清洗后的黄金记录、联调通过</td></tr>
+      <tr><td><b>④ 上线运营</b></td><td>用户测试、培训宣贯 → 长期定期质量审核</td><td>能否<b>自动识别一物多码</b>、<b>数据错误率是否下降</b></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 治理组织与角色（对齐 DAMA-DMBOK）</h3>
+  <table>
+    <thead><tr><th style="width:18%">角色</th><th style="width:32%">职责</th><th>对应厂商概念</th></tr></thead>
+    <tbody>
+      <tr><td><b>数据 Owner</b></td><td>高层决策；质量问题<b>整改第一责任人</b>；与认责人共定评价指标</td><td>SAP Business Owner；用友「数据 Owner」</td></tr>
+      <tr><td><b>数据管家</b><br>Steward</td><td>落地执行、连接业务与 IT；审阅待处理匹配队列；审批命名标准</td><td>SAP Steward-Approver；Informatica Steward Workbench</td></tr>
+      <tr><td><b>域/系统/操作管家</b></td><td>域管家=某域 SME；系统管家=技术口径；操作管家=日常维护/提报</td><td>用友/金蝶「专职/兼职主数据管理员」</td></tr>
+      <tr><td><b>数据保管者</b></td><td>保障技术环境（平台运维、备份、权限）</td><td>IT 运维</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 质量闭环与认责机制</h3>
+  <div class="callout win">
+    <div class="h">🔁 「发现—分析—整改—验证」闭环</div>
+    质量回潮的根因是<b>缺闭环</b>。对治：① <b>发现</b>=质量规则前置+监控仪表盘（§09）；② <b>分析</b>=按源归因评分卡，异常回溯到源系统；③ <b>整改</b>=派单到数据 Owner/管家；④ <b>验证</b>=整改后重跑规则，计入 KPI。每个主数据项在标准里明确<b>管理级次</b>与<b>认责人</b>，责任到人。
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="standard">
+  <h2><span class="n">05</span>标准与编码规则体系 <span class="en">standards &amp; coding</span></h2>
+  <p>编码规则是主数据方案最具体、最能体现管控力的技术资产。<span class="v2mark">V2 落地修正</span>：DCT 定义里已有 <code>codeRule</code> 声明字段（<code>{mode, field, pattern, uniqueCheck}</code>），但 <code>compile_dct</code> <b>完全不解析它</b>，运行时也不生成业务编码——这正是 V2 要补的「编码引擎」缺口（详见 §15）。</p>
+
+  <h3>5.1 主数据标准三层</h3>
+  <table>
+    <thead><tr><th style="width:16%">标准类别</th><th style="width:40%">内容</th><th>管理属性</th></tr></thead>
+    <tbody>
+      <tr><td><b>管理标准</b></td><td>主数据定义、分类原则、责任归属、密级</td><td rowspan="3">每条标准均声明：<b>责任部门、审批流程、启用日期、停用日期</b></td></tr>
+      <tr><td><b>应用标准</b></td><td><b>分类标准 · 编码规则 · 属性描述规则 · 数据提报指南</b></td></tr>
+      <tr><td><b>集成服务标准</b></td><td>分发接口口径、服务契约、Key/Value 映射规则（§11/§19）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 编码规则的六种构件</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 常量段</h4>固定前缀/后缀，如物料码首位 <code>M</code>、供应商 <code>V</code>。</div>
+    <div class="box"><h4>② 属性取值段</h4>取主数据某属性值或其映射，如「分类码=电子→<code>EL</code>」。</div>
+    <div class="box"><h4>③ 流水号段</h4>自增序列，可按范围/按分组重置（<code>0001</code>…）。核心防重构件。</div>
+    <div class="box"><h4>④ 日期段</h4>年月日，如 <code>2026</code>/<code>2608</code>，用于批次类。</div>
+    <div class="box"><h4>⑤ 校验位段</h4>Luhn/模 11 等校验码，防止手工录入错码。</div>
+    <div class="box"><h4>⑥ 分隔符段</h4>可选 <code>-</code>/<code>.</code>，仅显示用，不参与唯一性。</div>
+  </div>
+
+  <h3>5.3 借鉴金蝶：编码规则的适用条件</h3>
+  <div class="callout gold">
+    <div class="h">🏅 按受控组织生效 + 按属性设适用条件</div>
+    金蝶苍穹的关键机制值得直接吸收：① <b>按受控组织生效</b>——同一主数据在不同组织可用不同编码规则；② <b>按对象属性设适用条件</b>——如「物料分类=原材料」走规则 A、「=成品」走规则 B。<b>易错点</b>：对象未设主业务组织时，不能使用设了受控组织的编码规则——编码引擎须显式处理「无组织上下文」的兜底规则。
+  </div>
+
+  <h3>5.4 编码治理的三条铁律</h3>
+  <ol class="tight">
+    <li><b>编码即身份，永不回收</b>：主数据编码一经启用，即便对象作废也永不复用。作废走冻结/归档，号段不释放。</li>
+    <li><b>内码 ≠ 外码</b>：DCT 物理表 <code>id</code>（bigint 内码，pk52 铸号）作主键与关系锚点；<code>code</code> 是可读外码。改编码规则不动 <code>id</code>，关系不断裂。</li>
+    <li><b>规则可版本化</b>：编码规则本身是受管对象，改规则留版本、标启停日期，旧对象保留旧码、新对象用新规则。</li>
+  </ol>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="lifecycle">
+  <h2><span class="n">06</span>主数据全生命周期 <span class="en">the lifecycle</span></h2>
+  <p><span class="v2mark">V2 落地修正</span>：DCT 现在只有 <code>status</code>（1启用/0停用二元），<b>没有</b>草稿/发布/冻结/归档生命周期。V2 通过给 DCT 物理表扩展 <code>lifecycle_status</code> 列（单表+状态列，Flex 式，不改 DCT 引擎）来实现，详见 §14/§17。</p>
+
+  <h3>6.1 七状态生命周期</h3>
+  <div class="chain">
+    <span class="st">申请 Apply</span><span class="ar">→</span>
+    <span class="st">校验 Validate</span><span class="ar">→</span>
+    <span class="st">审核 Approve</span><span class="ar">→</span>
+    <span class="st">发布 Publish</span><span class="ar">→</span>
+    <span class="st">变更 Change</span><span class="ar">→</span>
+    <span class="st">冻结 Freeze</span><span class="ar">→</span>
+    <span class="st">归档 Archive</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:12%">状态</th><th style="width:34%">含义</th><th>V2 落地（lifecycle_status 值）</th></tr></thead>
+    <tbody>
+      <tr><td><b>申请</b></td><td>业务发起新建/变更请求（对齐 SAP Change Request）</td><td><code>draft</code>：草稿态，写入 DCT 表但 <code>lifecycle_status='draft'</code>，不对外可见</td></tr>
+      <tr><td><b>校验</b></td><td>规则校验（唯一性/完整性/格式）+ 查重匹配</td><td>提交 CR 时触发校验 + <code>find-duplicates</code></td></tr>
+      <tr><td><b>审核</b></td><td>按数据分级走单级/多级/并行审批</td><td>接 cmx-flow，CR 作流程实例的业务数据</td></tr>
+      <tr><td><b>发布</b></td><td>审核通过 → 写激活 → 事件驱动分发</td><td><code>lifecycle_status='published'</code>，此刻成为「黄金记录」</td></tr>
+      <tr><td><b>变更</b></td><td>已发布对象的属性修改（Change Order 留痕，版本+1）</td><td>CR cr_type=update，<code>published_version</code>+1</td></tr>
+      <tr><td><b>冻结</b></td><td>停用但保留；不可再被新交易引用</td><td><code>lifecycle_status='frozen'</code>，编码不释放</td></tr>
+      <tr><td><b>归档</b></td><td>标记删除 / 长期封存</td><td><code>lifecycle_status='archived'</code>，永不物理删主键</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 集团分级维护</h3>
+  <div class="callout note">
+    <div class="h">🏢 「管理层—执行层」分级（中国式集团管控核心）</div>
+    <b>集团总部定标准、控关键主数据</b>（如统一科目表、集团客户），<b>成员单位在授权范围维护本地主数据</b>（如本地供应商、本地成本中心）。每个数据项明确<b>管理级次</b>；编码规则按组织生效（§05）、数据按组织授权分发（§11）。<span class="v2mark">V2</span> 落地：复用 DCT 的 <code>scopeFieldSet</code>（<code>scope_type/entity_id</code>）做组织隔离。
+  </div>
+
+  <h3>6.3 定义态 vs 变更态：两类治理动作</h3>
+  <div class="grid2">
+    <div class="box"><h4>定义态：新建主数据</h4>
+      对齐 <b>Oracle NIR</b>：请求→定义→审批→计划生效。<b>无红线标记</b>，产出一条 <code>lifecycle_status='draft'</code> 的新对象；未批准前不对外可见。
+    </div>
+    <div class="box"><h4>变更态：修改已有主数据</h4>
+      对齐 <b>Oracle Change Order</b>：对已发布对象<b>带红线/markup</b>修改，审批通过<b>自动版本+1</b>（<code>published_version</code>），全程留痕可对比可回滚。
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART II BAND ============ -->
+<div class="partband">
+  <div class="pt">Part II</div>
+  <div class="pn">第二部分 · 应用方案</div>
+  <div class="pd">能力全景（治理叠加层视角）· 实现风格 · 质量匹配合并 · 层次分类 · 集成分发</div>
+</div>
+
+<!-- ============ 07 ============ -->
+<section id="capmap">
+  <h2><span class="n">07</span>能力全景与治理叠加层架构 <span class="en">capability map × overlay architecture</span></h2>
+  <p>综合 SAP MDG、Oracle、Informatica、Stibo、Reltio、TIBCO EBX 与 Gartner MDM 能力评估维度，一个完整的 MDM 平台收敛为<b>八大能力域</b>。<span class="v2mark">V2</span> 把它们重新映射到「DCT 底座已有 / 治理层需补」两层。</p>
+
+  <h3>7.1 八大能力域 × V2 两层归属</h3>
+  <table>
+    <thead><tr><th style="width:20%">能力域</th><th style="width:40%">职责</th><th style="width:20%">归属层</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 多域建模</b></td><td>元数据/模型驱动 · 实体·属性·关系·层次</td><td><span class="pill dct">DCT 底座</span></td><td><span class="pill keep">已有(强)</span></td></tr>
+      <tr><td><b>② 匹配合并</b></td><td>标准化→匹配→合并→存活→校验→发布</td><td><span class="pill mdm">治理层</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>③ 存活与信任</b></td><td>源优先级·最新/最全/质量分·字段级信任</td><td><span class="pill mdm">治理层</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>④ 数据质量</b></td><td>校验·清洗·去重·标准化·评分卡</td><td><span class="pill dct">DCT 底座</span>(校验) + <span class="pill mdm">治理层</span>(评分)</td><td><span class="pill half">半有</span></td></tr>
+      <tr><td><b>⑤ 治理与管家</b></td><td>Owner/Steward·变更请求·审批工作流·认责</td><td><span class="pill mdm">治理层</span> + cmx-flow</td><td><span class="pill half">需接线</span></td></tr>
+      <tr><td><b>⑥ 参考数据/层次</b></td><td>RDM码表·分类taxonomy·层次版本化·编码规则</td><td><span class="pill dct">DCT 底座</span>(层次/分类) + <span class="pill mdm">治理层</span>(编码)</td><td><span class="pill half">层次已有/编码新造</span></td></tr>
+      <tr><td><b>⑦ 集成与分发</b></td><td>REST/事件/批量·Key/Value映射·发布订阅</td><td><span class="pill mdm">治理层</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>⑧ 安全审计/AI</b></td><td>RBAC·脱敏·血缘·持久ID·AI实体解析</td><td><span class="pill dct">DCT 底座</span>(审计列) + <span class="pill mdm">治理层</span>(版本留痕)</td><td><span class="pill half">半有</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 V2 分层架构（三层）</h3>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:34%">职责</th><th>承载</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 治理叠加层</b><br><span class="en">cmx-mdm crate</span></td><td>编码引擎·生命周期·版本留痕·查重匹配存活·交叉引用·分发订阅·事件日志</td><td>独立 crate，不建表，通过扩展列+治理表+事件驱动</td></tr>
+      <tr><td><b>② DCT 建模底座</b><br><span class="en">已有，复用</span></td><td>实体建模·树形·取值域·唯一键·生效期·组织隔离·导入导出·零拷贝装载</td><td>cmx-dct 三 crate + cmxfico 32 张字典表</td></tr>
+      <tr><td><b>③ 平台骨架</b><br><span class="en">已有，复用</span></td><td>元数据台账·IAM·cmx-flow·compile/deploy·ZmcDataSet·pk52铸号</td><td>init_ddl 61 张表</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🎯 V2 核心洞察：MDM 是「能力」不是「容器」</div>
+    V1 把 MDM 当成一个装数据的容器（<code>md_golden</code> 表）。V2 认清：主数据的<b>容器</b>已经有了（DCT 物理表），MDM 真正要提供的是<b>能力</b>——让 DCT 表里的数据「经过治理成为黄金记录」。所以 V2 的 MDM 是一个<b>无状态的能力层</b>：它读 DCT 表、写治理表、发事件、触流程，但主数据本身始终躺在 DCT 物理表里。这符合 cmx 无状态服务设计约束。
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="styles">
+  <h2><span class="n">08</span>实现风格选型 <span class="en">the four implementation styles</span></h2>
+  <p>MDM 有四种业界公认的实现风格，本质是一条「控制力/侵入性由弱到强」的谱系。选型是应用架构的首要决策。</p>
+
+  <h3>8.1 四种风格对照</h3>
+  <table>
+    <thead><tr><th style="width:12%">维度</th><th style="width:20%">注册型<br><span class="en">Registry</span></th><th style="width:20%">整合型<br><span class="en">Consolidation</span></th><th style="width:20%">共存型<br><span class="en">Coexistence</span></th><th>集中型<br><span class="en">Transaction</span></th></tr></thead>
+    <tbody>
+      <tr><td><b>机制</b></td><td>只存交叉引用索引，数据留源系统</td><td>源汇入中央库，匹配整合成黄金记录（单向）</td><td>中央黄金副本 + 与源双向同步</td><td>MDM 亲自编纂，向所有系统分发</td></tr>
+      <tr><td><b>SOR 归属</b></td><td>源系统</td><td>源系统</td><td>无单一 SOR</td><td><b>MDM</b></td></tr>
+      <tr><td><b>黄金记录</b></td><td>不持久化（虚拟）</td><td>持久化</td><td>持久化+回写</td><td>持久化+分发</td></tr>
+      <tr><td><b>侵入/改造</b></td><td><span class="pill keep">最低</span></td><td><span class="pill keep">低</span></td><td><span class="pill add">中</span></td><td><span class="pill gap">最高</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🎯 本方案选型建议：从集中型起步（cmx 自带优势）</div>
+    <span class="v2mark">V2 调整</span>：多数厂商建议从整合型起步，但 cmx 的独特优势是<b>DCT 已是权威建模底座</b>——主数据本就在 DCT 表里生产与维护。因此 cmx 上的 MDM 天然接近<b>集中型（Transaction）</b>：MDM hub（DCT 表 + 治理层）亲自编纂，审批后分发。对<b>财务科目/组织等强管控域直接上集中</b>；对<b>客商/物料等需多源汇入的域</b>，先用匹配合并（整合）再走向集中。整体采<b>混合式</b>：强管控域集中，分析消费走整合分发。
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="quality">
+  <h2><span class="n">09</span>数据质量 · 匹配 · 合并 · 黄金记录 <span class="en">the golden-record pipeline</span></h2>
+  <p>这是 MDM 的心脏。黄金记录不是「存出来的」，而是「算出来的」——由一条固定的流水线从多源脏数据里提炼。</p>
+
+  <h3>9.1 黄金记录七步流水线</h3>
+  <div class="dag">数据载入 → 初检 → 标准化 → 匹配 → 存活(最佳记录) → 校验 → 激活/发布
+Load      Check   Standardize  Match   Survivorship    Validate  Activate
+   │         │         │           │          │             │         │
+ DCT导入   列级校验  归一化/清洗  查重识别   逐字段选真值   业务校验  lifecycle_status
+ (已有)    (已有)    (治理层)    (治理层)   (治理层)      (已有)    ='published'+分发</div>
+
+  <h3>9.2 数据质量六维度（评分卡骨架）</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 准确性 Accuracy</h4>值与真实世界一致（地址真实存在、税号有效）。</div>
+    <div class="box"><h4>② 完整性 Completeness</h4>必填属性有值、关键字段不缺（缺失率）。</div>
+    <div class="box"><h4>③ 一致性 Consistency</h4>跨系统同一对象口径一致。</div>
+    <div class="box"><h4>④ 唯一性 Uniqueness</h4>无重复主数据（一物多码率、去重率）。</div>
+    <div class="box"><h4>⑤ 及时性 Timeliness</h4>变更能及时反映、分发不滞后。</div>
+    <div class="box"><h4>⑥ 有效性 Validity</h4>值落在允许域内（枚举/正则/范围）。</div>
+  </div>
+  <div class="callout note">
+    <div class="h">📊 监控 vs 评分卡（两类度量联动）</div>
+    <b>监控（Monitor）</b>=实时检测违规、触发即时纠正；<b>评分卡（Scorecard）</b>=某时点质量快照。关键做法：<b>按源归因</b>——把质量异常回溯到源系统，形成「按源质量评分卡」。<span class="v2mark">V2</span> 初检/校验复用 DCT 的 <code>TableSpec</code> 列级校验（已有），评分卡是治理层新造。
+  </div>
+
+  <h3>9.3 匹配：三种技术 + 分块</h3>
+  <table>
+    <thead><tr><th style="width:16%">匹配类型</th><th style="width:40%">机制</th><th>适用</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确匹配</b></td><td>匹配列取值完全一致（税号/统一社会信用代码相等）</td><td>有强标识符时，最快最准</td></tr>
+      <tr><td><b>模糊匹配</b></td><td>容忍拼写错误/换位/合并拆分/遗漏；返回置信度分数</td><td>名称/地址等自由文本</td></tr>
+      <tr><td><b>AI/ML 匹配</b></td><td>监督/主动学习推断规则（Reltio FERN / Informatica）</td><td>大规模、高噪声</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gap">
+    <div class="h">⚠ 必须分块（Clustering/Blocking），绝不做 N×N</div>
+    500 条记录两两比较 ≈ 25 万次，全量不可行。<b>分块</b>先用「操纵后的标识值」生成<b>簇键（cluster key）</b>，只比较同簇记录。簇键用<b>音近（Soundex/Metaphone）+ 分词 + 子串</b>变换。防坑：大量 NULL 会形成巨型 NULL 簇；设<b>簇大小上限（默认 500）</b>+ 子簇拆分并行。
+  </div>
+
+  <h3>9.4 合并 vs 存活（务必区分）</h3>
+  <div class="grid2">
+    <div class="box"><h4>合并 Merge = 结构</h4>把识别为同一实体的多条记录<b>并成一个容器</b>；子实体<b>重新挂到存活记录（re-parent）</b>；victim 置「已合并」状态，<b>不硬删</b>，可 unmerge 还原。</div>
+    <div class="box"><h4>存活 Survivorship = 取值</h4>决定<b>每个属性</b>的最终真值。策略：源优先级 / 最新胜出 / 最全胜出 / 质量分驱动。<b>字段级（cell-level）信任优于整记录排序</b>。</div>
+  </div>
+
+  <h3>9.5 双阈值自动/人工分流（借鉴 Oracle CDM）</h3>
+  <div class="dag">匹配得分 score
+   │
+   ├─ score < 匹配阈值 ──────────→ 保留为新记录（非重复）
+   ├─ 匹配阈值 ≤ score < 自动合并阈值 ──→ 生成合并请求 → 数据管家人工评审
+   └─ score ≥ 自动合并阈值 ──────→ 自动合并（无需人工）
+
+   护栏：① 整组每条都须过自动合并阈值，否则整组转人工
+        ② 重复组大小上限（默认 10）③ 多候选时对最高分记录匹配</div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="hierarchy">
+  <h2><span class="n">10</span>层次 · 分类 · 参考数据管理 <span class="en">hierarchy · taxonomy · RDM</span></h2>
+  <p><span class="v2mark">V2 重点</span>：DCT 已有完整的树形/层次能力——<code>selfHierarchy + parentField</code> 声明 + 递归 CTE 自动维护 <code>level_no/full_path/is_leaf</code>（<code>cmx-dct-store-pg/src/hierarchy.rs:145</code>）。cmxfico 的 <code>cf_gl_account</code> 已是树形科目表。本节描述 MDM 需要补充的「层次版本化」等增强。</p>
+
+  <h3>10.1 DCT 已有的层次能力</h3>
+  <div class="grid3">
+    <div class="box dct"><h4>① 自引用单表树</h4><code>selfHierarchy:true</code> + <code>parentField:"parent_id"</code>。递归 CTE 重算整棵子树的 <code>level_no/full_path/is_leaf</code>。</div>
+    <div class="box dct"><h4>② 多字典分类</h4><code>dictKind:CLASSIFY</code> 分类字典 + <code>dictKind:GROUP</code> 分组字典 + <code>dictKind:RELATION</code> 关系字典。</div>
+    <div class="box dct"><h4>③ 主从协调</h4><code>DctHierService</code> 适配 <code>cmx_master_slave::HierService</code> trait，可挂主从协调器。</div>
+  </div>
+
+  <h3>10.2 MDM 需补充的层次增强</h3>
+  <table>
+    <thead><tr><th style="width:24%">增强</th><th style="width:16%">状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>多重/替代层次</b></td><td><span class="pill half">需补</span></td><td>同一批节点挂多棵树服务不同视角（成本中心「按地理」vs「按业务线」）。DCT 现仅单 parent，需扩展多视图层次。</td></tr>
+      <tr><td><b>层次版本化</b></td><td><span class="pill gap">新造</span></td><td>层次是日期有效的快照：2025 版与 2026 版组织树不同，历史可查可恢复。需新建层次版本表。</td></tr>
+      <tr><td><b>分类驱动继承</b></td><td><span class="pill half">需补</span></td><td>Oracle item class：子类继承父类属性组。DCT 现无属性沿树继承，需在治理层补。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.3 参考数据（RDM）与主数据的界分</h3>
+  <p>在 cmx 里，RDM 就是 <code>dictKind:CLASSIFY/ENUM</code> 的小型受控字典（国家、币种、计量单位、税码）。<code>cf_currency</code>/<code>cf_country</code> 已是 RDM。它们极稳定、慢变、常由外部标准定义（ISO），集中管控并分发。</p>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="integration">
+  <h2><span class="n">11</span>集成 · 分发 · 映射 <span class="en">distribution &amp; mapping</span></h2>
+  <p>黄金记录的价值在于「被消费」。MDM 是一个<b>平台</b>，不同消费者按各自延迟/访问模式取数。</p>
+
+  <h3>11.1 五种分发模式</h3>
+  <table>
+    <thead><tr><th style="width:20%">模式</th><th style="width:14%">延迟</th><th>最佳场景</th></tr></thead>
+    <tbody>
+      <tr><td><b>实时 API</b>（REST）</td><td>亚秒/秒</td><td>事务系统按需取黄金记录（CRUD、findDuplicates）</td></tr>
+      <tr><td><b>发布/订阅·事件驱动</b></td><td>实时推送</td><td>向多订阅者传播；松耦合；治理事件触发下游</td></tr>
+      <tr><td><b>批量/ETL·联合发布</b></td><td>小时级</td><td>分析负载、遗留系统、批量导出</td></tr>
+      <tr><td><b>ESB/中间件</b>（iPaaS）</td><td>视情况</td><td>编排、转换、多协议混合</td></tr>
+      <tr><td><b>Hub-and-Spoke</b></td><td>实时/批量</td><td>集中治理、hub→系统单向流</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 两大不可或缺的映射原语（借鉴 SAP DRF）</h3>
+  <table>
+    <thead><tr><th style="width:16%">映射</th><th style="width:34%">Key Mapping 键映射</th><th>Value Mapping 值映射</th></tr></thead>
+    <tbody>
+      <tr><td>映射对象</td><td><b>对象标识</b>（整条记录）跨系统</td><td><b>属性值/代码</b>跨系统</td></tr>
+      <tr><td>示例</td><td>BP 1234(ERP)=A100(CRM)=C600(SRM)</td><td>物料组 01(ERP)=01-200(S/4)</td></tr>
+      <tr><td>V2 落地</td><td><code>md_xref</code>（治理层新造）</td><td><code>md_value_map</code>（治理层新造）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.3 事件驱动 + 过滤分发（借鉴 SAP DRF/MDI）</h3>
+  <p>把「发什么」与「怎么发」分离：<b>复制模型</b>= 对象 × 目标系统 × 过滤条件。治理完成（审批/发布）<b>触发事件</b> → 检查复制模型 → 按过滤逻辑决定目标系统 → 推送。</p>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="benchmark">
+  <h2><span class="n">12</span>主流厂商对标与借鉴 <span class="en">vendor benchmark</span></h2>
+  <p>把六家标杆的差异化能力汇成一表，作为本方案详细设计（第三部分）的来源索引。</p>
+
+  <table>
+    <thead><tr><th style="width:13%">厂商/产品</th><th style="width:20%">差异化标签</th><th style="width:38%">最值得借鉴的设计点</th><th>本案落点</th></tr></thead>
+    <tbody>
+      <tr><td><b>SAP MDG</b></td><td>治理式主数据、暂存/激活、决策表工作流</td><td>CR 原子治理单元；<b>Staging/Active 双区</b>；BRF+ 决策表外置流程；Key/Value Mapping；<b>数据所有权</b>联邦</td><td>§14/§17</td></tr>
+      <tr><td><b>Oracle</b></td><td>层次/维度一等公民、TCA 党派模型、EDQ 匹配</td><td><b>Party≠Account 分离</b>（cmx cf_bus_partner 已实现）；内码 UUID 永不复用；<b>交叉引用表</b>；双阈值匹配；NIR vs Change Order 二分</td><td>§13/§16</td></tr>
+      <tr><td><b>Informatica</b></td><td>匹配合并/信任框架标杆</td><td><b>单元格级存活</b>（BVT）；<b>存活分绑定 DQ 校验</b>；声明式配置匹配合并规则</td><td>§16/§09</td></tr>
+      <tr><td><b>Stibo STEP</b></td><td>多域与建模灵活性</td><td>超灵活数据模型；买/卖方黄金记录；版本+多语言维度；<b>GraphQL API</b></td><td>§13</td></tr>
+      <tr><td><b>Reltio</b></td><td>云原生、图、实时 API</td><td><b>图数据模型</b>；FERN rule-free 匹配；动态存活；API-first 毫秒响应</td><td>§13/§16</td></tr>
+      <tr><td><b>TIBCO EBX</b></td><td>治理、RDM、模型驱动</td><td>一体化 RDM+多域+分类+层次+治理；<b>模型驱动「所见即所建」</b>（=cmx DCT）；<b>制度先于工具</b></td><td>§10/§17</td></tr>
+      <tr><td><b>用友 iUAP MDM</b></td><td>装载即清洗、四定、服务分发</td><td>装载时唯一性检查+归一化+查重合并；按分发策略以服务分发；<b>异常主动通知</b>；四定方法论</td><td>§04/§11</td></tr>
+      <tr><td><b>金蝶苍穹 AMDM</b></td><td>集团分级、编码按组织生效</td><td><b>编码规则按受控组织生效 + 按属性设适用条件</b>；总部+多下级分级维护；元数据模型驱动低代码集成</td><td>§15/§06</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout verdict">
+    <div class="h">🧭 五个跨厂商反复出现的「必抄」原语 × V2 落地</div>
+    ① <b>数据所有权</b> → DCT <code>scopeFieldSet</code> + cmx-flow 组织路由；② <b>规范模型 canonical</b> → DCT 定义 JSON（versioned）；③ <b>暂存/激活分离</b> → <code>lifecycle_status</code> 单表状态列（Flex 式）；④ <b>决策表外置规则</b> → cmx-flow 网关条件；⑤ <b>Key/Value 映射</b> → <code>md_xref</code>/<code>md_value_map</code>（治理层）。<span class="v2mark">V2</span> 五条全部能映射到 DCT 底座 + 治理层，无一需要新 kind。
+  </div>
+</section>
+
+<!-- ============ PART III BAND ============ -->
+<div class="partband">
+  <div class="pt">Part III</div>
+  <div class="pn">第三部分 · 详细设计（重写）</div>
+  <div class="pd">DCT 即建模底座 · 治理叠加层表结构 · 编码引擎 · 匹配存活 · 状态机 · API · 分发 —— 全部基于真实代码勘探</div>
+</div>
+
+<!-- ============ 13 ============ -->
+<section id="model">
+  <h2><span class="n">13</span>核心架构：MDM 独立新域 + DCT 建模 + 治理叠加层 <span class="v2mark">V2 核心章节</span></h2>
+  <p class="lede">这一章是 V2 与 V1 的根本分野。<span class="v2mark">V2 关键决策</span> MDM 是<b>独立新域</b>（<code>mdm/cmxmdm/mdm</code>），在 <code>data/meta/definitions/mdm/</code> 下自建 DCT 定义和物理表，<b>只用 base 公共 fieldSets，不碰 <code>fi/</code> 下任何元数据</b>。cmxfico 的 32 张 <code>cf_*</code> 表是财务模块自有的，MDM 不侵入。</p>
+
+  <h3>13.1 MDM 是独立新域，与财务域并列</h3>
+  <div class="dag">data/meta/definitions/
+├── base/                          ← 公共 fieldSet 池(MDM 可用)
+│   └── base_dct_meta_v1.json      ← id/code/name/sort_no/status/hierarchy/audit/effective/scope
+├── fi/cmxfico/                    ← 财务域(MDM 不碰)
+│   └── gl/cmxfico_dct_meta_v3.json → cf_gl_account/cf_bus_partner/...(32张,财务自有)
+└── mdm/cmxmdm/mdm/                ← ★ MDM 独立新域(V2 新建)
+    └── cmxmdm_dct_meta_v1.json    → cm_supplier/cm_customer/cm_material/...(MDM 自建)
+                                   只引用 base fieldSets + 自定义业务列
+                                   物理表前缀 cm_,与 cf_* 完全隔离</div>
+
+  <h3>13.2 MDM 域 DCT 定义示例（只用 base，不碰 fi）</h3>
+  <pre><code><span class="cmt">// data/meta/definitions/mdm/cmxmdm/mdm/cmxmdm_dct_meta_v1.json</span>
+{
+  <span class="str">"moduleMeta"</span>: { <span class="str">"moduleCode"</span>: <span class="str">"cmxmdm"</span>, <span class="str">"version"</span>: <span class="nu">1</span> },
+  <span class="str">"baseDctMetaRef"</span>: { <span class="str">"file"</span>: <span class="str">"base_dct_meta_v1.json"</span> },  <span class="cmt">// 只引用 base 公共列</span>
+  <span class="str">"dictionaryTables"</span>: [{
+    <span class="str">"dictMeta"</span>: {
+      <span class="str">"dictCode"</span>: <span class="str">"supplier"</span>, <span class="str">"dictName"</span>: <span class="str">"供应商"</span>,
+      <span class="str">"dictKind"</span>: <span class="str">"BUSINESS"</span>,
+      <span class="str">"tableName"</span>: <span class="str">"cm_supplier"</span>,            <span class="cmt">// ★ MDM 物理表前缀 cm_,不是 cf_</span>
+      <span class="str">"idField"</span>: <span class="str">"id"</span>, <span class="str">"codeField"</span>: <span class="str">"code"</span>, <span class="str">"labelField"</span>: <span class="str">"name"</span>,
+      <span class="str">"codeRule"</span>: { <span class="str">"ruleCode"</span>: <span class="str">"supplier_hq"</span> }   <span class="cmt">// 引用 cmx-code 独立规则库</span>
+    },
+    <span class="str">"fields"</span>: [                               <span class="cmt">// MDM 自己的业务列</span>
+      { <span class="str">"name"</span>:<span class="str">"tax_no"</span>, <span class="str">"dataType"</span>:<span class="str">"varchar"</span>, <span class="str">"fieldLength"</span>:<span class="nu">32</span> },
+      { <span class="str">"name"</span>:<span class="str">"credit_code"</span>, <span class="str">"dataType"</span>:<span class="str">"varchar"</span>, <span class="str">"fieldLength"</span>:<span class="nu">18</span> }
+    ],
+    <span class="str">"baseFieldSet"</span>: <span class="str">"dictionaryCommonFields"</span>,        <span class="cmt">// ← base 公共列</span>
+    <span class="str">"hierarchyFieldSet"</span>: <span class="str">"dictionaryHierarchyFields"</span>, <span class="cmt">// ← base 层级列(若树形)</span>
+    <span class="str">"auditFieldSet"</span>: <span class="str">"dictionaryAuditFields"</span>,        <span class="cmt">// ← base 审计列</span>
+    <span class="str">"effectiveFieldSet"</span>: <span class="str">"dictionaryEffectiveFields"</span>,  <span class="cmt">// ← base 生效期</span>
+    <span class="str">"mdmGovernanceFieldSet"</span>: <span class="str">"mdmGovernanceFields"</span>,     <span class="cmt">// ← ★ MDM 治理列(见 13.4)</span>
+    <span class="str">"uniqueKeys"</span>: [[<span class="str">"code"</span>]]
+  }]
+}
+<span class="cmt">// 部署:POST /api/model/deploy {kind:"DCT",domain:"mdm",application:"cmxmdm",module:"mdm"}
+//   → compile_dct → CREATE TABLE cm_supplier(...) → 登记 cmx_meta_table_define</span></code></pre>
+
+  <h3>13.3 V1 vs V2 数据模型对比</h3>
+  <table>
+    <thead><tr><th style="width:24%">建模要素</th><th style="width:36%">V1（独立 md_* 元模型）</th><th>V2（MDM 域 DCT 自建）</th></tr></thead>
+    <tbody>
+      <tr><td><b>实体类型定义</b></td><td><span class="strike">md_entity_type 表</span></td><td>MDM 域 DCT <code>dictMeta</code> —— 复用 DCT 机制</td></tr>
+      <tr><td><b>属性定义</b></td><td><span class="strike">md_attr_def 表</span></td><td>MDM 域 DCT <code>fields[]</code> —— 复用 DCT 机制</td></tr>
+      <tr><td><b>黄金记录存储</b></td><td><span class="strike">md_golden 表</span></td><td>MDM 域物理表 <code>cm_*</code> 行 + lifecycle_status</td></tr>
+      <tr><td><b>层次关系</b></td><td><span class="strike">md_hierarchy 表</span></td><td>DCT <code>parent_id/full_path</code> + 递归 CTE（base fieldSet）</td></tr>
+      <tr><td><b>取值域/唯一性/组织隔离</b></td><td>应用层</td><td>DCT <code>enumValues/uniqueKeys/scopeFieldSet</code>（base 已有）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.4 MDM 治理列：mdmGovernanceFields fieldSet<span class="v2mark">V2 关键</span></h3>
+  <p>这是 V2 实现「暂存/激活双区」的方式——<b>不改 DCT 引擎，不碰 cmxfico</b>，只在 base fieldSet 池里新增一个 <code>mdmGovernanceFields</code>，MDM 域的 DCT 定义按需引用。cmxfico 的 cf_* 表不引用它就不带这些列，<b>零侵入</b>。</p>
+  <pre><code><span class="cmt">// base_dct_meta_v1.json 新增一个 fieldSet（与现有 fieldSet 同构，零改 DCT 引擎）</span>
+<span class="str">"mdmGovernanceFields"</span>: [
+  { <span class="str">"name"</span>: <span class="str">"lifecycle_status"</span>, <span class="str">"dataType"</span>: <span class="str">"varchar"</span>, <span class="str">"fieldLength"</span>: <span class="nu">16</span>,
+    <span class="str">"nullable"</span>: <span class="kw">false</span>, <span class="str">"defaultValue"</span>: <span class="str">"draft"</span>,
+    <span class="str">"enumValues"</span>: [<span class="str">"draft"</span>, <span class="str">"pending"</span>, <span class="str">"published"</span>, <span class="str">"frozen"</span>, <span class="str">"archived"</span>, <span class="str">"merged"</span>] },
+  { <span class="str">"name"</span>: <span class="str">"published_version"</span>, <span class="str">"dataType"</span>: <span class="str">"int"</span>, <span class="str">"nullable"</span>: <span class="kw">false</span>, <span class="str">"defaultValue"</span>: <span class="nu">0</span> },
+  { <span class="str">"name"</span>: <span class="str">"pending_cr_id"</span>, <span class="str">"dataType"</span>: <span class="str">"bigint"</span>, <span class="str">"nullable"</span>: <span class="kw">true</span> }
+]
+<span class="cmt">// MDM 域定义引用:"mdmGovernanceFieldSet":"mdmGovernanceFields" → cm_supplier 带这三列
+// cmxfico 不引用 → cf_* 不带这三列(零侵入财务模块)</span></code></pre>
+  <p><b>查询黄金记录 = <code>WHERE lifecycle_status='published'</code></b>，草稿天然不可见。</p>
+
+  <div class="callout v2fix">
+    <div class="h">🔧 为什么不直接改 cmxfico 的 cf_* 表加列</div>
+    ① <b>所有权归属</b>：cmxfico 是财务模块自有的主数据，MDM 无权侵入；② <b>解耦</b>：财务域的主数据口径由财务团队负责，MDM 域由主数据团队负责，两套独立演进；③ <b>复用 base</b>：MDM 自建定义照样能用 base 的公共列（id/code/name/hierarchy/audit/effective/scope），不损失任何能力；④ <b>零侵入</b>：cf_* 表不带 mdmGovernanceFields，财务模块完全无感知。
+  </div>
+
+  <h3>13.5 治理叠加层的数据模型</h3>
+  <p>MDM 治理层<b>不复制主数据</b>，只存「治理事实」，通过 <code>(dict_code, record_id)</code> 引用 MDM 域 DCT 物理表的行（<code>record_id</code> → <code>cm_*.id</code>，不建物理外键，用索引替代）。</p>
+  <div class="dag">┌──────────────── MDM 治理叠加层（cmx-mdm 三段 crate，治理事实表）─────────────┐
+│                                                                              │
+│  md_change_request + md_cr_item  变更请求(治理原子单元)                      │
+│  md_audit                        审计留痕/版本历史                            │
+│  md_xref + md_value_map          交叉引用(Key) + 值映射(Value)               │
+│  md_merge_record                  匹配组/存活裁决                              │
+│  md_subscription + md_event_log  分发订阅 + 事件日志(delta)                  │
+│                                                                              │
+│  ★ 编码规则归 cmx-code(独立方案),本层只预留插入点;不在本次范围              │
+└──────────────────────────┬───────────────────────────────────────────────────┘
+                           │ (dict_code, record_id) 引用
+┌──────────────────────────▼───────────────────────────────────────────────────┐
+│  MDM 域 DCT 主数据表（独立新域 mdm/cmxmdm/mdm 自建）                           │
+│  cm_supplier(id/code/name/lifecycle_status/published_version/pending_cr_id   │
+│             /status/parent_id/full_path/.../effective_from/to/...)           │
+│  cm_customer / cm_material / ...（按需新建，只用 base fieldSets）             │
+│  ★ cmxfico 的 cf_* 表不在此层(财务自有,MDM 不动)                             │
+└──────────────────────────────────────────────────────────────────────────────┘</div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="schema">
+  <h2><span class="n">14</span>治理叠加层表结构（废弃 md_golden）<span class="v2mark">V2 重写</span></h2>
+  <p>下列表结构以 PostgreSQL 为目标，命名前缀 <code>md_</code>（master data governance）。<span class="v2mark">V2</span> 相比 V1：<b>删除了 5 张建模表</b>（md_entity_type/md_attr_def/md_golden/md_hierarchy/md_source_rec），<b>保留并细化 8 张治理表</b>。所有主键用 pk52 bigint 内码。</p>
+
+  <h3>14.1 <code>md_change_request</code> + <code>md_cr_item</code> — 变更请求（治理原子单元）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_change_request (
+  <span class="pk">id</span>            <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,        <span class="cmt">-- pk52 内码</span>
+  cr_type       <span class="ty">VARCHAR(32)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- create/update/extend/block/merge/flag_delete</span>
+  dict_code     <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- 目标 DCT 字典码(如 supplier/gl_account) = 实体类型</span>
+  flow_instance_id <span class="ty">BIGINT</span>,                         <span class="cmt">-- cmx-flow 流程实例 id(审批驱动)</span>
+  status        <span class="ty">VARCHAR(32)</span>  <span class="kw">NOT NULL DEFAULT</span> <span class="str">'apply'</span>, <span class="cmt">-- 状态机(§17)</span>
+  priority      <span class="ty">VARCHAR(16)</span>  <span class="kw">DEFAULT</span> <span class="str">'normal'</span>,
+  reason_code   <span class="ty">VARCHAR(32)</span>,                         <span class="cmt">-- 原因码/驳回码</span>
+  effective_date <span class="ty">DATE</span>,                              <span class="cmt">-- 未来生效日</span>
+  requested_by  <span class="ty">BIGINT</span>       <span class="kw">NOT NULL</span>,           <span class="cmt">-- 发起人(四眼原则:≠审批人)</span>
+  org_scope     <span class="ty">VARCHAR(64)</span>,                         <span class="cmt">-- 受控组织</span>
+  payload       <span class="ty">JSONB</span>        <span class="kw">NOT NULL</span>,           <span class="cmt">-- 变更内容(新值/红线markup)</span>
+  created_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now()
+);
+<span class="kw">CREATE INDEX</span> ix_cr_dict_status <span class="kw">ON</span> md_change_request(dict_code, status);
+
+<span class="kw">CREATE TABLE</span> md_cr_item (               <span class="cmt">-- 一个CR含多行项(多对象/多视图并行审批)</span>
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  cr_id       <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,                  <span class="cmt">-- 关联 md_change_request.id (索引,无物理FK)</span>
+  record_id   <span class="ty">BIGINT</span>,                            <span class="cmt">-- 目标 DCT 行 id(新建时空,铸号后回填)</span>
+  dict_code   <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- 冗余 dict_code 便于查询</span>
+  view_group  <span class="ty">VARCHAR(32)</span>,                       <span class="cmt">-- 视图分组:finance/purchasing/logistics</span>
+  field_deltas <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,               <span class="cmt">-- 字段级变更 {field:{old,new}}(红线对比)</span>
+  approve_status <span class="ty">VARCHAR(16)</span> <span class="kw">DEFAULT</span> <span class="str">'pending'</span>
+);
+<span class="kw">CREATE INDEX</span> ix_cr_item_cr <span class="kw">ON</span> md_cr_item(cr_id);</code></pre>
+
+  <h3>14.2 <code>md_audit</code> — 审计留痕 / 版本历史（DCT 现无，需新造）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_audit (                 <span class="cmt">-- DCT 现仅 update_time 乐观锁,无版本留痕</span>
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  dict_code   <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- DCT 字典码</span>
+  record_id   <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,                  <span class="cmt">-- DCT 行 id(无物理FK,索引替代)</span>
+  version     <span class="ty">INT</span> <span class="kw">NOT NULL</span>,                     <span class="cmt">-- 版本号(每次变更+1)</span>
+  action      <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- create/update/publish/freeze/merge/archive</span>
+  field       <span class="ty">VARCHAR(64)</span>,                       <span class="cmt">-- 变更字段(逐字段留痕)</span>
+  old_value   <span class="ty">JSONB</span>,                             <span class="cmt">-- 旧值</span>
+  new_value   <span class="ty">JSONB</span>,                             <span class="cmt">-- 新值</span>
+  cr_id       <span class="ty">BIGINT</span>,                            <span class="cmt">-- 触发此变更的 CR(可空=系统操作)</span>
+  operated_by <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,                 <span class="cmt">-- 操作人</span>
+  operated_at <span class="ty">TIMESTAMPTZ</span> <span class="kw">NOT NULL DEFAULT</span> now()
+);
+<span class="kw">CREATE INDEX</span> ix_audit_record <span class="kw">ON</span> md_audit(dict_code, record_id, version);</code></pre>
+
+  <h3>14.3 编码规则表 —— 已移出，归 cmx-code 独立方案 <span class="v2mark">V2 改动</span></h3>
+  <p><span class="v2mark">V2</span> V1 的 <code>md_code_rule</code>/<code>md_serial</code> 已<b>移出 MDM 范围</b>。编码是通用能力（服务 DCT/DOC/任意场景），已有独立方案 <a href="20260804_cmx-code_通用业务编码引擎设计方案.html" class="ref">cmx-code 通用业务编码引擎</a>——含独立规则库 <code>cmx_code_rule</code>（纯算法，不带 target，可被多处复用）、七种段（固定/流水/日期/日期流水/引用/随机/自定义）、断号补偿、反查 max 等。MDM 不重复设计，只在 DCT 保存钩子<b>预留 cmx-code 插入点</b>（见 §15）。</p>
+
+  <h3>14.4 <code>md_xref</code> — 跨系统交叉引用（Key Mapping 地基）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_xref (
+  <span class="pk">id</span>            <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,
+  dict_code     <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- DCT 字典码(实体类型)</span>
+  record_id     <span class="ty">BIGINT</span>       <span class="kw">NOT NULL</span>,           <span class="cmt">-- DCT 行 id(无物理FK)</span>
+  source_system <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,           <span class="cmt">-- 源系统码:ERP/CRM/SRM/legacy…</span>
+  source_ref    <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>,           <span class="cmt">-- 源系统内的原始ID(OSR)</span>
+  xref_status   <span class="ty">VARCHAR(16)</span>  <span class="kw">NOT NULL DEFAULT</span> <span class="str">'active'</span>,
+  confidence    <span class="ty">SMALLINT</span>     <span class="kw">DEFAULT</span> <span class="nu">50</span>,         <span class="cmt">-- 源系统信任分(存活输入)</span>
+  created_at    <span class="ty">TIMESTAMPTZ</span>  <span class="kw">NOT NULL DEFAULT</span> now(),
+  <span class="kw">UNIQUE</span>(source_system, source_ref)              <span class="cmt">-- 一个源ID只映射一个内码</span>
+);
+
+<span class="kw">CREATE TABLE</span> md_value_map (             <span class="cmt">-- 值映射(Value Mapping)</span>
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  field       <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,               <span class="cmt">-- 字段名</span>
+  src_sys     <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  src_val     <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>,
+  tgt_sys     <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  tgt_val     <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>
+);</code></pre>
+
+  <h3>14.5 <code>md_merge_record</code> — 匹配组 / 存活裁决</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_merge_record (
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  dict_code   <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  group_key   <span class="ty">VARCHAR(256)</span> <span class="kw">NOT NULL</span>,            <span class="cmt">-- 簇键(分块生成)</span>
+  member_ids  <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,                   <span class="cmt">-- 组成员 DCT 行 id 数组</span>
+  master_id   <span class="ty">BIGINT</span>,                            <span class="cmt">-- 存活主记录 id(合并后)</span>
+  score       <span class="ty">SMALLINT</span> <span class="kw">NOT NULL</span>,                  <span class="cmt">-- 最高匹配分</span>
+  decision    <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- auto_merge/review/no_match</span>
+  survivorship_log <span class="ty">JSONB</span>,                     <span class="cmt">-- 逐字段存活裁决轨迹{field:{source,reason}}</span>
+  status      <span class="ty">VARCHAR(16)</span> <span class="kw">DEFAULT</span> <span class="str">'pending'</span>,    <span class="cmt">-- pending/merged/unmerged</span>
+  created_at  <span class="ty">TIMESTAMPTZ</span> <span class="kw">NOT NULL DEFAULT</span> now()
+);</code></pre>
+
+  <h3>14.6 <code>md_subscription</code> + <code>md_event_log</code> — 分发订阅与事件日志</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_subscription (
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  target_sys  <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,            <span class="cmt">-- 订阅方系统码</span>
+  dict_code   <span class="ty">VARCHAR(64)</span>  <span class="kw">NOT NULL</span>,
+  filter      <span class="ty">JSONB</span>,                          <span class="cmt">-- 过滤:按org/分类/属性裁剪</span>
+  field_map   <span class="ty">JSONB</span>,                          <span class="cmt">-- 发布映射:一源属性→多目标列</span>
+  channel     <span class="ty">VARCHAR(16)</span>  <span class="kw">NOT NULL</span>,            <span class="cmt">-- rest/event/batch/file</span>
+  active      <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">true</span>
+);
+
+<span class="kw">CREATE TABLE</span> md_event_log (           <span class="cmt">-- 中央事件日志(消费者按 delta 拉取)</span>
+  <span class="pk">seq</span>         <span class="ty">BIGSERIAL</span> <span class="kw">PRIMARY KEY</span>,     <span class="cmt">-- 单调递增序号 = delta 游标</span>
+  dict_code   <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  record_id   <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,
+  event_type  <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,            <span class="cmt">-- created/updated/merged/frozen/published</span>
+  payload     <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,                 <span class="cmt">-- 变更后的规范模型快照</span>
+  emitted_at  <span class="ty">TIMESTAMPTZ</span> <span class="kw">NOT NULL DEFAULT</span> now()
+);
+<span class="kw">CREATE INDEX</span> ix_event_dict_seq <span class="kw">ON</span> md_event_log(dict_code, seq);</code></pre>
+
+  <h3>14.7 V1→V2 表清单变更总览</h3>
+  <table>
+    <thead><tr><th style="width:24%">表</th><th style="width:12%">V1</th><th style="width:12%">V2</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td><code>md_entity_type</code></td><td>有</td><td><span class="pill v1">废弃</span></td><td>DCT dictMeta 已是实体类型定义</td></tr>
+      <tr><td><code>md_attr_def</code></td><td>有</td><td><span class="pill v1">废弃</span></td><td>DCT fields[] 已是属性定义</td></tr>
+      <tr><td><code>md_golden</code></td><td>有</td><td><span class="pill v1">废弃</span></td><td>DCT 物理表行 + lifecycle_status 即黄金记录</td></tr>
+      <tr><td><code>md_hierarchy</code></td><td>有</td><td><span class="pill v1">废弃</span></td><td>DCT parent_id/full_path + 递归CTE 已有</td></tr>
+      <tr><td><code>md_source_rec</code></td><td>有</td><td><span class="pill v1">废弃</span></td><td>多源汇入走 DCT 导入 + md_merge_record，无需独立 staging</td></tr>
+      <tr><td><code>md_attr_value</code></td><td>有(EAV)</td><td><span class="pill v1">废弃</span></td><td>DCT 物理宽表列，不用 EAV</td></tr>
+      <tr><td><code>md_change_request</code>+<code>md_cr_item</code></td><td>有</td><td><span class="pill v2">保留细化</span></td><td>治理原子单元，dict_code 替代 entity_type</td></tr>
+      <tr><td><code>md_audit</code></td><td>有</td><td><span class="pill v2">保留细化</span></td><td>DCT 无版本留痕，这是治理层核心补充</td></tr>
+      <tr><td><code>md_code_rule</code>+<code>md_serial</code></td><td>有</td><td><span class="pill v1">移出</span></td><td>编码归 cmx-code 独立方案（cmx_code_rule 表），MDM 只引用 ruleCode + 预留插入点</td></tr>
+      <tr><td><code>md_xref</code>+<code>md_value_map</code></td><td>有</td><td><span class="pill v2">保留</span></td><td>Key/Value 映射</td></tr>
+      <tr><td><code>md_merge_record</code></td><td>有</td><td><span class="pill v2">保留细化</span></td><td>匹配组+存活裁决，加 survivorship_log</td></tr>
+      <tr><td><code>md_subscription</code>+<code>md_event_log</code></td><td>有</td><td><span class="pill v2">保留</span></td><td>分发订阅+事件日志</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="codeengine">
+  <h2><span class="n">15</span>编码引擎：引用 cmx-code 方案 + 预留插入点 <span class="v2mark">不在本次范围</span></h2>
+  <p class="lede"><span class="v2mark">V2 关键调整</span> 编码引擎是<b>通用能力</b>（服务 DCT/DOC/任意场景），不属于 MDM 专属。已有独立方案 <a href="20260804_cmx-code_通用业务编码引擎设计方案.html" class="ref">cmx-code 通用业务编码引擎</a>。MDM 方案<b>不重复设计</b>，只在此说明<b>如何预留插入点</b>，让 MDM 域的主数据在 cmx-code 就绪后能接入。</p>
+
+  <h3>15.1 编码能力归属 cmx-code（独立方案）</h3>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:18%">归属</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>编码规则库</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">cmx-code</span></td><td><code>cmx_code_rule</code> 表（纯算法，不带 target，可被多处复用）</td></tr>
+      <tr><td><b>七种段</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">cmx-code</span></td><td>固定/流水/日期/日期流水/引用/随机/自定义</td></tr>
+      <tr><td><b>断号补偿</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">cmx-code</span></td><td>断号表 + 连号域可选启用</td></tr>
+      <tr><td><b>反查 max + 重试</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">cmx-code</span></td><td>不存已分配编码，业务表自身即真相</td></tr>
+      <tr><td><b>前后端协作</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">cmx-code</span></td><td>后端权威生成 + 前端预览（不占号）</td></tr>
+      <tr><td><b>MDM 域 DCT 引用</b></td><td><span class="pill mdm">cmx-mdm</span></td><td>MDM 域定义里 <code>codeRule.ruleCode</code> 引用 cmx-code 规则</td></tr>
+    </tbody>
+  </table>
+
+  <h3>15.2 MDM 域如何引用编码规则</h3>
+  <pre><code><span class="cmt">// MDM 域 DCT 定义里,codeRule 只写 ruleCode 引用(不内联段定义)</span>
+<span class="str">"dictMeta"</span>: {
+  <span class="str">"dictCode"</span>: <span class="str">"supplier"</span>,
+  <span class="str">"codeRule"</span>: { <span class="str">"ruleCode"</span>: <span class="str">"supplier_hq"</span> }   <span class="cmt">// 引用 cmx-code 独立规则库</span>
+}
+<span class="cmt">// 规则详情在 cmx_code_rule 表(由 cmx-code 管理),MDM 不持有</span></code></pre>
+
+  <h3>15.3 预留的后端插入点（cmx-code 就绪后接线）</h3>
+  <p>cmx-code 未就绪前，MDM 域的主数据 code 可走 <b>manual 模式</b>（前端手敲 + DB UNIQUE 兜底，与现状一致）。cmx-code 就绪后，通过 DCT 保存钩子接入，<b>零改 MDM 代码</b>：</p>
+  <div class="dag">MDM 域 DCT 保存 (/api/dct/entries, /api/dct/save)
+   │
+   ├─ [当前/manual] codeRule.mode=manual → 前端手敲,DB UNIQUE 兜底(现状)
+   │
+   └─ [cmx-code 就绪后] DCT before_save 钩子检测 codeRule.ruleCode
+       │
+       ├─ 有 ruleCode → 调 cmx_code::resolve_and_apply(ruleCode, target, ctx)
+       │                target = {kind:"dct", code:"supplier", field:"code"}
+       │                → cmx-code 按规则段序列生成 code,反查 max,UNIQUE 重试
+       │
+       └─ 无 ruleCode/manual → 跳过(走现状路径)
+       
+   ★ 插入点:DCT 保存路径的 before_save 钩子(由 cmx-code 提供,MDM 零改)</div>
+
+  <div class="callout note">
+    <div class="h">💡 为什么编码引擎不在 MDM 本次范围</div>
+    ① <b>通用性</b>：编码能力服务 DCT/DOC/MDM/任意场景，做成 MDM 专属是过度耦合；② <b>独立性</b>：cmx-code 已有完整独立方案（七段/断号/反查 max/前后端协作），MDM 重复设计是浪费；③ <b>解耦</b>：MDM 的核心价值是治理（生命周期/匹配/分发），编码是辅助能力，可后置；④ <b>兼容性</b>：cmx-code 未就绪前 MDM 走 manual 模式照常工作，就绪后通过钩子接入零改。
+  </div>
+
+  <h3>15.4 编码铁律（由 cmx-code 保证，MDM 受益）</h3>
+  <p>三条铁律由 cmx-code 引擎保证，MDM 域的主数据编码自动受益：① <b>永不回收</b>（作废置 <code>lifecycle_status='frozen'</code>，号段不释放）；② <b>内码≠外码</b>（关系锚在 <code>cm_*.id</code> bigint 内码，code 改规则关系不断）；③ <b>规则版本化</b>（<code>cmx_code_rule.valid_from/to</code>，旧对象留旧码）。详见 <a href="20260804_cmx-code_通用业务编码引擎设计方案.html" class="ref">cmx-code 方案 §05/§09</a>。</p>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="matchmerge">
+  <h2><span class="n">16</span>匹配合并与存活规则设计 <span class="en">match · merge · survivorship</span></h2>
+  <p>这是 MDM 的心脏，也是<b>全部缺口里最难的一件</b>。四阶段：<b>分块 → 比较 → 裁决 → 合并存活</b>。<span class="v2mark">V2</span> 数据源是 DCT 物理表（通过 <code>ZmcDataSet</code> 零拷贝读），结果写回 DCT 表（victim 置 <code>lifecycle_status='merged'</code>，不硬删）。</p>
+
+  <h3>16.1 分块（Clustering）</h3>
+  <pre><code><span class="cmt">// 每条记录生成 N 个带优先级的簇键，只比较同簇（绝不 N×N）</span>
+<span class="kw">fn</span> <span class="fn">cluster_keys</span>(rec: &Record) -> Vec&lt;(<span class="ty">String</span>, <span class="ty">u8</span>)&gt; {
+  vec![
+    (soundex(&rec.name), <span class="nu">1</span>),                  <span class="cmt">// 音近</span>
+    (metaphone(&rec.name), <span class="nu">2</span>),
+    (first_n(&normalize(&rec.name), <span class="nu">5</span>), <span class="nu">3</span>),      <span class="cmt">// 前5字符</span>
+    (rec.tax_id.clone().unwrap_or_default(), <span class="nu">0</span>),  <span class="cmt">// 税号:强标识优先级最高</span>
+  ].into_iter().filter(|(k,_)| !k.is_empty())     <span class="cmt">// 防 NULL 巨簇</span>
+   .collect()
+}
+<span class="cmt">// 护栏：簇大小上限 500（超则告警+子簇拆分并行）</span></code></pre>
+
+  <h3>16.2 比较（Comparison）—— 分级结果非布尔</h3>
+  <table>
+    <thead><tr><th style="width:24%">比较器</th><th style="width:36%">机制</th><th>返回</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确匹配</b></td><td>税号/统一社会信用代码全等</td><td>true/false</td></tr>
+      <tr><td><b>编辑距离</b></td><td>最小增删改次数（Matthews→Mathews=1）</td><td>0-100%</td></tr>
+      <tr><td><b>字符换位</b></td><td>Michael/Micheal 换位识别</td><td>0-100%</td></tr>
+      <tr><td><b>音近</b></td><td>Soundex/Metaphone 发音相同</td><td>true/false</td></tr>
+    </tbody>
+  </table>
+
+  <h3>16.3 裁决（三向决策 + 双阈值）</h3>
+  <pre><code><span class="kw">enum</span> <span class="ty">MatchDecision</span> { AutoMerge, Review, NoMatch }
+
+<span class="kw">fn</span> <span class="fn">decide</span>(score: <span class="ty">u8</span>, cfg: &MatchCfg) -> <span class="ty">MatchDecision</span> {
+  <span class="kw">if</span> score &gt;= cfg.automerge_threshold { <span class="ty">AutoMerge</span> }        <span class="cmt">// 如 ≥95 自动合并</span>
+  <span class="kw">else if</span> score &gt;= cfg.match_threshold { <span class="ty">Review</span> }         <span class="cmt">// 如 80-94 进人工队列</span>
+  <span class="kw">else</span> { <span class="ty">NoMatch</span> }                                       <span class="cmt">// &lt;80 保留为新记录</span>
+}
+<span class="cmt">// 护栏：① 组内每条都须过 automerge ② 组大小上限(默认10) ③ 多候选对最高分匹配</span></code></pre>
+
+  <h3>16.4 合并 + 存活（结构 + 取值分离）</h3>
+  <div class="callout win">
+    <div class="h">✅ V2 合并的落地方式（复用 DCT，不新建表）</div>
+    合并 = 把 victim 记录的 <code>lifecycle_status</code> 置为 <code>'merged'</code>（DCT 物理表，不硬删），子实体（地址/银行账户/子字典）的 <code>parent_id</code> 重指向 master 的 <code>id</code>（re-parent），<code>md_xref</code> 里 victim 的引用标记 inactive。存活主记录的逐字段取值写回 DCT 表，<code>md_merge_record.survivorship_log</code> 记录每字段取值来源与理由——<b>全程操作 DCT 物理表，无 md_golden</b>。
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="statemachine">
+  <h2><span class="n">17</span>治理流程状态机与工作流（DCT status 扩展）<span class="v2mark">V2 落地</span></h2>
+  <p><span class="v2mark">V2 关键</span>：DCT 现与 cmx-flow <b>零集成</b>（双向依赖检查为零命中）。V2 要建这个集成点：CR 作 cmx-flow 流程实例的业务数据，审批通过回写 DCT 表的 <code>lifecycle_status</code>。</p>
+
+  <h3>17.1 变更请求状态机（落 to lifecycle_status）</h3>
+  <div class="dag">        ┌─────────┐  提交   ┌──────────┐  校验通过  ┌──────────┐
+   ●───→│  apply  │────────→│ validate │──────────→│ approving │
+        │  申请   │         │  校验    │  校验失败  │  审批中   │
+        └─────────┘         └────┬─────┘◀────┐     └────┬─────┘
+                                 │ 挡回      │驳回      │ 审批
+              ┌──────────────────┘           │      ┌─────┴─────┐
+              ▼                                │      │通过       │驳回
+        ┌──────────┐  疑似重复            ┌────┴─────┐│    ┌──────┴───┐
+        │  匹配队列 │──人工评审──────────│ rejected ││    │published │◀ lifecycle_status='published'
+        │  (review) │                     └──────────┘│    └────┬─────┘  + 写 md_event_log + 分发
+        └──────────┘                                  │         │ 变更
+                                                       │    ┌────┴─────┐
+                            ┌──────────┐   冻结         │    │changing  │(Change Order)
+                            │ archived │◀──────┐       │    └────┬─────┘
+                            │(archived)│       │  ┌────┴────┐    │ version+1
+                            └──────────┘       └──│ frozen  │◀───┘ lifecycle_status='frozen'
+                                                  │(frozen) │
+                                                  └─────────┘</div>
+
+  <h3>17.2 cmx-flow 集成（DCT↔flow 接线点，V2 新建）</h3>
+  <table>
+    <thead><tr><th style="width:30%">MDM 治理需求</th><th>cmx-flow 现成机制（V2 接线）</th></tr></thead>
+    <tbody>
+      <tr><td>变更请求原子单元</td><td><code>start_process</code> 发起流程实例，<code>md_change_request</code> 作业务数据</td></tr>
+      <tr><td>决策表驱动路由</td><td>BPMN 排他/并行网关 + 条件表达式</td></tr>
+      <tr><td>单级/多级/并行审批</td><td>串行用户任务 / 会签或签（multiInstance）</td></tr>
+      <tr><td>按 role/position/org 定审批人</td><td>cmx-flow M4 候选人机制（claim 认领）</td></tr>
+      <tr><td>四眼原则</td><td>候选人排除发起人</td></tr>
+      <tr><td>抄送 / 转签</td><td>M4.2 抄送 / M4.3 转办委派加签</td></tr>
+      <tr><td>未来生效日</td><td>M2.5 边界定时器（可注入时钟）</td></tr>
+      <tr><td>审批通过回写</td><td><span class="v2mark">V2 新建</span> 流程完成事件 → 更新 DCT 表 lifecycle_status='published'</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="h">⚙️ 三条工作流设计原则</div>
+    ① <b>四眼原则默认</b>：审批人策略默认排除提交人；② <b>行项原子提交</b>：一个 CR 内多行项一起校验/审批；③ <b>多视图并行</b>：财务视图→财务部、采购视图→采购部，各批各的（<code>md_cr_item.view_group</code> + cmx-flow 并行网关）。
+  </div>
+</section>
+
+<!-- ============ 17b ============ -->
+<section id="arch">
+  <h2><span class="n">17b</span>cmx-mdm 后端 crate 工程结构 <span class="v2mark">三段式</span></h2>
+  <p class="lede"><span class="v2mark">V2 规划</span> 采用<b>三段式</b>（对齐 cmx-dct/cmxfico/cmz-rpt 惯例）：<code>cmx-mdm-model</code>（纯逻辑）/ <code>cmx-mdm-store-pg</code>（治理表读写）/ <code>cmx-mdm-api</code>（HTTP handlers）。</p>
+
+  <h3>17b.1 三段式 crate 结构</h3>
+  <pre><code><span class="cmt">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+cmx-mdm-model/                   <span class="cmt"># 纯逻辑层(无 DB/无 HTTP),可被其他 crate 轻量依赖</span>
+├── src/
+│   ├── lib.rs                  <span class="cmt"># 公共入口</span>
+│   ├── error.rs                <span class="cmt"># MdmError(thiserror)</span>
+│   ├── cr.rs                   <span class="cmt"># ChangeRequest / CrItem 数据结构 + 状态机规则</span>
+│   ├── audit.rs                <span class="cmt"># AuditEntry 数据结构</span>
+│   ├── match_algo.rs           <span class="cmt"># 匹配算法(分块/比较器/裁决,纯计算)</span>
+│   ├── survivorship.rs         <span class="cmt"># 存活规则(逐字段选真值,纯计算)</span>
+│   ├── xref.rs                 <span class="cmt"># 交叉引用/值映射 数据结构</span>
+│   ├── distribute.rs           <span class="cmt"># 分发订阅/事件日志 数据结构 + delta 计算</span>
+│   └── lifecycle.rs            <span class="cmt"># 生命周期状态枚举 + 流转规则</span>
+
+<span class="cmt">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+cmx-mdm-store-pg/                <span class="cmt"># PG 存储层:治理表读写 + DCT 数据访问</span>
+├── src/
+│   ├── lib.rs
+│   ├── cr_store.rs             <span class="cmt"># md_change_request/md_cr_item CRUD</span>
+│   ├── audit_store.rs          <span class="cmt"># md_audit CRUD</span>
+│   ├── xref_store.rs           <span class="cmt"># md_xref/md_value_map CRUD</span>
+│   ├── match_store.rs          <span class="cmt"># md_merge_record CRUD</span>
+│   ├── distribute_store.rs     <span class="cmt"># md_subscription/md_event_log CRUD</span>
+│   ├── dct_accessor.rs         <span class="cmt"># 读 MDM 域 DCT 物理表(cm_*) 查黄金记录/更新 lifecycle_status</span>
+│   └── flow_hook.rs            <span class="cmt"># cmx-flow 审批完成 → 回写 cm_*.lifecycle_status</span>
+
+<span class="cmt">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+cmx-mdm-api/                     <span class="cmt"># HTTP handlers + 路由</span>
+├── src/
+│   ├── lib.rs                  <span class="cmt"># MdmModule impl ModuleRoutes, /api/mdm/* 前缀</span>
+│   └── handlers.rs             <span class="cmt"># /api/mdm/change-requests, /audit, /find-duplicates,</span>
+│                               <span class="cmt"># /merge-requests, /subscriptions, /publish, /events</span>
+└── tests/</code></pre>
+
+  <h3>17b.2 依赖关系（破环）</h3>
+  <div class="dag">cmx-mdm-model ──依赖──→ cmx-core(model/DataValue/ListOptions)    ← 纯逻辑,无 DB/HTTP
+
+cmx-mdm-store-pg ──依赖──→ cmx-mdm-model(数据结构/trait)
+                 ──依赖──→ cmx-database(治理表 + DCT 表访问)
+                 ──依赖──→ cmx-dct-model(读 MDM 域 DCT DictView,不依赖 cmx-dct-store-pg)
+                 ──可选依赖──→ cmx-flow(审批完成事件回调,feature gate)
+
+cmx-mdm-api   ──依赖──→ cmx-mdm-model + cmx-mdm-store-pg
+              ──依赖──→ cmx-api(ModuleRoutes trait)
+
+★ cmx-mdm-* ──不依赖──→ cmx-code(编码引擎,仅预留插入点,通过 DCT 钩子间接接入)
+★ cmx-mdm-* ──不依赖──→ fi/cmxfico(不碰财务域)
+★ 主数据 CRUD 复用 /api/dct/*(已有),cmx-mdm-api 只出治理端点</div>
+
+  <h3>17b.3 关键设计：复用 DCT 的 CRUD，MDM 只出治理端点</h3>
+  <table>
+    <thead><tr><th style="width:24%">操作</th><th style="width:24%">走哪</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据 CRUD（建/读/改/删）</b></td><td><span class="pill dct">复用 /api/dct/*</span></td><td>已有 8 端点，MDM 域的 <code>cm_*</code> 表天然支持，零改</td></tr>
+      <tr><td><b>树形/导入导出/零拷贝</b></td><td><span class="pill dct">复用 /api/dct/*</span></td><td>DCT 全套能力对 MDM 域表同样适用</td></tr>
+      <tr><td><b>变更请求/审批/审计</b></td><td><span class="pill mdm">/api/mdm/*</span></td><td>cmx-mdm-api 新出治理端点</td></tr>
+      <tr><td><b>查重/匹配/合并</b></td><td><span class="pill mdm">/api/mdm/*</span></td><td>cmx-mdm-api 新出</td></tr>
+      <tr><td><b>分发订阅/事件</b></td><td><span class="pill mdm">/api/mdm/*</span></td><td>cmx-mdm-api 新出</td></tr>
+      <tr><td><b>编码生成</b></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">/api/code/*</span></td><td>归 cmx-code（独立方案），MDM 预留插入点</td></tr>
+    </tbody>
+  </table>
+
+  <h3>17b.4 web-server 接入（两行 merge）</h3>
+  <pre><code><span class="cmt">// crates/web/web-server/src/routes.rs</span>
+api_routes()
+    .merge(ReportModule.routes()).merge(FlowModule.routes())
+    .merge(DocModule.routes()).merge(DctModule.routes())
+    .merge(<span class="fn">MdmModule</span>.routes())               <span class="cmt">// ← cmx-mdm-api 治理端点</span>
+    .merge(<span class="fn">CodeModule</span>.routes())              <span class="cmt">// ← cmx-code-api 编码端点(cmx-code 就绪后)</span>
+    .merge(JobModule.routes()).merge(ModelModule.routes())</code></pre>
+
+  <h3>17b.5 MDM 域元数据文件组织</h3>
+  <pre><code>data/meta/definitions/
+└── mdm/cmxmdm/mdm/                    <span class="cmt"># ★ MDM 独立新域</span>
+    ├── cmxmdm_dct_meta_v1.json        <span class="cmt"># 主数据字典定义(cm_supplier/cm_customer/cm_material/...)</span>
+    └── (按需扩展更多实体)
+<span class="cmt"># base/ 下的 base_dct_meta_v1.json 新增 mdmGovernanceFields fieldSet(供 MDM 域引用)
+# fi/ 下的任何文件 MDM 都不碰</span></code></pre>
+
+  <div class="callout win">
+    <div class="h">✅ 三段式的收益</div>
+    ① <b>对齐惯例</b>：与 cmx-dct/cmxfico/cmz-rpt 完全同构，团队熟悉；② <b>model 可被复用</b>：匹配算法/存活规则是纯计算，未来其他域或插件可依赖 model 层；③ <b>store 独立可测</b>：PG 读写隔离，便于单测 mock；④ <b>api 薄层</b>：只做 HTTP 适配，业务在 model + store。
+  </div>
+</section>
+
+<!-- ============ 18 ============ -->
+<section id="api">
+  <h2><span class="n">18</span>REST API 契约（复用 /api/dct + 新增 /api/mdm 治理层）<span class="v2mark">V2 重写</span></h2>
+  <p><span class="v2mark">V2 关键</span>：主数据 CRUD <b>直接复用 <code>/api/dct/*</code></b>（已有 8 端点：meta/search/upsert/delete/save/export/import/zmc），不需要新造。MDM 只新增「治理层」端点。</p>
+
+  <h3>18.1 复用 DCT 的端点（主数据 CRUD，零新造）</h3>
+  <table>
+    <thead><tr><th style="width:30%">端点（已有）</th><th style="width:10%">方法</th><th>MDM 用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>/api/dct/meta</code></td><td>GET</td><td>取主数据实体元数据（列/树形/取值域）</td></tr>
+      <tr><td><code>/api/dct/data/search</code></td><td>GET/POST</td><td>查询主数据（加 <code>lifecycle_status=published</code> 过滤=黄金记录）</td></tr>
+      <tr><td><code>/api/dct/data/tokio-zmc-msgpack</code></td><td>GET/POST</td><td>零拷贝列式装载（大表性能）</td></tr>
+      <tr><td><code>/api/dct/entries</code></td><td>POST</td><td>主数据 upsert（merge 语义）</td></tr>
+      <tr><td><code>/api/dct/save</code></td><td>POST</td><td>changeset 回存（事务+乐观锁）</td></tr>
+      <tr><td><code>/api/dct/import</code> / <code>/api/dct/export</code></td><td>POST/GET</td><td>批量导入导出（期初装载）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>18.2 新增治理层端点（/api/mdm/*）</h3>
+  <p><span class="v2mark">V2 改动</span> 编码相关端点（<code>/api/mdm/code/*</code>）已<b>移出</b>，归 cmx-code 的 <code>/api/code/*</code>。MDM 只保留治理/匹配/分发端点。</p>
+  <table>
+    <thead><tr><th style="width:8%">组</th><th style="width:30%">端点</th><th style="width:10%">方法</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="4"><b>治理</b></td><td><code>/api/mdm/change-requests</code></td><td>GET/POST</td><td>变更请求提交/列表</td></tr>
+      <tr><td><code>/api/mdm/change-requests/{id}/submit</code></td><td>POST</td><td>提交进 cmx-flow 工作流</td></tr>
+      <tr><td><code>/api/mdm/change-requests/{id}/approve</code></td><td>POST</td><td>审批（通过/驳回/退回）→ 回写 cm_* lifecycle_status</td></tr>
+      <tr><td><code>/api/mdm/audit/{dictCode}/{recordId}</code></td><td>GET</td><td>查变更历史/版本留痕</td></tr>
+      <tr><td rowspan="2"><b>匹配</b></td><td><code>/api/mdm/records/find-duplicates</code></td><td>POST</td><td>实时查重（录入防重，返回候选+分数）</td></tr>
+      <tr><td><code>/api/mdm/merge-requests</code></td><td>GET/POST</td><td>合并/链接请求（管家评审）</td></tr>
+      <tr><td rowspan="3"><b>分发</b></td><td><code>/api/mdm/subscriptions</code></td><td>GET/POST</td><td>订阅配置</td></tr>
+      <tr><td><code>/api/mdm/publish/{dictCode}</code></td><td>POST</td><td>发布（增量/全量，按订阅裁剪）</td></tr>
+      <tr><td><code>/api/mdm/events</code></td><td>GET</td><td>变更事件查询（delta，供消费者拉取）</td></tr>
+      <tr><td><b>编码</b></td><td><code>/api/code/*</code></td><td>-</td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">归 cmx-code</span> 不在 MDM 范围（见 §15）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>18.3 关键契约示例</h3>
+  <pre><code><span class="cmt">// POST /api/mdm/records/find-duplicates —— 录入时实时防重</span>
+{ <span class="str">"dictCode"</span>: <span class="str">"bus_partner"</span>,
+  <span class="str">"candidate"</span>: { <span class="str">"name"</span>:<span class="str">"甲骨文(中国)"</span>, <span class="str">"taxId"</span>:<span class="str">"91310000..."</span> } }
+<span class="cmt">// Response</span>
+{ <span class="str">"code"</span>: <span class="nu">0</span>, <span class="str">"data"</span>: { <span class="str">"matches"</span>: [
+    { <span class="str">"recordId"</span>:<span class="nu">7484900</span>, <span class="str">"name"</span>:<span class="str">"甲骨文(中国)软件"</span>, <span class="str">"score"</span>:<span class="nu">93</span>, <span class="str">"decision"</span>:<span class="str">"review"</span> },
+    { <span class="str">"recordId"</span>:<span class="nu">7484881</span>, <span class="str">"name"</span>:<span class="str">"Oracle China"</span>, <span class="str">"score"</span>:<span class="nu">71</span>, <span class="str">"decision"</span>:<span class="str">"no_match"</span> } ] } }</code></pre>
+</section>
+
+<!-- ============ 19 ============ -->
+<section id="distribute">
+  <h2><span class="n">19</span>分发订阅与事件设计 <span class="en">distribution &amp; events</span></h2>
+  <p>核心：<b>规范模型 + 中央事件日志 + 各系统本地同步副本 + delta token</b>（借鉴 SAP MDI/ODM）。<span class="v2mark">V2</span> 事件触发点 = CR 审批通过、DCT 表 lifecycle_status 置 published 时。</p>
+
+  <h3>19.1 事件驱动分发流程</h3>
+  <div class="dag">CR 审批通过 → DCT 表 lifecycle_status='published' → 追加 md_event_log(seq++)
+                                                    │
+                              ┌─────────────────────┼─────────────────────┐
+                        实时事件推送            REST 拉取              批量联合发布
+                        (event mesh)          GET /events?since=       (nightly ETL)
+                              │                &delta_token=…               │
+                        订阅方按 filter          消费者持游标              裁剪+格式化
+                        接收 + 落本地副本        增量拉取(28天兜底           GDSN/文件
+                                                 →全量初装)</div>
+
+  <div class="callout note">
+    <div class="h">📨 借鉴用友：分发异常主动通知</div>
+    分发失败不静默——按用友 iUAP MDM 做法，<b>分发异常自动以邮件/短信通知主数据管理员</b>。可直接复用既有<b>异步任务中心</b>（cmx-job）的 SSE 进度 + 失败告警能力。
+  </div>
+</section>
+
+<!-- ============ PART IV BAND ============ -->
+<div class="partband">
+  <div class="pt">Part IV</div>
+  <div class="pn">第四部分 · cmx 平台落地（重写）</div>
+  <div class="pd">治理叠加层而非新 kind · V2 缺口分析（基于 DCT 底座重新判定）· 分期路线图重排</div>
+</div>
+
+<!-- ============ 20 ============ -->
+<section id="realize">
+  <h2><span class="n">20</span>落地总纲：治理叠加层而非新 kind <span class="v2mark">V2 核心</span></h2>
+
+  <div class="callout verdict">
+    <div class="h">🎯 V2 一句话落地策略</div>
+    <b>MDM = 独立新域（mdm/cmxmdm/mdm）自建 DCT 定义和物理表（cm_*，只用 base fieldSets，不碰 fi/）+ 三段式 cmx-mdm-{model,store-pg,api} 作治理叠加层（生命周期/版本/查重匹配存活/交叉引用/分发）+ 接线 cmx-flow 作治理工作流 + 编码引用独立方案 cmx-code（预留插入点，不在本次范围）。</b>MDM 不碰主数据存储建模之外的事，只读写治理事实。
+  </div>
+
+  <h3>20.1 V2 落地与 V1 落地的对照</h3>
+  <table>
+    <thead><tr><th style="width:24%">维度</th><th style="width:36%">V1（metaKind:MDM）</th><th>V2（独立新域+治理层）</th></tr></thead>
+    <tbody>
+      <tr><td><b>新建 crate</b></td><td><span class="strike">cmx-mdm-{model,store-pg,api} 建表</span></td><td>cmx-mdm-{model,store-pg,api} <b>三段治理层</b>（不建主数据表，建表靠 DCT compile）</td></tr>
+      <tr><td><b>主数据建模</b></td><td><span class="strike">新建 md_entity_type/md_attr_def</span></td><td>MDM 独立新域 DCT 定义（mdm/cmxmdm/mdm），只用 base fieldSets</td></tr>
+      <tr><td><b>物理表</b></td><td><span class="strike">新建 md_golden 等 13 张</span></td><td>MDM 域自建 cm_* 表（DCT compile）+ 6 张治理表；<b>不碰 cmxfico cf_*</b></td></tr>
+      <tr><td><b>metaKind</b></td><td><span class="strike">新增 MDM 分流</span></td><td>不增（主数据就是 DCT）</td></tr>
+      <tr><td><b>CRUD API</b></td><td><span class="strike">新建 /api/mdm/records 全套</span></td><td>复用 /api/dct/*（已有 8 端点）</td></tr>
+      <tr><td><b>编码引擎</b></td><td>自建 md_code_rule/md_serial</td><td><b>引用 cmx-code 独立方案</b>，预留插入点，不在本次范围</td></tr>
+      <tr><td><b>治理工作流</b></td><td>接 cmx-flow</td><td>接 cmx-flow（新建 DCT↔flow 接线点）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout win">
+    <div class="h">🎁 V2 的直接收益：复用率从 V1 的「约 70%」提升到「约 85%」</div>
+    V1 复用 DCT 数据底座却又要平行造一套 md_* 建模表，自相矛盾。V2 彻底复用 DCT，<b>主数据 CRUD/树形/导入导出/零拷贝/校验全部白拿</b>，新代码只剩「治理能力」——编码引擎、生命周期接线、查重匹配存活、交叉引用分发。工作量与风险显著降低。
+  </div>
+</section>
+
+<!-- ============ 21 ============ -->
+<section id="gap">
+  <h2><span class="n">21</span>V2 缺口分析（基于 DCT 底座重新判定）<span class="v2mark">V2 内置更新版</span></h2>
+  <p class="lede">承接 V1 缺口文档，但基于「DCT 即建模底座」重新判定每个缺口。结论：<b>V1 的多个「新造」在 V2 降级为「补齐 DCT」或「接线」</b>，净新造进一步收敛。</p>
+
+  <div class="legend" style="display:flex;gap:16px;flex-wrap:wrap;margin:14px 0;font-size:12.6px">
+    <span><span class="pill dct">DCT已有</span>　建模底座自带</span>
+    <span><span class="pill keep">复用</span>　平台现成白拿</span>
+    <span><span class="pill half">补齐/接线</span>　有基础需连通</span>
+    <span><span class="pill gap">新造</span>　零基础开发</span>
+  </div>
+
+  <h3>21.1 后端缺口（基于 DCT 底座重新判定）</h3>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:10%">V1判定</th><th style="width:10%">V2判定</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据建模</b></td><td><span class="pill gap">新造</span></td><td><span class="pill dct">DCT 机制</span></td><td>V1 要建 md_entity_type；V2 在 mdm/cmxmdm/mdm 下自建 DCT 定义（只用 base）</td></tr>
+      <tr><td><b>主数据物理表</b></td><td><span class="pill gap">新造</span></td><td><span class="pill dct">DCT compile</span></td><td>V1 要建 md_golden；V2 自建 cm_* 表（compile/deploy 动态建，不碰 cf_*）</td></tr>
+      <tr><td><b>主数据 CRUD API</b></td><td><span class="pill gap">新造</span></td><td><span class="pill keep">复用</span></td><td>V1 要建 /api/mdm/records；V2 复用 /api/dct/*（8 端点）</td></tr>
+      <tr><td><b>树形/层次</b></td><td><span class="pill keep">复用</span></td><td><span class="pill dct">DCT已有</span></td><td>DCT selfHierarchy + 递归CTE（base hierarchyFieldSet）</td></tr>
+      <tr><td><b>列级校验</b></td><td><span class="pill keep">复用</span></td><td><span class="pill dct">DCT已有</span></td><td>DCT TableSpec 落库前校验</td></tr>
+      <tr><td><b>导入导出/零拷贝/组织隔离</b></td><td>未提</td><td><span class="pill dct">DCT已有</span></td><td>DCT 流式 import/export + zmc-msgpack + scopeFieldSet</td></tr>
+      <tr><td><b>cmx-mdm crate</b></td><td><span class="pill gap">建表三段</span></td><td><span class="pill gap">治理三段</span></td><td>V2 三段式 cmx-mdm-{model,store-pg,api}，但只做治理（不建主数据表）</td></tr>
+      <tr><td><b>编码引擎</b></td><td><span class="pill gap">自建</span></td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">引用 cmx-code</span></td><td><b>不在本次范围</b>，引用独立方案 cmx-code，预留 DCT 钩子插入点</td></tr>
+      <tr><td><b>生命周期/发布</b></td><td><span class="pill gap">新造</span></td><td><span class="pill half">补齐</span></td><td>V2 在 base 加 mdmGovernanceFields fieldSet，MDM 域定义引用</td></tr>
+      <tr><td><b>版本/变更留痕</b></td><td>未单列</td><td><span class="pill gap">新造</span></td><td>DCT 仅 update_time 乐观锁，需新建 md_audit 表</td></tr>
+      <tr><td><b>DCT↔cmx-flow 集成</b></td><td>未识别</td><td><span class="pill half">接线</span></td><td>V1 假设已有；V2 勘探确认零集成，需新建接线点</td></tr>
+      <tr><td><b>匹配合并存活</b></td><td><span class="pill gap">新造</span></td><td><span class="pill gap">新造</span></td><td>同 V1，最难的核心</td></tr>
+      <tr><td><b>交叉引用+分发</b></td><td><span class="pill gap">新造</span></td><td><span class="pill gap">新造</span></td><td>同 V1</td></tr>
+      <tr><td><b>cmx-agg 层次汇总</b></td><td><span class="pill add">误列复用</span></td><td><span class="pill gap">前置新造</span></td><td>V2 确认零代码，按域决定（分级域需，客商物料可缓）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>21.2 前端缺口（V2 判定基本同 V1，DCT 起步点更明确）</h3>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:12%">V2判定</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据维护工作台</b></td><td><span class="pill keep">复用</span></td><td><code>portal.dct.data-editor</code> 已是元数据驱动四区工作台，改 /api/dct→同源即可</td></tr>
+      <tr><td><b>表格/树/lookup/对话框</b></td><td><span class="pill keep">复用</span></td><td>cmx-data-comp 全家桶（revo-grid/tabulator/web-treeview/combo-box/dict-select）</td></tr>
+      <tr><td><b>元数据驱动表单</b></td><td><span class="pill keep">复用</span></td><td>cmx-ui5-form（39 处实测）+ 字段级校验红框</td></tr>
+      <tr><td><b>查重候选 UI</b></td><td><span class="pill gap">新造</span></td><td>录入时「疑似重复+匹配分」列表（前端零基础）</td></tr>
+      <tr><td><b>字段级红线 diff</b></td><td><span class="pill gap">新造</span></td><td>变更请求 old→new 对比展示</td></tr>
+      <tr><td><b>流程待办/审批台</b></td><td><span class="pill gap">新造</span></td><td>cmx-flow 后端就绪，缺前端消费页（建议通用）</td></tr>
+      <tr><td><b>数据管家评审台</b></td><td><span class="pill half">组合</span></td><td>四区外壳复用 + 匹配预览新造</td></tr>
+    </tbody>
+  </table>
+
+  <h3>21.3 V2 净缺口收敛</h3>
+  <div class="kpis">
+    <div class="kpi"><div class="v">~85%</div><div class="l">复用率<br>DCT机制+平台骨架</div></div>
+    <div class="kpi"><div class="v">4</div><div class="l">后端真新造<br>版本/匹配/分发/cmxFLOW接线</div></div>
+    <div class="kpi"><div class="v">3</div><div class="l">前端真新造<br>查重UI/红线diff/待办台</div></div>
+    <div class="kpi"><div class="v">cmx-code</div><div class="l">编码引擎<br>引用独立方案(不在本次)</div></div>
+  </div>
+</section>
+
+<!-- ============ 22 ============ -->
+<section id="roadmap">
+  <h2><span class="n">22</span>分期路线图与风险（重排）<span class="v2mark">V2 重排</span></h2>
+  <p>V2 路线图相比 V1：<b>M0/M1 大幅简化</b>（不再建 kind/三段 crate/物理表，只加 fieldSet 扩展列），<b>重心后移到治理能力</b>。</p>
+
+  <table class="mile">
+    <thead><tr><th style="width:8%">阶段</th><th style="width:32%">交付</th><th style="width:18%">性质</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td>M0</td><td><b>MDM 独立新域建模</b>：base 加 mdmGovernanceFields fieldSet + 新建 <code>data/meta/definitions/mdm/cmxmdm/mdm/</code> 域定义（供应商/客户/物料等样例 cm_* 表）+ compile/deploy 建物理表</td><td><span class="pill half">补齐base+新建域</span></td><td>MDM 域 cm_* 表建成，带 lifecycle_status 三列；复用 /api/dct/* CRUD 通过</td></tr>
+      <tr><td>M1</td><td><b>cmx-mdm 三段 crate 骨架</b>：cmx-mdm-{model,store-pg,api} + md_change_request/md_cr_item/md_audit 治理表 + /api/mdm 治理端点骨架 + MdmModule.routes 接入 web-server</td><td><span class="pill gap">新造(三段)</span></td><td>变更请求 CRUD 通；审计留痕写入；查询黄金记录（lifecycle_status=published）</td></tr>
+      <tr><td>M2</td><td><b>DCT↔cmx-flow 集成</b>：CR 接 cmx-flow（发起/审批/激活）+ 审批回写 cm_*.lifecycle_status + 决策表路由 + 四眼 + 待办台前端</td><td><span class="pill half">接线+前端</span></td><td>提交→多级审批→激活→lifecycle_status=published E2E</td></tr>
+      <tr><td>M3</td><td><b>匹配合并存活</b>：分块 + 比较器 + 双阈值裁决 + 字段级存活 + 交叉引用 md_xref + 查重候选 UI</td><td><span class="pill gap">新造①</span></td><td>去重识别一物多码；自动/人工分流；unmerge 可还原</td></tr>
+      <tr><td>M4</td><td><b>数据管家工作台</b>：匹配评审队列 + 合并/链接请求 + 红线 diff 组件 + 四区 native-pages</td><td><span class="pill half">组合</span></td><td>Steward 评审疑似重复、批量整改；真机验证</td></tr>
+      <tr><td>M5</td><td><b>分发订阅</b>：md_event_log + delta token + md_subscription + 接 cmx-job 任务中心 + 失败告警</td><td><span class="pill gap">新造②</span></td><td>增量拉取；28天全量兜底；分发失败通知</td></tr>
+      <tr><td>M6</td><td><b>多域扩展 + 层次增强</b>：更多主数据实体 DCT 定义 + 层次版本化 + 多视图层次 + (按需)cmx-agg 层次汇总</td><td><span class="pill half">配置+增强</span></td><td>新实体零改引擎落地；层次版本快照；分级域小计上卷</td></tr>
+      <tr><td><b>待定</b></td><td><b>编码引擎接入</b>：cmx-code 独立方案就绪后，通过 DCT 保存钩子接入（预留插入点已就绪）</td><td><span class="pill" style="background:#dcf1f1;color:#0e7c7b">引用 cmx-code</span></td><td>不在本次范围；cmx-code 就绪后零改 MDM 接入</td></tr>
+    </tbody>
+  </table>
+  <p class="en">V2 关键顺序：M0 建 MDM 独立域（不碰 cmxfico）→ M1 三段治理 crate → M2 治理流接线 → M3 匹配（难点核心）→ M4-M6 收敛。<b>编码引擎不在本次范围</b>（引用 cmx-code 独立方案），待其就绪后通过预留的 DCT 钩子插入点零改接入。</p>
+
+  <h3>22.1 风险与取舍</h3>
+  <ul class="tight">
+    <li><b>治理层绝不认识具体域（底线）</b>：域数、实体、编码规则全部只存在于 DCT 定义 JSON 与治理表；cmx-mdm 引擎逐条按定义驱动，绝不为「供应商」「科目」写 if 分支。</li>
+    <li><b>匹配合并是真正的难点</b>：存活规则企业级规模极难。M4 从<b>精确匹配 + 单一存活策略</b>起步，逐步加模糊/AI；分块护栏（NULL 巨簇、簇大小上限 500）第一版必须有。</li>
+    <li><b>cmx-agg 按域决定（V2 纠正）</b>：V1 误列为复用，V2 确认零代码。若一期含组织/成本中心分级域，cmx-agg 是隐藏关键路径，须排进 M7 之前；若只做客商/物料可缓。</li>
+    <li><b>DCT↔cmx-flow 集成是新接线点</b>：V1 假设已有，V2 勘探确认零集成。M3 须从零建集成（CR→流程实例→审批→回写 lifecycle_status）。</li>
+    <li><b>待办台做成通用件</b>：cmx-flow 后端就绪缺前端消费页，建议做成<b>通用 flow 待办台</b>（报表/单据/MDM 共用），不止 MDM 用。</li>
+    <li><b>内码永不复用</b>：DCT 表 id（pk52 bigint 内码）+ code（外码）分离，作废走冻结/归档，号段不回收——防「一码多物」的架构级保证。</li>
+    <li><b>制度先于工具</b>：MDM 成败七分治理三分工具。平台就绪≠数据变好，必须先落「两体系一工具 + 四定 + Owner 认责」（§04）。</li>
+  </ul>
+
+  <div class="callout verdict">
+    <div class="h">🧭 V2 一页纸总结</div>
+    <b>V2 的根本修正</b>：MDM 不是新 metaKind，而是<b>独立新域</b>（<code>mdm/cmxmdm/mdm</code>），在 <code>data/meta/definitions/mdm/</code> 下自建 DCT 定义和物理表（<code>cm_*</code>），<b>只用 base 公共 fieldSets，不碰 <code>fi/cmxfico/</code> 的任何元数据</b>——cmxfico 的 32 张 <code>cf_*</code> 表是财务模块自有的，MDM 不侵入（作为「DCT 能建模主数据」的参考实例）。<b>三段式 crate</b> cmx-mdm-{model,store-pg,api} 作治理叠加层（生命周期/版本留痕/查重匹配存活/交叉引用/分发），不建主数据表（靠 DCT compile）。<b>编码引擎引用独立方案 cmx-code</b>（预留 DCT 钩子插入点，不在本次范围，cmx-code 就绪后零改接入）。主数据 CRUD/树形/导入导出/零拷贝全部复用 /api/dct/*。<b>关键路径瓶颈</b>是匹配合并存活引擎。业务蓝图与应用方案承接 V1（对标 SAP MDG/Oracle/用友/金蝶），技术上更贴合 cmx 真实架构。
+  </div>
+</section>
+
+<div class="foot">
+  企业主数据管理平台（MDM）设计方案 V2 · DCT 治理叠加层架构 · 承接 V1 业务蓝图 · 基于真实代码勘探修正 · 对标 SAP MDG · Oracle EDM · 用友 iUAP · 金蝶苍穹 · Informatica · 只出方案不落地代码 · 2026
+</div>
+
+</div>
+</body>
+</html>

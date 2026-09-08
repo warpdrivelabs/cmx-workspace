@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业主数据管理平台（MDM）设计方案 V3.1 · 暂存激活分离 · 评审修订</title>
+<style>
+  :root{
+    --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fb; --card:#ffffff;
+    --code-bg:#0f1524; --code-ink:#d6def0;
+    --mdm:#4338ca; --mdm-soft:#eef0fe; --mdm-line:#c7ccf6;
+    --gold:#a9781a; --gold-bg:#faf3df;
+    --fin:#2f6fed; --party:#1f8a56; --mat:#c65d21; --org:#7c5cff; --ref:#0e8a8a;
+    --dct:#0e7c7b; --dct-soft:#dcf1f1; --dct-line:#9fd4d4;
+    --doc:#c65d21; --doc-soft:#fbeadd; --doc-line:#e8d9a8;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --gap:#b4433a; --gap-bg:#fbecea;
+    --add:#8a6d1f; --add-bg:#faf3df; --accent:#4338ca;
+    --act:#7c5cff; --act-soft:#efeaff; --act-line:#cfc4f6;
+    --v1:#b4433a; --v1-bg:#fbecea; --v2:#1f8a56; --v2-bg:#e8f6ee; --v3:#0e7c7b; --v3-bg:#dcf1f1;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.72;font-size:15px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#0f1f3a 0%,#1e3a4a 45%,#0e4d4d 100%);color:#fff;padding:62px 24px 50px}
+  header.hero .inner{max-width:1160px;margin:0 auto}
+  header.hero h1{margin:0 0 14px;font-size:33px;letter-spacing:.3px;line-height:1.24}
+  header.hero .tag{display:inline-block;background:rgba(110,200,200,.2);color:#b8e6e6;
+       border:1px solid rgba(110,200,200,.42);padding:3px 13px;border-radius:999px;font-size:12.5px;margin:0 6px 16px 0}
+  header.hero .tag.kd{background:rgba(198,93,33,.2);color:#f0c3a0;border-color:rgba(198,93,33,.42)}
+  header.hero p.lead{font-size:16.5px;color:#c7cbdd;max-width:920px;margin:8px 0}
+  header.hero .meta{margin-top:22px;font-size:13px;color:#96a0bc;line-height:1.9}
+  header.hero .meta b{color:#e2e5f2;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 14px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc .part{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--mdm);margin:14px 0 6px;text-transform:uppercase}
+  nav.toc .part:first-of-type{margin-top:0}
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:44px}
+  nav.toc li{margin:5px 0;break-inside:avoid;font-size:13.6px}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--mdm);border-bottom-color:var(--mdm)}
+  nav.toc .nn{display:inline-block;min-width:26px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+  section{margin:0 0 46px}
+  h2{font-size:23px;margin:50px 0 14px;padding-top:14px;border-top:3px solid var(--mdm);display:inline-block}
+  h2 .n{color:var(--mdm);font-weight:800;margin-right:10px}
+  h3{font-size:17.5px;margin:28px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:10px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.pk{color:#e57ab0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.2px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.3px;letter-spacing:.2px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.2px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.gap{background:var(--gap-bg);color:var(--gap)}
+  .pill.add{background:var(--add-bg);color:var(--add)}
+  .pill.half{background:#f0eede;color:#8a6d1f}
+  .pill.mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .pill.dct{background:var(--dct-soft);color:var(--dct)}
+  .pill.doc{background:var(--doc-soft);color:var(--doc)}
+  .pill.act{background:var(--act-soft);color:var(--act)}
+  .pill.v1{background:var(--v1-bg);color:var(--v1)}.pill.v2{background:var(--v2-bg);color:var(--v2)}.pill.v3{background:var(--v3-bg);color:var(--v3)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.verdict{background:var(--mdm-soft);border-color:var(--mdm-line)}.callout.verdict .h{color:var(--mdm)}
+  .callout.gap{background:#fbecea;border-color:#f0c3bd}.callout.gap .h{color:var(--gap)}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}.callout.note .h{color:var(--fin)}
+  .callout.win{background:#e8f6ee;border-color:#bfe3cd}.callout.win .h{color:var(--keep)}
+  .callout.gold{background:var(--gold-bg);border-color:#e8d9a8}.callout.gold .h{color:var(--gold)}
+  .callout.dct{background:var(--dct-soft);border-color:var(--dct-line)}.callout.dct .h{color:var(--dct)}
+  .callout.doc{background:var(--doc-soft);border-color:var(--doc-line)}.callout.doc .h{color:var(--doc)}
+  .callout.act{background:var(--act-soft);border-color:var(--act-line)}.callout.act .h{color:var(--act)}
+  .callout.v3fix{background:#fff5e6;border-color:#e8d9a8}.callout.v3fix .h{color:#a9781a}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  .box.tint{background:var(--mdm-soft);border-color:var(--mdm-line)}
+  .box.dct{background:var(--dct-soft);border-color:var(--dct-line)}
+  .box.doc{background:var(--doc-soft);border-color:var(--doc-line)}
+  .box.act{background:var(--act-soft);border-color:var(--act-line)}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  ol.tight{margin:8px 0;padding-left:22px}ol.tight li{margin:5px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.2px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--mdm);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .lede{font-size:16px;color:var(--muted)}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:4px}
+  .b-fin{background:#e7efff;color:var(--fin)}.b-party{background:#e4f4ea;color:var(--party)}
+  .b-mat{background:#fbeadd;color:var(--mat)}.b-org{background:#efeaff;color:var(--org)}
+  .b-ref{background:#dcf1f1;color:var(--ref)}.b-mdm{background:var(--mdm-soft);color:var(--mdm)}
+  .en{color:var(--muted);font-style:italic;font-size:13.3px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:800;color:var(--mdm);line-height:1.1}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .chain{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .chain .st{background:var(--card);border:1px solid var(--mdm-line);color:var(--mdm);border-radius:8px;padding:7px 13px;font-size:12.8px;font-weight:700}
+  .chain .ar{color:var(--muted);font-weight:700}
+  .partband{margin:56px 0 8px;padding:14px 20px;border-radius:12px;background:linear-gradient(100deg,#1e3a4a,#0e4d4d);color:#fff}
+  .partband .pt{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b8e6e6;font-weight:700}
+  .partband .pn{font-size:20px;font-weight:800;margin-top:2px}
+  .partband .pd{font-size:13px;color:#c7cbdd;margin-top:4px}
+  a.ref{color:var(--mdm);text-decoration:none;border-bottom:1px dashed var(--mdm-line)}
+  .vmark{display:inline-block;background:var(--v3);color:#fff;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:4px;margin-left:6px;vertical-align:middle}
+  .strike{text-decoration:line-through;color:#999}
+  @media(max-width:860px){.grid2,.grid3,.grid4,.kpis{grid-template-columns:1fr}nav.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="inner">
+    <span class="tag">V3 · 暂存激活分离 · CR 复用 DOC</span><span class="tag kd">通用激活器 + 映射配置</span>
+    <h1>企业主数据管理平台（MDM）设计方案 V3<br><span style="font-size:20px;font-weight:500;color:#b8e6e6">主数据(DCT)只存 published · 变更请求(DOC 单据)走暂存 · 审批通过激活落字典</span></h1>
+    <p class="lead">
+      V3 的核心架构升级：<b>主数据</b>（cm_* DCT 字典）是权威 reference，<b>永远只存 published</b>（frozen/archived 仍在 cm_* 表，但业务约定不查），下游通过视图或默认 <code>WHERE lifecycle_status='published'</code> 消费；
+      <b>变更请求</b>（CR）复用 <b>DOC 单据</b>体系（头存主体提议值/行存明细），走 cmx-flow 审批，<b>审批通过由通用激活器同步落字典</b>。
+      坚守「reference 与 transaction 物理分离」铁律——cm_* 永远没有 draft。承接 V2 的独立新域、不碰 cmxfico、激活器内部调用 cmx-code 生成 code（不经 DCT 钩子）。
+    </p>
+    <p class="meta">
+      <b>V2→V3 核心修正</b>　CR 从独立表(md_change_request)改为复用 DOC 单据 · cm_* 去掉 draft/pending 只存 published · 新增通用激活器+映射配置<br>
+      <b>设计依据</b>　SAP MDG Staging/Active 双区 · Oracle NIR/Change Order · 用户讨论共识(reference vs transaction 分离)<br>
+      <b>性质</b>　只出方案不落地代码 &nbsp;|&nbsp; <b>对标</b>　SAP MDG · Oracle EDM · 用友 iUAP · 金蝶苍穹 · Informatica
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录 · Contents</h4>
+
+  <div class="part">导言 · V3 架构修正</div>
+  <ol>
+    <li><span class="nn">00</span><a href="#exec">执行摘要 · V3 为什么再升级</a></li>
+    <li><span class="nn">00b</span><a href="#classify">数据分类铁律：reference vs transaction</a></li>
+  </ol>
+
+  <div class="part">第一部分 · 业务方案</div>
+  <ol>
+    <li><span class="nn">01</span><a href="#concept">主数据认知与边界</a></li>
+    <li><span class="nn">02</span><a href="#pain">现状痛点与建设价值</a></li>
+    <li><span class="nn">03</span><a href="#domains">主数据域全景</a></li>
+    <li><span class="nn">04</span><a href="#governance">数据治理体系</a></li>
+    <li><span class="nn">05</span><a href="#standard">标准与编码规则体系</a></li>
+    <li><span class="nn">06</span><a href="#lifecycle">主数据全生命周期（暂存/激活分离）</a></li>
+  </ol>
+
+  <div class="part">第二部分 · 应用方案</div>
+  <ol>
+    <li><span class="nn">07</span><a href="#capmap">能力全景与三层架构</a></li>
+    <li><span class="nn">08</span><a href="#styles">实现风格选型</a></li>
+    <li><span class="nn">09</span><a href="#quality">数据质量 · 匹配 · 合并 · 黄金记录</a></li>
+    <li><span class="nn">10</span><a href="#hierarchy">层次 · 分类 · 参考数据</a></li>
+    <li><span class="nn">11</span><a href="#integration">集成 · 分发 · 映射</a></li>
+    <li><span class="nn">12</span><a href="#benchmark">主流厂商对标</a></li>
+  </ol>
+
+  <div class="part">第三部分 · 详细设计</div>
+  <ol>
+    <li><span class="nn">13</span><a href="#model">核心架构：MDM 域 DCT 主数据 + DOC 变更单 + 激活器</a></li>
+    <li><span class="nn">14</span><a href="#schema">表结构（CR 复用 DOC · cm_* 只存 published · 激活映射）</a></li>
+    <li><span class="nn">15</span><a href="#codeengine">编码引擎：引用 cmx-code（不在本次范围）</a></li>
+    <li><span class="nn">16</span><a href="#matchmerge">匹配合并与存活规则</a></li>
+    <li><span class="nn">17</span><a href="#statemachine">治理流程状态机（CR 单据状态 + cm_* 激活）</a></li>
+    <li><span class="nn">17b</span><a href="#arch">cmx-mdm 后端 crate 工程结构（三段式）</a></li>
+    <li><span class="nn">17c</span><a href="#activation">激活机制：通用激活器 + UI 映射配置器 <span style="font-size:10px">V3 核心</span></a></li>
+    <li><span class="nn">18</span><a href="#api">REST API 契约</a></li>
+    <li><span class="nn">19</span><a href="#distribute">分发订阅与事件</a></li>
+  </ol>
+
+  <div class="part">第四部分 · cmx 平台落地</div>
+  <ol>
+    <li><span class="nn">20</span><a href="#realize">落地总纲</a></li>
+    <li><span class="nn">21</span><a href="#gap">V3 缺口分析</a></li>
+    <li><span class="nn">22</span><a href="#roadmap">分期路线图与风险</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 00 ============ -->
+<section id="exec">
+  <h2><span class="n">00</span>执行摘要 · V3 为什么再升级</h2>
+  <p class="lede">V2 把变更请求的草稿写进 cm_* 主数据表（lifecycle_status='draft'），这违反了「主数据是权威 reference」的本质——把待办事项混进了员工档案。V3 坚守 <b>reference 与 transaction 物理分离</b>铁律：主数据只存 published，变更请求复用 DOC 单据走暂存，审批通过由激活器落字典。</p>
+
+  <div class="callout v3fix">
+    <div class="h">🔧 V2 → V3 的三处根本修正</div>
+    <table style="margin:8px 0;background:transparent;border:none">
+      <thead><tr><th style="width:26%">V2 方案（有问题）</th><th style="width:38%">为什么错</th><th>V3 修正</th></tr></thead>
+      <tbody>
+        <tr><td><span class="strike">CR 草稿写进 cm_* 表</span><br>(lifecycle_status='draft')</td><td>主数据是权威 reference，混入审批中的草稿=把待办塞进员工档案；下游每次查询都要过滤 draft，半成品可能被误读</td><td><b>cm_* 只存 published</b>，CR 草稿放 DOC 单据（暂存区）</td></tr>
+        <tr><td><span class="strike">独立 md_change_request/md_cr_item 表</span></td><td>CR 本质是流转性单据（有头/行/审批/归档），DOC 单据体系天然适配，何必另造平行结构</td><td><b>CR 复用 DOC 单据</b>（doc_type=mdm_*_apply），废弃 md_change_request</td></tr>
+        <tr><td><span class="strike">无激活机制设计</span></td><td>V2 只说"审批通过回写 lifecycle_status"，没讲清单据数据如何变成主数据——这是 MDM 的核心动作</td><td><b>新增通用激活器 + UI 映射配置器</b>（§17c）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">published</div><div class="l">cm_* 唯一状态<br>主数据永远干净</div></div>
+    <div class="kpi"><div class="v">DOC</div><div class="l">CR 载体<br>复用单据体系</div></div>
+    <div class="kpi"><div class="v">激活器</div><div class="l">审批→落字典<br>通用+映射配置</div></div>
+    <div class="kpi"><div class="v">0</div><div class="l">draft 进 cm_*<br>reference 纯净</div></div>
+  </div>
+
+  <h3>V3 架构全景一图</h3>
+  <div class="dag">┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│   ┌─────── 变更请求 CR（DOC 单据 · 暂存区）───────────────────────────────┐ │
+│   │  cv_header (doc_type='mdm_supplier_apply')  存主体提议值               │ │
+│   │  cv_行      存明细提议值(银行账户/资质)/变更 delta                     │ │
+│   │  走 cmx-flow 审批 · 审批前 cm_* 完全不动 · 审批后归档                  │ │
+│   └───────────────────────┬───────────────────────────────────────────────┘ │
+│                           │ ServiceTask(JavaDelegate)                       │
+│   ┌───────────────────────▼───────────────────────────────────────────────┐ │
+│   │   通用激活器 Activator（cmx-mdm · 读映射配置执行固定流程）             │ │
+│   │   读 CR 头/行 → 按映射写 cm_* 头表/明细表 → 记 md_audit → 发事件       │ │
+│   │   映射由 UI 配置器维护(mdm_activation 表),新增主数据只加配置       │ │
+│   └───────────────────────┬───────────────────────────────────────────────┘ │
+│                           │ 激活落字典                                      │
+│   ┌───────────────────────▼───────────────────────────────────────────────┐ │
+│   │   主数据 cm_*（DCT 字典 · 激活区 · 只存 published）                    │ │
+│   │   cm_supplier(头) + cm_bank_account(明细,supplier_id挂头) + ...     │ │
+│   │   ★ 永远没有 draft · 下游视图/默认WHERE published消费 · 黄金记录     │ │
+│   │     ='published' 的行                                                  │ │
+│   │   MDM 独立新域(basic/dataplatform/mdm)只用 base fieldSets,不碰 fi/cmxfico     │ │
+│   └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                           │
+│   平台骨架:init_ddl 61 表 · cmx-flow 审批 · cmx-code 编码(引用,不在本次)   │
+└───────────────────────────────────────────────────────────────────────────┘</div>
+
+  <div class="callout gold">
+    <div class="h">🏅 V3 核心洞察：主数据是「成品库」，不是「车间」</div>
+    主数据表（cm_*）是<b>成品库</b>——只放检验合格（published）的产品，下游直接取用。变更请求（CR 单据）是<b>车间</b>——原料加工（录入/审批）在这里进行，半成品不进成品库。审批通过=质检合格，激活器把成品从车间搬进成品库。<b>V2 的错误是把车间和成品库混在一起</b>（cm_* 里既有 published 也有 draft），V3 严格分离。
+  </div>
+</section>
+
+<!-- ============ 00b ============ -->
+<section id="classify">
+  <h2><span class="n">00b</span>数据分类铁律：reference vs transaction <span class="vmark">V3 基石</span></h2>
+  <p class="lede">这是 V3 一切设计的基石。主数据和变更请求是两类本质不同的数据，必须物理分离——这是 SAP MDG、Oracle、Informatica 的共同铁律。</p>
+
+  <h3>0b.1 两类数据的本质区别</h3>
+  <table>
+    <thead><tr><th style="width:16%">维度</th><th style="width:42%">主数据（reference）</th><th>变更请求（transaction）</th></tr></thead>
+    <tbody>
+      <tr><td><b>性质</b></td><td>权威真相，描述「实体是谁/是什么」</td><td>流程性事务，描述「一次变更动作」</td></tr>
+      <tr><td><b>生命周期</b></td><td>持续存在，相对稳定</td><td>有头有尾，审批完就归档</td></tr>
+      <tr><td><b>谁来读</b></td><td>全企业所有系统消费（高频）</td><td>只在审批流里流转（低频）</td></tr>
+      <tr><td><b>cmx 载体</b></td><td><span class="pill dct">DCT 字典</span> cm_*</td><td><span class="pill doc">DOC 单据</span> cv_*</td></tr>
+      <tr><td><b>状态</b></td><td>只有 published/frozen/archived/merged</td><td>draft/approving/approved/activated/rejected</td></tr>
+      <tr><td><b>混在一起的后果</b></td><td colspan="2">下游每次查询都要 WHERE lifecycle_status='published' 过滤草稿；半成品可能被误读；审计混乱；性能下降</td></tr>
+    </tbody>
+  </table>
+
+  <h3>0b.2 SAP MDG 的 Staging/Active 双区模型（V3 对标）</h3>
+  <div class="dag">                    SAP MDG 双区模型（V3 采纳）
+                    
+  暂存区 Staging Area               激活区 Active Area
+  ┌─────────────────────┐          ┌─────────────────────┐
+  │ 变更请求 CR           │          │ 主数据 Golden Record │
+  │ · 提议值(新建全量/    │  审批通过 │ · 只有 published     │ ← 全企业消费
+  │   变更 delta)         │ ────────→│ · 永远没有 draft     │
+  │ · 走审批流            │  激活步骤 │ · 稳定、可被反复引用  │
+  │ · 审批完归档          │          │                     │
+  └─────────────────────┘          └─────────────────────┘
+    单据性质(transaction)             字典性质(reference)
+    
+  V3 落地:暂存区=DOC 单据(cv_*)      V3 落地:激活区=DCT 字典(cm_*)
+          激活步骤=通用激活器(§17c)</div>
+
+  <div class="callout gap">
+    <div class="h">⚠ V2 的错误（V3 必须纠正）</div>
+    V2 §13 把 CR 草稿写进 cm_supplier（lifecycle_status='draft'），等于<b>把车间和成品库混在一起</b>：cm_supplier 里既有 published 的合格供应商，也有 draft 的半成品申请。下游系统查供应商要时刻提防读到草稿，每次都 WHERE 过滤——这违背了主数据「权威、稳定、可直接消费」的本质。V3 把 draft 彻底赶出 cm_*，挪到 DOC 单据暂存区。
+  </div>
+
+  <h3>0b.3 V3 的数据分类全景</h3>
+  <table>
+    <thead><tr><th style="width:18%">数据类别</th><th style="width:16%">性质</th><th style="width:24%">cmx 载体</th><th>MDM 中的角色</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据</b></td><td>reference</td><td><span class="pill dct">DCT cm_*</span></td><td>权威黄金记录，只存 published</td></tr>
+      <tr><td><b>变更请求 CR</b></td><td>transaction</td><td><span class="pill doc">DOC cv_*</span></td><td>暂存提议值，审批流载体</td></tr>
+      <tr><td><b>交易数据</b></td><td>transaction</td><td><span class="pill doc">DOC cv_*</span></td><td>引用主数据的业务凭证（会计凭证等）</td></tr>
+      <tr><td><b>参考数据</b></td><td>reference</td><td><span class="pill dct">DCT cm_*</span></td><td>受控码表（国家/币种/计量单位）</td></tr>
+      <tr><td><b>治理事实</b></td><td>transaction</td><td><span class="pill mdm">md_*</span></td><td>审计留痕/交叉引用/匹配组/分发日志</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ PART I BAND ============ -->
+<div class="partband">
+  <div class="pt">Part I</div>
+  <div class="pn">第一部分 · 业务方案</div>
+  <div class="pd">建什么、谁负责、按什么标准、走什么流程 —— 业务蓝图承接 V1/V2，强化暂存/激活分离</div>
+</div>
+
+<!-- ============ 01 ============ -->
+<section id="concept">
+  <h2><span class="n">01</span>主数据认知与边界 <span class="en">what master data is — and is not</span></h2>
+  <p>做主数据的第一步不是建库，而是<b>把「主数据」从其它数据里精确地切出来</b>。切错了边界，后面的治理、质量、分发全部落空。</p>
+
+  <h3>1.1 三类数据的界分（强化 V3 的 reference/transaction 二分）</h3>
+  <table>
+    <thead><tr><th style="width:16%">数据类别</th><th style="width:26%">定义</th><th style="width:28%">典型例子</th><th>在 cmx 里的对应</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据</b><br><span class="en">Master Data</span><br><span class="badge b-ref">reference</span></td><td>跨系统共享的核心业务对象，描述「实体是谁/是什么」，<b>权威、稳定、持续存在</b></td><td>客户、供应商、物料、会计科目、组织</td><td><span class="pill dct">DCT cm_*</span> 只存 published</td></tr>
+      <tr><td><b>交易数据</b><br><span class="en">Transaction Data</span><br><span class="badge b-fin">transaction</span></td><td>某一时刻发生的业务活动，<b>引用</b>主数据，有时效性</td><td>销售订单、采购单、会计凭证、<b>MDM 变更请求</b></td><td><span class="pill doc">DOC cv_*</span> 含 CR</td></tr>
+      <tr><td><b>参考数据</b><br><span class="en">Reference Data</span><br><span class="badge b-ref">reference</span></td><td>分类/取值约束的小型受控码表，主数据的「取值域」</td><td>国家、币种、计量单位、税码</td><td><span class="pill dct">DCT cm_*</span> dictKind:CLASSIFY/ENUM</td></tr>
+    </tbody>
+  </table>
+  <div class="callout dct">
+    <div class="h">🧬 V3 关键认知：变更请求(CR)是 transaction，不是 reference</div>
+    CR 有发起人、有审批人、有状态流转、有生命周期终点（审批完归档）——它是<b>一次变更动作的记录</b>，本质是交易数据。<b>把 CR 当主数据塞进 cm_* 是分类错误</b>。V3 把 CR 归入 DOC 单据（transaction 载体），主数据 cm_* 保持 reference 纯净。
+  </div>
+
+  <h3>1.2 主数据的六个本质特征</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 唯一权威</h4>全企业对同一实体只有一条黄金记录，MDM 是它的 System of Record。</div>
+    <div class="box"><h4>② 跨域共享</h4>被财务、供应链、销售、HR 多域反复引用。</div>
+    <div class="box"><h4>③ 相对稳定</h4>变化频率远低于交易数据，但一旦变影响面极大，须留痕。</div>
+    <div class="box"><h4>④ 结构复杂</h4>属性多、分组多、常带层次，且多语言/多视图。</div>
+    <div class="box"><h4>⑤ 多源汇入</h4>常同时存在于 ERP、CRM、SRM、旧系统，需匹配合并。</div>
+    <div class="box"><h4>⑥ 需要治理</h4>价值来自「被信任」，须有 Owner、标准、审批、质量闭环。</div>
+  </div>
+
+  <h3>1.3 主数据的分层视图（头表 + 明细表）</h3>
+  <p>一条主数据常不是「一张扁平表」，而是「主体 + 明细」分层——这正是 V3 用 DCT 头表 + 明细表（用<b>业务命名的普通外键</b>如 supplier_id 挂接）建模的基础：</p>
+  <div class="dag">主数据对象（如：供应商 = cm_supplier 头表 + 明细表）
+  ├─ 标识层  id(内码) + code(外码) + lifecycle_status(只 published/frozen/archived/merged)
+  ├─ 通用属性 name/简称/税号/统一社会信用…             ← cm_supplier 头表自有列
+  ├─ 明细:银行账户(多个) ──→ cm_bank_account   (supplier_id → cm_supplier.id,业务外键)
+  ├─ 明细:资质证书(多个) ──→ cm_qualification  (supplier_id → cm_supplier.id,业务外键)
+  ├─ 明细:收货地址(多个) ──→ cm_address        (supplier_id → cm_supplier.id,业务外键)
+  └─ 层次归属 所属分类(parent_id 树,selfHierarchy) · 所属组织(scope_type/entity_id)
+
+  ★ 区分两类关系:
+    · 明细表挂头表 = 业务命名普通外键(如 supplier_id),不配 selfHierarchy
+    · 头表自身树形(科目树/组织树)才用 selfHierarchy + parent_id(同表自引用)
+    两类关系并存但语义不同,不可混用</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="pain">
+  <h2><span class="n">02</span>现状痛点与建设价值 <span class="en">why it always hurts</span></h2>
+  <h3>2.1 六大典型痛点</h3>
+  <table>
+    <thead><tr><th style="width:20%">痛点</th><th style="width:44%">表现与根因</th><th>后果</th></tr></thead>
+    <tbody>
+      <tr><td><b>一物多码</b></td><td>同一物料/供应商在不同系统有多个编码</td><td>无法集中议价、库存失真、人工转码</td></tr>
+      <tr><td><b>一码多物</b></td><td>废弃编码回收再用，同一码指向不同实物</td><td>历史错乱、审计失败，比一物多码更危险</td></tr>
+      <tr><td><b>标准不一致</b></td><td>部门间分类/属性/命名口径各行其是</td><td>协同壁垒，报表口径打架</td></tr>
+      <tr><td><b>质量回潮</b></td><td>缺质量闭环：发现不了、不知找谁、改了不知对没对</td><td>投入打水漂，业务绕过主数据自建小表</td></tr>
+      <tr><td><b>重系统轻数据</b></td><td>先上系统后才发现底层基础数据未统筹</td><td>数据裂缝随系统增多指数扩大</td></tr>
+      <tr><td><b>责任真空</b></td><td>数据「谁都在用、没人负责」</td><td>问题无人整改，标准无人维护</td></tr>
+    </tbody>
+  </table>
+  <h3>2.2 价值主张</h3>
+  <div class="grid2">
+    <div class="box tint"><h4>🎯 对业务</h4><ul class="tight"><li><b>降本</b>：消灭一物多码→集中议价</li><li><b>提效</b>：一次维护多系统复用</li><li><b>合规</b>：口径统一满足审计</li><li><b>决策</b>：全域单一视图</li></ul></div>
+    <div class="box tint"><h4>🛠 对 IT</h4><ul class="tight"><li><b>解耦</b>：源系统只管消费</li><li><b>可控</b>：变更走审批留痕</li><li><b>可扩</b>：新系统接入即订阅</li><li><b>提质</b>：质量规则前置</li></ul></div>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="domains">
+  <h2><span class="n">03</span>主数据域全景 <span class="en">the domains</span></h2>
+  <p>本方案覆盖四大域，以<b>财务域为主</b>，兼顾客商、物料、组织人员。<span class="vmark">V3</span> MDM 是独立新域，在 <code>basic/dataplatform/mdm</code> 下自建这些主数据的 DCT 定义和物理表（cm_*），不碰 fi/cmxfico。</p>
+  <div class="grid2">
+    <div class="box"><h4><span class="badge b-fin">财务域</span>（主）</h4>
+      <b>实体</b>：会计科目、成本中心、利润中心、往来单位、币种、财务组织。<br>
+      <b>MDM 建表</b>：cm_gl_account / cm_cost_center / cm_currency 等。<br>
+      <b>责任</b>：财务共享中心 / 集团财务部。
+    </div>
+    <div class="box"><h4><span class="badge b-party">客商域</span></h4>
+      <b>实体</b>：客户、供应商、业务伙伴 BP、联系人、银行账户、地址。<br>
+      <b>MDM 建表</b>：cm_bus_partner(头) + cm_bank_account/cm_address(明细)。<br>
+      <b>责任</b>：销售管理部 / 采购管理部。
+    </div>
+    <div class="box"><h4><span class="badge b-mat">物料域</span></h4>
+      <b>实体</b>：物料/产品、物料分类、计量单位、规格、条码。<br>
+      <b>MDM 建表</b>：cm_material / cm_material_class 等。<br>
+      <b>责任</b>：供应链 / 技术部。
+    </div>
+    <div class="box"><h4><span class="badge b-org">组织人员域</span></h4>
+      <b>实体</b>：法人/公司、组织单元、部门、岗位、员工。<br>
+      <b>MDM 建表</b>：cm_company / cm_organization 等。<br>
+      <b>责任</b>：集团管控部 / HR。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="governance">
+  <h2><span class="n">04</span>数据治理体系 <span class="en">two systems + one tool</span></h2>
+  <h3>4.1 两体系一工具</h3>
+  <div class="grid3">
+    <div class="box tint"><h4>① 标准体系</h4>管理标准（定义/分类/责任）+ 应用标准（编码/属性/提报）+ 集成服务标准（分发接口）</div>
+    <div class="box tint"><h4>② 保障体系</h4>数据 Owner / 管家(Steward) / 认责人 + MDM 委员会 + KPI。「发现—分析—整改—验证」闭环</div>
+    <div class="box tint"><h4>③ 管理工具</h4>本 MDM 平台 = DCT 主数据底座 + DOC 变更请求 + cmx-mdm 治理层（激活/匹配/分发）</div>
+  </div>
+  <h3>4.2 四定方法论 + 治理角色</h3>
+  <div class="chain"><span class="st">定岗责</span><span class="ar">·</span><span class="st">定标准</span><span class="ar">·</span><span class="st">定流程</span><span class="ar">·</span><span class="st">定平台</span></div>
+  <table>
+    <thead><tr><th style="width:18%">角色</th><th style="width:42%">职责</th><th>对应厂商</th></tr></thead>
+    <tbody>
+      <tr><td><b>数据 Owner</b></td><td>高层决策；质量问题整改第一责任人</td><td>SAP Business Owner</td></tr>
+      <tr><td><b>数据管家 Steward</b></td><td>连接业务与 IT；审阅匹配队列；审批命名标准</td><td>Informatica Steward Workbench</td></tr>
+      <tr><td><b>域/操作管家</b></td><td>域 SME / 技术口径 / 日常维护提报</td><td>用友/金蝶主数据管理员</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="standard">
+  <h2><span class="n">05</span>标准与编码规则体系 <span class="en">standards &amp; coding</span></h2>
+  <p><span class="vmark">V3</span> 编码引擎引用独立方案 <a href="../20260804_cmx-code_通用业务编码引擎设计方案.html" class="ref">cmx-code</a>（七段/断号补偿/反查 max），不在本次开发范围。MDM 域定义里只 <code>codeRule.ruleCode</code> 引用，cmx-code 就绪后，激活器在步骤3内部调用 cmx-code 生成 code（通过 <code>mdm_activation.codeRuleCode</code> 配置），不依赖 DCT 钩子（cmx-dct 的 write.rs 没有 before_save/after_save 钩子点）。</p>
+  <h3>5.1 编码三铁律（由 cmx-code 保证）</h3>
+  <ol class="tight">
+    <li><b>编码即身份，永不回收</b>：作废走冻结/归档，号段不释放（防一码多物）</li>
+    <li><b>内码 ≠ 外码</b>：cm_*.id（bigint 内码）作关系锚点；code 是可读外码</li>
+    <li><b>规则可版本化</b>：cmx_code_rule.valid_from/to，旧对象留旧码</li>
+  </ol>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="lifecycle">
+  <h2><span class="n">06</span>主数据全生命周期（暂存/激活分离）<span class="vmark">V3 核心</span></h2>
+  <p class="lede"><span class="vmark">V3 根本修正</span> V2 把 draft 写进 cm_*，V3 严格分离：<b>草稿在 CR 单据（暂存区），激活后才进 cm_*（激活区）</b>。这是 SAP MDG Staging/Active 模型的直接落地。</p>
+
+  <h3>6.1 两套状态机（彻底分离）</h3>
+  <div class="grid2">
+    <div class="box doc"><h4>CR 单据状态机（暂存区 · DOC）</h4>
+      变更请求单据自己的生命周期，走 cmx-flow 审批：<br>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">draft 草稿</span><span class="ar">→</span>
+        <span class="st">approving 审批中</span><span class="ar">→</span>
+        <span class="st">approved 已通过</span>
+      </div>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">approved</span><span class="ar">→激活→</span>
+        <span class="st">activated 已激活</span>（归档）
+      </div>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">approving</span><span class="ar">→驳回→</span>
+        <span class="st">rejected 已驳回</span>（归档）
+      </div>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">rejected</span><span class="ar">→克隆新建→</span>
+        <span class="st">draft</span>（新 CR，<code>source_cr_id</code> 指向旧 CR）
+      </div>
+      <span class="en">CR 状态存在 cv_header.doc_status，审批走 cmx-flow。</span><br>
+      <b>驳回后重提交</b>：不从 rejected 直接复活，而是<b>基于原 CR 克隆新建</b>（保留驳回留痕，新 CR 的 <code>source_cr_id</code> 指向被驳回的旧 CR id），新 CR 走完整 draft→approving 流程。
+    </div>
+    <div class="box dct"><h4>主数据状态（激活区 · DCT cm_*）</h4>
+      主数据自己的状态，<b>永远没有 draft/pending</b>：<br>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">published 已发布</span><span class="ar">→</span>
+        <span class="st">frozen 冻结</span><span class="ar">→</span>
+        <span class="st">archived 归档</span>
+      </div>
+      <div class="chain" style="margin:8px 0">
+        <span class="st">published</span><span class="ar">→合并→</span>
+        <span class="st">merged 已合并</span>
+      </div>
+      <span class="en">cm_*.lifecycle_status，只这四个值。published=黄金记录。</span>
+    </div>
+  </div>
+
+  <h3>6.2 新建 vs 变更：两种激活场景</h3>
+  <div class="grid2">
+    <div class="box"><h4>定义态：新建主数据（对齐 Oracle NIR）</h4>
+      <ol class="tight" style="margin-top:4px">
+        <li>申请人录入 CR 单据（头存全量提议值，行存明细）</li>
+        <li>提交 cmx-flow 审批（cm_* 不动）</li>
+        <li>审批通过 → 激活器 INSERT cm_*（published, version=1）</li>
+        <li>CR 状态=activated（归档）</li>
+      </ol>
+      <b>无红线标记</b>，产出全新对象。
+    </div>
+    <div class="box"><h4>变更态：修改已发布（对齐 Oracle Change Order）</h4>
+      <ol class="tight" style="margin-top:4px">
+        <li>申请人录变更 CR（行存 field_deltas 新旧值）</li>
+        <li>审批期间 cm_* 原值照旧（业务照常用）</li>
+        <li>审批通过 → 激活器 UPDATE cm_*（version+1）</li>
+        <li>md_audit 记新旧值 delta（红线可追溯）</li>
+      </ol>
+      <b>带红线</b>，版本+1，全程留痕。
+    </div>
+  </div>
+
+  <h3>6.3 集团分级维护</h3>
+  <div class="callout note">
+    <div class="h">🏢 集团总部定标准、成员单位在授权范围维护本地主数据</div>
+    <span class="vmark">V3</span> 落地：复用 DCT 的 <code>scopeFieldSet</code>（scope_type/entity_id）做组织隔离；编码规则按组织生效（cmx-code orgScope）。
+  </div>
+</section>
+
+<!-- ============ PART II BAND ============ -->
+<div class="partband">
+  <div class="pt">Part II</div>
+  <div class="pn">第二部分 · 应用方案</div>
+  <div class="pd">三层架构（DOC 暂存 / 激活器 / DCT 激活）· 实现风格 · 质量匹配 · 层次分类 · 集成分发</div>
+</div>
+
+<!-- ============ 07 ============ -->
+<section id="capmap">
+  <h2><span class="n">07</span>能力全景与三层架构 <span class="vmark">V3</span></h2>
+  <p><span class="vmark">V3</span> 把 MDM 重新组织为<b>三层</b>：DOC 变更请求（暂存）→ 激活器（转换）→ DCT 主数据（激活）。这是 SAP MDG Staging/Active 的 cmx 落地。</p>
+
+  <h3>7.1 八大能力域 × V3 三层归属</h3>
+  <table>
+    <thead><tr><th style="width:20%">能力域</th><th style="width:40%">职责</th><th style="width:20%">归属层</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 多域建模</b></td><td>元数据驱动 · 实体·属性·关系·层次</td><td><span class="pill dct">DCT 主数据层</span></td><td><span class="pill keep">复用 DCT</span></td></tr>
+      <tr><td><b>② 变更请求</b></td><td>CR 暂存·审批·归档</td><td><span class="pill doc">DOC 暂存层</span></td><td><span class="pill keep">复用 DOC</span></td></tr>
+      <tr><td><b>③ 激活</b></td><td>审批通过→落主数据</td><td><span class="pill act">激活器</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>④ 匹配合并</b></td><td>标准化→匹配→合并→存活</td><td><span class="pill mdm">治理层</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>⑤ 治理与管家</b></td><td>Owner/Steward·审批工作流·认责</td><td><span class="pill doc">DOC</span>+cmx-flow</td><td><span class="pill half">接线</span></td></tr>
+      <tr><td><b>⑥ 参考数据/层次</b></td><td>RDM码表·分类·层次·编码</td><td><span class="pill dct">DCT</span>+cmx-code</td><td><span class="pill half">层次已有/编码引用</span></td></tr>
+      <tr><td><b>⑦ 集成与分发</b></td><td>REST/事件/批量·Key/Value映射·订阅</td><td><span class="pill mdm">治理层</span></td><td><span class="pill gap">新造</span></td></tr>
+      <tr><td><b>⑧ 安全审计</b></td><td>RBAC·版本留痕·血缘</td><td><span class="pill mdm">治理层</span>(md_audit)</td><td><span class="pill half">半有</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 V3 三层架构</h3>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:34%">职责</th><th>承载</th></tr></thead>
+    <tbody>
+      <tr><td><b>① DOC 暂存层</b><br><span class="en">变更请求 CR</span></td><td>CR 单据存提议值（头/行）·走 cmx-flow 审批·审批前 cm_* 不动·审批后归档</td><td>复用 DOC cv_* + cmx-flow</td></tr>
+      <tr><td><b>② 激活器</b><br><span class="en">Activator</span></td><td>审批通过→读 CR 头/行→按映射写 cm_* 头表/明细表→记 md_audit→发事件</td><td>cmx-mdm 通用激活器 + 映射配置</td></tr>
+      <tr><td><b>③ DCT 激活层</b><br><span class="en">主数据</span></td><td>只存 published 的黄金记录·头表+明细表·全企业零过滤消费</td><td>MDM 域 DCT cm_* + base fieldSets</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="styles">
+  <h2><span class="n">08</span>实现风格选型 <span class="en">implementation styles</span></h2>
+  <table>
+    <thead><tr><th style="width:14%">风格</th><th style="width:24%">机制</th><th style="width:20%">黄金记录</th><th>侵入</th></tr></thead>
+    <tbody>
+      <tr><td><b>注册型</b></td><td>只存交叉引用，数据留源系统</td><td>不持久化（虚拟）</td><td><span class="pill keep">最低</span></td></tr>
+      <tr><td><b>整合型</b></td><td>源汇入中央库，匹配成黄金记录</td><td>持久化</td><td><span class="pill keep">低</span></td></tr>
+      <tr><td><b>共存型</b></td><td>中央黄金副本 + 与源双向同步</td><td>持久化+回写</td><td><span class="pill add">中</span></td></tr>
+      <tr><td><b>集中型</b></td><td>MDM 亲自编纂，向所有系统分发</td><td>持久化+分发</td><td><span class="pill gap">最高</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout verdict">
+    <div class="h">🎯 选型：从集中型起步（cmx 自带优势）</div>
+    cmx 的 DCT 已是权威建模底座，主数据本就在 cm_* 表生产维护。因此 cmx 上的 MDM 天然接近<b>集中型</b>：MDM（cm_* + 激活器）亲自编纂，审批后分发。强管控域（科目/组织）直接集中；多源汇入域（客商/物料）先匹配合并再走向集中。
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="quality">
+  <h2><span class="n">09</span>数据质量 · 匹配 · 合并 · 黄金记录 <span class="en">golden-record pipeline</span></h2>
+  <h3>9.1 黄金记录生产流水线</h3>
+  <div class="dag">CR 审批通过 → 激活器写 cm_* → 初检/校验(DCT已有) → [匹配(治理层)] → published 黄金记录
+                              │                                              │
+                              └─ 多源汇入时:标准化→匹配→存活→合并           └─ 发 md_event_log 分发</div>
+  <h3>9.2 数据质量六维度</h3>
+  <div class="grid3">
+    <div class="box"><h4>① 准确性</h4>值与真实世界一致</div>
+    <div class="box"><h4>② 完整性</h4>必填属性有值</div>
+    <div class="box"><h4>③ 一致性</h4>跨系统口径一致</div>
+    <div class="box"><h4>④ 唯一性</h4>无重复（一物多码率）</div>
+    <div class="box"><h4>⑤ 及时性</h4>变更及时反映</div>
+    <div class="box"><h4>⑥ 有效性</h4>值在允许域内</div>
+  </div>
+  <h3>9.3 匹配三技术 + 分块（绝不 N×N）</h3>
+  <table>
+    <thead><tr><th style="width:16%">类型</th><th style="width:44%">机制</th><th>适用</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确匹配</b></td><td>税号/统一社会信用代码全等</td><td>有强标识符</td></tr>
+      <tr><td><b>模糊匹配</b></td><td>容忍拼写错误/换位，返回置信度</td><td>名称/地址</td></tr>
+      <tr><td><b>AI/ML</b></td><td>监督学习推断规则</td><td>大规模高噪声</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gap">
+    <div class="h">⚠ 必须分块（Clustering）</div>
+    N×N 不可行。分块用音近(Soundex)+分词+子串生成簇键，只比较同簇。护栏：NULL 巨簇、簇大小上限 500。
+  </div>
+  <h3>9.4 合并 vs 存活</h3>
+  <div class="grid2">
+    <div class="box"><h4>合并 Merge=结构</h4>victim 置 <code>lifecycle_status='merged'</code>（不硬删），子实体 re-parent 到 master。</div>
+    <div class="box"><h4>存活 Survivorship=取值</h4>逐字段选真值（源优先/最新/最全/质量分），字段级 cell-level。</div>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="hierarchy">
+  <h2><span class="n">10</span>层次 · 分类 · 参考数据 <span class="en">hierarchy · taxonomy · RDM</span></h2>
+  <p>DCT 已有完整树形能力：<code>selfHierarchy + parentField</code> + 递归 CTE 维护 <code>level_no/full_path/is_leaf</code>。MDM 域的主数据字典直接复用。</p>
+  <h3>10.1 主数据的头/明细层次（V3 关键建模）</h3>
+  <div class="dag">cm_supplier (头表,selfHierarchy 可选树形)
+  ├─ cm_bank_account    (明细,supplier_id → cm_supplier.id,业务外键)
+  ├─ cm_qualification   (明细,supplier_id → cm_supplier.id,业务外键)
+  └─ cm_address         (明细,supplier_id → cm_supplier.id,业务外键)
+  
+  cm_gl_account (树形字典,selfHierarchy=true,parent_id 同表自引用)</div>
+  <p class="en">明细表也是 DCT 字典，通过业务外键（如 supplier_id）挂头表，<b>不配 selfHierarchy</b>。激活时单据分录→明细表行（见 §17c）。头表自身如需树形（科目树/组织树）才用 selfHierarchy+parent_id，两类关系并存但语义不同。</p>
+
+  <h3>10.2 主数据关系建模（用 DCT dictKind:RELATION 关系字典）</h3>
+  <p>除头/明细归属外，主数据之间常有<b>跨实体关系</b>（物料→科目映射、客户→信用额度、供应商→付款条件）。这类关系用 DCT 的 <code>dictKind:'RELATION'</code> 关系字典建模——关系字典是独立表，带 <code>master_id</code>（主实体引用）+ <code>aux_id</code>（被关联实体引用）+ 关系属性列。</p>
+  <div class="dag">cm_material_account_map   (dictKind:RELATION,物料→科目映射)
+  ├─ master_id  → cm_material.id      (主实体)
+  ├─ aux_id     → cm_gl_account.id    (被关联实体)
+  └─ 属性:is_default(是否默认科目)/usage_type(用途)
+
+cm_customer_credit_limit  (dictKind:RELATION,客户→信用额度)
+  ├─ master_id  → cm_bus_partner.id
+  ├─ aux_id     → cm_credit_policy.id
+  └─ 属性:limit_amount/currency/valid_until</div>
+  <p class="en">关系字典也是 DCT 字典，<b>不碰两端的头表</b>，只存映射关系。变更关系也走 CR + 激活器（激活映射配 relation 分支）。比在头表加外键列更灵活（一头对多关系、关系可带属性/有效期）。</p>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="integration">
+  <h2><span class="n">11</span>集成 · 分发 · 映射 <span class="en">distribution</span></h2>
+  <h3>11.1 五种分发模式</h3>
+  <table>
+    <thead><tr><th style="width:20%">模式</th><th style="width:14%">延迟</th><th>场景</th></tr></thead>
+    <tbody>
+      <tr><td><b>实时 API</b></td><td>亚秒</td><td>事务系统取黄金记录</td></tr>
+      <tr><td><b>发布/订阅</b></td><td>实时推送</td><td>多订阅者传播</td></tr>
+      <tr><td><b>批量/ETL</b></td><td>小时级</td><td>分析、遗留系统</td></tr>
+      <tr><td><b>ESB/iPaaS</b></td><td>视情况</td><td>编排转换</td></tr>
+      <tr><td><b>Hub-Spoke</b></td><td>实时/批量</td><td>集中治理单向流</td></tr>
+    </tbody>
+  </table>
+  <h3>11.2 Key/Value 映射（借鉴 SAP DRF）</h3>
+  <table>
+    <thead><tr><th style="width:16%">映射</th><th>Key Mapping</th><th>Value Mapping</th></tr></thead>
+    <tbody>
+      <tr><td>对象</td><td>对象标识跨系统</td><td>属性值/代码跨系统</td></tr>
+      <tr><td>示例</td><td>BP 1234(ERP)=A100(CRM)</td><td>物料组 01(ERP)=01-200(S/4)</td></tr>
+      <tr><td>落地</td><td><code>md_xref</code></td><td><code>md_value_map</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="benchmark">
+  <h2><span class="n">12</span>主流厂商对标 <span class="en">vendor benchmark</span></h2>
+  <table>
+    <thead><tr><th style="width:13%">厂商</th><th style="width:20%">标签</th><th style="width:40%">最值得借鉴</th><th>本案落点</th></tr></thead>
+    <tbody>
+      <tr><td><b>SAP MDG</b></td><td>治理式、暂存/激活</td><td><b>Staging/Active 双区</b>（V3 直接采纳）；CR 原子单元；BRF+ 决策表</td><td>§06/§13/§17c</td></tr>
+      <tr><td><b>Oracle</b></td><td>层次、TCA、EDQ</td><td>Party≠Account（cmx BP 已实现）；交叉引用表；<b>NIR vs Change Order 二分</b>（V3 新建/变更）</td><td>§06/§16</td></tr>
+      <tr><td><b>Informatica</b></td><td>匹配/信任标杆</td><td>单元格级存活；存活分绑定 DQ 校验</td><td>§09/§16</td></tr>
+      <tr><td><b>用友 iUAP</b></td><td>装载即清洗、四定</td><td>异常主动通知；四定方法论</td><td>§04/§11</td></tr>
+      <tr><td><b>金蝶苍穹</b></td><td>集团分级、编码按组织</td><td>编码规则按受控组织生效（cmx-code 采纳）；分级维护</td><td>§05/§06</td></tr>
+      <tr><td><b>TIBCO EBX</b></td><td>治理、模型驱动</td><td>模型驱动「所见即所建」（=cmx DCT）；制度先于工具</td><td>§10/§04</td></tr>
+    </tbody>
+  </table>
+  <div class="callout verdict">
+    <div class="h">🧭 五个「必抄」原语 × V3 落地</div>
+    ① <b>数据所有权</b>→DCT scopeFieldSet；② <b>规范模型</b>→DCT 定义 JSON；③ <b>暂存/激活分离</b>→DOC 暂存 + cm_* 激活（V3 核心）；④ <b>决策表外置</b>→cmx-flow 网关；⑤ <b>Key/Value 映射</b>→md_xref/md_value_map。
+  </div>
+</section>
+
+<!-- ============ PART III BAND ============ -->
+<div class="partband">
+  <div class="pt">Part III</div>
+  <div class="pn">第三部分 · 详细设计</div>
+  <div class="pd">DCT 主数据 + DOC 变更单 + 激活器 · 表结构 · 匹配存活 · 状态机 · API · 分发</div>
+</div>
+
+<!-- ============ 13 ============ -->
+<section id="model">
+  <h2><span class="n">13</span>核心架构：MDM 域 DCT 主数据 + DOC 变更单 + 激活器 <span class="vmark">V3 核心</span></h2>
+  <p class="lede">V3 的架构核心：主数据（DCT cm_*）只存 published；变更请求（DOC 单据 cv_*）走暂存；审批通过由<b>通用激活器</b>把单据数据落进字典。三者在 MDM 独立新域（basic/dataplatform/mdm）内协同。</p>
+
+  <h3>13.1 V3 三层协同全景</h3>
+  <div class="dag">┌─────────────────────────────────────────────────────────────────────────┐
+│  ① DOC 暂存层：变更请求 CR（cv_* 单据）                                  │
+│  ┌─────────────────────────────────────────────────────────────────────┐ │
+│  │ cv_header  doc_type='mdm_supplier_apply'  存主体提议值               │ │
+│  │            name/tax_no/credit_code/...(新建=全量,变更=新值)          │ │
+│  │ cv_行1     line_type='bank_account' account=工行...  存明细提议值   │ │
+│  │ cv_行2     line_type='bank_account' account=建行...                 │ │
+│  │ doc_status: draft → approving → approved → activated(归档)          │ │
+│  │ 走 cmx-flow 审批 · 审批前 cm_* 完全不动                             │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
+│                          │ BPMN ServiceTask 触发(JavaDelegate 回调)        │
+│  ┌───────────────────────▼─────────────────────────────────────────────┐ │
+│  │  ② 激活器 Activator（cmx-mdm 内置通用 Rust 服务）                   │ │
+│  │  读 mdm_activation 映射配置 → 读 CR 头/行 → 写 cm_* → 记审计    │ │
+│  │  固定流程,配置驱动,所有主数据共用一个激活器,不为每种主数据写代码    │ │
+│  └───────────────────────┬─────────────────────────────────────────────┘ │
+│                          │ 激活落字典                                      │
+│  ┌───────────────────────▼─────────────────────────────────────────────┐ │
+│  │  ③ DCT 激活层：主数据（cm_* 字典 · 只存 published）                 │ │
+│  │  cm_supplier      id/code/name/tax_no/... lifecycle_status=published│ │
+│  │  cm_bank_account  supplier_id→cm_supplier.id, account_no/...published│ │
+│  │  ★ 永远没有 draft · 下游视图/默认WHERE published消费 · 业务外键挂接 │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+
+  <h3>13.2 MDM 独立新域的元数据组织</h3>
+  <div class="dag">data/meta/definitions/
+├── base/                          ← 公共 fieldSet 池(MDM 可用)
+│   └── base_dct_meta_v1.json      ← 新增 mdmGovernanceFields(published/frozen/...)
+├── fi/cmxfico/                    ← 财务域(MDM 不碰)
+└── basic/dataplatform/mdm/                ← ★ MDM 独立新域
+    ├── dataplatform_dct_meta_v1.json    ← DCT:主数据字典(cm_supplier/cm_bank_account/...)
+    └── dataplatform_doc_meta_v1.json    ← DOC:变更请求单据(mdm_supplier_apply 等)
+                                   两类定义同域,CR 复用 DOC 体系</div>
+
+  <h3>13.3 主数据字典定义（DCT · cm_* 只存 published）</h3>
+  <pre><code><span class="cmt">// basic/dataplatform/mdm/dataplatform_dct_meta_v1.json —— 主数据字典(激活区)</span>
+{
+  <span class="str">"dictionaryTables"</span>: [{
+    <span class="str">"dictMeta"</span>: {
+      <span class="str">"dictCode"</span>: <span class="str">"supplier"</span>, <span class="str">"tableName"</span>: <span class="str">"cm_supplier"</span>,
+      <span class="str">"codeRule"</span>: { <span class="str">"ruleCode"</span>: <span class="str">"supplier_hq"</span> }   <span class="cmt">// 引用 cmx-code</span>
+    },
+    <span class="str">"fields"</span>: [ {<span class="str">"name"</span>:<span class="str">"tax_no"</span>,...}, {<span class="str">"name"</span>:<span class="str">"credit_code"</span>,...} ],
+    <span class="str">"baseFieldSet"</span>: <span class="str">"dictionaryCommonFields"</span>,            <span class="cmt">// id/code/name/status</span>
+    <span class="str">"auditFieldSet"</span>: <span class="str">"dictionaryAuditFields"</span>,            <span class="cmt">// create/update</span>
+    <span class="str">"mdmGovernanceFieldSet"</span>: <span class="str">"mdmGovernanceFields"</span>,     <span class="cmt">// ★ 只 published/frozen/archived/merged</span>
+    <span class="str">"uniqueKeys"</span>: [[<span class="str">"code"</span>]]
+  }, {
+    <span class="str">"dictMeta"</span>: { <span class="str">"dictCode"</span>:<span class="str">"supplier_bank"</span>, <span class="str">"tableName"</span>:<span class="str">"cm_bank_account"</span> },
+    <span class="str">"fields"</span>: [ {<span class="str">"name"</span>:<span class="str">"supplier_id"</span>,<span class="str">"dataType"</span>:<span class="str">"bigint"</span>}, {<span class="str">"name"</span>:<span class="str">"account_no"</span>,...} ],
+    <span class="str">"mdmGovernanceFieldSet"</span>: <span class="str">"mdmGovernanceFields"</span>
+    <span class="cmt">// supplier_id 挂 cm_supplier.id(业务外键,非树形parent_id),明细表</span>
+  }]
+}</code></pre>
+  <pre><code><span class="cmt">// base_dct_meta_v1.json 新增 mdmGovernanceFields(无 draft/pending!)</span>
+<span class="str">"mdmGovernanceFields"</span>: [
+  { <span class="str">"name"</span>: <span class="str">"lifecycle_status"</span>, <span class="str">"dataType"</span>:<span class="str">"varchar"</span>, <span class="str">"fieldLength"</span>:<span class="nu">16</span>,
+    <span class="str">"defaultValue"</span>:<span class="str">"published"</span>,                              <span class="cmt">// ★ 默认 published,无 draft</span>
+    <span class="str">"enumValues"</span>:[<span class="str">"published"</span>,<span class="str">"frozen"</span>,<span class="str">"archived"</span>,<span class="str">"merged"</span>] }, <span class="cmt">// ★ 只 4 值</span>
+  { <span class="str">"name"</span>: <span class="str">"published_version"</span>, <span class="str">"dataType"</span>:<span class="str">"int"</span>, <span class="str">"defaultValue"</span>:<span class="nu">1</span> },
+  { <span class="str">"name"</span>: <span class="str">"effective_date"</span>, <span class="str">"dataType"</span>:<span class="str">"date"</span>, <span class="str">"nullable"</span>:<span class="kw">true</span> }   <span class="cmt">// 可空,未来生效日(>今天则激活器记 pending 不立即落 published)</span>
+]</code></pre>
+
+  <h3>13.4 变更请求单据定义（DOC · CR 暂存区）</h3>
+  <pre><code><span class="cmt">// basic/dataplatform/mdm/dataplatform_doc_meta_v1.json —— 变更请求单据(暂存区)</span>
+{
+  <span class="str">"voucherTables"</span>: [{
+    <span class="str">"tableName"</span>: <span class="str">"cv_mdm_apply"</span>,                    <span class="cmt">// CR 头表(主体关键字段展开成独立列)</span>
+    <span class="str">"fields"</span>: [
+      {<span class="str">"name"</span>:<span class="str">"doc_type"</span>,...},                     <span class="cmt">// mdm_supplier_apply / mdm_supplier_change</span>
+      {<span class="str">"name"</span>:<span class="str">"target_dict_code"</span>,...},             <span class="cmt">// 目标主数据字典(supplier)</span>
+      {<span class="str">"name"</span>:<span class="str">"target_record_id"</span>,...},             <span class="cmt">// 变更时指向 cm_supplier.id;新建时空</span>
+      {<span class="str">"name"</span>:<span class="str">"source_cr_id"</span>,...},                <span class="cmt">// 克隆重提交时指向被驳回的旧CR(留痕)</span>
+      {<span class="str">"name"</span>:<span class="str">"cr_type"</span>,...},                      <span class="cmt">// create/update/merge/block/flag_delete</span>
+      {<span class="str">"name"</span>:<span class="str">"effective_date"</span>,<span class="str">"dataType"</span>:<span class="str">"date"</span>},  <span class="cmt">// 可空,未来生效日</span>
+      <span class="cmt">// ★ 主体关键字段逐列展开(享受 DOC 列级校验:必填/格式/唯一)</span>
+      {<span class="str">"name"</span>:<span class="str">"name"</span>,<span class="str">"dataType"</span>:<span class="str">"varchar"</span>,<span class="str">"required"</span>:<span class="kw">true</span>},        <span class="cmt">// 供应商名(新建全量/变更新值)</span>
+      {<span class="str">"name"</span>:<span class="str">"tax_no"</span>,<span class="str">"dataType"</span>:<span class="str">"varchar"</span>},                  <span class="cmt">// 税号</span>
+      {<span class="str">"name"</span>:<span class="str">"credit_code"</span>,<span class="str">"dataType"</span>:<span class="str">"varchar"</span>},           <span class="cmt">// 统一社会信用代码</span>
+      {<span class="str">"name"</span>:<span class="str">"short_name"</span>,<span class="str">"dataType"</span>:<span class="str">"varchar"</span>},            <span class="cmt">// 简称(关键字段示例)</span>
+      {<span class="str">"name"</span>:<span class="str">"ext_attrs"</span>,<span class="str">"dataType"</span>:<span class="str">"jsonb"</span>},                <span class="cmt">// ★ 扩展属性(非关键/动态/低频字段留 jsonb)</span>
+      {<span class="str">"name"</span>:<span class="str">"field_deltas"</span>,<span class="str">"dataType"</span>:<span class="str">"jsonb"</span>}            <span class="cmt">// 变更:字段级 {field:{old,new}}</span>
+    ]
+  }, {
+    <span class="str">"tableName"</span>: <span class="str">"cv_mdm_apply_line"</span>,              <span class="cmt">// CR 行表(明细提议值)</span>
+    <span class="str">"fields"</span>: [
+      {<span class="str">"name"</span>:<span class="str">"upper_id"</span>,...},                    <span class="cmt">// 挂 cv_mdm_apply.id</span>
+      {<span class="str">"name"</span>:<span class="str">"line_type"</span>,...},                    <span class="cmt">// bank_account/qualification/address</span>
+      {<span class="str">"name"</span>:<span class="str">"line_action"</span>,...},                  <span class="cmt">// insert/update/delete(明细级操作)</span>
+      {<span class="str">"name"</span>:<span class="str">"line_payload"</span>,<span class="str">"dataType"</span>:<span class="str">"jsonb"</span>}    <span class="cmt">// 明细提议值</span>
+    ]
+  }],
+  <span class="str">"voucherStatusFlow"</span>: {                       <span class="cmt">// ★ CR 单据状态流(审批/驳回/激活)</span>
+    <span class="str">"initial"</span>: <span class="str">"draft"</span>,
+    <span class="str">"transitions"</span>: [
+      {<span class="str">"from"</span>:<span class="str">"draft"</span>,     <span class="str">"to"</span>:<span class="str">"approving"</span>,  <span class="str">"event"</span>:<span class="str">"submit"</span>},
+      {<span class="str">"from"</span>:<span class="str">"approving"</span>, <span class="str">"to"</span>:<span class="str">"approved"</span>,   <span class="str">"event"</span>:<span class="str">"approve"</span>},
+      {<span class="str">"from"</span>:<span class="str">"approving"</span>, <span class="str">"to"</span>:<span class="str">"rejected"</span>,   <span class="str">"event"</span>:<span class="str">"reject"</span>},
+      {<span class="str">"from"</span>:<span class="str">"approved"</span>,  <span class="str">"to"</span>:<span class="str">"activated"</span>,  <span class="str">"event"</span>:<span class="str">"activate"</span>}
+    ]
+  }
+}
+<span class="cmt">// 关键字段逐列 + ext_attrs jsonb 存扩展(不再用 proposed_payload 存全量)。
+// CR 走 DOC 的 cv_* 体系:有 doc_status(状态机)/审批/归档,复用 DOC 全链路</span></code></pre>
+  <p class="en">关键字段（name/tax_no/credit_code 等）逐列存储以享受 DOC 列级校验（必填/格式/正则/唯一约束），低频或动态扩展属性留 <code>ext_attrs</code> jsonb。删除"proposed_payload 存全量提议值"的旧说法——列存 + jsonb 扩展更利于校验与查询。</p>
+
+  <div class="callout dct">
+    <div class="h">🧬 V3 的关键解耦：cm_* 与 cv_* 物理分离</div>
+    <b>cm_supplier</b>（DCT 激活区）：只有 published 供应商，全企业消费，零过滤。<br>
+    <b>cv_mdm_apply</b>（DOC 暂存区）：变更请求单据，存提议值，走审批，审批后归档。<br>
+    <b>两者通过激活器单向流动</b>：cv_* →（激活）→ cm_*。主数据永远不被草稿污染。
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="schema">
+  <h2><span class="n">14</span>表结构（CR 复用 DOC · cm_* 只存 published · 激活映射）<span class="vmark">V3 重写</span></h2>
+  <p><span class="vmark">V3 改动</span> 废弃 md_change_request/md_cr_item/md_code_rule/md_serial 共 4 张；CR 数据走 DOC 的 cv_* 表；新增 mdm_activation 映射配置表。保留 md_audit/md_xref/md_value_map/md_merge_record/md_subscription/md_event_log。</p>
+
+  <h3>14.1 CR 复用 DOC 单据表（不新造 CR 表）<span class="vmark">V3</span></h3>
+  <p>变更请求 = DOC 单据，数据落 <code>cv_mdm_apply</code>（头）+ <code>cv_mdm_apply_line</code>（行）。表结构见 §13.4 的 DOC 定义。CR 不再有独立的 md_change_request/md_cr_item——<b>废弃</b>。</p>
+
+  <h3>14.2 <code>mdm_activation</code> — 激活映射配置（UI 配置器维护）<span class="vmark">V3 新增</span></h3>
+  <pre><code><span class="kw">CREATE TABLE</span> mdm_activation (        <span class="cmt">-- 激活映射(单据→主数据),UI 配置器维护</span>
+  <span class="pk">id</span>              <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  activation_code <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL UNIQUE</span>,    <span class="cmt">-- 映射码(如 supplier_apply)</span>
+  source_doc_type <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,           <span class="cmt">-- 来源单据类型(mdm_supplier_apply)</span>
+  cr_type         <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- create/update/merge/block/flag_delete</span>
+  target_dict     <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- 目标头字典(supplier)</span>
+  header_mapping  <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,                   <span class="cmt">-- 头映射{单据字段:主数据列}</span>
+  line_mappings   <span class="ty">JSONB</span>,                            <span class="cmt">-- 明细映射[{lineType,targetDict,parentIdField,fields}]</span>
+  code_rule_code  <span class="ty">VARCHAR(64)</span>,                        <span class="cmt">-- code 由哪个 cmx-code 规则生成(新建时)</span>
+  is_active       <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">true</span>,
+  updated_at      <span class="ty">TIMESTAMPTZ</span> <span class="kw">NOT NULL DEFAULT</span> now()
+);</code></pre>
+  <p><b>cr_type 操作分支差异</b>：create/update 走 <code>header_mapping</code> + <code>line_mappings</code> 配置驱动（字段映射搬运）；merge/block/flag_delete 走固定操作分支（<code>target_dict</code> 仍配置驱动定位目标表，但无字段映射）。五种 cr_type 与 §13.4 对齐。</p>
+  <p>映射示例（UI 配置器产出，激活器读取执行）：</p>
+  <pre><code>{
+  <span class="str">"activationCode"</span>: <span class="str">"supplier_apply"</span>,
+  <span class="str">"sourceDocType"</span>: <span class="str">"mdm_supplier_apply"</span>,
+  <span class="str">"crType"</span>: <span class="str">"create"</span>,
+  <span class="str">"targetDict"</span>: <span class="str">"supplier"</span>,
+  <span class="str">"headerMapping"</span>: {                         <span class="cmt">// 单据头字段 → cm_supplier 列</span>
+    <span class="str">"name"</span>: <span class="str">"name"</span>, <span class="str">"tax_no"</span>: <span class="str">"tax_no"</span>, <span class="str">"credit_code"</span>: <span class="str">"credit_code"</span>
+  },
+  <span class="str">"lineMappings"</span>: [
+    { <span class="str">"lineType"</span>: <span class="str">"bank_account"</span>, <span class="str">"targetDict"</span>: <span class="str">"supplier_bank"</span>,
+      <span class="str">"parentField"</span>: <span class="str">"supplier_id"</span>,              <span class="cmt">// cm_bank_account.supplier_id ← cm_supplier.id</span>
+      <span class="str">"fields"</span>: { <span class="str">"account_no"</span>: <span class="str">"account_no"</span>, <span class="str">"bank_name"</span>: <span class="str">"bank_name"</span> } }
+  ],
+  <span class="str">"codeRuleCode"</span>: <span class="str">"supplier_hq"</span>                  <span class="cmt">// 新建时 code 由 cmx-code 此规则生成</span>
+}</code></pre>
+
+  <h3>14.3 <code>md_audit</code> — 审计留痕/版本历史（保留）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_audit (                 <span class="cmt">-- 主数据版本留痕(激活器写入)</span>
+  <span class="pk">id</span>          <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>,
+  dict_code   <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- cm_* 字典码</span>
+  record_id   <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,                  <span class="cmt">-- cm_*.id(无物理FK)</span>
+  version     <span class="ty">INT</span> <span class="kw">NOT NULL</span>,                     <span class="cmt">-- 版本号</span>
+  action      <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,             <span class="cmt">-- create/update/freeze/merge/archive</span>
+  source_cr_id <span class="ty">BIGINT</span>,                         <span class="cmt">-- 触发此变更的 CR 单据 cv_mdm_apply.id</span>
+  field       <span class="ty">VARCHAR(64)</span>,                       <span class="cmt">-- 变更字段</span>
+  old_value   <span class="ty">JSONB</span>, <span class="ty">new_value</span> <span class="ty">JSONB</span>,           <span class="cmt">-- 新旧值</span>
+  operated_by <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>, operated_at <span class="ty">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> now()
+);
+<span class="kw">CREATE INDEX</span> ix_audit_record <span class="kw">ON</span> md_audit(dict_code, record_id, version);</code></pre>
+
+  <h3>14.4 <code>md_xref</code> + <code>md_value_map</code> — 交叉引用/值映射（保留）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_xref (                   <span class="cmt">-- Key Mapping</span>
+  <span class="pk">id</span> <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>, dict_code <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, record_id <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,
+  source_system <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, source_ref <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>,
+  xref_status <span class="ty">VARCHAR(16)</span> <span class="kw">DEFAULT</span> <span class="str">'active'</span>, confidence <span class="ty">SMALLINT</span> <span class="kw">DEFAULT</span> <span class="nu">50</span>,
+  <span class="kw">UNIQUE</span>(source_system, source_ref)
+);
+<span class="kw">CREATE TABLE</span> md_value_map (             <span class="cmt">-- Value Mapping</span>
+  <span class="pk">id</span> <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>, field <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  src_sys <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, src_val <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>,
+  tgt_sys <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, tgt_val <span class="ty">VARCHAR(128)</span> <span class="kw">NOT NULL</span>
+);</code></pre>
+
+  <h3>14.5 <code>md_merge_record</code> — 匹配组/存活裁决（保留）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_merge_record (
+  <span class="pk">id</span> <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>, dict_code <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  group_key <span class="ty">VARCHAR(256)</span> <span class="kw">NOT NULL</span>, member_ids <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>,
+  master_id <span class="ty">BIGINT</span>, score <span class="ty">SMALLINT</span> <span class="kw">NOT NULL</span>, decision <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>,
+  survivorship_log <span class="ty">JSONB</span>, status <span class="ty">VARCHAR(16)</span> <span class="kw">DEFAULT</span> <span class="str">'pending'</span>
+);</code></pre>
+
+  <h3>14.6 <code>md_subscription</code> + <code>md_event_log</code> — 分发订阅/事件（保留）</h3>
+  <pre><code><span class="kw">CREATE TABLE</span> md_subscription (
+  <span class="pk">id</span> <span class="ty">BIGINT</span> <span class="kw">PRIMARY KEY</span>, target_sys <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>,
+  dict_code <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, filter <span class="ty">JSONB</span>, field_map <span class="ty">JSONB</span>,
+  channel <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>, active <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">true</span>
+);
+<span class="kw">CREATE TABLE</span> md_event_log (             <span class="cmt">-- 激活器写入,消费者按 delta 拉取</span>
+  <span class="pk">seq</span> <span class="ty">BIGSERIAL</span> <span class="kw">PRIMARY KEY</span>, dict_code <span class="ty">VARCHAR(64)</span> <span class="kw">NOT NULL</span>, record_id <span class="ty">BIGINT</span> <span class="kw">NOT NULL</span>,
+  event_type <span class="ty">VARCHAR(16)</span> <span class="kw">NOT NULL</span>, payload <span class="ty">JSONB</span> <span class="kw">NOT NULL</span>, emitted_at <span class="ty">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> now()
+);</code></pre>
+
+  <h3>14.7 V1→V2→V3 表清单演进</h3>
+  <table>
+    <thead><tr><th style="width:22%">表</th><th style="width:10%">V1</th><th style="width:10%">V2</th><th style="width:10%">V3</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td><code>md_change_request</code>+<code>md_cr_item</code></td><td>有</td><td>保留</td><td><span class="pill v3">废弃</span></td><td>CR 复用 DOC cv_* 单据，无需独立表</td></tr>
+      <tr><td><code>md_code_rule</code>+<code>md_serial</code></td><td>有</td><td>移出</td><td><span class="pill v3">归 cmx-code</span></td><td>编码是通用能力，独立方案</td></tr>
+      <tr><td><code>md_entity_type</code>/<code>md_attr_def</code>/<code>md_golden</code>等</td><td>有</td><td>废弃</td><td><span class="pill v3">废弃</span></td><td>DCT 已覆盖建模</td></tr>
+      <tr><td><code>mdm_activation</code></td><td>-</td><td>-</td><td><span class="pill v3">V3 新增</span></td><td>激活映射配置（UI 配置器维护）</td></tr>
+      <tr><td><code>md_audit</code>/<code>md_xref</code>/<code>md_value_map</code></td><td>有</td><td>保留</td><td><span class="pill v2">保留</span></td><td>版本留痕/Key-Value 映射</td></tr>
+      <tr><td><code>md_merge_record</code>/<code>md_subscription</code>/<code>md_event_log</code></td><td>有</td><td>保留</td><td><span class="pill v2">保留</span></td><td>匹配/分发/事件</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="codeengine">
+  <h2><span class="n">15</span>编码引擎：引用 cmx-code（不在本次范围）<span class="vmark">V3</span></h2>
+  <p>编码是通用能力，已有独立方案 <a href="../20260804_cmx-code_通用业务编码引擎设计方案.html" class="ref">cmx-code</a>（七段/断号补偿/反查 max/前后端协作）。MDM 不重复设计，域定义里 <code>codeRule.ruleCode</code> 引用，cmx-code 就绪后，激活器在步骤3内部调用 cmx-code 生成 code（通过 <code>mdm_activation.codeRuleCode</code> 配置），不依赖 DCT 钩子。详见 V2 §15，V3 不赘述。</p>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="matchmerge">
+  <h2><span class="n">16</span>匹配合并与存活规则 <span class="en">match · merge · survivorship</span></h2>
+  <p>MDM 心脏，四阶段：<b>分块 → 比较 → 裁决 → 合并存活</b>。数据源是 cm_* 主数据表（published 行），结果写回 cm_*（victim 置 merged，不硬删）。</p>
+  <h3>16.1 分块（绝不 N×N）</h3>
+  <pre><code><span class="kw">fn</span> <span class="fn">cluster_keys</span>(rec) -> Vec&lt;(String,u8)&gt; {      <span class="cmt">// 多簇键带优先级,只比同簇</span>
+  vec![(soundex(rec.name),<span class="nu">1</span>), (first_n(rec.name,<span class="nu">5</span>),<span class="nu">3</span>),
+       (rec.tax_id,<span class="nu">0</span>)]                              <span class="cmt">// 护栏:NULL巨簇/簇上限500</span>
+}</code></pre>
+  <h3>16.2 双阈值裁决</h3>
+  <pre><code><span class="kw">fn</span> <span class="fn">decide</span>(score,cfg) -> Decision {
+  <span class="kw">if</span> score &gt;= cfg.automerge { AutoMerge }       <span class="cmt">// ≥95 自动合并</span>
+  <span class="kw">else if</span> score &gt;= cfg.match { Review }        <span class="cmt">// 80-94 人工</span>
+  <span class="kw">else</span> { NoMatch }                              <span class="cmt">// &lt;80 新记录</span>
+}</code></pre>
+  <h3>16.3 合并落地（走激活器内部 merge CR，复用 cm_*）</h3>
+  <div class="callout win">
+    <div class="h">✅ 合并 = 内部 merge CR → 走激活器 merge 分支</div>
+    管家在评审台确认合并 → 后台自动生成一个 <code>cr_type='merge'</code> 的内部 CR → 走<b>激活器的 merge 分支</b>（victim 置 <code>lifecycle_status='merged'</code> 不硬删；明细 <code>supplier_id</code>（业务外键）重指向 master.id，即 re-parent；md_xref 里 victim 引用标记 inactive）。存活主记录逐字段取值 UPDATE 写回 cm_*，md_merge_record.survivorship_log 记录每字段来源。合并审批可简化（管家确认即生效，或配置免审批）。<b>统一写入入口（不绕开激活器），事件不漏，全程操作 cm_* 无 md_golden</b>。详见 §17c merge 分支。
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="statemachine">
+  <h2><span class="n">17</span>治理流程状态机（CR 单据状态 + cm_* 激活）<span class="vmark">V3</span></h2>
+  <p><span class="vmark">V3</span> 两套状态机彻底分离：CR 单据走自己的审批状态（cv_*.doc_status），主数据 cm_* 只有 published/frozen/archived/merged。审批通过由激活器把 cm_* 从"不存在"（新建）或"旧值"（变更）变成 published。</p>
+  <h3>17.1 CR 单据状态机（走 cmx-flow）</h3>
+  <div class="dag">   ●───→ draft ──提交──→ approving ──┬通过──→ approved ──激活──→ activated(归档)
+                                      └驳回──→ rejected(归档)
+   CR 状态在 cv_mdm_apply.doc_status,走 cmx-flow 审批引擎
+   ★ 审批期间 cm_* 完全不动(新建:还不存在;变更:原值照旧)</div>
+  <h3>17.2 cmx-flow 集成</h3>
+  <table>
+    <thead><tr><th style="width:30%">需求</th><th>cmx-flow 机制</th></tr></thead>
+    <tbody>
+      <tr><td>CR 审批流</td><td>start_process，cv_mdm_apply 作业务数据</td></tr>
+      <tr><td>多级/并行审批</td><td>串行任务 / 会签 multiInstance</td></tr>
+      <tr><td>按 role/org 定审批人</td><td>M4 候选人机制</td></tr>
+      <tr><td>四眼原则</td><td>候选人排除发起人</td></tr>
+      <tr><td>审批通过触发激活</td><td><span class="vmark">V3</span> 激活器实现为 JavaDelegate，注册到 DelegateRegistry，绑定到 BPMN 流程末尾的 ServiceTask 节点（节点id如 <code>svc_activate_mdm</code>）。审批流走到该 ServiceTask 时引擎自动调用激活器 delegate。零改 cmx-flow 引擎。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 17b ============ -->
+<section id="arch">
+  <h2><span class="n">17b</span>cmx-mdm 后端 crate 工程结构（三段式）<span class="vmark">V3</span></h2>
+  <pre><code>cmx-mdm-model/                   <span class="cmt"># 纯逻辑层</span>
+├── src/
+│   ├── error.rs                <span class="cmt"># MdmError</span>
+│   ├── activation.rs           <span class="cmt"># ★ 激活器逻辑:读映射→字段搬运规则(纯计算)</span>
+│   ├── match_algo.rs           <span class="cmt"># 匹配/分块/比较/裁决(纯计算)</span>
+│   ├── survivorship.rs         <span class="cmt"># 存活规则(纯计算)</span>
+│   ├── audit.rs / xref.rs / distribute.rs  <span class="cmt"># 数据结构</span>
+│   └── lifecycle.rs            <span class="cmt"># cm_* 状态枚举(published/frozen/archived/merged)</span>
+
+cmx-mdm-store-pg/                <span class="cmt"># PG 存储层</span>
+├── src/
+│   ├── activation_store.rs     <span class="cmt"># ★ mdm_activation 映射配置读写</span>
+│   ├── audit_store.rs / xref_store.rs / match_store.rs / distribute_store.rs
+│   ├── dct_accessor.rs         <span class="cmt"># ★ cm_* 唯一写入闸口,激活器/合并器都经此写 cm_*,强制 lifecycle_status='published'</span>
+│   ├── doc_accessor.rs         <span class="cmt"># ★ 读 CR 单据(cv_mdm_apply/line)</span>
+│   └── flow_hook.rs            <span class="cmt"># cmx-flow JavaDelegate impl,绑定 BPMN ServiceTask,审批流走到时触发激活器</span>
+
+cmx-mdm-api/                     <span class="cmt"># HTTP handlers</span>
+├── src/
+│   ├── lib.rs                  <span class="cmt"># MdmModule impl ModuleRoutes, /api/mdm/*</span>
+│   └── handlers.rs             <span class="cmt"># /activations /audit /find-duplicates /merge /subscriptions /publish /events</span></code></pre>
+  <h3>依赖关系</h3>
+  <div class="dag">cmx-mdm-model ──→ cmx-core                      ← 纯逻辑
+cmx-mdm-store-pg ──→ cmx-mdm-model + cmx-database + cmx-dct-model + cmx-doc-model(读CR)
+                  ──可选→ cmx-flow(feature gate,审批回调)
+cmx-mdm-api ──→ cmx-mdm-model + cmx-mdm-store-pg + cmx-api
+
+★ cmx-mdm-* ──trait CodeGenerator 解耦──→ cmx-code(cmx-code 就绪前用 stub/manual impl 注入) / fi-cmxfico(不碰)
+★ 主数据 CRUD 复用 /api/dct/*;CR 录入复用 /api/doc/*;cmx-mdm-api 只出治理端点</div>
+  <pre><code><span class="cmt">// web-server/routes.rs 接入</span>
+.merge(<span class="fn">MdmModule</span>.routes())     <span class="cmt">// /api/mdm/* 治理端点</span></code></pre>
+</section>
+
+<!-- ============ 17c ============ -->
+<section id="activation">
+  <h2><span class="n">17c</span>激活机制：通用激活器 + UI 映射配置器 <span class="vmark">V3 核心新增</span></h2>
+  <p class="lede">这是 V3 的核心新增章节。回答"审批通过后单据数据如何变成主数据"——<b>通用激活器读映射配置执行固定流程，新增主数据只加配置不改代码</b>。</p>
+
+  <h3>17c.1 为什么是"通用激活器 + 映射配置"而非 WASM 编排</h3>
+  <div class="grid3">
+    <div class="box act"><h4>❌ WASM 服务编排</h4>用户反馈：WASM 编排最终还是要写代码，每种主数据单独写，并不灵活。排除。</div>
+    <div class="box act"><h4>❌ 纯声明式 JSON</h4>没可视化维护方式，手写映射 JSON 难维护。排除。</div>
+    <div class="box act"><h4>✅ 通用激活器 + UI 配置器<br><span class="vmark">V3 采纳</span></h4>通用 Rust 激活器（固定流程）+ UI 映射配置器（两端字段下拉对照，因为都是 DCT 元数据）。新增主数据只加配置。</div>
+  </div>
+
+  <h3>17c.2 通用激活器的固定流程（所有主数据共用）</h3>
+  <div class="dag">BPMN ServiceTask 节点触发(激活器是 JavaDelegate impl)
+  │
+  ├─ 1. 读 CR 单据:doc_accessor 读 cv_mdm_apply(头) + cv_mdm_apply_line(行)
+  │
+  ├─ 2. 读激活映射:activation_store 读 mdm_activation(按 doc_type + cr_type)
+  │
+  ├─ 3. 头处理(按 header_mapping):
+  │     ├─ 新建(create): code=cmx-code生成(codeRuleCode) → INSERT cm_*(published,v1)
+  │     └─ 变更(update): UPDATE cm_* SET 按映射的字段 WHERE id=target_record_id (v+1)
+  │
+  ├─ 4. 明细处理(按 line_mappings,遍历 cv_mdm_apply_line):
+  │     ├─ line_action=insert: INSERT cm_明细表(业务外键=头表id,如 supplier_id)
+  │     ├─ line_action=update: UPDATE cm_明细表
+  │     └─ line_action=delete: cm_明细表 lifecycle_status='archived'
+  │
+  ├─ 5. 记审计:md_audit 写 create/update 记录(新旧值,source_cr_id)
+  │
+  ├─ 6. 发事件:md_event_log 追加(created/updated,供订阅方拉取)
+  │
+  └─ 7. CR 归档:cv_mdm_apply.doc_status='activated'</div>
+
+  <div class="callout note">
+    <div class="h">🔒 事务边界（单事务，全流程原子）</div>
+    激活器全流程（读CR → 写cm_*头/明细 → md_audit → md_event_log → CR归档）必须在<b>单个 DB 事务</b>里完成。激活器直接复用 cmx-infra 的事务管理器，经 cmx-mdm-store-pg 的 <code>dct_accessor</code>/<code>doc_accessor</code>/<code>md_accessor</code> 共用同一事务上下文，<b>不经 HTTP</b>。任一步失败整体回滚——不会出现"cm_* 已写但 md_audit 没记"或"CR 没归档"的中间态。
+  </div>
+
+  <div class="callout gold">
+    <div class="h">⚡ 并发控制（变更场景）</div>
+    ① <b>CR 互斥</b>：同一目标实体（<code>target_record_id</code>）同时只允许一个 <code>approving</code> 状态的 CR（DB 唯一约束 <code>UNIQUE(target_record_id) WHERE doc_status='approving'</code> 或查询拦截），避免并发变更打架。<br>
+    ② <b>乐观锁</b>：激活器 UPDATE cm_* 时读 <code>cm_*.published_version</code> 做乐观锁——若 CR 发起时快照的版本号与当前 cm_* 的 <code>published_version</code> 不一致（中途被别的激活改过），则报冲突，CR 需重审（不允许盲改覆盖）。
+  </div>
+
+  <h4>merge 分支（合并走激活器，见 §16.3）</h4>
+  <p>合并不绕开激活器：管家在评审台确认合并 → 后台自动生成一个 <code>cr_type='merge'</code> 的内部 CR → 走激活器的 merge 分支（victim 置 <code>merged</code> + 明细业务外键 re-parent + 发事件）。合并审批可简化（管家确认即生效，或配置免审批）。<b>内部 merge CR 不走 cmx-flow 审批（管家确认即生效），激活器由 merge-requests 端点直接调用（不经 ServiceTask）</b>。因此激活器有两条触发路径：① <b>审批型 CR</b>→ServiceTask(JavaDelegate)；② <b>内部/手动 CR</b>→直接调用。<b>统一写入入口，事件不漏</b>。</p>
+
+  <h4>未来生效（effective_date）分支</h4>
+  <p>CR 可带 <code>effective_date</code>（DATE，可空）。审批通过时若 <code>effective_date &gt; 今天</code>，激活器记 <code>pending</code>（CR 状态置 approved 但不立即落 published），由定时任务到期再触发激活落字典。用于"未来生效"场景（如组织调整生效日、新科目次月启用）。<b>集群安全</b>：定时任务经 cmx-job 调度，集群下用分布式锁（或 <code>SELECT FOR UPDATE</code> + <code>doc_status</code> CAS：<code>UPDATE cv_mdm_apply SET doc_status='activating' WHERE id=? AND doc_status='approved'</code>）保证同一 CR 只被激活一次，避免多节点重复激活。</p>
+
+  <h4>批量模式</h4>
+  <p>一次 CR 可挂多行（批量新建/变更，如一次性导入 N 个供应商）。区分两种规模：<br>
+  ① <b>单 CR 内多明细行</b>（一次录入若干条）= <b>单事务原子</b>：激活器在同一事务内循环处理每行，全部成功才整体提交，任一行失败整体回滚；<br>
+  ② <b>import_export 大批量装载</b>（成百上千行）= <b>按 chunk 分批提交</b>：如每批 200 行独立事务，单 chunk 失败不影响已提交 chunk，错误行写入错误表不阻断。<br>
+  <b>大批量不走单事务</b>，避免长事务持锁。DCT import_export 批量装载也走此批量模式（生成内部批量 CR），不直写 cm_*。</p>
+
+  <h3>17c.3 新建供应商（含明细）完整激活示例</h3>
+  <pre><code><span class="cmt">// 前提:CR-002 已审批通过,映射配置 supplier_apply 已就绪</span>
+<span class="cmt">// CR-002 数据:</span>
+<span class="cmt">//   cv_mdm_apply:  name='B公司', tax_no='911...', credit_code='91...' (主体关键字段展开成独立列) cr_type=create</span>
+<span class="cmt">//   cv_mdm_apply_line1: line_type=bank_account line_payload={account_no:"工行6222"}</span>
+<span class="cmt">//   cv_mdm_apply_line2: line_type=bank_account line_payload={account_no:"建行4367"}</span>
+
+激活器执行:
+1. 读 CR-002 头 + 2 行
+2. 读映射 supplier_apply: headerMapping + lineMappings[bank_account]
+3. 头处理(create):
+   code = cmx-code.generate("supplier_hq", {category:"raw"})  → "VRM26080008"
+   INSERT cm_supplier(id=pk52, code='VRM26080008', name='B公司', tax_no='911...',
+                      lifecycle_status='published', published_version=1)
+   ← 得到 cm_supplier.id = 8001
+4. 明细处理(遍历 2 行):
+   行1: INSERT cm_bank_account(id=pk52, supplier_id=8001, account_no='工行6222', lifecycle_status='published')
+   行2: INSERT cm_bank_account(id=pk52, supplier_id=8001, account_no='建行4367', lifecycle_status='published')
+5. md_audit: dict_code=supplier, record_id=8001, version=1, action=create, source_cr_id=CR-002.id
+6. md_event_log: seq++, dict_code=supplier, record_id=8001, event_type=created, payload=快照
+7. CR-002.doc_status='activated'(归档)
+
+结果:
+  cm_supplier: B公司(published,可被全企业消费)
+  cm_bank_account: 工行/建行(supplier_id=8001)
+  下游: 直接查 cm_supplier/cm_bank_account,零感知 CR 单据</code></pre>
+
+  <h3>17c.4 变更供应商（改电话）激活示例</h3>
+  <pre><code><span class="cmt">// CR-003: 改供应商B(已在cm_supplier,id=8001)的电话</span>
+<span class="cmt">// cv_mdm_apply: target_record_id=8001, cr_type=update, field_deltas={phone:{old:"111",new:"222"}}</span>
+
+激活器执行:
+1-2. 读 CR-003 + 映射
+3. 头处理(update):
+   UPDATE cm_supplier SET phone='222', published_version=2 WHERE id=8001
+   (B从未离开 cm_supplier,只是字段更新)
+4. 无明细变更
+5. md_audit: record_id=8001, version=2, action=update, field=phone, old=111, new=222
+6. md_event_log: event_type=updated
+7. CR-003 归档</code></pre>
+
+  <h3>17c.5 UI 映射配置器（可视化维护映射）</h3>
+  <div class="callout act">
+    <div class="h">🎨 映射配置器：两端字段下拉对照</div>
+    单据字段和主数据字段都已是 DCT 元数据（name/caption/dataType），配置器 UI：<br>
+    <b>左侧下拉</b>（来自 CR 单据 DOC 定义的字段）→ <b>右侧下拉</b>（来自主数据 DCT 定义的字段）<br>
+    用户点选对照，配置器自动生成 headerMapping/lineMappings JSON 存入 mdm_activation。<b>不用手写 JSON</b>。明细映射可配多条（bank_account 一条、qualification 一条）。
+  </div>
+
+  <div class="callout win">
+    <div class="h">✅ 激活器方案的三大收益</div>
+    ① <b>不为每种主数据写代码</b>：激活器是通用 Rust，读配置执行，新增主数据只加 mdm_activation 配置；② <b>可视化维护</b>：UI 配置器下拉对照，不手写 JSON；③ <b>cm_* 永远干净</b>：只有 published，草稿在 CR 单据，激活后才落字典。
+  </div>
+</section>
+
+<!-- ============ 18 ============ -->
+<section id="api">
+  <h2><span class="n">18</span>REST API 契约<span class="vmark">V3</span></h2>
+  <h3>18.1 复用的端点（零新造）</h3>
+  <table>
+    <thead><tr><th style="width:28%">端点</th><th style="width:10%">方法</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>/api/dct/*</code></td><td>-</td><td>主数据查询/读复用 /api/dct/*；<b>但 /api/dct 写端点（entries/save/delete）对 MDM 域 cm_* 字典降级为只读</b>（业务系统只查不写），cm_* 写入唯一入口是激活器（经 cmx-mdm-store-pg 的 dct_accessor 直连，不经 HTTP）</td></tr>
+      <tr><td><code>/api/doc/*</code></td><td>-</td><td><span class="vmark">V3</span> CR 单据录入/查询/提交审批（复用 DOC 全链路）</td></tr>
+      <tr><td><code>/api/code/*</code></td><td>-</td><td>编码（归 cmx-code，不在本次范围）</td></tr>
+    </tbody>
+  </table>
+  <h3>18.2 新增治理端点（/api/mdm/*）</h3>
+  <table>
+    <thead><tr><th style="width:8%">组</th><th style="width:32%">端点</th><th style="width:10%">方法</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><b>激活</b></td><td><code>/api/mdm/activations</code></td><td>GET/POST</td><td><span class="vmark">V3</span> 激活映射配置 CRUD（UI 配置器用）</td></tr>
+      <tr><td rowspan="3"><b>治理</b></td><td><code>/api/mdm/audit/{dict}/{id}</code></td><td>GET</td><td>查变更历史/版本留痕</td></tr>
+      <tr><td><code>/api/mdm/change-requests</code></td><td>GET</td><td>CR 列表（查 cv_mdm_apply 视图）</td></tr>
+      <tr><td><code>/api/mdm/change-requests/{id}/activate</code></td><td>POST</td><td><span class="vmark">V3</span> 手动触发激活（通常 cmx-flow 自动触发）</td></tr>
+      <tr><td rowspan="2"><b>匹配</b></td><td><code>/api/mdm/records/find-duplicates</code></td><td>POST</td><td>实时查重</td></tr>
+      <tr><td><code>/api/mdm/merge-requests</code></td><td>GET/POST</td><td>合并请求（管家评审）</td></tr>
+      <tr><td rowspan="3"><b>分发</b></td><td><code>/api/mdm/subscriptions</code></td><td>GET/POST</td><td>订阅配置</td></tr>
+      <tr><td><code>/api/mdm/publish/{dict}</code></td><td>POST</td><td>发布</td></tr>
+      <tr><td><code>/api/mdm/events</code></td><td>GET</td><td>事件查询（delta）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 19 ============ -->
+<section id="distribute">
+  <h2><span class="n">19</span>分发订阅与事件 <span class="en">distribution</span></h2>
+  <p>核心：<b>规范模型 + 中央事件日志 + delta token</b>（借鉴 SAP MDI）。<span class="vmark">V3</span> 事件触发点 = <b>cm_* 被任何路径修改时（激活/合并），都写 md_event_log</b>——由于 cm_* 写入收归激活器唯一闸口（dct_accessor），激活/合并两条路径都经过激活器，事件天然不漏。</p>
+  <div class="dag">激活器激活成功 → md_event_log(seq++) → 分发
+                                        │
+                          ┌─────────────┼─────────────┐
+                    实时推送         REST 拉取         批量ETL
+                    (event)       GET /events?since=   (nightly)
+                                  &delta_token=</div>
+  <div class="callout note">
+    <div class="h">📨 分发异常主动通知（借鉴用友）</div>
+    复用 cmx-job 任务中心的 SSE 进度 + 失败告警。分发失败不静默，邮件/短信通知管理员。
+  </div>
+</section>
+
+<!-- ============ PART IV BAND ============ -->
+<div class="partband">
+  <div class="pt">Part IV</div>
+  <div class="pn">第四部分 · cmx 平台落地</div>
+  <div class="pd">三层架构落地 · V3 缺口分析 · 分期路线图</div>
+</div>
+
+<!-- ============ 20 ============ -->
+<section id="realize">
+  <h2><span class="n">20</span>落地总纲 <span class="vmark">V3</span></h2>
+  <div class="callout verdict">
+    <div class="h">🎯 V3 一句话落地策略</div>
+    <b>MDM = 独立新域（basic/dataplatform/mdm）含 DCT 主数据定义（cm_* 只存 published）+ DOC 变更请求定义（cv_* 暂存）+ 三段式 cmx-mdm-{model,store-pg,api}（核心是通用激活器+映射配置）+ 接线 cmx-flow（CR 审批→激活）+ 编码引用 cmx-code（不在本次）。</b>主数据 CRUD 复用 /api/dct/*，CR 录入复用 /api/doc/*，cmx-mdm-api 只出治理端点。
+  </div>
+  <h3>20.1 V1→V2→V3 落地演进</h3>
+  <table>
+    <thead><tr><th style="width:20%">维度</th><th style="width:26%">V1</th><th style="width:26%">V2</th><th>V3</th></tr></thead>
+    <tbody>
+      <tr><td><b>CR 载体</b></td><td>md_change_request 独立表</td><td>同 V1</td><td><b>复用 DOC cv_*</b>（暂存区）</td></tr>
+      <tr><td><b>cm_* 状态</b></td><td>md_golden.is_active</td><td>含 draft/pending</td><td><b>只 published/frozen/archived/merged</b></td></tr>
+      <tr><td><b>激活机制</b></td><td>无</td><td>仅"回写状态"</td><td><b>通用激活器+映射配置</b></td></tr>
+      <tr><td><b>主数据明细</b></td><td>md_attr_value EAV</td><td>未明确</td><td><b>头表+明细表(业务外键如 supplier_id)</b></td></tr>
+      <tr><td><b>编码</b></td><td>md_code_rule 自建</td><td>引用 cmx-code</td><td>同 V2（引用 cmx-code）</td></tr>
+      <tr><td><b>MDM 域</b></td><td>无（混用）</td><td>独立新域不碰 fi</td><td>同 V2（独立新域）</td></tr>
+    </tbody>
+  </table>
+  <div class="callout win">
+    <div class="h">🎁 V3 的直接收益：reference 纯净 + CR 零新造</div>
+    ① <b>cm_* 永远干净</b>：只 published，下游零过滤消费，告别 draft 污染；② <b>CR 零新造</b>：复用 DOC 全链路（录入/审批/归档/头行结构），不造 md_change_request；③ <b>激活器通用</b>：新增主数据只加映射配置，不改代码。
+  </div>
+</section>
+
+<!-- ============ 21 ============ -->
+<section id="gap">
+  <h2><span class="n">21</span>V3 缺口分析 <span class="vmark">V3</span></h2>
+  <h3>21.1 后端缺口（V3 判定）</h3>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:14%">V3 判定</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>主数据建模/物理表</b></td><td><span class="pill dct">DCT compile</span></td><td>MDM 域自建 cm_* 表（头+明细），只用 base fieldSets。注：compile 对 fieldSet 是<b>按需引用</b>（compile.rs:373-390），mdmGovernanceFields 只有显式引用才生效，cmxfico 不引用因此不受影响</td></tr>
+      <tr><td><b>主数据 CRUD/树形/导入导出</b></td><td><span class="pill keep">复用 /api/dct</span></td><td>已有 8 端点；MDM 域 cm_* 字典写端点降级只读（B3）</td></tr>
+      <tr><td><b>变更请求 CR</b></td><td><span class="pill keep">复用 DOC</span></td><td><span class="vmark">V3</span> CR 是 DOC 单据，复用 cv_* 全链路，不造 md_change_request</td></tr>
+      <tr><td><b>cmx-mdm 三段 crate</b></td><td><span class="pill gap">新造</span></td><td>model/store-pg/api，核心是激活器+治理</td></tr>
+      <tr><td><b>激活器+映射配置</b></td><td><span class="pill gap">新造①</span></td><td><span class="vmark">V3 核心</span> 通用激活器 + mdm_activation + UI 配置器</td></tr>
+      <tr><td><b>DCT↔cmx-flow 集成</b></td><td><span class="pill half">接线</span></td><td>CR 审批通过（JavaDelegate/ServiceTask）→触发激活器</td></tr>
+      <tr><td><b>编码引擎</b></td><td><span class="pill dct">引用 cmx-code</span></td><td>不在本次范围，激活器内部调用接入（不依赖 DCT 钩子）</td></tr>
+      <tr><td><b>匹配合并存活</b></td><td><span class="pill gap">新造②</span></td><td>最难的核心；合并走激活器 merge 分支（I6）</td></tr>
+      <tr><td><b>交叉引用+分发</b></td><td><span class="pill gap">新造③</span></td><td>md_xref/md_event_log 等</td></tr>
+      <tr><td><b>版本/审计</b></td><td><span class="pill gap">新造</span></td><td>md_audit（激活器写入）</td></tr>
+      <tr><td><b>主数据关系建模</b></td><td><span class="pill keep">复用 DCT</span></td><td>用 <code>dictKind:'RELATION'</code> 关系字典建模实体间关系（物料→科目/客户→信用额度），带 master_id/aux_id（见 §10.2）</td></tr>
+      <tr><td><b>RBAC 权限</b></td><td><span class="pill half">排 V4</span></td><td>复用 cmx IAM 权限体系，本次不细化，V4 统一接入</td></tr>
+    </tbody>
+  </table>
+  <h3>21.2 前端缺口</h3>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:14%">V3 判定</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>CR 录入工作台</b></td><td><span class="pill keep">复用 DOC 录入</span></td><td><span class="vmark">V3</span> 复用 DOC 单据编辑器（头+行），零造</td></tr>
+      <tr><td><b>主数据维护台</b></td><td><span class="pill keep">复用 dct.data-editor</span></td><td>查 cm_* published 数据</td></tr>
+      <tr><td><b>激活映射配置器</b></td><td><span class="pill gap">新造</span></td><td><span class="vmark">V3</span> 两端字段下拉对照 UI</td></tr>
+      <tr><td><b>查重候选 UI / 红线 diff / 待办台</b></td><td><span class="pill gap">新造</span></td><td>同 V2</td></tr>
+    </tbody>
+  </table>
+  <h3>21.3 V3 净缺口</h3>
+  <div class="kpis">
+    <div class="kpi"><div class="v">~88%</div><div class="l">复用率<br>DCT+DOC+平台</div></div>
+    <div class="kpi"><div class="v">3</div><div class="l">后端真新造<br>激活器/匹配/分发</div></div>
+    <div class="kpi"><div class="v">4</div><div class="l">前端真新造<br>配置器/查重/红线/待办</div></div>
+    <div class="kpi"><div class="v">0</div><div class="l">CR 新造<br>复用 DOC</div></div>
+  </div>
+</section>
+
+<!-- ============ 22 ============ -->
+<section id="roadmap">
+  <h2><span class="n">22</span>分期路线图与风险 <span class="vmark">V3</span></h2>
+  <table class="mile">
+    <thead><tr><th style="width:8%">阶段</th><th style="width:34%">交付</th><th style="width:18%">性质</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td>M0</td><td><b>MDM 域建模</b>：base 加 mdmGovernanceFields（只 published）+ 新建 basic/dataplatform/mdm 域（DCT cm_* 主数据 + DOC cv_* 变更单定义）+ compile 建表。<b>注：cm_* 写入约束（dct_accessor 闸口 + /api/dct 对 MDM 域只读）并入 M1 激活器一起做，M0 不单独做闸口</b></td><td><span class="pill half">建域</span></td><td>cm_* / cv_* 表建成；复用 /api/dct + /api/doc 通过</td></tr>
+      <tr><td>M1</td><td><b>cmx-mdm 三段 crate + 激活器</b>：model/store-pg/api + 通用激活器 + mdm_activation 表 + UI 映射配置器 + dct_accessor 写入闸口（cm_* 唯一入口，强制 published）+ 单事务边界（I3）+ 并发控制（I4）</td><td><span class="pill gap">新造①</span></td><td>配一份 supplier_apply 映射；手动触发激活成功落 cm_*；事务回滚验证。<b>cmx-code 未就绪时 code 暂由 CR 手填或 stub 生成器，cmx-code 就绪后切换为真实实现（trait CodeGenerator 解耦）</b></td></tr>
+      <tr><td>M2</td><td><b>CR↔cmx-flow 集成</b>：CR 审批走 cmx-flow + 激活器实现为 JavaDelegate 绑定 BPMN ServiceTask（审批走到自动触发）+ 待办台前端</td><td><span class="pill half">接线+前端</span></td><td>CR 录入→提交→审批→自动激活→cm_* published E2E</td></tr>
+      <tr><td>M3</td><td><b>匹配合并存活</b>：分块+比较+双阈值+字段级存活+md_xref+查重UI</td><td><span class="pill gap">新造②</span></td><td>去重识别一物多码；自动/人工分流；unmerge 还原</td></tr>
+      <tr><td>M4</td><td><b>数据管家工作台</b>：匹配评审队列+合并请求+红线diff+四区</td><td><span class="pill half">组合</span></td><td>Steward 评审；真机验证</td></tr>
+      <tr><td>M5</td><td><b>分发订阅</b>：md_event_log+delta+md_subscription+cmx-job</td><td><span class="pill gap">新造③</span></td><td>增量拉取；28天兜底；失败通知</td></tr>
+      <tr><td>M6</td><td><b>多域扩展</b>：更多主数据 DCT/DOC 定义 + 层次增强</td><td><span class="pill half">配置</span></td><td>新实体零改引擎落地</td></tr>
+      <tr><td><b>待定</b></td><td><b>编码接入</b>：cmx-code 就绪后激活器内部调用接入</td><td><span class="pill dct">引用</span></td><td>不在本次；就绪后激活器内调接入，不依赖 DCT 钩子</td></tr>
+    </tbody>
+  </table>
+  <h3>22.1 风险</h3>
+  <ul class="tight">
+    <li><b>激活器映射的表达力</b>：90% 场景字段搬运够用；极复杂转换（&lt;5%）可能需扩展点。缓解：mdm_activation 预留 pre/post hook 字段。</li>
+    <li><b>CR 复用 DOC 的结构适配</b>：DOC 原为会计凭证设计，CR 借用其头/行/审批骨架但不碰借贷结构。MDM 域自定义 doc_type + fields，不污染 fi/。</li>
+    <li><b>匹配合并是难点</b>：M3 从精确匹配+单一存活起步；分块护栏必须有。</li>
+    <li><b>cm_* 写入收归激活器（/api/dct 对 MDM 域只读，底线）</b>：dct_accessor 是唯一闸口，强制 lifecycle_status='published'。所有草稿必须走 CR 单据，激活器是唯一写入 cm_* published 的入口。DCT import_export 批量装载也走激活器批量模式（§17c），不直写 cm_*。</li>
+    <li><b>引擎不认识具体域</b>：激活器按映射配置驱动，无 if 供应商/科目分支。</li>
+  </ul>
+  <div class="callout verdict">
+    <div class="h">🧭 V3 一页纸总结</div>
+    <b>V3 的根本修正</b>：坚守「reference 与 transaction 物理分离」——主数据（DCT cm_*）<b>只存 published</b>，变更请求（CR）<b>复用 DOC 单据</b>走暂存，审批通过由<b>通用激活器</b>（读 UI 配置的映射）把单据数据落进字典。三者在 MDM 独立新域（basic/dataplatform/mdm）协同：DOC 暂存（cv_*）→ 激活器（cmx-mdm）→ DCT 激活（cm_*）。废弃 md_change_request/md_code_rule；编码引用 cmx-code。复用率 ~88%（DCT+DOC+平台骨架），真新造收敛为后端 3 件（激活器/匹配/分发）+ 前端 4 件（配置器/查重/红线/待办）。<b>关键路径</b>：M1 激活器 + M2 CR↔flow 接线 + M3 匹配。
+  </div>
+</section>
+
+<div class="foot">
+  企业主数据管理平台（MDM）设计方案 V3 · 暂存激活分离 · CR 复用 DOC · 通用激活器+映射配置 · 承接 V1/V2 业务蓝图 · 对标 SAP MDG · Oracle EDM · 只出方案不落地代码 · 2026
+</div>
+
+</div>
+</body>
+</html>

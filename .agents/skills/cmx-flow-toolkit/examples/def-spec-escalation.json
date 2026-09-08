@@ -1,0 +1,29 @@
+{
+  "_comment": "样例3：限时审批（边界定时器中断升级）+ 决策表定级 + 消息等待外部回调。决策表须先 POST /api/flow/v1/decisions 注册（见 references/bpmn-def-guide.md §5），否则 businessRuleTask 宽容跳过、网关恒走 default",
+  "key": "escalation_flow",
+  "name": "限时升级审批",
+  "nodes": [
+    {"id": "apply", "type": "userTask", "name": "发起申请", "candidates": "initiator"},
+    {"id": "grade", "type": "businessRuleTask", "name": "决策表定级", "decisionRef": "approval_matrix"},
+    {"id": "mgr", "type": "userTask", "name": "经理审批", "candidates": "role(manager)",
+     "timers": [
+       {"duration": "PT20S", "cancelActivity": false, "to": "remind"},
+       {"duration": "PT30S", "to": "boss"}
+     ]},
+    {"id": "remind", "type": "serviceTask", "name": "发催办通知", "delegate": "notifyDelegate"},
+    {"id": "boss", "type": "userTask", "name": "上级升级审批", "candidates": "initiatorLeader"},
+    {"id": "wait_ext", "type": "messageCatch", "name": "等外部系统回执", "message": "verdictReceived",
+     "correlationVar": "orderId"},
+    {"id": "done", "type": "endEvent", "name": "完成"}
+  ],
+  "flows": [
+    {"from": "apply", "to": "grade"},
+    {"from": "grade", "to": "mgr"},
+    {"from": "mgr", "to": "wait_ext"},
+    {"from": "boss", "to": "wait_ext"},
+    {"from": "wait_ext", "to": "done"}
+  ],
+  "deploy": {"server": "http://127.0.0.1:8091", "note": "cmx-flow-toolkit 样例", "publishedBy": "agent"},
+  "smoke": {"orgId": "zongbu", "businessKey": "SMOKE-ESC-001",
+            "variables": {"initiator": "u_emp", "orderId": "ORD-1"}, "expectActive": ["apply"]}
+}

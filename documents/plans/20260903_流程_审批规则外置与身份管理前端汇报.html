@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流程模块差距分析与审批规则外置方案 · 汇报</title>
+<style>
+  :root{
+    --ink:#1a2233; --sub:#5a6478; --line:#e4e8f0; --bg:#f6f8fb; --card:#ffffff;
+    --brand:#0f6cbd; --brand-weak:#e8f1fa; --ok:#1a7f4e; --ok-weak:#e9f6ef;
+    --warn:#9a6700; --warn-weak:#fdf3dd; --bad:#c0392b; --bad-weak:#fdeeec;
+    --delay:#6b7280; --delay-weak:#f0f1f4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px 80px}
+  header{background:linear-gradient(135deg,#0d2b4e,#0f6cbd);color:#fff;padding:52px 0 44px;margin-bottom:36px}
+  header .wrap{padding-bottom:0}
+  header h1{font-size:28px;font-weight:600;letter-spacing:.5px}
+  header p.meta{margin-top:12px;font-size:13.5px;opacity:.85}
+  header .tags{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  header .tag{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:3px 12px;border-radius:99px;font-size:12.5px}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 22px;margin-bottom:34px;display:flex;gap:22px;flex-wrap:wrap;font-size:13.5px}
+  nav.toc a{color:var(--brand);text-decoration:none}
+  nav.toc a:hover{text-decoration:underline}
+  h2{font-size:20px;margin:46px 0 6px;padding-left:12px;border-left:4px solid var(--brand)}
+  h2 small{display:block;font-size:13px;color:var(--sub);font-weight:400;margin-top:4px;border:0;padding:0}
+  h3{font-size:15.5px;margin:24px 0 10px;color:var(--ink)}
+  section p.lead{color:var(--sub);margin-bottom:16px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px 26px;margin-top:16px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px}
+  th{background:#f0f4f9;text-align:left;padding:9px 12px;border:1px solid var(--line);font-weight:600;white-space:nowrap}
+  td{padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+  td code, p code{background:#f0f3f8;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:12.5px;color:#0d4f8b}
+  .pill{display:inline-block;padding:1px 10px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+  .pill.ok{background:var(--ok-weak);color:var(--ok)}
+  .pill.bad{background:var(--bad-weak);color:var(--bad)}
+  .pill.warn{background:var(--warn-weak);color:var(--warn)}
+  .pill.delay{background:var(--delay-weak);color:var(--delay)}
+  .pill.brand{background:var(--brand-weak);color:var(--brand)}
+  .grid{display:grid;gap:14px;margin-top:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .kpi b{display:block;font-size:24px;color:var(--brand)}
+  .kpi span{font-size:12.5px;color:var(--sub)}
+  ul.clean{list-style:none;margin-top:10px}
+  ul.clean li{padding:7px 0 7px 24px;position:relative;border-bottom:1px dashed var(--line);font-size:14px}
+  ul.clean li:last-child{border-bottom:0}
+  ul.clean li::before{content:"";position:absolute;left:4px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--brand)}
+  ul.clean li.bad::before{background:var(--bad)} ul.clean li.ok::before{background:var(--ok)} ul.clean li.warn::before{background:var(--warn)}
+  .flow{display:flex;gap:0;margin-top:20px;align-items:stretch;flex-wrap:wrap}
+  .batch{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:relative;margin-right:26px;margin-bottom:12px}
+  .batch:last-child{margin-right:0}
+  .batch:not(:last-child)::after{content:"→";position:absolute;right:-22px;top:44%;font-size:18px;color:var(--sub)}
+  .batch .no{font-size:12px;font-weight:700;color:var(--brand);letter-spacing:1px}
+  .batch b{display:block;font-size:15px;margin:4px 0 8px}
+  .batch p{font-size:12.5px;color:var(--sub)}
+  .note{background:var(--warn-weak);border:1px solid #ecd9a8;border-radius:8px;padding:12px 16px;font-size:13.5px;margin-top:16px}
+  .note b{color:var(--warn)}
+  .concl{background:var(--brand-weak);border:1px solid #c8ddef;border-radius:8px;padding:16px 20px;margin-top:14px;font-size:14.5px}
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);color:var(--sub);font-size:12.5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  @media(max-width:860px){.g3,.g4{grid-template-columns:repeat(2,1fr)} .flow{flex-direction:column}.batch{margin-right:0}.batch:not(:last-child)::after{content:"↓";right:45%;top:auto;bottom:-24px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>流程模块差距分析与审批规则外置方案</h1>
+  <p class="meta">汇报日期 2026-09-03 ｜ 分支 cmx-rpt-flow ｜ 状态：<b>待评审</b> ｜ 方案文档：documents/plans/20260903_流程_审批规则外置与身份管理前端方案.md</p>
+  <div class="tags"><span class="tag">cmx-flowengine</span><span class="tag">cmx-iam</span><span class="tag">审批规则外置</span><span class="tag">身份底座</span></div>
+</div></header>
+
+<div class="wrap">
+<nav class="toc">
+  <a href="#s1">① 背景与结论</a><a href="#s2">② 现状全景</a><a href="#s3">③ 四问题定论</a><a href="#s4">④ 主流对标差距</a><a href="#s5">⑤ 建设方案（B1–B4）</a><a href="#s6">⑥ 暂缓项与风险</a>
+</nav>
+
+<h2 id="s1">一、背景与核心结论<small>来源：流程四问题专项调研 + Flowable/Camunda、钉钉/飞书审批对标分析</small></h2>
+<div class="card">
+  <div class="concl"><b>一句话结论：引擎底座已经很强，不输主流开源产品；真正的欠账在“审批业务体验层”与“身份底座”——审批人规则与流程图耦合、组织/用户/角色无管理前端。本方案以四个批次补齐，不动引擎核心架构。</b></div>
+  <ul class="clean" style="margin-top:14px">
+    <li class="ok">引擎层能力完整：20 种 BPMN 节点/事件、会签或签、退回任意节点、实例在线迁移、多租户、约 110 条 REST 端点、事件订阅三表管线（webhook/Kafka/RabbitMQ + 死信监控）——多项能力超 Camunda 社区版</li>
+    <li class="bad">审批人配置全部内嵌 BPMN XML，<b>改一个审批人必须重新发布流程版本</b>，与钉钉/飞书“规则独立配置”的差距是最大体验缺口</li>
+    <li class="bad">平台<b>没有组织机构模型</b>（cmx-iam 无 org 模块），流程候选人解析依赖的三张组织/岗位表有查询、无任何管理入口，数据靠手工 SQL 维护</li>
+    <li class="bad">用户/角色后端 API 齐全，但<b>门户管理前端为零页面</b></li>
+    <li class="warn">委派、加签有后端 API 无前端入口；无批量审批；无审批人去重/发起人自动通过/空候选策略</li>
+  </ul>
+</div>
+
+<h2 id="s2">二、现状功能全景<small>2026-09-03 代码实测盘点（含最新一轮更新）</small></h2>
+<div class="grid g4">
+  <div class="kpi"><b>20</b><span>BPMN 节点/网关/事件类型</span></div>
+  <div class="kpi"><b>110+</b><span>REST API 端点（含 OpenAPI）</span></div>
+  <div class="kpi"><b>12</b><span>流程前端功能页</span></div>
+  <div class="kpi"><b>7</b><span>审批人候选类型（用户/角色/岗位/部门/部门领导/发起人/上级）</span></div>
+</div>
+<div class="card">
+  <h3>近期已落地（本轮更新）</h3>
+  <ul class="clean">
+    <li class="ok">流程分组管理：definition-manager 分组面板 + 过滤 + 在分组下新建（四问题之③已闭环）</li>
+    <li class="ok">流程轨迹统一：cmx-flow-trail 共享组件上收 cmx-data-comp，待办/任务表单/MDM 变更单三页同副本</li>
+    <li class="ok">事件订阅体系重构：分组/订阅者/投递三表管线，通道双模式（服务键路由 / URL 直连），投递监控 + 死信处置</li>
+    <li class="ok">RulesEngineDelegate：决策外包 cmx-rulesengine，flow×rules 集成 E2E 13/13 全绿</li>
+    <li class="ok">治理批次：CAS 乐观锁、incident/重试/死信、retention、运维端点、越权收口</li>
+  </ul>
+  <h3>引擎能力亮点（对标 Camunda/Flowable 不落下风甚至更强）</h3>
+  <ul class="clean">
+    <li>撤回 / 退回任意上游节点 / 任意跳转 / <b>实例在线版本迁移</b>（社区版无）</li>
+    <li>多租户全链路、设计器多人协同（SSE presence）、设计态模拟试跑、版本结构化 diff</li>
+    <li>外部 Worker 协议（多语言可接）、决策表热注册、定时器含非中断周期催办</li>
+    <li>运维台含流程图令牌高亮 + 生命周期回放、节点耗时分析、Prometheus 指标</li>
+  </ul>
+</div>
+
+<h2 id="s3">三、四问题专项定论<small>2026-09-02 提出 → 09-03 调研核实</small></h2>
+<div class="card">
+  <table>
+    <tr><th style="width:60px">#</th><th>问题</th><th style="width:110px">定论</th><th>关键事实</th></tr>
+    <tr><td>1</td><td>审批配置与流程配置是否分离</td><td><span class="pill bad">未分离</span></td><td>审批人/审批方式/表单绑定/抄送全部为 BPMN XML 节点属性，改审批人 = 改图 → 发布新版本</td></tr>
+    <tr><td>2</td><td>审批是否挂组织机构</td><td><span class="pill warn">机制有·链路断</span></td><td>七种候选 + 部门子树/部门领导解析齐备；但发起侧不传组织上下文，部门领导（实例组织）空转。<b>修复暂缓</b></td></tr>
+    <tr><td>3</td><td>流程是否缺分组</td><td><span class="pill ok">已解决</span></td><td>分组面板 + 过滤 + 改分组已上线（20260902 重构）</td></tr>
+    <tr><td>4</td><td>表单是否缺审批组件</td><td><span class="pill warn">部分解决</span></td><td>轨迹组件已共享化；审批操作区未组件化、委派/加签无前端入口</td></tr>
+  </table>
+</div>
+
+<h2 id="s4">四、主流对标差距<small>钉钉/飞书审批（业务体验层）为主，Camunda/Flowable（引擎层）为辅</small></h2>
+<div class="card">
+  <table>
+    <tr><th>能力</th><th>钉钉 / 飞书</th><th>CMX 现状</th><th style="width:80px">差距</th><th style="width:90px">对应批次</th></tr>
+    <tr><td>审批人规则外置</td><td>独立配置，改人不改流程</td><td>内嵌 BPMN，改人必须发布版本</td><td><span class="pill bad">大</span></td><td><span class="pill brand">B2</span></td></tr>
+    <tr><td>组织/用户/角色管理</td><td>组织架构是企业底座</td><td>无 org 模型、无管理页面、三表手工维护</td><td><span class="pill bad">大</span></td><td><span class="pill brand">B1</span></td></tr>
+    <tr><td>审批人去重 / 发起人自动通过 / 空候选策略</td><td>三项均为开关化配置</td><td>全部没有（空候选静默挂起）</td><td><span class="pill bad">大</span></td><td><span class="pill brand">B3</span></td></tr>
+    <tr><td>委派 / 加签 / 减签</td><td>前/并/后加签 + 减签 + 转交</td><td>后端仅并加签一种；委派/加签无前端入口；无减签</td><td><span class="pill warn">中</span></td><td><span class="pill brand">B4</span></td></tr>
+    <tr><td>批量审批</td><td>列表多选批量同意</td><td>无</td><td><span class="pill warn">中</span></td><td><span class="pill brand">B4</span></td></tr>
+    <tr><td>消息通知触达</td><td>工作通知/IM/邮件</td><td>有催办台账、无触达通道</td><td><span class="pill delay">暂缓</span></td><td>—</td></tr>
+    <tr><td>出差代理设置</td><td>时间窗自动转办</td><td>仅任务级转签</td><td><span class="pill delay">后置</span></td><td>—</td></tr>
+    <tr><td>办理人侧高亮流程图</td><td>可视进度图</td><td>仅运维台有，办理侧是文字时间线</td><td><span class="pill delay">后置</span></td><td>—</td></tr>
+    <tr><td>信号事件 / 补偿事务 / DMN 全策略 / FEEL</td><td>Camunda/Flowable 有</td><td>无（短期业务用不到）</td><td><span class="pill delay">技术债</span></td><td>—</td></tr>
+    <tr><td>集群水平扩展（job/timer 并发）</td><td>—</td><td>引擎单实例内嵌，多副本会重复触发</td><td><span class="pill delay">暂缓</span></td><td>—</td></tr>
+  </table>
+</div>
+
+<h2 id="s5">五、建设方案：四个批次<small>每批独立可验收、可提交；B4 可与 B2/B3 并行</small></h2>
+<div class="flow">
+  <div class="batch"><div class="no">BATCH 1 · 前置</div><b>身份底座</b><p>cmx_org / cmx_position / cmx_user_position 三表 DDL 归位 IAM（含部门子树路径、部门领导）；组织树 / 用户 / 角色三个管理页（复用 cmx-iam-api 既有接口）；<b>共享选人组件</b>（组织树 + 角色岗位筛选 + 搜索）进 cmx-data-comp</p></div>
+  <div class="batch"><div class="no">BATCH 2</div><b>审批人规则外置</b><p>新表 cmx_flow_approval_rule（定义 key + 节点 id + 候选 JSON + 时间窗 + 乐观锁）；引擎解析时叠加——外置规则覆盖 BPMN 内嵌兜底值；规则 CRUD API + 规则管理页。<b>改审批人不再升流程版本，下一环节即生效</b></p></div>
+  <div class="batch"><div class="no">BATCH 3</div><b>审批策略三件套</b><p>审批人去重（同人在流程内只审首次）/ 审批人=发起人自动通过 / 空候选四策略（报错·自动通过·转上级·挂起告警）；策略随外置规则存储，设计工作台同步暴露开关</p></div>
+  <div class="batch"><div class="no">BATCH 4 · 可并行</div><b>审批动作补齐</b><p>委派 / 加签 / 减签前端入口（后端 API 大多就绪，补减签）；待办批量同意；全部复用 B1 选人组件</p></div>
+</div>
+<div class="note"><b>关键设计决策：</b>外置规则定位为「运行时覆盖，BPMN 内嵌值为设计态兜底」——不破坏现有版本 diff / 模拟能力，规则管理页明示覆盖关系；规则变更走事件总线发 rule.updated，既有订阅体系可直接消费做通知扩展（为暂缓的通知通道预留口子）。</div>
+
+<h2 id="s6">六、暂缓项与风险<small>已决策暂缓 / 需评审关注</small></h2>
+<div class="card">
+  <h3>暂缓项（2026-09-03 决策，不在本方案范围）</h3>
+  <ul class="clean">
+    <li>组织上下文自动补全（发起侧传 org_id 或引擎反查）——部门领导（实例组织）空转维持现状</li>
+    <li>集群安全（timer / 异步作业 / 订阅投递的多副本并发）</li>
+    <li>站内信 / 邮件 / IM 通知通道</li>
+  </ul>
+  <h3>评审关注点</h3>
+  <ul class="clean">
+    <li class="warn">双真源边界：外置规则与 BPMN 内嵌候选人并存，覆盖关系需在规则管理页对管理员足够显性</li>
+    <li class="warn">发起人自动通过与会签叠加语义：仅单候选人场景整体自动通过，多实例集合中过滤发起人</li>
+    <li class="warn">存量组织数据迁移：三表从 flowengine 自建迁为 IAM 管理，需迁移脚本与回归（flowengine external resolver 三链路）</li>
+  </ul>
+</div>
+
+<footer><span>CMX 平台 · 流程模块汇报材料</span><span>2026-09-03 ｜ 详版方案见 documents/plans/20260903_流程_审批规则外置与身份管理前端方案.md</span></footer>
+</div>
+</body>
+</html>

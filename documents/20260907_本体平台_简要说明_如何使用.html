@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>简要说明 2/4 · 如何使用</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--fg:#1c2530;--muted:#5a6b7b;--border:#d9dee5;
+  --accent:#0a6ed1;--accent2:#7c5cf0;--accent-soft:#e9f2fc;--ok:#178a5a;--warn:#b25f00;--err:#c9364a;
+  --code-bg:#0f1729;--code-fg:#d8e4f5;--chip:#edf3fa;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0c111d;--card:#151c2c;--fg:#dfe6f0;--muted:#8fa0b4;--border:#28324a;
+  --accent:#4d9eff;--accent2:#a58bff;--accent-soft:#15243c;--ok:#3ecf8e;--warn:#f0a35e;--err:#ff7a8a;
+  --code-bg:#0a0f1c;--code-fg:#d8e4f5;--chip:#1b2740}
+}
+body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.75;font-size:15px}
+.wrap{max-width:1000px;margin:0 auto;padding:0 26px 70px}
+.hero{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border-radius:0 0 18px 18px;padding:38px 26px 34px}
+.hero .kicker{font-size:12.5px;letter-spacing:2px;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:27px;font-weight:700;letter-spacing:.5px}
+.hero p{margin-top:10px;font-size:14.5px;opacity:.92;max-width:760px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:2px 12px;font-size:12px;margin-right:8px;vertical-align:2px}
+h2{border-left:4px solid var(--accent);padding-left:12px;margin:40px 0 14px;font-size:20px}
+h3{margin:22px 0 8px;font-size:16px}
+p{margin:8px 0}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;font-size:13.5px}
+th{background:var(--chip);text-align:left;padding:9px 12px;font-size:13px}
+td{padding:7px 12px;border-top:1px solid var(--border);vertical-align:top}
+td code,p code,li code{background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:Consolas,Menlo,monospace;font-size:12.8px;color:var(--accent)}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow:auto;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;margin:12px 0}
+pre .c{color:#7d8db0}
+.mth{display:inline-block;min-width:52px;text-align:center;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;color:#fff;font-family:Consolas,Menlo,monospace}
+.m-get{background:var(--ok)}.m-post{background:var(--accent)}.m-del{background:var(--err)}
+.tip,.warn{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13.8px;border:1px solid}
+.tip{background:var(--accent-soft);border-color:var(--accent)}
+.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:var(--warn)}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a{color:var(--accent);text-decoration:none;margin-right:16px}
+footer a:hover{text-decoration:underline}
+ul{padding-left:22px}li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="kicker">CMX 本体平台（cmx-ontology :8097）</div>
+  <h1><span class="badge">简要说明 2/4</span>如何使用</h1>
+  <p>三种入口（工作台页面 / 建模控制台 / REST API），一套统一前缀 <code style="background:rgba(255,255,255,.15)">/api/onto/v1</code>，从建模、发布、写数到查数、执行动作的全动线。</p>
+</div>
+<div class="wrap">
+
+<h2>一、三种使用入口</h2>
+<table>
+  <tr><th style="width:180px">入口</th><th>地址</th><th>适合</th></tr>
+  <tr><td><b>门户工作台（推荐）</b></td><td>门户菜单 → 数据平台 → 本体：设计工作台 <code>portal.onto.designer</code>、对象浏览器 <code>portal.onto.explorer</code>、对象工作台 <code>portal.onto.workshop</code></td><td>日常建模、浏览图谱、办理动作（四区界面 + 可视化图编辑）</td></tr>
+  <tr><td><b>建模控制台</b></td><td>直开 <code>http://127.0.0.1:8097/</code></td><td>快速统计、建类型、发布版本的免登录单页</td></tr>
+  <tr><td><b>REST API / OSDK</b></td><td><code>http://127.0.0.1:8097/api/onto/v1</code>（门户内走 <code>/api/onto/v1</code> 同源）</td><td>程序化集成、脚本、生成 TS 客户端</td></tr>
+</table>
+<p class="muted">另有 Swagger 交互文档 <code>/api/onto/v1/docs</code>、OpenAPI 契约 <code>/api/onto/v1/openapi.json</code>、SSE 事件流 <code>/api/onto/v1/events</code>（发布/动作等事件推送）。</p>
+
+<h2>二、地址与鉴权</h2>
+<table>
+  <tr><th>场景</th><th>怎么调</th></tr>
+  <tr><td>浏览器/前端页面</td><td>走门户同源 <code>/api/onto/...</code>，门户反代自动注入服务身份（<code>X-API-Key</code> + 委托用户令牌），前端零配置</td></tr>
+  <tr><td>脚本/直连调试</td><td>直连 <code>http://127.0.0.1:8097/api/onto/v1</code>，请求头 <code>X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6</code>（开发环境密钥）</td></tr>
+  <tr><td>JWT 模式</td><td><code>Authorization: Bearer &lt;token&gt;</code>（生产推荐，主体以令牌为准）</td></tr>
+</table>
+<p class="muted">所有响应统一信封 <code>{ code, msg, data }</code>，<code>code=0</code> 成功。</p>
+
+<h2>三、常用端点速查</h2>
+<table>
+  <tr><th style="width:120px">域</th><th style="width:440px">端点</th><th>作用</th></tr>
+  <tr><td rowspan="3"><b>建模</b></td><td><span class="mth m-post">POST</span> <code>/object-types</code>、<code>/link-types</code>、<code>/action-types</code>、<code>/functions</code>…</td><td>六类元素 upsert（apiName 即主键）</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/object-types/validate</code></td><td>只校验不落库</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/publish</code> ／ <span class="mth m-get">GET</span> <code>/versions</code></td><td>发布不可变版本 / 查版本列表</td></tr>
+  <tr><td rowspan="3"><b>数据</b></td><td><span class="mth m-post">POST</span> <code>/objects/{type}</code> ／ <code>/objects/{type}/batch</code></td><td>写对象（单条/批量事务）</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/objects/{type}/{pk}/modify</code></td><td>乐观锁修改（带 expectedUpdatedAt）</td></tr>
+  <tr><td><span class="mth m-post">POST</span> <code>/object-sets/load</code> ／ <code>/aggregate</code></td><td>对象集代数查询 / 聚合</td></tr>
+  <tr><td rowspan="2"><b>动作</b></td><td><span class="mth m-post">POST</span> <code>/action-types/{api}/execute</code> ／ <code>/dry-run</code></td><td>执行 / 预演动作（事务+审计+副作用）</td></tr>
+  <tr><td><span class="mth m-get">GET</span> <code>/action-logs</code> ／ <code>/action-outbox</code></td><td>审计 / 副作用投递状态</td></tr>
+  <tr><td><b>函数</b></td><td><span class="mth m-post">POST</span> <code>/functions/{api}/evaluate</code></td><td>FEEL 函数求值（输入可绑对象/对象集）</td></tr>
+  <tr><td><b>集成</b></td><td><code>/import/doc</code>、<code>/import/dct</code>、<code>/funnel/*</code>、<code>/osdk/typescript</code></td><td>DOC/DCT 导入、源同步、TS SDK 生成</td></tr>
+</table>
+
+<h2>四、标准使用动线</h2>
+<div class="card">
+  <b>① 建模</b> → 设计工作台画对象/关系（或 API 建类型）<br>
+  <b>② 发布</b> → <code>POST /publish</code> 固化版本（SSE 广播 published 事件）<br>
+  <b>③ 灌数据</b> → 写对象 + 建关系边（或 funnel 从源表同步）<br>
+  <b>④ 查数据</b> → 对象浏览器 / 对象集代数（Filter + Search-Around 钻取）<br>
+  <b>⑤ 定义动作</b> → 参数 + FEEL 校验 + 编辑 + 副作用（可从模板创建）<br>
+  <b>⑥ 办理动作</b> → 对象工作台选中对象执行动作 → 事务写回 + 起审批流/算报表
+</div>
+
+<h2>五、两个开箱即用示例</h2>
+<h3>看本体全貌（清单）</h3>
+<pre><span class="c"># 直连开发环境</span>
+curl -s http://127.0.0.1:8097/api/onto/v1/manifest \
+     -H "X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6"</pre>
+<h3>沿关系查一圈（Search-Around：客户 → 他下的订单）</h3>
+<pre><span class="c"># 便捷端点：正向一跳</span>
+curl -s "http://127.0.0.1:8097/api/onto/v1/objects/Customer/1/links/customerPlacesOrder" \
+     -H "X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6"
+
+<span class="c"># 代数方式：三跳也只编译成一条 SQL</span>
+curl -s -X POST http://127.0.0.1:8097/api/onto/v1/object-sets/load \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6" \
+     -d '{"objectSet":{
+            "op":"filter",
+            "source":{"op":"searchAround",
+               "source":{"op":"filter",
+                  "source":{"op":"base","objectType":"Customer"},
+                  "predicate":{"kind":"eq","property":"region","value":"north"}},
+               "link":"customerPlacesOrder","direction":"forward"},
+            "predicate":{"kind":"ge","property":"amount","value":1000}}}'</pre>
+
+<h2>六、OSDK：生成强类型 TS 客户端</h2>
+<p>浏览器打开 <code>GET /osdk/typescript</code> 直接拿到按当前本体生成的 TypeScript SDK：每个对象类型一个 interface，附 <code>objects.&lt;T&gt;.all()/.filter()</code>、<code>actions.&lt;A&gt;(params)</code>、<code>functions.&lt;F&gt;(args)</code> 等客户端方法，前后端字段契约自动对齐。</p>
+<div class="tip">前端页面改样式/逻辑：改 <code>cmx-container/assets/onto/web/ui-native/onto/</code> 下的 designer.js / explorer.js / workshop.js 后<b>须重启 onto-server</b>（服务从磁盘读页面，非热更）。</div>
+
+<footer>
+  <b>相关文档：</b>
+  <a href="20260907_本体平台_简要说明_本体如何设计.html">简要 1/4 · 本体如何设计</a>
+  <a href="20260907_本体平台_简要说明_如何增加对象.html">简要 3/4 · 如何增加对象</a>
+  <a href="20260907_本体平台_简要说明_如何结合主数据.html">简要 4/4 · 如何结合主数据</a>
+  <a href="20260907_本体平台_详细说明.html">完整详细说明</a>
+  <p style="margin-top:8px">CMX 企业门户 · 本体平台说明文档 · 2026-09-07 · 基于 cmx-ontology 代码与 e2e 脚本实测整理</p>
+</footer>
+</div>
+</body>
+</html>

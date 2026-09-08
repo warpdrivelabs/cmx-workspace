@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCT/DOC · bigint 主键 ID 生成与导入导出免撞方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;max-width:1480px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .mono-block .hl{color:#fca5a5;font-weight:600}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--ink-dim)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:6px}
+  .tag.new{background:#0e1a30;color:#9ec1ff;border-color:#274a86}
+  .tag.reuse{background:#0e2417;color:#86efac;border-color:#1f6f3f}
+  .tag.warn{background:#241a08;color:#fcd57a;border-color:#7a5a14}
+  .kbd{font-family:var(--mono);font-size:12px;background:#0b0d14;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#c9d4ee}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .foot{color:var(--ink-dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line)}
+  a.ilink{color:var(--accent);text-decoration:none}a.ilink:hover{text-decoration:underline}
+  .num-badge{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);font-weight:700;font-size:12px;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+  .rec{border:1px solid #1f6f3f;background:#0e1c14;border-radius:12px;padding:18px 20px;margin:16px 0}
+  .rec .t{color:#86efac;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:12.5px;margin-bottom:8px}
+  .bitrow{display:flex;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;margin:12px 0;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .bitrow .seg{padding:8px 10px;text-align:center;border-right:1px solid rgba(0,0,0,.35);flex:none}
+  .bitrow .seg small{display:block;font-size:10px;opacity:.8;margin-top:3px}
+  .bitrow .s-sign{background:#2a2f42;color:#9aa3b8}
+  .bitrow .s-time{background:#153058;color:#9ec1ff}
+  .bitrow .s-node{background:#3a2a10;color:#fcd57a}
+  .bitrow .s-seq{background:#123020;color:#86efac}
+  .bitrow .s-tier{background:#2e1846;color:#d6b4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#s0"><span class="n">0</span>摘要 &amp; 结论先行</a>
+  <a href="#s1"><span class="n">1</span>问题定义与三条硬约束</a>
+  <a href="#s1" class="sub">1.1 为什么自增序列不行</a>
+  <a href="#s2"><span class="n">2</span>候选算法横向对比</a>
+  <a href="#s3"><span class="n">3</span>推荐：双车道 63 位空间划分</a>
+  <a href="#s4"><span class="n">4</span>雪花布局（含 JS 安全变体）</a>
+  <a href="#s4" class="sub">4.1 63 位标准布局</a>
+  <a href="#s4" class="sub">4.2 52 位 JS 安全布局</a>
+  <a href="#s4" class="sub">4.3 node 分配 &amp; 时钟回拨</a>
+  <a href="#s5"><span class="n">5</span>保留段 &amp; 确定性哈希段</a>
+  <a href="#s6"><span class="n">6</span>导入导出协议（免改·不重复）</a>
+  <a href="#s6" class="sub">6.1 三类内容分流</a>
+  <a href="#s6" class="sub">6.2 外键整包搬运</a>
+  <a href="#s6" class="sub">6.3 冲突决策矩阵</a>
+  <a href="#s7"><span class="n">7</span>落地到本仓库</a>
+  <a href="#s8"><span class="n">8</span>关键坑（务必先读）</a>
+  <a href="#s9"><span class="n">9</span>推荐取舍与决策表</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX · 元数据主键治理</div>
+  <h1>DCT / DOC · bigint 主键 ID 生成与导入导出免撞方案</h1>
+  <div class="sub">如何为 DCT 数据字典 / DOC 业务单据的 <code>bigint id</code> 列生成取值：既全局唯一，又能<strong>整包导入他系统而无需改号、且不产生重复</strong>。</div>
+  <div class="meta">
+    <span class="chip w">先不动代码 · 仅方案</span>
+    <span class="chip">2026-07-11</span>
+    <span class="chip b">范围 cf_* / cv_* 物理表 · 元数据 &amp; 数据行</span>
+    <span class="chip g">默认建议：保留段 + 雪花双车道</span>
+    <span class="chip p">配套 DCT/DOC 服务方案</span>
+  </div>
+</header>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <h2 class="sec"><span class="num">00</span>摘要 &amp; 结论先行</h2>
+  <p class="lead">一句话：把 63 位正整数空间切成两条车道——<b>低段</b>放「标准交付/确定性」内容（各系统里 id 恒等，导入即幂等 upsert），<b>高段</b>放「运行期自建」内容（每个部署一个 node id 的雪花号，天生跨系统不撞）。两段用一条数值边界自动隔离，任何导出包直插目标库都<strong>不用改 id、不会重复</strong>。</p>
+
+  <div class="grid3">
+    <div class="card tight">
+      <div class="status"><span class="dot new"></span>唯一性</div>
+      <p style="margin:8px 0 0">雪花 = 时间 + 部署号 + 序列，单调递增且跨部署不重叠；保留段由厂商单点铸号或按业务键确定性推导。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot have"></span>导入免改号</div>
+      <p style="margin:8px 0 0">导出包里的 id 本就全局唯一，<code>INSERT</code> 时原样保留；自引用/外键（<code>parent_id</code>、<code>category_id</code>、<code>bindField</code>）同包搬运，无需重映射。</p>
+    </div>
+    <div class="card tight">
+      <div class="status"><span class="dot partial"></span>不重复</div>
+      <p style="margin:8px 0 0">标准内容按 id 做 <code>UPSERT</code>（幂等）；自建内容因号段不重叠不会撞库；撞号只可能来自「同一 node id 被两处复用」——由分配登记杜绝。</p>
+    </div>
+  </div>
+
+  <div class="callout danger">
+    <div class="t">最先要知道的一条坑</div>
+    本仓库前端是 JS。<strong>63 位雪花 id 会超过 <code>Number.MAX_SAFE_INTEGER = 2^53-1 ≈ 9.007e15</code></strong>（真实时间下雪花值约 1e17 量级），一旦以 JS <code>Number</code> 解析 JSON/msgpack 就会<strong>静默丢精度、id 变号</strong>，直接击穿 <code>ChangeSetCollector</code> 按 <code>row.id</code> 记键的逻辑。两条出路：① id 全链路当<strong>字符串</strong>传（推荐，范围无损）；② 改用 <a href="#s4" class="ilink">§4.2 的 52 位 JS 安全布局</a>。详见 <a href="#s8" class="ilink">§8</a>。
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>问题定义与三条硬约束</h2>
+  <p>DCT 字典与 DOC 单据的字段集里都有一列 <code>id bigint</code>（由 <code>compile_dct</code> / <code>compile_doc</code> 从 <code>baseFieldSet</code>/<code>systemFieldSet</code> 合并生成，落到 <code>cf_*</code> / <code>cv_*</code> 物理表作主键）。问题是：<strong>这一列的取值从哪来？</strong> 取值必须同时满足三条：</p>
+
+  <div class="flow">
+    <div class="step"><div class="badge">C1</div><div class="body"><b>唯一性（Uniqueness）</b> — 同一张表内绝不重复；理想情况下<strong>跨库、跨系统、跨厂商</strong>也不重复。</div></div>
+    <div class="step"><div class="badge">C2</div><div class="body"><b>导入免改（Transplantable）</b> — 从 A 系统导出的一批行，导入 B 系统时 <strong>id 原样不动</strong>，包括其自引用/外键指向也不用改写。</div></div>
+    <div class="step"><div class="badge">C3</div><div class="body"><b>不重复（Idempotent / Non-colliding）</b> — 导入不会与 B 已有数据撞车；对「同一逻辑对象」重复导入是幂等的（不会插出两条）。</div></div>
+  </div>
+
+  <h3>1.1 为什么自增序列（<code>serial</code> / <code>bigserial</code> / <code>IDENTITY</code>）直接出局</h3>
+  <div class="grid2">
+    <div class="card tight">
+      <h4 style="margin-top:0;color:#fca5a5">撞号</h4>
+      <p>A 库 <code>id=1..100</code>、B 库也 <code>id=1..100</code>。把 A 的「银行存款 id=3」导入 B，B 早有 id=3（库存现金）→ 主键冲突或覆盖错行。违反 <b>C1/C3</b>。</p>
+    </div>
+    <div class="card tight">
+      <h4 style="margin-top:0;color:#fca5a5">要重映射外键</h4>
+      <p>为避撞号，导入时得给 A 的行重新分配 B 的新 id，随即<strong>级联改写所有引用</strong>（<code>parent_id</code>、单据行→头、<code>category_id</code>…）。工程量大、易错。违反 <b>C2</b>。</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <div class="t">结论</div>
+    序列适合「单库内部、永不外迁」的数据；一旦有<strong>跨系统导入导出</strong>诉求，主键必须在<strong>全局命名空间</strong>里生成。下面比较的所有候选，本质都是「如何把全局唯一性塞进 64 位」。
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>候选算法横向对比</h2>
+  <p class="lead">评估维度：是否装得进 <code>bigint</code>(63 可用位)、是否全局唯一、是否时间有序（决定 B-tree 写入局部性）、导入是否天然不撞、对「同一对象」是否幂等、协调成本、以及是否 JS 安全（≤ 2^53）。</p>
+  <table>
+    <thead><tr>
+      <th>算法</th><th>位宽/类型</th><th>装进 bigint</th><th>全局唯一</th><th>时间有序</th><th>导入不撞</th><th>同对象幂等</th><th>JS 安全</th><th>协调成本</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><b>自增序列</b><br><span class="tag">bigserial</span></td>
+        <td>64 位</td>
+        <td>✅</td><td>❌ 仅单库</td><td>✅</td><td>❌ 必撞</td><td>❌</td><td>✅ 小值</td><td>无</td>
+      </tr>
+      <tr>
+        <td><b>UUID v4</b></td>
+        <td>128 位</td>
+        <td>❌ 放不下</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>—</td><td>无</td>
+      </tr>
+      <tr>
+        <td><b>UUID v7</b><br><span class="tag">时间序</span></td>
+        <td>128 位</td>
+        <td>❌ 放不下</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>—</td><td>无</td>
+      </tr>
+      <tr>
+        <td><b>号段 / Segment</b><br><span class="tag">Leaf-segment</span></td>
+        <td>64 位</td>
+        <td>✅</td><td>△ 靠中心分配</td><td>△ 粗</td><td>△ 需按系统切段</td><td>❌</td><td>✅ 可控</td><td>中（需发号中心）</td>
+      </tr>
+      <tr style="outline:2px solid #274a86">
+        <td><b>雪花 Snowflake</b><br><span class="tag new">推荐·运行段</span></td>
+        <td>63 位</td>
+        <td>✅</td><td>✅ 靠 node id</td><td>✅ 单调</td><td>✅ 号段不重叠</td><td>❌</td><td>❌ &gt;2^53</td><td>低（只分配 node id）</td>
+      </tr>
+      <tr>
+        <td><b>雪花·52 位变体</b><br><span class="tag new">JS 安全</span></td>
+        <td>52 位</td>
+        <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅ &lt;2^53</td><td>低</td>
+      </tr>
+      <tr style="outline:2px solid #1f6f3f">
+        <td><b>确定性哈希</b><br><span class="tag reuse">推荐·标准段</span></td>
+        <td>可截 ≤52 位</td>
+        <td>✅</td><td>✅ 同键同值</td><td>❌ 随机分布</td><td>✅</td><td>✅ 天然幂等</td><td>✅ 可控位宽</td><td>需碰撞登记</td>
+      </tr>
+      <tr>
+        <td><b>手工保留段</b><br><span class="tag">delivered</span></td>
+        <td>小整数</td>
+        <td>✅</td><td>✅ 单点铸</td><td>—</td><td>✅</td><td>✅</td><td>✅</td><td>人工维护</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <div class="t">读表要点</div>
+    没有单一算法通吃三约束 + JS 安全。<strong>雪花</strong>解「运行期自建」的唯一与免撞，但不幂等、且 63 位不 JS 安全；<strong>确定性哈希/手工保留段</strong>解「标准交付内容」的幂等与稳定，但不适合高频运行数据。<b>因此推荐把两者按内容性质分车道组合</b>——见 §3。
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>推荐：双车道 63 位空间划分</h2>
+  <p class="lead">把 <code>bigint</code> 的 63 个可用位（符号位恒 0，保证正数）沿一条<strong>数值边界</strong>切成两条车道。内容按「谁拥有这个号」进入不同车道，边界保证两车道的取值范围永不交叠。</p>
+
+  <div class="bitrow">
+    <div class="seg s-sign" style="width:9%">0<small>符号位·恒 0</small></div>
+    <div class="seg s-tier" style="width:33%">低段 &lt; 2^52<small>保留 / 确定性（标准交付）</small></div>
+    <div class="seg s-time" style="width:58%">高段 ≥ 2^56<small>雪花（运行期自建，按部署分 node）</small></div>
+  </div>
+
+  <div class="grid2">
+    <div class="rec">
+      <div class="t">车道 A · 保留 / 确定性段（低段）</div>
+      <p><b>放什么：</b>随产品交付的标准内容——标准字典（币种、国家、标准科目模板）、标准单据类型、以及所有<strong>元数据定义自身的身份</strong>（字典 code、单据 docType 的对象 id）。</p>
+      <p><b>怎么铸：</b>两种方式二选一——① <b>手工/单点铸号</b>：厂商构建期集中分配小整数，随数据发布；② <b>确定性哈希</b>：<code>id = hash63(自然键) &amp; 0xF_FFFF_FFFF_FFFF</code>（截到 ≤52 位），同一逻辑对象在任何系统算出同一个 id。</p>
+      <p><b>为什么免撞/不重复：</b>低段范围由厂商独占，客户运行不会在此段铸号；导入即按 id 做 <code>UPSERT</code>，天然幂等。</p>
+    </div>
+    <div class="rec" style="border-color:#274a86;background:#0e1a30">
+      <div class="t" style="color:#9ec1ff">车道 B · 雪花运行段（高段）</div>
+      <p><b>放什么：</b>运行期由用户新建的数据行——字典明细（<code>cf_gl_account</code> 新科目）、单据实例（<code>cv_*</code> 头/行）、及一切「哪个部署造的」有意义的行。</p>
+      <p><b>怎么铸：</b>标准雪花 <code>(ms&lt;&lt;22)|(node&lt;&lt;12)|seq</code>；每个<strong>部署/租户/权威源</strong>一个 node id（见 §4.3）。</p>
+      <p><b>为什么免撞/不重复：</b>不同部署的 node 段不同 → 号段天然不重叠；导出的 id 全局唯一，导入原样 <code>INSERT</code>，不可能与目标库已有雪花号撞车。</p>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <div class="t">边界为何能「自动」隔离</div>
+    雪花值 = <code>ms_since_epoch &lt;&lt; 22</code>。取 epoch=2025-01-01，则运行一年后 <code>ms ≈ 3.16e10 ≈ 2^34.9</code>，左移 22 位后<strong>雪花号恒 ≥ 2^56 ≈ 7.2e16</strong>。只要把车道 A 限制在 <code>&lt; 2^52 ≈ 4.5e15</code>，两段之间还留着 <code>[2^52, 2^56)</code> 的<strong>缓冲带</strong>，永不交叠——无需额外「车道标志位」，靠数值大小即可判别一个 id 属于哪条车道。
+  </div>
+
+  <div class="callout">
+    <div class="t">与本仓库 NoID 字典的关系</div>
+    记忆记载：部分字典是 <b>NoID</b>（如 <code>cf_currency</code> 以 <code>code</code> 作 PK，没有 bigint id 列）。这类字典的「身份」本就是业务 code，<strong>天生跨系统稳定、导入免撞</strong>——它们不进本方案的号段体系，保持 code 主键即可。本方案只治理<strong>真正声明了 <code>id bigint</code> 主键</strong>的表（如 <code>cf_gl_account</code>、多数 <code>cv_*</code> 单据）。
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>雪花布局（含 JS 安全变体）</h2>
+
+  <h3>4.1 63 位标准布局（吞吐优先）</h3>
+  <div class="bitrow">
+    <div class="seg s-sign" style="width:8%">1<small>bit 63 · 符号=0</small></div>
+    <div class="seg s-time" style="width:48%">41 bit 毫秒时间戳<small>相对 epoch，≈ 69.7 年</small></div>
+    <div class="seg s-node" style="width:24%">10 bit node<small>1024 个部署/源</small></div>
+    <div class="seg s-seq" style="width:20%">12 bit 序列<small>4096 / ms / node</small></div>
+  </div>
+  <ul>
+    <li><b>时间戳</b>：当前毫秒 − 自定义 epoch（建议 <code>2025-01-01T00:00:00Z</code>）。41 位可用约 <b>69.7 年</b>（到 ~2094）。</li>
+    <li><b>node</b>：10 位 = 1024 个铸号点。可再切 <code>5 bit 数据中心 + 5 bit 机器</code>，或整体作「部署编号」由登记表分配。</li>
+    <li><b>序列</b>：同一毫秒内自增，满 4096 则自旋等下一毫秒。单 node ≈ <b>409.6 万/秒</b>，对元数据/字典/单据量级绰绰有余。</li>
+    <li><b>取值范围</b>：真实时间下 <code>≈ 7e16 ~ 3e17</code>，远大于 <code>bigint</code> 上限 <code>9.22e18</code> 的零头——安全，且<strong>正数</strong>（符号位不用）。</li>
+  </ul>
+  <div class="callout danger">
+    <div class="t">代价</div>
+    该布局的 id <strong>&gt; 2^53</strong>，<strong>不是 JS 安全整数</strong>。若采用，必须全链路以字符串承载 id（见 §8）。
+  </div>
+
+  <h3>4.2 52 位 JS 安全布局（本域推荐）</h3>
+  <p>DCT/DOC 是<strong>低频元数据/字典/单据</strong>，不需要百万 TPS。用一个总位宽 ≤ 52 的紧凑布局，让 id 始终 <code>&lt; 2^53</code>，从根上绕开 JS 精度雷区：</p>
+  <div class="bitrow">
+    <div class="seg s-time" style="width:56%">32 bit 秒级时间戳<small>相对 epoch，≈ 136 年</small></div>
+    <div class="seg s-node" style="width:22%">8 bit node<small>256 个部署/源</small></div>
+    <div class="seg s-seq" style="width:22%">12 bit 序列<small>4096 / 秒 / node</small></div>
+  </div>
+  <ul>
+    <li>总 <b>52 位</b>，最大值 <code>≈ 4.5e15 &lt; 2^53-1 ≈ 9.007e15</code>，留 1 位安全余量 → <strong>JS <code>Number</code> 直接安全</strong>，无需字符串化。</li>
+    <li>256 个部署、每部署每秒 4096 号（够用；突发可退避到下一秒）。136 年时间跨度。</li>
+    <li>依旧<strong>单调时间有序 + 跨部署不重叠</strong>，C1/C2/C3 全满足。</li>
+  </ul>
+  <div class="callout key">
+    <div class="t">选型建议</div>
+    <b>若愿意让 id 全链路走字符串</b> → 用 §4.1（范围无上限焦虑，未来若挪作高频数据也不用换算法）。<br>
+    <b>若想保持 id 是纯数字、最省前端改造</b> → 用 §4.2（本域数据量完全够）。两者可共存：同一条边界之上，52 位雪花与 63 位雪花值域仍不交叠（52 位雪花 &lt; 2^52，正好落在……）——<span class="tag warn">注意</span>此时需重新规划边界，见下方警示。
+  </div>
+  <div class="callout warn">
+    <div class="t">别把两种雪花布局混用在同一套系统</div>
+    52 位雪花的取值 <code>&lt; 2^52</code>，会<strong>落进车道 A 的保留段范围</strong>，与「低段=标准内容」的约定冲突。<b>一套系统只选一种雪花布局</b>：选 63 位→车道 A 用 <code>&lt;2^52</code>；选 52 位→改用「显式 tier 高位」区分车道（见 §5 的 tier 位方案），不要靠数值大小自动隔离。
+  </div>
+
+  <h3 id="s43">4.3 node id 分配 &amp; 时钟回拨</h3>
+  <div class="grid2">
+    <div class="card tight">
+      <h4 style="margin-top:0">node id 从哪来</h4>
+      <ul style="margin-bottom:0">
+        <li><b>登记表</b>：中央维护「部署/租户 → node id」映射，一处一号，永不复用（复用=撞号根源）。</li>
+        <li><b>启动注入</b>：node id 走配置（如 <code>dev-local.toml</code> 增 <code>id_gen.node_id</code>），进程启动读入。</li>
+        <li><b>厂商标准源</b>：预留 <code>node=0</code> 给「构建期铸标准内容」，客户侧从 1 起分配。</li>
+      </ul>
+    </div>
+    <div class="card tight">
+      <h4 style="margin-top:0">时钟回拨（clock skew）</h4>
+      <ul style="margin-bottom:0">
+        <li>检测：记住 <code>last_ms</code>，若 <code>now &lt; last_ms</code> 即回拨。</li>
+        <li>小回拨（≤ 数十 ms）：<strong>自旋等待</strong>时钟追上再发号。</li>
+        <li>大回拨：拒绝发号并告警，绝不「猜一个更大的号」（会与未来撞车）。</li>
+        <li>NTP 建议 <code>slew</code> 模式（平滑校时）而非 <code>step</code>（跳变）。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>保留段 &amp; 确定性哈希段</h2>
+  <p class="lead">车道 A 内部还可细分两个来源：<b>手工保留</b>（人指定小整数）与 <b>确定性哈希</b>（按业务键算）。两者都保证「同一逻辑对象在任何系统里 id 恒等」，从而导入幂等。</p>
+
+  <h3>5.1 手工保留段（delivered 标准内容）</h3>
+  <p>厂商在构建期为标准内容集中分配固定整数，随交付数据发布。适合<strong>数量少、语义关键、极少变更</strong>的对象——标准字典条目、标准单据类型、系统枚举。类比 SAP 的「标准命名空间 vs 客户 Y/Z 段」、Oracle 的 seeded data。</p>
+
+  <h3>5.2 确定性哈希段</h3>
+  <p>当「同一逻辑对象可能在多个系统被各自独立定义、事后需要按身份合并」时，用业务自然键推导 id：</p>
+  <div class="mono-block"><span class="c">// 自然键 = 稳定、跨系统一致的业务标识（不含随机/自增成分）</span>
+<span class="c">//   DCT 字典条目：domain · module · dictCode · entryCode</span>
+<span class="c">//   DOC 单据类型：domain · module · docType</span>
+key  = <span class="s">"fi/cmxfico/gl/gl_account/1002"</span>
+<span class="c">// 64 位强散列（xxHash64 / SHA-256 取前 8 字节），再截到 ≤52 位并清符号位</span>
+h    = xxhash64(key)
+id   = (h <span class="k">&amp;</span> <span class="a">0x000F_FFFF_FFFF_FFFF</span>)        <span class="c">// 保留低 52 位 → JS 安全、落在车道 A</span>
+<span class="c">// 落库前查「碰撞登记表」：若 id 已被别的 key 占用 → 记录并加盐重算</span>
+<span class="hl">assert</span> registry.lookup(id) <span class="k">in</span> {none, key}</div>
+  <div class="grid2">
+    <div class="card tight">
+      <h4 style="margin-top:0;color:#86efac">好处</h4>
+      <p style="margin-bottom:0">同键同值 → 重复导入是 <code>UPSERT</code>（不重复）；两系统独立建「币种字典」也得同一 id，天然对齐。<b>无需任何发号中心</b>。</p>
+    </div>
+    <div class="card tight">
+      <h4 style="margin-top:0;color:#fcd57a">代价 &amp; 纪律</h4>
+      <p style="margin-bottom:0">哈希有碰撞概率（52 位下，约数十万行时概率仍极低但非零）→ 需<strong>碰撞登记表</strong>兜底；且随机分布、<strong>非时间有序</strong>（对低频元数据的索引局部性影响可忽略）。自然键一旦选定<strong>不可改</strong>（改了 id 就变）。</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="t">若采用 52 位雪花（§4.2），车道用「显式 tier 位」而非数值边界</div>
+    保留 63 位空间的最高 3 位作 <code>tier</code>：<code>tier=0</code> 保留段、<code>tier=1</code> 确定性段、<code>tier≥2</code> 雪花运行段。此时 id = <code>(tier &lt;&lt; 60) | body</code>。但注意 <code>tier&gt;0</code> 会让 id &gt; 2^60 → 又不 JS 安全。<b>所以「JS 安全」与「tier 位显式分车道」二者有张力</b>：要么全链路字符串 + tier 位（最规整），要么放弃 tier、用数值边界 + 63 位雪花 + 字符串传输。<span class="tag warn">这是本方案唯一需要产品/架构拍板的取舍点</span>，见 §9。
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>导入导出协议（免改·不重复）</h2>
+
+  <h3 id="s61">6.1 三类内容分流</h3>
+  <table>
+    <thead><tr><th>内容类别</th><th>车道 / 铸号</th><th>导入策略</th><th>为何免改·不重复</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>标准交付</b><br>标准字典/单据类型/枚举</td>
+        <td>A · 保留段 或 确定性</td>
+        <td><code>UPSERT</code> by id</td>
+        <td>id 各系统恒等；重导即幂等覆盖，插不出第二条</td>
+      </tr>
+      <tr>
+        <td><b>运行自建</b><br>用户新科目/单据实例</td>
+        <td>B · 雪花（本部署 node）</td>
+        <td><code>INSERT</code> 原样 id</td>
+        <td>号段跨部署不重叠，目标库无同号；环境搬迁（dev→test→prod）id 全程不变</td>
+      </tr>
+      <tr>
+        <td><b>跨厂商/跨租户合并</b></td>
+        <td>B · 各自不同 node</td>
+        <td><code>INSERT</code> 原样 id</td>
+        <td>node 段隔离 → 两方号段天然不交；无需协调即可合库</td>
+      </tr>
+      <tr>
+        <td><b>NoID 字典</b>（code 主键）</td>
+        <td>不进号段体系</td>
+        <td><code>UPSERT</code> by code</td>
+        <td>业务 code 本就全局稳定</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 id="s62">6.2 外键 / 自引用「整包搬运」</h3>
+  <p>关键洞察：<strong>因为每个 id 本身就是全局唯一的，它被谁引用也就全局稳定</strong>。所以导出时把「对象 + 其引用」放进同一个包，导入时<strong>连 id 带引用原样插入</strong>，引用自动命中——不需要「先插父、拿到新 id、再回填子」的重映射舞步。</p>
+  <div class="mono-block"><span class="c">// 一个自分级字典（gl_account）导出片段 —— parent_id 指向的也是全局唯一 id</span>
+{ <span class="a">"table"</span>:<span class="s">"cf_gl_account"</span>, <span class="a">"lane"</span>:<span class="s">"snowflake"</span>, <span class="a">"node"</span>:7, <span class="a">"rows"</span>:[
+   { <span class="a">"id"</span>:<span class="s">"720381947500000001"</span>, <span class="a">"code"</span>:<span class="s">"1001"</span>, <span class="a">"parent_id"</span>:null,                    <span class="a">"name"</span>:<span class="s">"库存现金"</span> },
+   { <span class="a">"id"</span>:<span class="s">"720381947500000002"</span>, <span class="a">"code"</span>:<span class="s">"1001.01"</span>, <span class="a">"parent_id"</span>:<span class="s">"720381947500000001"</span>, <span class="a">"name"</span>:<span class="s">"现金-人民币"</span> }
+]}
+<span class="c">// 导入 B 库：两行原样 INSERT，parent_id 无需改写即命中父行。</span>
+<span class="c">// 分类字典同理：category_id / bindField 指向的分类行 id 也整包搬运。</span></div>
+  <div class="callout key">
+    <div class="t">这正是「导入无需修改」的技术根因</div>
+    序列 id 做不到这点，是因为它只在单库内唯一 → 引用是「局部指针」，跨库必须重定位。全局唯一 id 把引用变成「全局指针」，搬到哪都指得对。DCT 的 <code>parent_id</code> 自引用、分类字典的 <code>bindField</code>、DOC 的行→头引用、乃至跨 DAM 引用，全部适用。
+  </div>
+
+  <h3 id="s63">6.3 导入冲突决策矩阵</h3>
+  <div class="flow">
+    <div class="step"><div class="badge">1</div><div class="body"><b>按 id 探测目标库</b> — 目标不存在此 id？→ 直接 <code>INSERT</code>，结束。</div></div>
+    <div class="step"><div class="badge">2</div><div class="body"><b>id 已存在 &amp; 内容等价</b> — 视为重复导入 → <b>跳过</b>（幂等）。</div></div>
+    <div class="step"><div class="badge">3</div><div class="body"><b>id 已存在 &amp; 内容不同</b> — 分车道处理：<br>· 标准段：按<b>版本</b>决胜（厂商新版覆盖 / 或提示冲突留给部署选择）；<br>· 雪花段：<strong>本不该发生</strong>（号段隔离）→ 若真撞了，说明<span class="tag warn">node id 被复用</span>，立即告警并阻断，排查登记表。</div></div>
+    <div class="step"><div class="badge">4</div><div class="body"><b>记账</b> — 导入报告输出：新增 N / 幂等跳过 M / 冲突 K，绝不静默覆盖。</div></div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>落地到本仓库</h2>
+  <p class="lead">仅标注改动点与位置，代码留待批准后再动。锚定既有实现：<code>dct.rs</code>（<code>dct_upsert</code>/<code>dct_save</code> 已在服务端强填 <code>create_time</code>/<code>status</code> 等 NOT NULL 列）、<code>compile_dct</code>/<code>compile_doc</code>、前端 model 页 collector。</p>
+
+  <h3>7.1 铸号发生在哪一层</h3>
+  <table>
+    <thead><tr><th>层</th><th>做法</th><th>取舍</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>DB 默认值</b></td>
+        <td><code>id bigint DEFAULT cmx_next_id()</code>（PG 函数封装雪花，node 从 <code>current_setting</code> 读）</td>
+        <td>最省事、并发安全；但 node 注入需会话级 GUC，跨连接池要小心</td>
+      </tr>
+      <tr style="outline:2px solid #1f6f3f">
+        <td><b>应用层</b> <span class="tag new">推荐</span></td>
+        <td>在 <code>cmx_database_pg</code> 侧铸号，<code>dct_upsert</code>/<code>dct_save</code> 的 <code>inserted</code> 分支像强填 <code>create_time</code> 一样<strong>强填 <code>id</code></strong> 再拼 SQL</td>
+        <td>与现有「服务端补列」范式一致；node id 从配置读一次；最易审计</td>
+      </tr>
+      <tr>
+        <td><b>前端</b></td>
+        <td>不铸最终 id</td>
+        <td>前端 temp id（CmxDataSet 的 <code>r{random}</code>）仅用于本地行标识，<strong>保存后用响应里的真 id 回填</strong></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <div class="t">与 collector / normPk 的衔接（记忆里的真实坑）</div>
+    记忆记载：<code>ChangeSetCollector</code> 按 <code>row.id</code> 记键，而无 id 列的行会被分配随机 <code>r{...}</code> → 曾用 <code>normPk</code> 把 <code>row.id</code> 对齐业务 PK 才修好。引入服务端铸号后：<b>insert 响应必须回传真 id</b>，前端在 <code>/save</code> 成功回调里把临时行的 <code>id</code> 替换成真 id（同时更新 collector 键、grid 行、context），否则「新建后立刻再改再存」会因 id 仍是临时串而错位。
+  </div>
+
+  <h3>7.2 元数据侧</h3>
+  <ul>
+    <li><code>compile_dct</code> / <code>compile_doc</code>：<code>id</code> 列声明 <code>bigint</code> + <code>PRIMARY KEY</code>，标注生成策略（默认策略键，如 <code>idStrategy:"snowflake"</code> / <code>"deterministic"</code> / <code>"reserved"</code>）。NoID 字典维持 <code>code</code> PK 分支不变。</li>
+    <li>字段集：给 <code>id</code> 加元属性区分车道（供导入器判定 UPSERT vs INSERT）。</li>
+    <li>迁移：新增「node id 登记表」+「哈希碰撞登记表」（若启用确定性段）；<code>dev-local.toml</code> 增 <code>[id_gen] node_id=…, epoch=…, layout="js52"|"full63"</code>。</li>
+  </ul>
+
+  <h3>7.3 传输链路（承接 §8 精度坑）</h3>
+  <ul>
+    <li>选 63 位布局 → <code>id</code> 在 JSON/msgpack 里一律<strong>字符串</strong>；<code>decodeMsgpack → pkgToRows</code> 后 id 保持 string；grid/collector/context 全程 string 比较。</li>
+    <li>选 52 位布局 → id 可保持 number，链路不改；仅需保证任何一环没把它塞进会溢出的运算。</li>
+    <li>白名单/路由：导入导出端点（拟 <code>/api/dct/export</code>、<code>/api/dct/import</code>、DOC 对应）记得加 <code>auth.whitelist</code>，与既有 <code>/api/dct</code> 一致。</li>
+  </ul>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>关键坑（务必先读）</h2>
+
+  <div class="callout danger">
+    <div class="t">坑 1 · JS 2^53 精度天花板（本仓库头号风险）</div>
+    <code>Number.MAX_SAFE_INTEGER = 9,007,199,254,740,991 (2^53-1)</code>。63 位雪花 id ≈ <code>1e17</code>，<strong>远超此值</strong>。JS <code>JSON.parse</code> / msgpack 解出的 <code>Number</code> 会<strong>丢低位、id 变号且不报错</strong>。后果直击 <code>ChangeSetCollector</code>（按 <code>row.id</code> 记键）、grid <code>moveToId</code>、乐观锁 <code>WHERE pk=$</code> → 改到别的行 / 冲突误报。<br>
+    <b>缓解：</b>① id 全链路字符串（<code>rmp</code> 编码为 str、前端不 <code>Number()</code>）；或 ② 用 §4.2 的 52 位布局把 id 压回安全区。<b>切勿</b>用 63 位雪花却让 id 走 <code>Number</code>。
+  </div>
+
+  <div class="grid2">
+    <div class="callout warn">
+      <div class="t">坑 2 · node id 复用 = 撞号唯一来源</div>
+      两个部署/进程拿到同一 node id，同一毫秒就可能发出相同 id。<b>登记表单点分配、永不回收</b>；容器扩缩容时 node id 要随实例稳定（不能随机）。
+    </div>
+    <div class="callout warn">
+      <div class="t">坑 3 · 时钟回拨</div>
+      NTP <code>step</code> 跳变致时间倒退 → 重号。检测到回拨<strong>宁可等待/拒发</strong>，不可猜号。见 §4.3。
+    </div>
+    <div class="callout warn">
+      <div class="t">坑 4 · 符号位 / 负数</div>
+      PG <code>bigint</code> 有符号。布局<strong>务必保证最高位为 0</strong>（正数），否则排序、比较、前端展示全乱。63 位方案天然满足；自定义位宽时手动清高位。
+    </div>
+    <div class="callout warn">
+      <div class="t">坑 5 · 两种雪花布局混用</div>
+      52 位与 63 位雪花值域会侵入车道 A。<b>一套系统只选一种布局</b>；若必须并存，改用显式 tier 位分车道（§5 末）。
+    </div>
+    <div class="callout warn">
+      <div class="t">坑 6 · 确定性哈希的自然键漂移</div>
+      自然键选错列（含可变/本地成分）→ 换库 id 就变，幂等失效。自然键只能用<strong>跨系统恒定</strong>的业务标识，且一经发布不可改。
+    </div>
+    <div class="callout warn">
+      <div class="t">坑 7 · 导入静默覆盖</div>
+      冲突时绝不默认覆盖客户数据。按 §6.3 出报告，标准段覆盖也要留版本审计。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>推荐取舍与决策表</h2>
+
+  <div class="rec">
+    <div class="t">默认建议（若不想纠结，照这个走）</div>
+    <ol style="margin:6px 0 0">
+      <li><b>运行期自建数据</b>（<code>cf_*</code> 明细、<code>cv_*</code> 单据）→ <b>雪花</b>，每部署一个 node id（登记表分配），服务端在 <code>dct_upsert</code>/<code>dct_save</code> insert 分支铸号。</li>
+      <li><b>id 传输</b> → 采 <b>63 位布局 + 全链路字符串</b>（范围无忧、面向未来）；<em>或</em>若想少改前端，采 <b>52 位布局 + 数字</b>。</li>
+      <li><b>标准交付内容</b> → <b>保留段/确定性哈希</b>，各系统 id 恒等，导入幂等 <code>UPSERT</code>。</li>
+      <li><b>NoID 字典</b>（<code>cf_currency</code> 等）→ 维持 <code>code</code> 主键，不进号段体系。</li>
+      <li><b>导入器</b> → 按 §6.3 分车道：标准 UPSERT、自建 INSERT 原样 id、冲突出报告不静默覆盖。</li>
+    </ol>
+  </div>
+
+  <table>
+    <thead><tr><th>你的优先诉求</th><th>选布局</th><th>标准内容</th><th>前端改造量</th></tr></thead>
+    <tbody>
+      <tr><td>最省前端改造、数据量低（本域典型）</td><td><b>52 位 JS 安全</b></td><td>确定性哈希（≤52 位）</td><td>小（id 仍是 number）</td></tr>
+      <tr><td>面向未来 / 可能挪作高频数据</td><td><b>63 位标准</b></td><td>保留段 或 确定性</td><td>中（id 全链路字符串化）</td></tr>
+      <tr><td>强调「同名对象自动对齐合并」</td><td>任一 + 确定性段权重高</td><td><b>确定性哈希</b>为主</td><td>+ 碰撞登记表</td></tr>
+      <tr><td>标准内容极少、想完全可控</td><td>任一</td><td><b>手工保留段</b></td><td>+ 人工号池维护</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="t">唯一需要拍板的点</div>
+    <b>52 位数字（省前端） vs 63 位字符串（面向未来）</b>——两条路都完整满足唯一/免改/不重复三约束，差别只在前端是否需要把 id 当字符串处理，以及未来可扩展性。建议按「本域数据量 + 团队对前端字符串化 id 的接受度」二选一，其余部分方案通用。
+  </div>
+
+  <div class="foot">
+    <p>配套文档：<a class="ilink" href="DCT数据字典存储与加载服务方案.html">DCT 数据字典存储与加载服务方案</a> · <a class="ilink" href="业务单据数据装载与前端模型映射方案.html">业务单据数据装载与前端模型映射方案</a> · <a class="ilink" href="模型中心-元数据建模与数据库部署方案.html">模型中心 · 元数据建模与数据库部署方案</a> · <a class="ilink" href="三元定义统一与跨DAM引用架构方案.html">三元定义统一与跨 DAM 引用架构方案</a></p>
+    <p>状态：草案 · 仅方案未动代码 · 2026-07-11。号段布局（63 位 vs 52 位）与标准内容策略（保留段 vs 确定性哈希）为待拍板项，其余为推荐默认。</p>
+  </div>
+</section>
+</main>
+</div>
+</body>
+</html>

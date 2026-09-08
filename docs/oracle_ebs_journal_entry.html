@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oracle EBS — 总账凭证录入（Enter Journals）仿真示意</title>
+<style>
+  :root{
+    --orawin:#c9d2dc; --orahead:#7b8aa0; --oraline:#9aa7b5; --orafield:#fff;
+    --orafieldb:#7f8c9b; --oralabel:#1b2b3a; --reqbg:#fffbe6; --reqborder:#d9b310;
+    --orablue:#1c4e80; --orabtn:#dfe6ee; --red:#b00020; --green:#1a7a3c; --teal:#0a6e74;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#aeb9c6;font-family:"Segoe UI","Microsoft YaHei",Tahoma,sans-serif;font-size:12px;color:#1b2b3a;padding:18px}
+  .win{max-width:1080px;margin:0 auto;border:2px solid #4a5a6c;border-radius:3px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.3);background:var(--orawin)}
+  /* Oracle 标题栏(红褐) */
+  .titlebar{background:linear-gradient(#8a4636,#6e3326);color:#fff;display:flex;align-items:center;gap:8px;padding:4px 9px;font-weight:600;font-size:12.5px}
+  .titlebar .logo{background:#fff;color:#c74634;font-weight:800;border-radius:2px;padding:1px 6px;font-size:11px;letter-spacing:.5px}
+  .titlebar .sp{flex:1}
+  .titlebar .winbtn{width:16px;height:14px;border:1px solid #d8c4be;border-radius:2px;text-align:center;line-height:12px;font-size:10px;background:#e6d6d0;color:#6e3326}
+  /* 菜单 */
+  .menubar{background:#cdd6e0;border-bottom:1px solid var(--oraline);padding:3px 8px;display:flex;gap:15px;color:#27384a}
+  /* 工具栏(Oracle Forms 风) */
+  .toolbar{background:#dde4ec;border-bottom:1px solid var(--oraline);padding:4px 8px;display:flex;align-items:center;gap:3px}
+  .ibtn{width:23px;height:22px;border:1px solid #9aa7b5;border-radius:2px;background:linear-gradient(#fbfdff,#e3e9f1);display:inline-flex;align-items:center;justify-content:center;color:#345;font-size:13px}
+  .ibtn.dis{color:#aab4c0;background:#e9edf2}
+  .sep{width:1px;height:18px;background:#9aa7b5;margin:0 4px}
+  .toolbar .sp{flex:1}
+  .toolbar .crumb{color:#3a4a5d;font-size:11.5px}
+  /* 窗口标题条 */
+  .subwin{margin:8px;border:1px solid #6d7d90;background:#dfe5ec;border-radius:2px}
+  .subttl{background:linear-gradient(#aebccd,#93a3b6);color:#15263a;font-weight:700;padding:4px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #6d7d90;font-size:12.5px}
+  .subttl .sp{flex:1}
+  .subttl .st{font-weight:600;font-size:11.5px;color:#123;background:#eef3f8;border:1px solid #9fb0c2;border-radius:9px;padding:1px 9px}
+  /* 区域 */
+  .region{padding:10px 12px;border-bottom:1px solid #b9c3cf}
+  .region:last-child{border-bottom:0}
+  .rhead{font-weight:700;color:var(--orablue);font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .rhead .chip{background:var(--orablue);color:#fff;font-size:10.5px;padding:1px 7px;border-radius:9px;font-weight:700}
+  .grid{display:grid;grid-template-columns:auto 165px auto 165px auto 150px;gap:7px 12px;align-items:center}
+  .lbl{color:var(--oralabel);text-align:right;white-space:nowrap}
+  .lbl.req::after{content:" *";color:var(--red);font-weight:700}
+  .fld{height:22px;border:1px solid var(--orafieldb);border-radius:1px;background:var(--orafield);display:flex;align-items:center;padding:0 6px;box-shadow:inset 1px 1px 0 #e7edf3}
+  .fld.req{background:var(--reqbg);border-color:var(--reqborder)}
+  .fld.ro{background:#e7ebf0;color:#445}
+  .fld .ph{color:#a7b0bb}
+  .fld.lov{position:relative;padding-right:18px}
+  .fld.lov::after{content:"⋯";position:absolute;right:4px;color:#4a6;font-weight:800;background:#eef6ee;border:1px solid #bcd;border-radius:2px;padding:0 3px;line-height:16px;height:16px}
+  .fld.num{justify-content:flex-end;font-variant-numeric:tabular-nums}
+  .fld.wide{grid-column:span 3}
+  /* 行项目表(Oracle 多行块) */
+  .linesbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#cdd8e4;border-bottom:1px solid #93a3b6}
+  .linesbar b{color:#15263a;font-size:12px}
+  table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
+  th{background:#b9c6d6;border:1px solid #93a3b6;padding:5px 8px;text-align:left;color:#15263a;font-weight:700;white-space:nowrap}
+  td{border:1px solid #aeb9c6;padding:0;white-space:nowrap}
+  td .c{height:25px;display:flex;align-items:center;padding:0 8px}
+  td.num .c{justify-content:flex-end;font-variant-numeric:tabular-nums}
+  td.rn{background:#e1e8f0;text-align:center;color:#6a7888;width:34px}
+  tr.cur td{background:#fffbe0}   /* 当前行(Oracle 黄高亮) */
+  tr:nth-child(even):not(.cur) td{background:#f5f8fb}
+  .ccid{font-family:ui-monospace,Consolas,monospace;color:#0a3a6e;font-weight:650}
+  .lov-tag{color:#0a6e74}
+  /* 合计/控制 */
+  .ctrl{display:flex;align-items:center;gap:20px;padding:8px 12px;background:#dfe8f1;border-top:1px solid #93a3b6;font-size:12.5px}
+  .ctrl .amt{font-weight:700;font-variant-numeric:tabular-nums}
+  .ctrl .ok{margin-left:auto;font-weight:700;color:var(--green)}
+  /* 底部按钮行(Oracle 标准按钮) */
+  .btnrow{display:flex;gap:8px;justify-content:flex-end;padding:9px 12px;background:#cdd6e0;border-top:1px solid #93a3b6}
+  .obtn{min-width:78px;background:linear-gradient(#eef3f8,#cdd8e4);border:1px solid #7f8c9b;border-radius:3px;padding:4px 12px;color:#1b2b3a;font-size:12px;font-weight:600;box-shadow:0 1px 0 #fff inset}
+  .obtn.prim{background:linear-gradient(#3f78b8,#1c4e80);color:#fff;border-color:#163e66}
+  /* 状态栏 */
+  .statusbar{background:#cdd6e0;border-top:1px solid var(--oraline);padding:4px 10px;display:flex;align-items:center;color:#27384a;font-size:11.5px}
+  .statusbar .ok{color:#1a7a3c;font-weight:700}
+  .legend{max-width:1080px;margin:12px auto 0;color:#3a4a5d;font-size:11.5px;line-height:1.65;background:#fff;border:1px solid var(--oraline);border-radius:6px;padding:10px 14px}
+  .legend code{background:#eef1f4;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Consolas,monospace;color:#0a3a6e}
+  .legend b{color:#1c4e80}
+</style>
+</head>
+<body>
+<div class="win">
+  <!-- 标题栏 -->
+  <div class="titlebar">
+    <span class="logo">ORACLE</span>
+    <span>Journals (CNPC_PL) — 中国石油主账本</span>
+    <span class="sp"></span>
+    <span class="winbtn">—</span><span class="winbtn">▢</span><span class="winbtn">✕</span>
+  </div>
+  <!-- 菜单栏 -->
+  <div class="menubar">
+    <span>File（文件）</span><span>Edit（编辑）</span><span>View（视图）</span><span>Folder（文件夹）</span><span>Tools（工具）</span><span>Window（窗口）</span><span>Help（帮助）</span>
+  </div>
+  <!-- 工具栏 -->
+  <div class="toolbar">
+    <span class="ibtn">🗋</span><span class="ibtn">💾</span><span class="sep"></span>
+    <span class="ibtn">✎</span><span class="ibtn">✕</span><span class="ibtn">🔍</span><span class="sep"></span>
+    <span class="ibtn">⮈</span><span class="ibtn">⮊</span><span class="sep"></span>
+    <span class="ibtn dis">📎</span><span class="ibtn">🖶</span>
+    <span class="sp"></span>
+    <span class="crumb">总账 ▸ 凭证 ▸ 录入（Enter Journals）</span>
+  </div>
+
+  <!-- Journals 窗口 -->
+  <div class="subwin">
+    <div class="subttl">
+      Journals — 凭证录入
+      <span class="sp"></span>
+      <span class="st">批状态：未过账（Unposted）</span>
+      <span class="st">来源：Manual 手工</span>
+    </div>
+
+    <!-- 批(Batch) -->
+    <div class="region">
+      <div class="rhead"><span class="chip">Batch 凭证批</span>GL_JE_BATCHES</div>
+      <div class="grid">
+        <span class="lbl req">Batch（批名）</span><div class="fld req">JS销售6月收入批-0615</div>
+        <span class="lbl req">Period（期间）</span><div class="fld req lov">JUN-26</div>
+        <span class="lbl">Balance Type（余额类型）</span><div class="fld ro">A 实际</div>
+
+        <span class="lbl">Control Total（控制总额）</span><div class="fld num">1,130,000.00</div>
+        <span class="lbl">Posting Date（过账日期）</span><div class="fld">15-JUN-2026</div>
+        <span class="lbl">Status（状态）</span><div class="fld ro">Unposted 未过账</div>
+      </div>
+    </div>
+
+    <!-- 头(Header) -->
+    <div class="region">
+      <div class="rhead"><span class="chip">Journal 凭证头</span>GL_JE_HEADERS</div>
+      <div class="grid">
+        <span class="lbl req">Journal（凭证名）</span><div class="fld req">江苏销售-成品油批发收入</div>
+        <span class="lbl req">Ledger（账本）</span><div class="fld req lov">CNPC_PL 中国石油主账本</div>
+        <span class="lbl req">Category（类别）</span><div class="fld req lov">Sales Invoices 销售发票</div>
+
+        <span class="lbl req">Source（来源）</span><div class="fld lov">Manual 手工</div>
+        <span class="lbl req">Currency（币种）</span><div class="fld lov">CNY 人民币</div>
+        <span class="lbl">Conv. Type（汇率类型）</span><div class="fld ro">—（本位币）</div>
+
+        <span class="lbl req">Accounting Date（会计日期）</span><div class="fld req">15-JUN-2026</div>
+        <span class="lbl">Doc Sequence（文档序列号）</span><div class="fld ro">1000000015</div>
+        <span class="lbl">Legal Entity（法律实体）</span><div class="fld lov">LE-PCL 中国石油股份</div>
+      </div>
+    </div>
+
+    <!-- 行(Lines) -->
+    <div class="linesbar"><span class="chip" style="background:#1c4e80;color:#fff;font-size:10.5px;padding:1px 7px;border-radius:9px;font-weight:700">Lines 凭证行</span><b>GL_JE_LINES</b><span style="color:#6a7888">　共 3 行 · 当前第 1 行</span></div>
+    <div style="overflow:auto;background:#fff">
+    <table>
+      <thead>
+        <tr>
+          <th>Line</th>
+          <th>Account（科目代码组合 CCID）</th>
+          <th>说明</th>
+          <th>Entered Debit 输入币借方</th>
+          <th>Entered Credit 输入币贷方</th>
+          <th>Accounted Debit 本位币借方</th>
+          <th>Accounted Credit 本位币贷方</th>
+          <th>Description（行说明）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="cur">
+          <td class="rn">1</td>
+          <td><div class="c"><span class="ccid">21-500-1122-MARKETING</span></div></td>
+          <td><div class="c">江苏销售·应收账款·营销</div></td>
+          <td class="num"><div class="c">1,130,000.00</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c">1,130,000.00</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td><div class="c">应收成品油款</div></td>
+        </tr>
+        <tr>
+          <td class="rn">2</td>
+          <td><div class="c"><span class="ccid">21-500-6001-MARKETING</span></div></td>
+          <td><div class="c">江苏销售·主营收入·营销</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c">1,000,000.00</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c">1,000,000.00</div></td>
+          <td><div class="c">成品油销售收入</div></td>
+        </tr>
+        <tr>
+          <td class="rn">3</td>
+          <td><div class="c"><span class="ccid">21-500-2221-MARKETING</span></div></td>
+          <td><div class="c">江苏销售·应交税费·营销</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c">130,000.00</div></td>
+          <td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c">130,000.00</div></td>
+          <td><div class="c">销项税额13%</div></td>
+        </tr>
+        <tr>
+          <td class="rn">4</td>
+          <td><div class="c"><span class="ph" style="color:#bbb">.-.-.-.</span></div></td>
+          <td><div class="c"></div></td>
+          <td class="num"><div class="c"></div></td><td class="num"><div class="c"></div></td>
+          <td class="num"><div class="c"></div></td><td class="num"><div class="c"></div></td><td><div class="c"></div></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <!-- 控制合计 -->
+    <div class="ctrl">
+      <span>Total Debit 借方合计 <span class="amt">1,130,000.00</span></span>
+      <span>Total Credit 贷方合计 <span class="amt">1,130,000.00</span></span>
+      <span class="ok">● Difference 差额 0.00 · 借贷平衡，可过账</span>
+    </div>
+
+    <!-- 底部按钮(Oracle 标准) -->
+    <div class="btnrow">
+      <button class="obtn">Check Funds（检查资金）</button>
+      <button class="obtn">More Actions（更多操作）</button>
+      <button class="obtn">More Details（更多明细）</button>
+      <button class="obtn">Change Currency（更改币种）</button>
+      <button class="obtn prim">Post（过账）</button>
+    </div>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="statusbar">
+    <span class="ok">FRM: 凭证行已录入，借贷平衡，可保存/过账</span>
+    <span style="margin-left:auto">Record 1/3 ▸ Ledger CNPC_PL ▸ Resp: GL Super User ▸ &lt;OSC&gt;</span>
+  </div>
+</div>
+
+<div class="legend">
+  <b>这是什么：</b>Oracle EBS R12 总账（GL）的 <b>Enter Journals（凭证录入）</b> 界面仿真——Oracle Forms 风格，自上而下是 <b>Batch（批）→ Header（头）→ Lines（行）</b> 三层，对应三张表。<br>
+  <b>对应表字段：</b>批区 → <code>GL_JE_BATCHES</code>（批名 NAME、期间 PERIOD_NAME、余额类型 ACTUAL_FLAG、控制总额 CONTROL_TOTAL、状态 STATUS=U）；
+  头区 → <code>GL_JE_HEADERS</code>（账本 LEDGER_ID、类别 JE_CATEGORY、来源 JE_SOURCE、币种 CURRENCY_CODE、会计日期、文档序列 DOC_SEQUENCE_VALUE）；
+  行区 → <code>GL_JE_LINES</code>（科目组合 <code>CODE_COMBINATION_ID</code>=CCID、<code>ENTERED_DR/CR</code> 输入币借贷、<code>ACCOUNTED_DR/CR</code> 本位币借贷、DESCRIPTION）。<br>
+  <b>与 SAP 的关键差异：</b>科目是 <b>CCID 代码组合</b>（<span class="ccid">公司-成本中心-科目-板块</span> 多段，如 <code>21-500-1122-MARKETING</code>），不是单一科目 + 维度列；借贷为 <b>DR/CR 分列</b>，不是金额 + 借贷标志；底部 <b>Post（过账）</b>按钮在差额 0 时才可执行。
+</div>
+</body>
+</html>

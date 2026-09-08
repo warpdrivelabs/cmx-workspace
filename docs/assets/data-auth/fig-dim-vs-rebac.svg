@@ -1,0 +1,49 @@
+<svg viewBox="0 0 820 368" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+  </marker>
+  <filter id="s9" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="368" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">两种策略并存：维度(Dim)权限 ⊕ 关系(ReBAC)权限 → 统一 Constraint AST</text>
+
+<!-- 左：维度 -->
+<g filter="url(#s9)"><rect x="30" y="54" width="352" height="270" rx="12" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="206" y="82" font-size="13.5" font-weight="700" fill="#92400e" text-anchor="middle">维度权限 (Dim-Scope)</text>
+<text x="46" y="108" font-size="11.5" fill="#b45309">grant: user u42 在 org=[1001,1002]</text>
+<text x="46" y="128" font-size="11.5" fill="#b45309">policy: org_id IN {grant.dim_values}</text>
+<text x="46" y="148" font-size="11" fill="#92400e" font-style="italic">层级展开：1001 包含 100101,100102</text>
+<rect x="46" y="162" width="320" height="56" rx="8" fill="#ffffff" stroke="#fcd34d"/>
+<text x="56" y="183" font-size="11.5" fill="#92400e" font-weight="700">DimensionResolver（复用 cmx-flow）</text>
+<text x="56" y="201" font-size="11" fill="#b45309">resolve(dim_key="org", value="1001")</text>
+<text x="56" y="218" font-size="11" fill="#b45309">→ descendants [100101, 100102, ...]</text>
+<text x="46" y="244" font-size="11.5" fill="#92400e">输出约束：</text>
+<rect x="46" y="252" width="320" height="30" rx="6" fill="#fef9c3" stroke="#fde047"/>
+<text x="56" y="272" font-size="11.5" fill="#713f12" font-family="ui-monospace,Menlo,Consolas,monospace">In("org_id", [1001,100101,100102,…])</text>
+<text x="46" y="304" font-size="10.5" fill="#92400e">适用：按组织/项目/成本中心/期间过滤的ERP场景</text>
+
+<!-- 右：关系 -->
+<g filter="url(#s9)"><rect x="438" y="54" width="352" height="270" rx="12" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="614" y="82" font-size="13.5" font-weight="700" fill="#065f46" text-anchor="middle">关系权限 (ReBAC)</text>
+<text x="454" y="108" font-size="11.5" fill="#047857">tuple: voucher:123 #viewer user:u42</text>
+<text x="454" y="128" font-size="11.5" fill="#047857">LookupResources("voucher","viewer","u42")</text>
+<text x="454" y="148" font-size="11" fill="#065f46" font-style="italic">→ 返回 [123, 456, 789, ...]</text>
+<rect x="454" y="162" width="320" height="56" rx="8" fill="#ffffff" stroke="#6ee7b7"/>
+<text x="464" y="183" font-size="11.5" fill="#065f46" font-weight="700">RelationTupleStore（da_relation_tuple）</text>
+<text x="464" y="201" font-size="11" fill="#047857">内嵌轻量实现；大规模可接 SpiceDB</text>
+<text x="464" y="218" font-size="11" fill="#047857">或 OpenFGA 同构接口</text>
+<text x="454" y="244" font-size="11.5" fill="#065f46">输出约束：</text>
+<rect x="454" y="252" width="320" height="30" rx="6" fill="#d1fae5" stroke="#34d399"/>
+<text x="464" y="272" font-size="11.5" fill="#065f46" font-family="ui-monospace,Menlo,Consolas,monospace">In("id", [123, 456, 789, ...])</text>
+<text x="454" y="304" font-size="10.5" fill="#065f46">适用：单据共享/审批人查看/跨组织授权</text>
+
+<!-- 中间 AND -->
+<line x1="382" y1="192" x2="438" y2="192" stroke="#64748b" stroke-width="2" marker-end="url(#a9)"/>
+<rect x="388" y="182" width="46" height="22" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+<text x="411" y="196" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">AND</text>
+
+<text x="40" y="350" font-size="11" fill="#64748b">两种策略输出均为 Constraint 节点，compose 后进同一 AST 树，由同一后端编译执行；互不侵入，可按 resource_kind 选择适用哪种。</text>
+</svg>

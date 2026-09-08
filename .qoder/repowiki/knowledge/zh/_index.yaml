@@ -1,0 +1,100 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: dev
+nodes_managed: true
+exported_at: "2026-08-27T07:45:20Z"
+modules:
+    "":
+        dir_name: CMX 前端 Monorepo（门户_设计器_共享组件与工具链）
+        title: CMX 前端 Monorepo（门户/设计器/共享组件与工具链）
+        scope:
+            - README.md
+            - CONTRIBUTING.md
+            - AGENTS.md
+            - .gitignore
+            - .npmrc
+            - .stignore
+            - package.json
+            - package-lock.json
+            - e2e-struct.mjs
+            - shot-hdr.mjs
+            - docker命令.txt
+            - LICENSE
+            - SECURITY.md
+            - cmx-logo.png
+        source_files: []
+        children:
+            - cmx_html_designer
+            - cmx_mega_sheet
+            - cmx_portal_manager
+            - docs_and_documents
+            - scripts_and_tooling
+            - shared_packages
+        depends_on: []
+        related_to: []
+    cmx_html_designer:
+        dir_name: CMX HTML 页面设计器（可视化拖拽编辑器）
+        title: CMX HTML 页面设计器（可视化拖拽编辑器）
+        scope:
+            - CMXHTMLDesigner/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cmx_mega_sheet
+            - path: shared_packages
+    cmx_mega_sheet:
+        dir_name: cmx-mega-sheet 自研电子表格引擎
+        title: cmx-mega-sheet 自研电子表格引擎
+        scope:
+            - cmx-mega-sheet/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cmx_html_designer
+    cmx_portal_manager:
+        dir_name: CMX 企业门户管理器（Portal Manager）
+        title: CMX 企业门户管理器（Portal Manager）
+        scope:
+            - CMXPortalManager/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_packages
+    docs_and_documents:
+        dir_name: CMX 模型体系与业务方案文档库
+        title: CMX 模型体系与业务方案文档库
+        scope:
+            - docs/
+            - documents/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: scripts_and_tooling
+    scripts_and_tooling:
+        dir_name: 资产发布与 SAP 文档生成脚本集
+        title: 资产发布与 SAP 文档生成脚本集
+        scope:
+            - scripts/
+            - .agents/
+            - .claude/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: docs_and_documents
+    shared_packages:
+        dir_name: CMX 共享前端包集合（数据组件 _ 图标资源 _ UI5 运行时）
+        title: CMX 共享前端包集合（数据组件 / 图标资源 / UI5 运行时）
+        scope:
+            - packages/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cmx_html_designer
+            - path: cmx_portal_manager

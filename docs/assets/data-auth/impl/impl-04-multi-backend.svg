@@ -1,0 +1,90 @@
+<svg viewBox="0 0 820 512" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="dn4" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="8" markerHeight="8" orient="0">
+    <path d="M0,0 L10,0 L5,9 z" fill="#64748b"/>
+  </marker>
+  <filter id="sh4" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="512" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">core::compiler　一个约束 AST → 三个 PEP 后端（同一决策，多点执行）</text>
+
+<!-- AST source -->
+<g filter="url(#sh4)"><rect x="240" y="50" width="340" height="60" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="410" y="72" font-size="12" font-weight="700" fill="#5b21b6" text-anchor="middle">Decision.constraint（残差 AST）</text>
+<text x="410" y="93" font-size="10" fill="#6d28d9" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">ou_id IN [1001,100101,100102]</text>
+<text x="410" y="105" font-size="10" fill="#6d28d9" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">AND ( owner='u42' OR status='public' )</text>
+
+<!-- arrows to 3 compilers -->
+<line x1="330" y1="110" x2="165" y2="150" stroke="#64748b" stroke-width="1.6" marker-end="url(#dn4)"/>
+<line x1="410" y1="110" x2="410" y2="150" stroke="#64748b" stroke-width="1.6" marker-end="url(#dn4)"/>
+<line x1="490" y1="110" x2="655" y2="150" stroke="#64748b" stroke-width="1.6" marker-end="url(#dn4)"/>
+
+<!-- col1 SQL -->
+<g filter="url(#sh4)"><rect x="30" y="150" width="246" height="38" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="153" y="168" font-size="12" font-weight="700" fill="#155e75" text-anchor="middle">SqlCompiler</text>
+<text x="153" y="182" font-size="9.5" fill="#0e7490" text-anchor="middle">参数化 WHERE + 有序参数</text>
+<rect x="30" y="196" width="246" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="42" y="214" font-size="9" fill="#0369a1" font-family="ui-monospace,Menlo,Consolas,monospace">SqlWhere {</text>
+<text x="42" y="228" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  sql: "(ou_id IN ($1,$2,$3))</text>
+<text x="42" y="242" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">     AND ((owner = $4)</text>
+<text x="42" y="256" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">      OR (status = $5))",</text>
+<text x="42" y="270" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  params: ["1001","100101",</text>
+<text x="42" y="284" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    "100102","u42","public"]</text>
+<text x="42" y="298" font-size="9" fill="#0369a1" font-family="ui-monospace,Menlo,Consolas,monospace">}</text>
+<line x1="42" y1="312" x2="264" y2="312" stroke="#e2e8f0"/>
+<text x="42" y="330" font-size="9.5" fill="#b91c1c" font-weight="700">防注入硬门</text>
+<text x="42" y="346" font-size="9" fill="#64748b">· 字段名限白名单（资源列）</text>
+<text x="42" y="360" font-size="9" fill="#64748b">· 值恒走 $n 占位，绝不拼串</text>
+<text x="42" y="374" font-size="9" fill="#64748b">· 空 In → FALSE；Relation</text>
+<text x="42" y="388" font-size="9" fill="#64748b">　未解析 → 编译报错</text>
+<text x="42" y="402" font-size="9" fill="#64748b">· start_at(n) 支持右移拼接</text>
+
+<!-- col2 RowFilter -->
+<g filter="url(#sh4)"><rect x="288" y="150" width="246" height="38" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="411" y="168" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">RowFilterCompiler</text>
+<text x="411" y="182" font-size="9.5" fill="#047857" text-anchor="middle">内存谓词闭包</text>
+<rect x="288" y="196" width="246" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="300" y="214" font-size="9" fill="#047857" font-family="ui-monospace,Menlo,Consolas,monospace">RowPredicate =</text>
+<text x="300" y="228" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  Box&lt;dyn Fn(&amp;Map&lt;..&gt;)</text>
+<text x="300" y="242" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">     -&gt; bool + Send + Sync&gt;</text>
+<text x="300" y="262" font-size="9" fill="#334155">对每行就地判真：</text>
+<text x="300" y="278" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  ou_id ∈ {1001,100101,</text>
+<text x="300" y="292" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    100102}  &amp;&amp;</text>
+<text x="300" y="306" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  ( owner=='u42' ||</text>
+<text x="300" y="320" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    status=='public' )</text>
+<line x1="300" y1="332" x2="522" y2="332" stroke="#e2e8f0"/>
+<text x="300" y="350" font-size="9.5" fill="#065f46" font-weight="700">运行时闭包</text>
+<text x="300" y="366" font-size="9" fill="#64748b">· 数值/字符串归一比较</text>
+<text x="300" y="380" font-size="9" fill="#64748b">· LIKE 用经典 DP（无 regex）</text>
+<text x="300" y="394" font-size="9" fill="#64748b">· 跨库 DataSet / CSV 后过滤</text>
+
+<!-- col3 ES -->
+<g filter="url(#sh4)"><rect x="546" y="150" width="244" height="38" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="668" y="168" font-size="12" font-weight="700" fill="#92400e" text-anchor="middle">EsCompiler</text>
+<text x="668" y="182" font-size="9.5" fill="#b45309" text-anchor="middle">ElasticSearch Query DSL</text>
+<rect x="546" y="196" width="244" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="558" y="214" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">{ "bool": { "filter": [</text>
+<text x="558" y="228" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  { "terms": {</text>
+<text x="558" y="242" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">     "ou_id":[1001,100101,</text>
+<text x="558" y="256" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">              100102] }},</text>
+<text x="558" y="270" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  { "bool": { "should": [</text>
+<text x="558" y="284" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    {"term":{"owner":"u42"}},</text>
+<text x="558" y="298" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">    {"term":{"status":</text>
+<text x="558" y="312" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">            "public"}} ],</text>
+<text x="558" y="326" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">   "minimum_should_match":1</text>
+<text x="558" y="340" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  }} ]}}</text>
+<line x1="558" y1="352" x2="778" y2="352" stroke="#e2e8f0"/>
+<text x="558" y="370" font-size="9.5" fill="#92400e" font-weight="700">映射规则</text>
+<text x="558" y="384" font-size="9" fill="#64748b">In→terms · Cmp→term/range</text>
+<text x="558" y="398" font-size="9" fill="#64748b">Like→wildcard(%→* _→?)</text>
+
+<!-- targets -->
+<rect x="30" y="424" width="246" height="34" rx="8" fill="#0f172a"/><text x="153" y="446" font-size="10.5" font-weight="700" fill="#7dd3fc" text-anchor="middle">PostgreSQL · 下推/分页/聚合</text>
+<rect x="288" y="424" width="246" height="34" rx="8" fill="#0f172a"/><text x="411" y="446" font-size="10.5" font-weight="700" fill="#6ee7b7" text-anchor="middle">内存 DataSet · CSV · 跨库</text>
+<rect x="546" y="424" width="244" height="34" rx="8" fill="#0f172a"/><text x="668" y="446" font-size="10.5" font-weight="700" fill="#fcd34d" text-anchor="middle">ElasticSearch · 宽表/全文</text>
+
+<text x="40" y="484" font-size="11" fill="#334155">同一 <tspan font-weight="700" fill="#5b21b6">Decision.constraint</tspan> 既可 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">compile("sql")</tspan> 下推数据库，也可 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">enforce()</tspan> 在内存过滤 —— DB 从"权威"退化为"众多编译目标之一"。</text>
+<text x="40" y="502" font-size="10.5" fill="#64748b">trait ConstraintCompiler { type Output; fn compile(&amp;self, c: &amp;Constraint) -&gt; CompileResult&lt;Output&gt; } —— 新增后端只需再实现一次。</text>
+</svg>

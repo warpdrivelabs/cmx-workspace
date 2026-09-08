@@ -1,0 +1,76 @@
+<svg viewBox="0 0 820 446" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="rt10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+  </marker>
+  <marker id="dn10" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="7" markerHeight="7" orient="0">
+    <path d="M0,0 L10,0 L5,9 z" fill="#94a3b8"/>
+  </marker>
+  <filter id="sh10" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="820" height="446" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">D3 · 决策表作策略源（policy_source）　—— cmx-rulesengine 作纯库复用，core 保持零 rule 依赖</text>
+
+<!-- left: PolicyDef + decision table -->
+<g filter="url(#sh10)"><rect x="30" y="52" width="372" height="214" rx="10" fill="#faf5ff" stroke="#a855f7"/></g>
+<text x="46" y="74" font-size="11.5" font-weight="700" fill="#7e22ce">PolicyDef　source = decisionTable</text>
+<text x="46" y="92" font-size="9" fill="#9333ea" font-family="ui-monospace,Menlo,Consolas,monospace">constraint_tpl = DecisionBody JSON（存于 policy 表）</text>
+<text x="46" y="114" font-size="10" font-weight="700" fill="#6b21a8">决策表（hitPolicy = F / First）</text>
+<!-- grid header -->
+<rect x="46" y="124" width="130" height="26" fill="#f3e8ff" stroke="#d8b4fe"/>
+<rect x="176" y="124" width="210" height="26" fill="#f3e8ff" stroke="#d8b4fe"/>
+<text x="52" y="141" font-size="9.5" font-weight="700" fill="#6b21a8">IN region</text>
+<text x="182" y="141" font-size="9.5" font-weight="700" fill="#6b21a8">OUT constraint</text>
+<!-- row1 -->
+<rect x="46" y="150" width="130" height="42" fill="#ffffff" stroke="#e9d5ff"/>
+<rect x="176" y="150" width="210" height="42" fill="#ffffff" stroke="#e9d5ff"/>
+<text x="52" y="168" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">"east"</text>
+<text x="182" y="166" font-size="8.4" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">"{kind:in, field:ou_id,</text>
+<text x="182" y="182" font-size="8.4" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">  values:[\"$dim:org\"]}"</text>
+<!-- row2 -->
+<rect x="46" y="192" width="130" height="34" fill="#ffffff" stroke="#e9d5ff"/>
+<rect x="176" y="192" width="210" height="34" fill="#ffffff" stroke="#e9d5ff"/>
+<text x="52" y="213" font-size="9" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">-  (兜底)</text>
+<text x="182" y="213" font-size="8.4" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">"{kind:false}"</text>
+<text x="46" y="244" font-size="8.8" fill="#7e22ce">输出列 constraint = Constraint 的 JSON（对象或 JSON 字符串）</text>
+<text x="46" y="258" font-size="8.8" fill="#9333ea">规则可动态维护 → 无需改代码即调整数据可见范围</text>
+
+<!-- right: facts + evaluate -->
+<g filter="url(#sh10)"><rect x="420" y="52" width="370" height="214" rx="10" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<text x="436" y="74" font-size="11.5" font-weight="700" fill="#334155">主体事实投影 subject_facts</text>
+<rect x="436" y="84" width="338" height="66" rx="7" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="446" y="102" font-size="8.8" fill="#334155" font-family="ui-monospace,Menlo,Consolas,monospace">{ user:"dte", tenant, roles:[], dims:{},</text>
+<text x="446" y="118" font-size="8.8" fill="#16a34a" font-family="ui-monospace,Menlo,Consolas,monospace">  region:"east"   ← attrs 顶层平铺</text>
+<text x="446" y="134" font-size="8.8" fill="#64748b" font-family="ui-monospace,Menlo,Consolas,monospace">  (决策表输入表达式可直接写 region) }</text>
+<rect x="436" y="158" width="338" height="42" rx="7" fill="#faf5ff" stroke="#d8b4fe"/>
+<text x="446" y="176" font-size="9.4" fill="#7e22ce" font-weight="700">cmx_rule_engine::evaluate(def, ctx)</text>
+<text x="446" y="192" font-size="8.6" fill="#9333ea">跑决策表 · trace 有 failure → 报错</text>
+<rect x="436" y="208" width="164" height="46" rx="7" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="446" y="225" font-size="8.8" fill="#065f46" font-weight="700">east → In 模板</text>
+<text x="446" y="240" font-size="8.2" fill="#047857" font-family="ui-monospace,Menlo,Consolas,monospace">{in, ou_id, [$dim:org]}</text>
+<rect x="610" y="208" width="164" height="46" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="620" y="225" font-size="8.8" fill="#b91c1c" font-weight="700">west → false</text>
+<text x="620" y="240" font-size="8.2" fill="#7f1d1d" font-family="ui-monospace,Menlo,Consolas,monospace">{kind:false} → Deny</text>
+
+<line x1="402" y1="158" x2="420" y2="158" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#rt10)"/>
+
+<!-- bottom: degrade to inline + same pipeline -->
+<g filter="url(#sh10)"><rect x="30" y="286" width="760" height="96" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="46" y="308" font-size="11.5" font-weight="700" fill="#5b21b6">降解为内联模板 → 走 D0 同一管道（core::pdp 无感）</text>
+<rect x="46" y="318" width="220" height="48" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="56" y="336" font-size="9" fill="#5b21b6">extract_constraint</text>
+<text x="56" y="351" font-size="8.4" fill="#6d28d9">对象直用 / 字符串再解析一层</text>
+<rect x="286" y="318" width="220" height="48" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="296" y="336" font-size="9" fill="#5b21b6">resolve_policy 回填 constraint_tpl</text>
+<text x="296" y="351" font-size="8.4" fill="#6d28d9">source → Inline（已降解）</text>
+<rect x="526" y="318" width="248" height="48" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+<text x="536" y="336" font-size="9" fill="#5b21b6">core::pdp subst / compose</text>
+<text x="536" y="351" font-size="8.4" fill="#6d28d9">$dim:org 展开 + $user 替换 → 残差 AST</text>
+<line x1="266" y1="342" x2="286" y2="342" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#rt10)"/>
+<line x1="506" y1="342" x2="526" y2="342" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#rt10)"/>
+
+<text x="40" y="404" font-size="10.5" fill="#334155"><tspan font-weight="700" fill="#b91c1c">fail-closed</tspan>：求值失败 / 无 constraint 输出列 / 无命中 → 回退 <tspan font-family="ui-monospace,Menlo,Consolas,monospace">{"kind":"false"}</tspan>（Deny）。</text>
+<text x="40" y="424" font-size="10.5" fill="#64748b">依赖仅落 app 层（policy_source 引 cmx-rule-engine/model）；core 零 rule 依赖 —— 决策表产物退化为 D0 内联模板，可测可 wasm 不变。</text>
+</svg>

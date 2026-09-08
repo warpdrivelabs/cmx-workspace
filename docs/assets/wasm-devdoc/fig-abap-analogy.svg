@@ -1,0 +1,52 @@
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ag1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+  <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <filter id="s1" x="-4%" y="-4%" width="108%" height="112%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="400" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="36" font-size="15" font-weight="700" fill="#0f172a">类 SAP ABAP 二次开发范式 · Rust+WASM 逐层对位</text>
+<text x="150" y="66" font-size="13" font-weight="700" fill="#b45309" text-anchor="middle">SAP ABAP 世界</text>
+<text x="614" y="66" font-size="13" font-weight="700" fill="#4f46e5" text-anchor="middle">CMX · Rust+WASM 世界</text>
+<g filter="url(#s1)">
+<rect x="48" y="80" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="80" width="204" height="42" rx="9" fill="#eef2ff" stroke="#818cf8"/></g>
+<text x="150" y="106" font-size="12" fill="#92400e" text-anchor="middle">SE80 / ABAP Editor（浏览器 GUI）</text>
+<text x="410" y="106" font-size="12" fill="#3730a3" text-anchor="middle">code-server + CMX 扩展</text>
+<text x="280" y="106" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+<g filter="url(#s1)">
+<rect x="48" y="132" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="132" width="204" height="42" rx="9" fill="#eef2ff" stroke="#818cf8"/></g>
+<text x="150" y="158" font-size="12" fill="#92400e" text-anchor="middle">ABAP 语言（专有、托管）</text>
+<text x="410" y="158" font-size="12" fill="#3730a3" text-anchor="middle">Rust（开放、系统级、内存安全）</text>
+<text x="280" y="158" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+<g filter="url(#s1)">
+<rect x="48" y="184" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="184" width="204" height="42" rx="9" fill="#ecfeff" stroke="#67e8f9"/></g>
+<text x="150" y="210" font-size="12" fill="#92400e" text-anchor="middle">内核加载/激活（Activate）</text>
+<text x="410" y="210" font-size="12" fill="#155e75" text-anchor="middle">编译 wasm + 部署 + 池失效</text>
+<text x="280" y="210" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+<g filter="url(#s1)">
+<rect x="48" y="236" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="236" width="204" height="42" rx="9" fill="#ecfeff" stroke="#67e8f9"/></g>
+<text x="150" y="262" font-size="12" fill="#92400e" text-anchor="middle">用户命名空间 Z*/Y*（不改标准）</text>
+<text x="410" y="262" font-size="12" fill="#155e75" text-anchor="middle">WASM 插件沙箱（不改平台内核）</text>
+<text x="280" y="262" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+<g filter="url(#s1)">
+<rect x="48" y="288" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="288" width="204" height="42" rx="9" fill="#ecfdf5" stroke="#6ee7b7"/></g>
+<text x="150" y="314" font-size="12" fill="#92400e" text-anchor="middle">BAPI / RFC / Enhancement 点</text>
+<text x="410" y="314" font-size="12" fill="#065f46" text-anchor="middle">host 能力 + 编排 func 节点 + 触发钩子</text>
+<text x="280" y="314" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+<g filter="url(#s1)">
+<rect x="48" y="340" width="204" height="42" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+<rect x="308" y="340" width="204" height="42" rx="9" fill="#ecfdf5" stroke="#6ee7b7"/></g>
+<text x="150" y="366" font-size="12" fill="#92400e" text-anchor="middle">ABAP Debugger（断点/单步/变量）</text>
+<text x="410" y="366" font-size="12" fill="#065f46" text-anchor="middle">CodeLLDB attach · DWARF 单步</text>
+<text x="280" y="366" font-size="13" fill="#94a3b8" text-anchor="middle">≈</text>
+</svg>

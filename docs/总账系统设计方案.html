@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>总账系统 · 配置/初始化/做账/记账/冲销/折旧/查账/余额 设计方案</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161922; --panel2:#1c2030; --ink:#e6e9f0; --ink-dim:#9aa3b8;
+    --line:#262b3a; --accent:#4f8cff; --accent2:#22c55e; --warn:#f59e0b; --danger:#ef4444; --purple:#c792ea;
+    --code-bg:#0b0d14; --chip:#222840; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px}
+  .wrap{display:grid;grid-template-columns:320px 1fr;max-width:1560px;margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 60px;border-right:1px solid var(--line);background:var(--panel)}
+  nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 14px;padding-left:8px}
+  nav.toc a{display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2)}
+  nav.toc a.sub{padding-left:24px;font-size:12.5px}
+  nav.toc a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:7px}
+  main{padding:40px 56px 120px;min-width:0}
+  header.hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  header.hero .eyebrow{color:var(--accent);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+  header.hero h1{font-size:29px;margin:10px 0 6px;letter-spacing:-.01em}
+  header.hero .sub{color:var(--ink-dim);font-size:15px}
+  header.hero .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-block;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px}
+  .chip.g{border-color:#1f6f3f;color:#86efac;background:#0e2417}
+  .chip.b{border-color:#274a86;color:#9ec1ff;background:#0e1a30}
+  .chip.w{border-color:#7a5a14;color:#fcd57a;background:#241a08}
+  .chip.p{border-color:#5b3a86;color:#d6b4ff;background:#180e30}
+  section{margin:0 0 46px;scroll-margin-top:20px}
+  h2.sec{font-size:22px;margin:0 0 4px;padding-top:8px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h2.sec .num{color:var(--accent);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 10px;color:#fff}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--ink)}
+  p{margin:10px 0}
+  .lead{color:var(--ink-dim);font-size:15.5px;margin-bottom:18px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;color:#c9d4ee}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .card.tight{padding:14px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.key{border-left-color:var(--accent2);background:#0e1c14}
+  .callout.warn{border-left-color:var(--warn);background:#211a0c}
+  .callout.danger{border-left-color:var(--danger);background:#23110f}
+  .callout .t{font-weight:700;margin-bottom:4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .callout.key .t{color:#86efac}.callout.warn .t{color:#fcd57a}.callout.danger .t{color:#fca5a5}.callout .t{color:#9ec1ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.3px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600;white-space:nowrap}
+  td code{font-size:12.2px}
+  tr:nth-child(even) td{background:#13161f}
+  .mono-block{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.6px;line-height:1.62;color:#c9d4ee;margin:14px 0;white-space:pre}
+  .mono-block .c{color:#5d6680}
+  .mono-block .k{color:#c792ea}
+  .mono-block .s{color:#9ece6a}
+  .mono-block .f{color:#7aa2f7}
+  .mono-block .a{color:#e0af68}
+  .mono-block .g{color:#86efac}
+  .mono-block .r{color:#fca5a5}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 7px;border-radius:5px;margin-right:6px;font-weight:600}
+  .pill.get{background:#0e2417;color:#86efac;border:1px solid #1f6f3f}
+  .pill.post{background:#0e1a30;color:#9ec1ff;border:1px solid #274a86}
+  .pill.del{background:#23110f;color:#fca5a5;border:1px solid #6e2a24}
+  .pill.put{background:#241a08;color:#fcd57a;border:1px solid #7a5a14}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.have{background:var(--accent2)}.dot.partial{background:var(--warn)}.dot.new{background:var(--accent)}.dot.gap{background:var(--danger)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--ink-dim)}
+  .flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .flow .step{display:grid;grid-template-columns:36px 1fr;gap:14px;position:relative;padding-bottom:18px}
+  .flow .step:not(:last-child)::before{content:'';position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+  .flow .step .badge{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;z-index:1}
+  .flow .step .body{padding-top:5px}
+  .flow .step .body b{color:#fff}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--chip);border:1px solid var(--line);color:var(--ink-dim);margin-left:6px}
+  .tag.new{background:#0e1a30;color:#9ec1ff;border-color:#274a86}
+  .tag.reuse{background:#0e2417;color:#86efac;border-color:#1f6f3f}
+  .tag.mod{background:#241a08;color:#fcd57a;border-color:#7a5a14}
+  .kbd{font-family:var(--mono);font-size:12px;background:#0b0d14;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#c9d4ee}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .foot{color:var(--ink-dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line)}
+  a.ilink{color:var(--accent);text-decoration:none}a.ilink:hover{text-decoration:underline}
+  .num-badge{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);font-weight:700;font-size:12px;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+  /* 会计分录 T 型账 / 凭证示意 */
+  table.xl{border-collapse:collapse;margin:14px 0;font-size:12.8px;font-family:var(--mono);width:auto;min-width:60%}
+  table.xl th,table.xl td{border:1px solid #31374a;padding:5px 10px;text-align:right;white-space:nowrap}
+  table.xl th{background:#0d1220;color:#7c88a5;text-align:center;font-weight:600}
+  table.xl td.rh{background:#0d1220;color:#7c88a5;text-align:center}
+  table.xl td.txt{text-align:left;color:#e6e9f0}
+  table.xl td.dr{background:#0e1a30;color:#9ec1ff}
+  table.xl td.cr{background:#211a0c;color:#fcd57a}
+  table.xl td.tot{background:#180e30;color:#d6b4ff;font-weight:600}
+  .layers{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+  .layer{border:1px solid var(--line);border-radius:9px;padding:12px 16px;background:var(--panel)}
+  .layer .lh{font-weight:700;color:#fff;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+  .layer .ld{color:var(--ink-dim);font-size:12.8px}
+  .layer.l-cfg{border-left:3px solid var(--warn)}
+  .layer.l-entry{border-left:3px solid var(--accent)}
+  .layer.l-journal{border-left:3px solid var(--purple)}
+  .layer.l-bal{border-left:3px solid var(--accent2)}
+  .layer.l-rpt{border-left:3px solid #64748b}
+  .fielddef{font-size:12.6px}
+  .fielddef td.pk{color:#86efac;font-weight:600}
+  .fielddef td.fk{color:#9ec1ff}
+  .fielddef td.amt{color:#fcd57a}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <a href="#s0"><span class="n">§0</span>结论速览</a>
+  <a href="#s1"><span class="n">§1</span>现状盘点：可复用资产与缺口</a>
+  <a href="#s2"><span class="n">§2</span>目标 · 非目标 · 设计原则</a>
+  <a href="#s3"><span class="n">§3</span>领域模型：五层与 SAP 对照</a>
+  <a class="sub" href="#s3-1">3.1 五层数据分层</a>
+  <a class="sub" href="#s3-2">3.2 与 SAP FI / S4 ACDOCA 对照</a>
+  <a class="sub" href="#s3-3">3.3 通用日记账：单一事实源</a>
+  <a href="#s4"><span class="n">§4</span>系统配置（配置）</a>
+  <a class="sub" href="#s4-1">4.1 配置对象全景（35 部 cf_*）</a>
+  <a class="sub" href="#s4-2">4.2 分类账与并行会计</a>
+  <a class="sub" href="#s4-3">4.3 自动记账/账户确定（新增 ga_acct_determ）</a>
+  <a href="#s5"><span class="n">§5</span>系统初始化（初始化）</a>
+  <a href="#s6"><span class="n">§6</span>做账：凭证录入（做账）</a>
+  <a class="sub" href="#s6-1">6.1 录入即 cv_* 单据 DOC</a>
+  <a class="sub" href="#s6-2">6.2 校验：借贷平衡/字段状态/期间</a>
+  <a class="sub" href="#s6-3">6.3 预制与暂存（parking）</a>
+  <a href="#s7"><span class="n">§7</span>记账：过账引擎（记账）</a>
+  <a class="sub" href="#s7-1">7.1 过账 = cv_* 投影为 ga_*</a>
+  <a class="sub" href="#s7-2">7.2 过账事务七步</a>
+  <a class="sub" href="#s7-3">7.3 号码分配与并发</a>
+  <a class="sub" href="#s7-4">7.4 分类账扇出</a>
+  <a href="#s8"><span class="n">§8</span>数据落地：ga_* 表结构（表结构）</a>
+  <a class="sub" href="#s8-1">8.1 ga_doc 已过账凭证头</a>
+  <a class="sub" href="#s8-2">8.2 ga_journal 通用日记账行</a>
+  <a class="sub" href="#s8-3">8.3 ga_balance 科目余额</a>
+  <a class="sub" href="#s8-4">8.4 运行态支撑表（号段/期间/账户确定）</a>
+  <a class="sub" href="#s8-5">8.5 cv_gl_balance 兼容视图</a>
+  <a href="#s9"><span class="n">§9</span>冲销（冲销）</a>
+  <a href="#s10"><span class="n">§10</span>折旧（折旧）</a>
+  <a class="sub" href="#s10-1">10.1 资产主数据 ga_asset / ga_asset_dep</a>
+  <a class="sub" href="#s10-2">10.2 折旧计提运行</a>
+  <a href="#s11"><span class="n">§11</span>期末处理：结账 / 结转 / 估值</a>
+  <a href="#s12"><span class="n">§12</span>查账：账簿查询（查账）</a>
+  <a href="#s13"><span class="n">§13</span>余额引擎（余额）</a>
+  <a href="#s14"><span class="n">§14</span>后端方案：cmx-gl crate 群</a>
+  <a href="#s15"><span class="n">§15</span>API 契约（/api/gl/*）</a>
+  <a href="#s16"><span class="n">§16</span>前端工作台</a>
+  <a href="#s17"><span class="n">§17</span>端到端全流程范例</a>
+  <a href="#s18"><span class="n">§18</span>复用 / 新增清单</a>
+  <a href="#s19"><span class="n">§19</span>落地阶段</a>
+  <a href="#s20"><span class="n">§20</span>关键决策与风险</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CMX 元数据平台 · 财务会计 · 设计方案</div>
+  <h1>总账系统（GL）· 设计方案</h1>
+  <div class="sub">参照 SAP FI / S/4HANA <code>ACDOCA</code> 通用日记账，覆盖<b>配置 · 初始化 · 做账 · 记账 · 冲销 · 折旧 · 查账 · 余额</b>全链路。核心是新增一层<b>过账引擎</b>（<code>ga_*</code> 通用日记账 + 余额），把既有的「配置字典 <code>cf_*</code> + 录入单据 <code>cv_*</code> + 报表 <code>cr_*</code>」闭合成完整总账。后端 <code>cmx-container</code>（Rust · axum · tokio-postgres），前端复用四区工作台。</div>
+  <div class="meta">
+    <span class="chip b">后端 cmx-gl crate 群（镜像 cmx-doc/cmx-rpt）</span>
+    <span class="chip b">通用日记账 ga_journal（ACDOCA 范式）</span>
+    <span class="chip g">复用 cf_*/cv_*/cr_* 与 ZmcDataSet 管线</span>
+    <span class="chip p">新增 /api/gl/* · 过账/冲销/折旧/结账</span>
+    <span class="chip w">状态：设计（不动代码）</span>
+  </div>
+</header>
+
+<!-- ================= §0 结论速览 ================= -->
+<section id="s0">
+<h2 class="sec"><span class="num">§0</span>结论速览</h2>
+<p class="lead">总账系统<b>不是从零起的新系统</b>。cmx 财务模块（<code>fi.cmxfico.gl</code>）已经有了三块地基：<b>①配置层</b>——35 部 <code>cf_*</code> 会计配置字典（科目表/公司代码/分类账/凭证类型/记账码/会计期间…，全部按 SAP 建模）；<b>②录入层</b>——4 层主从的凭证单据 DOC（<code>cv_batch→cv_header→cv_acc_line→cv_aux_line</code>，三区/四区工作台可录入、可校验借贷平衡）；<b>③报表层</b>——RPT 报表平台（<code>cr_*</code> 三表 + 取数公式，出资产负债表/利润表）。<b>真正缺的，是把这三块串起来的那台发动机——过账引擎</b>：凭证一旦「记账」，要写进一张不可变的<b>通用日记账</b>、滚动出<b>科目余额</b>，并支撑冲销、折旧、期末结账、账簿查询。本方案就是补这台发动机（新增 <code>ga_*</code> 一族物理表与 <code>cmx-gl</code> crate 群），全部长在既有流水线之上。</p>
+
+<div class="card">
+<div class="legend">
+  <span class="status"><span class="dot have"></span>已就位（复用 / 配置级）</span>
+  <span class="status"><span class="dot partial"></span>小改（既有模块加分支）</span>
+  <span class="status"><span class="dot new"></span>新增（本方案核心）</span>
+  <span class="status"><span class="dot gap"></span>缺口（被引用但未落地）</span>
+</div>
+<table>
+<thead><tr><th>用户诉求（总账功能）</th><th>落点</th><th>做法</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><b>配置</b>：科目表/公司/分类账/凭证类型/记账码/期间…</td><td><code>cf_*</code> DCT 字典（35 部）</td><td>已按 SAP 建模落地；本方案仅补「自动记账/账户确定」一部 <code>ga_acct_determ</code></td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+<tr><td><b>初始化</b>：建表/装配置/导期初/开期间/号段</td><td>模型中心 deploy + 初始化服务</td><td>复用 <code>compile_*</code> 建表；新增 <code>gl_init</code> 装期初余额、开期间、号段置初值</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td><b>做账</b>：凭证录入、借贷平衡校验、暂存</td><td><code>cv_*</code> 凭证 DOC + fico-ws 工作台</td><td>已可录入/校验/暂存（draft/audited）；<b>录入 = 制单，不动账</b></td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+<tr><td><b>记账（过账）</b>：写总账、滚余额、锁凭证</td><td><b>过账引擎</b> → <code>ga_journal</code>+<code>ga_balance</code></td><td>本方案核心：cv_* 校验通过后投影为通用日记账 + 增量更新余额，一个事务</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td><b>冲销</b>：红冲/反向凭证、勾稽原凭证</td><td>冲销引擎（复用过账）</td><td>反向过账 或 负额过账（红冲）；冲销原因 + 双向勾稽 <code>STBLG</code></td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td><b>折旧</b>：资产折旧计提、生成折旧凭证</td><td><code>ga_asset</code>/<code>ga_asset_dep</code> + 折旧运行</td><td>资产主数据 + 折旧方法；计提差额生成凭证走过账引擎</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td><b>查账</b>：总账/明细账/多栏账/余额表/试算平衡</td><td>查询读模型（ZmcDataSet）</td><td>从 <code>ga_journal</code>/<code>ga_balance</code> 读；下钻回凭证；菜单已预留</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td><b>余额</b>：期初/发生/期末、多币种、多分类账</td><td><code>ga_balance</code> 余额表</td><td>过账时增量维护，可从 <code>ga_journal</code> 全量重算对账</td><td><span class="status"><span class="dot new"></span>新增</span></td></tr>
+<tr><td>报表读的 <code>cv_gl_balance</code>（已被 RPT 引用）</td><td>= <code>ga_balance</code> 的兼容视图</td><td><b>缺口闭合</b>：三张报表模板早已 <code>FROM cv_gl_balance</code>，但该表从未定义；本方案把它落成 <code>ga_balance</code> 的视图</td><td><span class="status"><span class="dot gap"></span>缺口→补</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>一句话架构</h3>
+<div class="callout key">
+<div class="t">核心洞察</div>
+总账 = <b>做账</b>（可改的草稿，<code>cv_*</code> 单据）+ <b>记账</b>（一次不可逆的投影，落成 <code>ga_journal</code> 通用日记账）+ <b>余额</b>（日记账的滚动汇总，<code>ga_balance</code>）。<b>凭证是过程，日记账是账，余额是账的合计。</b> 冲销、折旧、期末，本质都是「再生成一张凭证、再走一遍过账」——所以整套系统只有<b>一个写账入口</b>（过账引擎），一切账务变更都从它流过，天然可审计、可对账、可重算。查账则完全是读：从 <code>ga_journal</code>（明细）和 <code>ga_balance</code>（合计）出，绝不碰写路径。
+</div>
+
+<h3>全景数据流</h3>
+<div class="mono-block"><span class="c">// 设计期（会计主管，一次）</span>
+cf_*.json 配置字典  <span class="k">──deploy──▶</span>  cf_* 物理表（35 部：科目/公司/分类账/凭证类型/记账码/期间…）
+base_gl_meta.json   <span class="k">──compile_gl──▶</span>  ga_doc / ga_journal / ga_balance / ga_asset(_dep) / ga_number_range_state / ga_period_status  <span class="c">（固定基础设施表）</span>
+
+<span class="c">// 运行期（会计日常）</span>
+① 做账  <span class="f">fico-ws 工作台</span> ──▶ cv_batch/cv_header/cv_acc_line/cv_aux_line  <span class="c">（草稿 draft → 审核 audited；借贷平衡校验；可反复改）</span>
+                                             │
+② 记账  用户点「过账」 ──▶ <span class="f">PostingEngine</span>（一个 DB 事务）
+   │   ├─ 校验：借贷平衡 · 期间开放 · 科目末级有效 · 字段状态组必填
+   │   ├─ 取号：doc_type ▶ number_range ▶ <span class="f">ga_number_range_state</span>（行锁自增）
+   │   ├─ 扇出：ledger group（0L 主 + 非主分类账）每账一套
+   │   ├─ 落账：写 <span class="g">ga_doc</span> + <span class="g">ga_journal</span>（acc_line×aux_line 展平为分析行，6 币种金额）
+   │   ├─ 滚余额：<span class="g">ga_balance</span> UPSERT（period_debit/credit 累加、end_balance 重算）
+   │   └─ 锁单：cv_header.doc_status ▶ posted，回写 doc_no
+   │
+③ 冲销  ──▶ 生成反向/红冲凭证 ──▶ <span class="f">PostingEngine</span>（同一入口）──▶ ga_* + 勾稽 STBLG
+④ 折旧  ──▶ 折旧运行算差额 ──▶ 生成折旧凭证 ──▶ <span class="f">PostingEngine</span> ──▶ ga_*
+⑤ 期末  ──▶ 结账（锁期间）/ 外币估值 / 余额结转（BS 结转次年期初，PL 转本年利润）
+   │
+⑥ 查账  <span class="f">ZmcDataSet 读</span> ◀── ga_balance（总账/余额表/试算平衡）· ga_journal（明细账/多栏账）· 下钻回 cv_*
+⑦ 报表  cr_* 报表 ◀── cv_gl_balance（视图）◀── ga_balance
+</div>
+</section>
+
+<!-- ================= §1 现状盘点 ================= -->
+<section id="s1">
+<h2 class="sec"><span class="num">§1</span>现状盘点：可复用资产与缺口</h2>
+<p class="lead">总账能「小增量」落地，是因为最贵的两块——<b>会计配置</b>与<b>凭证录入</b>——早已按 SAP 建模就位。设计前必须先认清家底：凡标「已就位」者，本方案直接站在其上，不重造；真正要新写的只有「记账之后」的账务引擎。</p>
+
+<table>
+<thead><tr><th>既有资产</th><th>位置</th><th>总账系统如何用</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><b>35 部会计配置字典</b><br>科目表/公司代码/分类账/凭证类型/记账码/会计期间/字段状态组…</td><td><code>data/meta/definitions/fi/cmxfico/gl/cmxfico_dct_meta_v3.json</code><br><code>data/dictbak/entries/…/cf_*.json</code></td><td>过账引擎的全部规则来源：记账码定借贷、期间定开放、科目定性质、号段定编号——直接读 <code>cf_*</code></td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+<tr><td><b>4 层凭证单据 DOC</b><br>批→头→科目行→辅助行，6 币种度量、借贷平衡校验、状态机</td><td><code>cmxfico_doc_meta_v2.json</code><br><code>cv_batch/cv_header/cv_acc_line/cv_aux_line</code></td><td>「做账」层直接就是它；过账引擎的输入 = 一张 <code>audited</code> 的 cv 凭证</td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+<tr><td><b>ERP 凭证四区工作台</b><br>model 装载中枢 / explorer 批列表 / content 凭证视图 / property 辅助核算</td><td><code>fico-ws</code> 8 页 + <code>host.workspace</code></td><td>做账 UI 照搬；过账/冲销按钮挂 property 区；查账页复用同骨架</td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+<tr><td><b>模型中心编译器</b><br>compile → PgTableDefineExecutor 建表</td><td><code>cmx-api/.../portal/model_center.rs</code></td><td>新增 <code>compile_gl</code>：把 <code>base_gl_meta</code> 的 <code>storageTables</code> 编成 <code>ga_*</code> 物理表（同 compile_rpt 打法）</td><td><span class="status"><span class="dot partial"></span>小改</span></td></tr>
+<tr><td><b>ZmcDataSet 零拷贝列式管线</b><br>tokio-postgres 并行 DB 层</td><td><code>cmx-infra/cmx-rowsource</code>、<code>cmx-database-pg</code></td><td>查账（明细账/余额表/试算平衡）全走此管线读 <code>ga_*</code>；过账是它的写侧对应物</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>RPT 报表平台</b><br>cr_* 三表 + 取数公式 QM/QC</td><td><code>cmx-rpt</code> crate 群 + <code>/api/rpt/*</code></td><td>报表读余额；本方案把它引用的 <code>cv_gl_balance</code> 落成 <code>ga_balance</code> 视图，报表零改</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>落库列校验 + 错误码库</b><br>CmxErrCode + violations</td><td><code>dct-doc-column-validation</code></td><td>过账前校验（平衡/期间/字段状态）统一走错误码库，结构化 violations 回前端</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>bigint 后端铸号</b></td><td><code>bigint-id-backend-generation</code></td><td><code>ga_*</code> 主键沿用 52 位安全整数铸号（凭证号 doc_no 另由号段生成，见 §7.3）</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>异步任务中心</b><br>SSE 进度 + 断点恢复 + HA</td><td><code>cmx-job</code> crate 群</td><td>月结批量过账、折旧运行、余额重算 = 长任务，接任务中心（进度/暂停/恢复）</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>cmx-flow 流程引擎</b><br>审批/待办/表单集成</td><td><code>cmx-flow</code> crate 群</td><td>凭证审核（draft→audited）可选走审批流；过账权限、反结账审批挂流程</td><td><span class="status"><span class="dot have"></span>复用</span></td></tr>
+<tr><td><b>总账菜单树</b><br>凭证录入/审核/查询、账簿、期末结转/结账/反结账、试算平衡</td><td><code>explorer-menu.json</code>（GL_VOUCHER/GL_LEDGER/GL_PERIOD_END/GL_REPORT）</td><td>菜单已按总账全功能预留，本方案把节点接到 <code>ga_*</code> 引擎与查账页</td><td><span class="status"><span class="dot have"></span>已就位</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout danger">
+<div class="t">缺口：被引用但从未落地的 cv_gl_balance</div>
+三张报表模板（<code>cmxfico_md/bs/xs_rpt_meta</code>）都写着 <code>datasets.source.table = "cv_gl_balance"</code>，取 <code>begin_balance/debit_amount/credit_amount/end_balance</code>。但<b>全仓没有任何 DOC/DCT 定义、也没有任何建表脚本定义这张表</b>——它是一张「假设存在的余额读模型」。M2 阶段是靠手工在 fico 库 <code>CREATE TABLE cv_gl_balance</code> 塞了 8 行演示数据才让报表出数的。这正是总账缺口的缩影：<b>有账的入口（凭证）、有账的出口（报表），独缺中间那本账（余额）与写它的引擎（过账）。</b> 本方案把这张表正式落为 <code>ga_balance</code>，并以视图 <code>cv_gl_balance</code> 保持报表兼容。
+</div>
+
+<div class="callout">
+<div class="t">缺口总览：只缺「记账之后」的四台引擎 + 两族表</div>
+① <b>过账引擎</b>（cv_* → ga_journal + ga_balance）；② <b>冲销引擎</b>（反向/红冲，复用过账）；③ <b>折旧引擎</b>（资产 → 折旧凭证 → 过账）；④ <b>期末引擎</b>（结账/估值/余额结转）；⑤ <b>查账读模型</b>（总账/明细账/余额表/试算平衡）。落地物：<code>ga_*</code> 物理表 + <code>cmx-gl</code> crate 群 + <code>/api/gl/*</code>。其余全部复用。这与当年「DCT 补齐 = 镜像 DOC」「RPT 落地 = 第三类 metaKind」是同一种打法。
+</div>
+</section>
+
+<!-- ================= §2 目标 · 非目标 ================= -->
+<section id="s2">
+<h2 class="sec"><span class="num">§2</span>目标 · 非目标 · 设计原则</h2>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#86efac">✓ 目标（本方案覆盖）</h4>
+<ul>
+<li><b>配置</b>：会计科目表、公司代码、分类账（并行会计）、会计年度/期间变式、凭证类型、记账码、号码范围、字段状态组、账户组、货币/汇率、自动记账规则。</li>
+<li><b>初始化</b>：物理表部署、配置装载、期初余额导入、期间开放、号段置初、资产原值接管。</li>
+<li><b>做账</b>：凭证录入（多币种、辅助核算），借贷平衡/字段状态/科目有效性校验，预制暂存。</li>
+<li><b>记账</b>：过账引擎——凭证投影为通用日记账 <code>ga_journal</code> + 增量滚动余额 <code>ga_balance</code>，取号、分类账扇出、事务化、幂等。</li>
+<li><b>冲销</b>：标准反向冲销与负额红冲，冲销原因、跨期处理、双向勾稽。</li>
+<li><b>折旧</b>：资产主数据、折旧范围/方法、计划折旧 vs 已提折旧、周期折旧运行生成凭证。</li>
+<li><b>查账</b>：总账、明细账、多栏账、科目余额表、试算平衡表，逐格下钻到凭证。</li>
+<li><b>余额</b>：期初/本期发生/期末，多币种（交易币/本位币/集团币）、多分类账、按维度余额、年结结转。</li>
+</ul>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#fca5a5">✗ 非目标（本期不做 / 另案）</h4>
+<ul>
+<li><b>应收应付/资金/成本管理明细</b>：本方案是<b>总账（GL）</b>。AR/AP/CO 作为子分类账，仅保留科目行的 <code>customer_id/supplier_id/cost_center_id</code> 维度与「特别总账标识」挂钩，明细子模块另案。</li>
+<li><b>物料账/生产成本核算</b>：ACDOCA 的 MM/ML 维度列预留但不实现取数。</li>
+<li><b>合并报表抵消引擎</b>：多组织汇总/合并归 RPT 报表平台（已有方案），本方案只保证 <code>ga_balance</code> 可按组织树读。</li>
+<li><b>税务申报/发票</b>：只做税码在分录上的记录与税额行，申报另案。</li>
+<li><b>预算控制（可用额度检查）</b>：保留 <code>int_order/wbs</code> 维度，主动式预算校验另案。</li>
+</ul>
+</div>
+</div>
+
+<h3>设计原则</h3>
+<div class="card">
+<ol>
+<li><b>单一写账入口。</b> 一切账务变更（记账/冲销/折旧/结转）都必须经过<b>同一台过账引擎</b>产出 <code>ga_journal</code>。禁止任何旁路直接 INSERT 日记账或改余额。这是可审计、可对账、可重算的前提。</li>
+<li><b>通用日记账是唯一事实源。</b> <code>ga_journal</code> 一旦写入即不可变（不 UPDATE、不 DELETE，纠错只能靠冲销）。<code>ga_balance</code> 是它的派生合计，任何时刻都能从 <code>ga_journal</code> 全量重算校验——余额错了以日记账为准。</li>
+<li><b>做账与记账严格分离。</b> <code>cv_*</code> 凭证是可改草稿（做账）；<code>ga_*</code> 是不可改的账（记账）。过账是二者之间一次性、事务化的投影。凭证过账后锁定，改动只能冲销重做。</li>
+<li><b>配置驱动，规则不写死在代码。</b> 借贷方向来自记账码、期间开放来自期间字典、编号来自号段、折旧账户来自账户确定——引擎读 <code>cf_*</code>/<code>ga_acct_determ</code> 执行，不硬编码科目号或规则。</li>
+<li><b>参照 SAP 但适配平台。</b> 数据模型对标 BKPF/BSEG/ACDOCA，但金额沿用平台既有的<b>借贷分列 6 度量</b>（而非 SAP 的带符号金额 + 借贷标志），复用 <code>cv_*</code> 的聚合上卷语义，减少异构。</li>
+<li><b>多分类账、多币种正交。</b> 分类账（ledger）进主键、进扇出；币种是三组并列度量列。一次录入，各分类账/各币种各自成账，互不干扰（IFRS/CAS 并行）。</li>
+<li><b>可复用者不新起炉灶。</b> 判据：若 DOC/DCT/RPT/JOB/FLOW 已有，总账只允许加分支/加参数，不允许 fork。</li>
+</ol>
+</div>
+</section>
+
+<!-- ================= §3 领域模型 ================= -->
+<section id="s3">
+<h2 class="sec"><span class="num">§3</span>领域模型：五层与 SAP 对照</h2>
+<p class="lead">在写任何表之前，先把总账的五层数据钉死，并逐层对上 SAP 的物理表。看清哪层已有、哪层要建，是后续所有设计的地基。</p>
+
+<h3 id="s3-1">3.1 五层数据分层</h3>
+<div class="layers">
+<div class="layer l-cfg">
+<div class="lh">① 配置层 Configuration <span class="tag reuse">已就位 cf_*</span></div>
+<div class="ld">会计核算的规则与主数据骨架：科目表、公司代码、分类账、凭证类型、记账码、会计期间、字段状态组、货币汇率…… 35 部 <code>cf_*</code> DCT 字典，设计期维护，运行期被引擎读取。<b>决定「怎么记账」。</b></div>
+</div>
+<div class="layer l-cfg">
+<div class="lh">② 主数据层 Master Data <span class="tag reuse">部分已就位</span><span class="tag new">资产新增</span></div>
+<div class="ld">科目主数据（<code>cf_gl_account</code>，层级、性质、币种，已就位）+ 成本中心/利润中心/段（<code>cf_*</code> 已就位）+ <b>资产主数据 <code>ga_asset</code>/<code>ga_asset_dep</code>（折旧用，新增）</b>。<b>决定「记到哪个对象上」。</b></div>
+</div>
+<div class="layer l-entry">
+<div class="lh">③ 凭证层 Document（做账）<span class="tag reuse">已就位 cv_*</span></div>
+<div class="ld">可编辑的会计凭证草稿：批→头→科目行→辅助行。借贷平衡在此校验，状态 <code>draft→audited</code>。<b>录入 = 制单，不是记账；此层可反复改、可删。</b> 对标 SAP 预制凭证（<code>BKPF.BSTAT='V'</code>）。</div>
+</div>
+<div class="layer l-journal">
+<div class="lh">④ 日记账层 Universal Journal（记账）<span class="tag new">新增 ga_journal</span></div>
+<div class="ld">不可变的通用日记账行：过账时由凭证投影而来，一行一（分类账×分录×分析维度）。<b>这才是「账」</b>——单一事实源，只增不改。对标 SAP <code>ACDOCA</code>（S/4）/ <code>BSEG</code>（经典）。</div>
+</div>
+<div class="layer l-bal">
+<div class="lh">⑤ 余额层 Balances（余额）<span class="tag new">新增 ga_balance</span></div>
+<div class="ld">日记账的滚动合计：按分类账×公司×科目×期间（×维度）汇总期初/发生/期末。过账时增量维护，可全量重算。查账与报表的主要读源。对标 SAP <code>GLT0</code>/<code>FAGLFLEXT</code>。<b>= 报表引用却缺失的 cv_gl_balance。</b></div>
+</div>
+</div>
+
+<h3 id="s3-2">3.2 与 SAP FI / S/4HANA ACDOCA 对照</h3>
+<table>
+<thead><tr><th>层</th><th>本方案（cmx）</th><th>SAP 经典 FI</th><th>SAP S/4 ACDOCA</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>凭证头（草稿/预制）</td><td><code>cv_header</code></td><td><code>BKPF</code>（BSTAT='V'）</td><td><code>BKPF</code></td><td>录入抬头：日期/类型/币种/汇率</td></tr>
+<tr><td>凭证行（草稿）</td><td><code>cv_acc_line</code>+<code>cv_aux_line</code></td><td>录入缓冲</td><td>录入缓冲</td><td>科目行 + 辅助核算行（主从）</td></tr>
+<tr><td><b>已过账凭证头</b></td><td><code>ga_doc</code> <span class="tag new">新</span></td><td><code>BKPF</code></td><td><code>BKPF</code></td><td>取号后的正式凭证头 + 冲销勾稽</td></tr>
+<tr><td><b>通用日记账行</b></td><td><code>ga_journal</code> <span class="tag new">新</span></td><td><code>BSEG</code>+<code>BSIS/BSID/BSIK</code></td><td><code>ACDOCA</code>（511 列）</td><td>单一事实源；分类账进主键；6 币种；全维度展平</td></tr>
+<tr><td><b>科目余额/合计</b></td><td><code>ga_balance</code> <span class="tag new">新</span></td><td><code>GLT0</code></td><td><code>FAGLFLEXT</code>（S/4 由 ACDOCA 派生）</td><td>期初+发生+期末；多币种多账</td></tr>
+<tr><td>号码范围计数</td><td><code>ga_number_range_state</code> <span class="tag new">新</span></td><td><code>NRIV</code></td><td><code>NRIV</code></td><td>按 (号段,公司,年) 的当前号，行锁自增</td></tr>
+<tr><td>期间开关</td><td><code>ga_period_status</code> <span class="tag new">新</span></td><td><code>T001B</code>（OB52）</td><td><code>T001B</code></td><td>运行态开/关/已结账；配置默认在 <code>cf_fisc_period</code></td></tr>
+<tr><td>自动记账/账户确定</td><td><code>ga_acct_determ</code> <span class="tag new">新</span></td><td><code>T030</code></td><td><code>T030</code></td><td>事务码→科目（折旧/估值/税/差异）</td></tr>
+<tr><td>资产主数据 + 折旧值</td><td><code>ga_asset</code>/<code>ga_asset_dep</code> <span class="tag new">新</span></td><td><code>ANLA</code>/<code>ANLB</code>/<code>ANLC</code></td><td><code>ANLA</code>+ACDOCA</td><td>资产 + 折旧参数 + 计划/已提折旧</td></tr>
+<tr><td>配置字典（全部）</td><td><code>cf_*</code>（35 部）<span class="tag reuse">已有</span></td><td>T001/T003/T009/SKA1/SKB1/TBSL/T004G…</td><td>同左 + FINSC_LEDGER</td><td>见 §4.1 逐部对照</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-3">3.3 通用日记账：单一事实源</h3>
+<p>本方案最重要的一个设计取向，是学 S/4HANA 的 <b>Universal Journal（通用日记账）</b>：把「账」收敛到<b>一张</b>行项目表 <code>ga_journal</code>，而不是像经典 SAP 那样散在 BSEG + 三张 open-item 索引表 + GLT0 + CO 的 COEP + 资产的 ANEP 里、期末还要对账。</p>
+<div class="grid2">
+<div class="callout key">
+<div class="t">为什么收敛成一张表</div>
+<b>免对账</b>：成本中心/利润中心/段/订单/资产等维度与总账分录在<b>同一行</b>，不存在「FI 与 CO 不一致」。<b>免冗余</b>：无需维护多套并行明细/合计表。<b>天生多账多币</b>：分类账进主键、6 币种进列，一次过账各账各币各自成行。<b>可追溯</b>：每行带 <code>source_cv_*</code> 与 <code>awtyp/awkey</code>，下钻回源单据。</div>
+<div class="callout">
+<div class="t">余额是派生，不是并行</div>
+<code>ga_balance</code> 不是独立维护的第二套真相，而是 <code>ga_journal</code> 的 <code>GROUP BY (分类账,科目,期间[,维度]) SUM(借/贷)</code> 结果的物化。过账时增量更新是为了查得快；一旦怀疑不一致，<b>以 ga_journal 全量重算为准</b>（§13 提供 reconcile 作业）。这条纪律让「余额」永远有唯一权威来源。</div>
+</div>
+<div class="callout warn">
+<div class="t">与 SAP 的一处刻意偏离：金额表达</div>
+SAP ACDOCA 用<b>带符号金额 <code>HSL</code> + 借贷标志 <code>DRCRK</code></b> 表达方向。本平台既有 <code>cv_*</code> 已采用<b>借贷分列</b>（<code>entered_dr/entered_cr、local_dr/local_cr、group_dr/group_cr</code> 六个度量，各自 <code>agg:sum</code> 上卷）。为与既有单据、报表、聚合语义一致，<code>ga_journal</code> <b>沿用借贷分列</b>，不改用带符号金额。每行只会有借或贷一侧非零。转换关系：<code>SAP 借方 SHKZG='S'</code> → 填 <code>*_dr</code>；<code>'H'</code> → 填 <code>*_cr</code>。这不影响任何会计正确性，只是列布局取向。
+</div>
+</section>
+
+<!-- ================= §4 系统配置 ================= -->
+<section id="s4">
+<h2 class="sec"><span class="num">§4</span>系统配置（配置）</h2>
+<p class="lead">配置层几乎全部已就位——35 部 <code>cf_*</code> 字典是当年按四套主流 ERP（SAP/Oracle/用友/金蝶）实测对标后、以 SAP FI 为主干建成的。本节盘清每部字典的会计职责与它在过账时被引擎读取的时机；唯一新增是<b>自动记账/账户确定</b>一部。</p>
+
+<h3 id="s4-1">4.1 配置对象全景（35 部 cf_*）</h3>
+<table>
+<thead><tr><th>配置对象</th><th>cf_* 字典</th><th>SAP</th><th>会计职责 · 被引擎读取时机</th></tr></thead>
+<tbody>
+<tr><td>会计科目表 COA</td><td><code>cf_coa</code></td><td>T004/SKA1</td><td>科目命名空间；公司代码挂一张 COA</td></tr>
+<tr><td>总账科目</td><td><code>cf_gl_account</code>（152 行，层级）</td><td>SKA1/SKB1</td><td>分录科目来源；<code>account_type_code</code>+<code>pl_bs_flag</code> 定余额方向、结转归属；<b>过账校验末级+启用</b></td></tr>
+<tr><td>科目组</td><td><code>cf_acct_group</code></td><td>T077S</td><td>科目主数据的号段与字段状态</td></tr>
+<tr><td>账户类型</td><td><code>cf_account_type</code></td><td>KOART 域</td><td>S 总账/D 客户/K 供应商/A 资产/M 物料；记账码校验</td></tr>
+<tr><td>公司代码</td><td><code>cf_comp_unit</code></td><td>T001</td><td>独立记账+出表主体；带本位币/COA/控制范围/年度变式；<b>过账主键维度</b></td></tr>
+<tr><td>客户端</td><td><code>cf_client</code></td><td>MANDT</td><td>跨组织数据隔离；进 <code>ga_*</code> 每行</td></tr>
+<tr><td>合并主体 / 合并组织</td><td><code>cf_company</code> / <code>cf_cons_org</code></td><td>T880/组织</td><td>合并口径；余额按组织树上卷</td></tr>
+<tr><td>分类账</td><td><code>cf_ledger</code>（0L 主+并行）</td><td>T881/FINSC_LEDGER</td><td>并行会计；<b>进 ga_journal 主键、过账扇出维度</b></td></tr>
+<tr><td>会计原则</td><td><code>cf_acct_princ</code></td><td>—</td><td>IFRS/CAS；绑定分类账</td></tr>
+<tr><td>会计年度变式</td><td><code>cf_fy_variant</code></td><td>T009</td><td>每年期数 + 特殊期；由 <code>posting_date</code> 推期间</td></tr>
+<tr><td>会计期间</td><td><code>cf_fisc_period</code>（含 <code>posting_allowed</code>/<code>special_period</code>）</td><td>T009B</td><td>期间日历；<b>过账期间开放校验的配置默认</b></td></tr>
+<tr><td>凭证类型</td><td><code>cf_doc_type</code>（SA/KR/DR…，7 部）</td><td>T003</td><td>绑定 <code>number_range</code>；决定冲销凭证类型；<b>过账取号入口</b></td></tr>
+<tr><td>记账码</td><td><code>cf_posting_key</code>（40/50/01/31…，8 部）</td><td>TBSL</td><td>带 <code>debit_credit_code</code>+<code>account_type_code</code>；<b>过账时定借贷方向</b></td></tr>
+<tr><td>借贷标志</td><td><code>cf_dc_indicator</code>（S 借/H 贷）</td><td>SHKZG 域</td><td>方向枚举</td></tr>
+<tr><td>特别总账标识</td><td><code>cf_spl_gl_ind</code>（预付/预收/票据）</td><td>T074（UMSKZ）</td><td>替代统驭科目；子分类账挂钩</td></tr>
+<tr><td>字段状态组</td><td><code>cf_fld_stat_grp</code></td><td>T004G</td><td>控制分录字段必填/可选/隐藏；<b>过账字段状态校验</b></td></tr>
+<tr><td>号码范围</td><td><code>cf_number_range</code>（5 部）</td><td>T003/NRIV</td><td>号段界；运行态计数在 <code>ga_number_range_state</code></td></tr>
+<tr><td>货币 / 汇率类型</td><td><code>cf_currency</code> / <code>cf_fx_rate_type</code></td><td>TCURC/TCURV</td><td>币种小数位；折算取 M 类型；<b>过账多币折算</b></td></tr>
+<tr><td>成本中心/利润中心/段</td><td><code>cf_cost_center</code>/<code>cf_profit_ctr</code>/<code>cf_segment</code></td><td>CSKS/CEPC/段</td><td>分析维度；进 <code>ga_journal</code> 分析列与按维度余额</td></tr>
+<tr><td>业务范围/功能范围</td><td><code>cf_bus_area</code>/<code>cf_func_area</code></td><td>GSBER/FKBER</td><td>跨公司报表维度</td></tr>
+<tr><td>控制范围/内部订单/WBS</td><td><code>cf_ctrl_area</code>/<code>cf_int_order</code>/<code>cf_wbs_element</code></td><td>KOKRS/AUFNR/PROJK</td><td>CO 对象；分析维度</td></tr>
+<tr><td>财务报表版本</td><td><code>cf_fs_version</code></td><td>T011</td><td>报表科目汇总结构；查账/报表用</td></tr>
+<tr><td>税码/付款条件/付款方式</td><td><code>cf_tax_code</code>/<code>cf_pay_terms</code>/<code>cf_pay_method</code></td><td>T007A/ZTERM/ZLSCH</td><td>税率与税额行；AR/AP 维度</td></tr>
+<tr><td>业务伙伴/开户行/国家</td><td><code>cf_bus_partner</code>/<code>cf_house_bank</code>/<code>cf_country</code></td><td>BUT000/T012/T005</td><td>往来主体、银行、国家</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">结论：配置层零新建（除账户确定）</div>
+过账引擎所需的全部规则都能从既有 <code>cf_*</code> 读到。引擎不硬编码任何科目号、方向、期间或编号规则——它是<b>配置的解释器</b>。唯一要补的是「自动记账/账户确定」（SAP T030），因为折旧、外币估值、税务这些<b>系统自动生成的凭证</b>需要一张「事务码 → 目标科目」的映射表，见 §4.3。
+</div>
+
+<h3 id="s4-2">4.2 分类账与并行会计</h3>
+<p><code>cf_ledger</code> 已有两账：<code>0L 主分类账(IFRS)</code>（<code>leading_ledger=1</code>，绑 <code>acct_princ=IFRS</code>）与并行账。分类账是总账「一次录入、多口径成账」的关键：</p>
+<div class="mono-block"><span class="c">// 一张凭证，过账时按 ledger group 扇出成多账（各账可有不同评估/折旧规则）</span>
+cv_header(1 张)  <span class="k">──过账──▶</span>  ga_doc/ga_journal @ <span class="g">0L</span>（IFRS 口径）
+                            └─▶  ga_doc/ga_journal @ <span class="g">CN</span>（CAS 口径，如折旧年限不同则金额不同）
+<span class="c">// ledger 进 ga_journal 主键 → 同一业务在两账各自成行、各自滚余额、各自出报表</span>
+</div>
+<p style="margin-bottom:0">多数凭证两账一致（仅 0L）；差异凭证（折旧、减值、租赁）才需并行账各记各的。扇出逻辑见 §7.4。本期可先落 <code>0L</code> 单账，并行账留接口。</p>
+
+<h3 id="s4-3">4.3 自动记账 / 账户确定（新增 ga_acct_determ）</h3>
+<p>手工凭证由用户填科目；但<b>系统自动生成的凭证</b>（折旧、外币估值、税额、年结损益结转）必须知道「借哪个科目、贷哪个科目」。SAP 用 <code>T030</code> 按「科目表 + 事务码」映射。本方案落一部配置表 <code>ga_acct_determ</code>：</p>
+<table class="fielddef">
+<thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="pk">id</td><td>BIGINT PK</td><td>铸号</td></tr>
+<tr><td class="fk">coa_id</td><td>BIGINT</td><td>科目表（→cf_coa）</td></tr>
+<tr><td>ledger_code</td><td>VARCHAR(8)</td><td>分类账（可空=通用）</td></tr>
+<tr><td>txn_key</td><td>VARCHAR(8)</td><td>事务码：<code>AFA</code> 折旧/<code>KDF</code> 外币估值/<code>MWS</code> 销项税/<code>VST</code> 进项税/<code>GUV</code> 损益结转…</td></tr>
+<tr><td>rule_key</td><td>VARCHAR(32)</td><td>细分键：资产类别 / 估值科目组 / 税码 等（可空）</td></tr>
+<tr><td class="fk">debit_account_id</td><td>BIGINT</td><td>借方目标科目（→cf_gl_account）</td></tr>
+<tr><td class="fk">credit_account_id</td><td>BIGINT</td><td>贷方目标科目</td></tr>
+<tr><td>status</td><td>TINYINT</td><td>启用</td></tr>
+</tbody>
+</table>
+<p style="margin-bottom:0">可作为第 36 部 <code>cf_*</code> 字典（走 DCT 建模）或直接并入 <code>ga_*</code> 基础表。推荐<b>走 DCT 字典</b>（<code>cf_acct_determ</code>），与其它配置同库同管、可在字典工作台维护。折旧运行（§10.2）与外币估值（§11）读它取科目。</p>
+</section>
+
+<!-- ================= §5 初始化 ================= -->
+<section id="s5">
+<h2 class="sec"><span class="num">§5</span>系统初始化（初始化）</h2>
+<p class="lead">初始化 = 让一个空库变成「可以开始记账」的状态。分两类：<b>系统级</b>（建表、装配置，一次）与<b>启用级</b>（每个公司代码首次上线：导期初余额、开期间、置号段），后者可重复用于新公司接入。</p>
+
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>部署物理表</b>：<code>POST /api/model/deploy {items:[{kind:"GL",...}]}</code> → <code>compile_gl</code> 读 <code>base_gl_meta.storageTables</code> 建 <code>ga_doc/ga_journal/ga_balance/ga_number_range_state/ga_period_status/ga_asset/ga_asset_dep</code>（幂等，复用 <code>PgTableDefineExecutor</code>）。同时 deploy <code>cf_*</code>（配置字典）与 <code>cv_*</code>（凭证 DOC）。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>装载配置数据</b>：把 <code>cf_*.json</code> 种子导入配置表（科目表、公司代码、分类账、凭证类型、记账码、期间、账户确定…）。走既有 DCT upsert，后端铸号。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>开放会计期间</b>：为 (公司,分类账) 在 <code>ga_period_status</code> 建期间行，置启用期为 <code>open</code>；历史期 <code>closed</code>。配置默认来自 <code>cf_fisc_period.posting_allowed</code>。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>号段置初</b>：为每个 (号段,公司,年) 在 <code>ga_number_range_state</code> 写 <code>from_no/to_no/current_no</code>（首次 <code>current_no=from_no-1</code>），来源 <code>cf_number_range</code>。</div></div>
+  <div class="step"><div class="badge">5</div><div class="body"><b>导入期初余额</b>：启用期上线时，把旧系统的科目期末余额作为新系统<b>启用期期初</b>写入 <code>ga_balance</code>（<code>begin_balance</code>）。校验：全公司 Σ借方期初 = Σ贷方期初（试算平衡）。可选生成一张「期初余额凭证」入 <code>ga_journal</code> 以保持「余额皆有源」。</div></div>
+  <div class="step"><div class="badge">6</div><div class="body"><b>资产原值接管</b>（折旧用）：导入资产主数据 <code>ga_asset</code> 与已提折旧 <code>ga_asset_dep</code>（原值、累计折旧、已用期数、折旧方法），使折旧运行能从中途续提。</div></div>
+</div>
+
+<div class="grid2">
+<div class="callout key">
+<div class="t">期初余额的三条铁律</div>
+① <b>必须试算平衡</b>：导入前全局校验 Σ期初借 = Σ期初贷，否则拒绝。② <b>损益类科目期初通常为 0</b>（年内启用则带累计发生）。③ <b>期初可有源可无源</b>：推荐生成期初凭证（借贷方为「期初权益/上期结转」过渡科目）使 <code>ga_balance</code> 完全可由 <code>ga_journal</code> 重算；简化实现也允许 <code>ga_balance</code> 直接置初、<code>ga_journal</code> 从启用期起记。</div>
+<div class="callout warn">
+<div class="t">初始化是长任务，接任务中心</div>
+大企业期初余额 + 资产可达数十万行，走 <code>cmx-job</code> 异步任务（SSE 进度、失败可续、幂等）。初始化脚本对 <code>ga_*</code> 全部 <code>INSERT ... ON CONFLICT DO NOTHING</code>，重跑安全。<b>初始化只允许在期间未开放时做</b>，一旦有正式凭证过账，期初改动须走「反初始化」审批。</div>
+</div>
+</section>
+
+<!-- ================= §6 做账 ================= -->
+<section id="s6">
+<h2 class="sec"><span class="num">§6</span>做账：凭证录入（做账）</h2>
+<p class="lead">「做账」是制单，不是记账。它产出可反复修改的凭证草稿 <code>cv_*</code>，此层<b>已完整就位</b>（4 层 DOC + fico-ws 工作台 + 借贷平衡校验 + 状态机）。本节说明它如何对接过账，并补齐字段状态与预制两个细节。</p>
+
+<h3 id="s6-1">6.1 录入即 cv_* 单据 DOC</h3>
+<p>一张凭证是一棵 4 层主从树，金额六度量（交易币/本位币/集团币 × 借/贷），已按 SAP BKPF/BSEG 建模：</p>
+<div class="mono-block"><span class="a">cv_batch</span>   凭证批（一次提交一组）        <span class="c">← Oracle GL_JE_BATCHES</span>
+ └─ <span class="a">cv_header</span>   凭证头（日期/类型/币种/汇率）  <span class="c">← SAP BKPF</span>
+     └─ <span class="a">cv_acc_line</span>  科目行（科目+记账码+借贷+金额）<span class="c">← SAP BSEG 主体</span>
+         └─ <span class="a">cv_aux_line</span>  辅助行（成本中心/利润中心/段/订单/往来…18 维）<span class="c">← BSEG 分析维度</span>
+<span class="c">// 主从链：child.upper_id = parent.id；6 币种度量各级 agg:sum 上卷</span>
+<span class="c">// 状态机 doc_status: draft ──audit──▶ audited ──post──▶ posted ──reverse──▶ reversed</span>
+</div>
+<p style="margin-bottom:0">辅助行的存在，让一条科目行可以拆到多个成本中心/项目（SAP 的多维明细）。过账时 <code>cv_acc_line × cv_aux_line</code> 展平为 <code>ga_journal</code> 的分析行（§7.1）。</p>
+
+<h3 id="s6-2">6.2 校验：借贷平衡 / 字段状态 / 期间</h3>
+<p>DOC 定义里已有 7 条声明式 <code>validationRules</code>，做账阶段（保存/审核）即校验。关键三类：</p>
+<table>
+<thead><tr><th>校验</th><th>规则</th><th>时机</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td><b>借贷平衡</b></td><td><code>Σ(acc_line.local_dr) == Σ(acc_line.local_cr)</code>（本位币；扩展：按分类账、按利润中心/段平衡）</td><td>保存/审核/过账</td><td>已有 <code>voucher_local_balance</code></td></tr>
+<tr><td><b>科目有效</b></td><td>科目须末级（<code>is_leaf</code>）+ 启用（<code>status=1</code>）+ 属当前 COA</td><td>录入/过账</td><td><code>cf_gl_account</code></td></tr>
+<tr><td><b>字段状态组</b> <span class="tag new">补</span></td><td>按科目的 <code>fld_stat_grp</code> 判定分录字段必填/可选/隐藏（如「银行科目必填往来」）</td><td>录入/过账</td><td><code>cf_fld_stat_grp</code></td></tr>
+<tr><td><b>期间开放</b></td><td><code>posting_date</code> 推出的期间须 <code>open</code></td><td>过账（做账不强制）</td><td><code>ga_period_status</code></td></tr>
+<tr><td><b>辅助行汇总一致</b></td><td>科目行有辅助行时，科目行金额 == Σ辅助行金额</td><td>保存/过账</td><td>已有 <code>account_line_aux_rollup</code></td></tr>
+<tr><td><b>客户端/公司传播</b></td><td>批→头→行→辅助行 <code>client_code/comp_unit_id</code> 全链一致</td><td>保存</td><td>已有传播规则</td></tr>
+</tbody>
+</table>
+
+<h3 id="s6-3">6.3 预制与暂存（parking）</h3>
+<p>对标 SAP 预制凭证（<code>BKPF.BSTAT='V'</code>）：借贷不平也能存草稿（<code>draft</code>），供后续补录、他人接续、审批。只有到<b>审核（audited）</b>才强制借贷平衡，到<b>过账（posted）</b>才校验期间开放并真正动账。三态与过账/冲销的关系：</p>
+<div class="mono-block"><span class="k">draft</span>    <span class="c">// 草稿：可不平衡、可反复改、可删。做账中</span>
+  <span class="k">──audit──▶</span> <span class="k">audited</span>  <span class="c">// 已审：强制借贷平衡；等待过账；仍可退回 draft</span>
+      <span class="k">──post──▶</span>  <span class="g">posted</span>   <span class="c">// 已过账：锁定，不可改；已写 ga_journal/ga_balance</span>
+          <span class="k">──reverse──▶</span> <span class="r">reversed</span> <span class="c">// 已冲销：生成反向凭证，原凭证留痕</span>
+</div>
+<div class="callout">
+<div class="t">做账 ↔ 记账的交接点</div>
+过账引擎的<b>唯一输入</b>就是一张 <code>audited</code> 的 <code>cv_header</code>（连同其 acc_line/aux_line 子树）。做账层不需要为记账做任何改造——它已经把「一张平衡的凭证」准备好了。§7 讲这张凭证如何变成账。
+</div>
+</section>
+
+<!-- ================= §7 记账：过账引擎 ================= -->
+<section id="s7">
+<h2 class="sec"><span class="num">§7</span>记账：过账引擎（记账）</h2>
+<p class="lead">这是全系统的心脏。「记账（过账）」把一张审核通过的凭证草稿，一次性、事务化地投影成不可变的通用日记账，并滚动更新余额。它是<b>唯一的写账入口</b>——冲销、折旧、结转最终都从这里流过。</p>
+
+<h3 id="s7-1">7.1 过账 = cv_* 投影为 ga_*</h3>
+<p>投影的本质是「<b>展平 + 定型 + 取号</b>」：把可编辑的 4 层树，拍平成一批只增不改的日记账行，赋予正式凭证号，并按分类账复制。</p>
+<div class="mono-block"><span class="c">// 一张凭证（1 科目行拆 2 成本中心）过账后的 ga_journal（0L 账）</span>
+cv_header #H1001  借:6602管理费用 1200（辅助:CC-销售 800 / CC-行政 400）/ 贷:1002银行存款 1200
+        │
+        ▼ 展平（acc_line × aux_line）+ 取号 doc_no=SA-2026-000123
+ga_doc  #D  doc_no=SA-2026-000123  ledger=0L  period=2026-06  status=posted
+ga_journal:
+  行1  ledger=0L  acct=6602  <span class="dr">dr_local=800</span>   cost_center=CC-销售   item_text=...
+  行2  ledger=0L  acct=6602  <span class="dr">dr_local=400</span>   cost_center=CC-行政
+  行3  ledger=0L  acct=1002  <span class="cr">cr_local=1200</span>  （无辅助 → 一行）
+<span class="c">// Σdr(1200) = Σcr(1200) 恒平；每行带 source_cv_acc_line_id 可下钻回凭证</span>
+</div>
+<table class="xl">
+<thead><tr><th>行</th><th>科目</th><th>借(本位)</th><th>贷(本位)</th><th>成本中心</th></tr></thead>
+<tbody>
+<tr><td class="rh">1</td><td class="txt">6602 管理费用</td><td class="dr">800.00</td><td></td><td class="txt">CC-销售</td></tr>
+<tr><td class="rh">2</td><td class="txt">6602 管理费用</td><td class="dr">400.00</td><td></td><td class="txt">CC-行政</td></tr>
+<tr><td class="rh">3</td><td class="txt">1002 银行存款</td><td></td><td class="cr">1,200.00</td><td class="txt">—</td></tr>
+<tr><td class="rh tot" colspan="2">合计</td><td class="tot">1,200.00</td><td class="tot">1,200.00</td><td class="tot">平</td></tr>
+</tbody>
+</table>
+
+<h3 id="s7-2">7.2 过账事务七步</h3>
+<p>整个过账在<b>一个 tokio-postgres 事务</b>内完成，全成或全败：</p>
+<div class="mono-block"><span class="f">PostingEngine::post</span>(cv_header_id, ctx{operator, post_date?}) <span class="k">-&gt;</span> Result&lt;PostedDoc&gt; {
+  <span class="k">let</span> tx = pool.begin().<span class="k">await</span>?;                         <span class="c">// 事务开始</span>
+
+  1. <span class="f">load</span>    读 cv_header + acc_lines + aux_lines；guard doc_status == <span class="s">"audited"</span>
+                <span class="r">若已 posted → 409 冲突（幂等：拒绝重复过账）</span>
+  2. <span class="f">validate</span> ① 借贷平衡 Σlocal_dr==Σlocal_cr（每分类账/每平衡维度）
+                ② 期间开放：post_date→period，查 ga_period_status（按科目类型段）
+                ③ 科目末级+启用；④ 字段状态组必填；⑤ 外币须有汇率
+                <span class="r">任一失败 → 回滚 + 结构化 violations（复用错误码库）</span>
+  3. <span class="f">assign_no</span> 每目标分类账：doc_type▶number_range▶ga_number_range_state
+                <span class="k">SELECT ... FOR UPDATE</span> 行锁 → current_no+1 → 格式化 doc_no
+  4. <span class="f">fan_out</span>  确定 ledger group（0L + 适用非主账），逐账构建：
+  5. <span class="f">build</span>    ga_doc（头）+ ga_journal（acc_line×aux_line 展平；6 币种折算；填分析维度）
+                <span class="k">INSERT</span> ga_doc；<span class="k">INSERT</span> ga_journal（批量）
+  6. <span class="f">roll_bal</span> 对每 (ledger,comp_unit,account,period[,dims])：
+                <span class="k">INSERT ... ON CONFLICT DO UPDATE</span>
+                  period_debit += Σdr, period_credit += Σcr,
+                  end_balance = begin_balance + ytd_debit - ytd_credit（按科目方向）
+  7. <span class="f">lock_src</span> UPDATE cv_header SET doc_status=<span class="s">'posted'</span>, ga_doc_no=..., ga_doc_id=...
+
+  tx.commit().<span class="k">await</span>?;                                <span class="c">// 一次落定</span>
+}
+</div>
+<div class="callout danger">
+<div class="t">幂等与并发：过账绝不能重复动账</div>
+① <b>幂等</b>：步 1 以 <code>cv_header.doc_status</code> 为闸门，已 <code>posted</code> 直接 409；<code>ga_doc</code> 对 <code>source_cv_header_id + ledger</code> 建唯一键兜底，重复插入被 DB 拒。② <b>并发取号</b>：步 3 用行锁串行化同一号段（见 §7.3）。③ <b>余额一致</b>：步 6 的 UPSERT 在事务内原子完成；即便并发过账同一科目，行级锁保证累加不丢。④ 全程一个事务 → 要么日记账+余额+锁单全成，要么全回滚，不存在「记了账没滚余额」的中间态。
+</div>
+
+<h3 id="s7-3">7.3 号码分配与并发</h3>
+<p>凭证号 <code>doc_no</code> 不是铸号（铸号给代理主键 <code>id</code>），而是<b>按号段连续递增</b>的业务编号（会计要求连续、可审计断号）。路径 <code>doc_type → cf_number_range → ga_number_range_state</code>：</p>
+<div class="mono-block"><span class="c">// ga_number_range_state：一行 = 一个 (号段, 公司, 年) 的计数器</span>
+<span class="k">BEGIN</span>;
+  <span class="k">SELECT</span> current_no, to_no <span class="k">FROM</span> ga_number_range_state
+    <span class="k">WHERE</span> range_code=$1 <span class="k">AND</span> comp_unit_id=$2 <span class="k">AND</span> fiscal_year=$3
+    <span class="k">FOR UPDATE</span>;                        <span class="c">// 行锁：同号段过账串行，杜绝跳号/撞号</span>
+  <span class="c">// next = current_no + 1；校验 next &lt;= to_no（超界报错）</span>
+  <span class="k">UPDATE</span> ga_number_range_state <span class="k">SET</span> current_no = current_no + 1 <span class="k">WHERE</span> ...;
+<span class="c">// doc_no = 格式化(range_prefix, fiscal_year, next)  例：SA-2026-000123</span>
+<span class="k">COMMIT</span>;
+</div>
+<div class="callout warn">
+<div class="t">连续号 vs 高并发的权衡</div>
+行锁保证严格连续（会计合规），但同号段过账被串行化。缓解：① 按 <b>公司×年×凭证类型</b> 拆号段，分散热点；② 高吞吐场景可退化为「块号预取」（一次锁取 N 个号发给不同 worker，牺牲绝对连续换吞吐，需业务接受）。默认<b>严格连续</b>；号段状态表与过账在同一事务，回滚则号一并退回（不产生断号）。
+</div>
+
+<h3 id="s7-4">7.4 分类账扇出</h3>
+<p>一次录入要在所有适用分类账各记一套账。扇出在过账时展开：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>确定 ledger group</b>：主账 <code>0L</code> 恒记；非主账按公司代码的分类账分配（<code>cf_comp_unit</code>→ledger group）确定。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>逐账构建</b>：对每个 ledger 复制一套 <code>ga_doc</code>+<code>ga_journal</code>（<code>ledger_code</code> 进主键）。多数凭证各账金额相同。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>差异记账</b>：折旧/减值/租赁等各准则不同的业务，允许「仅特定分类账」的调整凭证（<code>ledger_code</code> 指定，只记该账）。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>各账独立滚余额</b>：<code>ga_balance</code> 以 <code>ledger_code</code> 为主键维度，各账余额、各账试算平衡、各账出表互不影响。</div></div>
+</div>
+<p style="margin-bottom:0"><b>本期建议</b>：先落 <code>0L</code> 单账把主链路跑通，扇出逻辑以「ledger 循环」写好但 group 只含 0L；并行账数据接入放 M4+。</p>
+</section>
+
+<!-- ================= §8 表结构 ================= -->
+<section id="s8">
+<h2 class="sec"><span class="num">§8</span>数据落地：ga_* 表结构（表结构）</h2>
+<p class="lead">这些是本方案要新建的物理表，声明在 <code>base_gl_meta_v1.json</code> 的 <code>storageTables</code> 段（同 RPT 的 <code>base_rpt_meta.storageTables</code> 范式），由 <code>compile_gl</code> 编译建表。字段命名、类型、审计字段全对齐平台既有约定（<code>&lt;dict&gt;_id</code>/<code>&lt;dict&gt;_code</code> 外键、<code>DECIMAL(23,2)</code> 金额、<code>create_by/create_time/update_*/delete_flag</code> 审计）。</p>
+
+<h3 id="s8-1">8.1 ga_doc · 已过账凭证头（← BKPF）</h3>
+<table class="fielddef">
+<thead><tr><th>字段</th><th>类型</th><th>SAP</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="pk">id</td><td>BIGINT PK</td><td>—</td><td>代理主键（铸号）</td></tr>
+<tr><td>doc_no</td><td>VARCHAR(20)</td><td>BELNR</td><td>凭证号（号段生成，连续）</td></tr>
+<tr><td>ledger_code</td><td>VARCHAR(8)</td><td>RLDNR</td><td>分类账（0L…）<b>唯一键成分</b></td></tr>
+<tr><td class="fk">comp_unit_id</td><td>BIGINT</td><td>BUKRS</td><td>公司代码</td></tr>
+<tr><td>client_code</td><td>VARCHAR(3)</td><td>MANDT</td><td>客户端</td></tr>
+<tr><td>fiscal_year</td><td>VARCHAR(4)</td><td>GJAHR</td><td>会计年度</td></tr>
+<tr><td>period_code</td><td>VARCHAR(8)</td><td>—</td><td>会计期间（2026-06）</td></tr>
+<tr><td>posting_period</td><td>SMALLINT</td><td>MONAT</td><td>期间号（1-12,特殊期13-16）</td></tr>
+<tr><td class="fk">doc_type_id</td><td>BIGINT</td><td>BLART</td><td>凭证类型</td></tr>
+<tr><td>posting_date</td><td>DATE</td><td>BUDAT</td><td>过账日期（定期间）</td></tr>
+<tr><td>doc_date</td><td>DATE</td><td>BLDAT</td><td>凭证日期（业务日）</td></tr>
+<tr><td>doc_currency_code</td><td>VARCHAR(8)</td><td>WAERS</td><td>凭证币</td></tr>
+<tr><td class="amt">exchange_rate</td><td>DECIMAL(15,7)</td><td>KURSF</td><td>汇率</td></tr>
+<tr><td>reference</td><td>VARCHAR(32)</td><td>XBLNR</td><td>参照/外部单号</td></tr>
+<tr><td>header_text</td><td>VARCHAR(128)</td><td>BKTXT</td><td>抬头摘要</td></tr>
+<tr><td class="fk">source_cv_header_id</td><td>BIGINT</td><td>—</td><td><b>来源凭证 DOC 头</b>（下钻/幂等键）</td></tr>
+<tr><td>awtyp / awkey</td><td>VARCHAR</td><td>AWTYP/AWKEY</td><td>来源对象类型+键（跨模块溯源）</td></tr>
+<tr><td>doc_status</td><td>VARCHAR(16)</td><td>BSTAT</td><td>posted / reversed</td></tr>
+<tr><td class="fk">reverse_doc_id</td><td>BIGINT</td><td>STBLG</td><td>冲销凭证 id（本张被冲/去冲哪张）</td></tr>
+<tr><td>reverse_reason_code</td><td>VARCHAR(8)</td><td>STGRD</td><td>冲销原因</td></tr>
+<tr><td>is_reversal</td><td>TINYINT</td><td>XREVERSAL</td><td>1=本张是冲销凭证 / 2=已被冲销</td></tr>
+<tr><td>poster_id / post_time</td><td>BIGINT / DATETIME</td><td>USNAM/CPUDT</td><td>过账人/过账时间</td></tr>
+<tr><td colspan="4" style="color:#9aa3b8">+ 审计字段集 <code>create_by/create_time/update_by/update_time/delete_flag</code>（同 base 约定）</td></tr>
+</tbody>
+</table>
+<p style="margin:6px 0 0;color:#9aa3b8"><b>唯一键</b> <code>(source_cv_header_id, ledger_code)</code>：一张凭证在一个分类账只能过账一次（幂等兜底）。<b>索引</b>：<code>(comp_unit_id, ledger_code, fiscal_year, period_code)</code>、<code>doc_no</code>。</p>
+
+<h3 id="s8-2">8.2 ga_journal · 通用日记账行（← ACDOCA / BSEG）</h3>
+<p>单一事实源，<b>只增不改</b>。一行 = 一个 (分类账 × 分录 × 分析维度)。</p>
+<table class="fielddef">
+<thead><tr><th>字段</th><th>类型</th><th>ACDOCA</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="pk">id</td><td>BIGINT PK</td><td>—</td><td>代理主键</td></tr>
+<tr><td class="fk">doc_id</td><td>BIGINT</td><td>—</td><td>→ ga_doc</td></tr>
+<tr><td>doc_no</td><td>VARCHAR(20)</td><td>BELNR</td><td>冗余（免 join 查询）</td></tr>
+<tr><td>line_no</td><td>INT</td><td>DOCLN</td><td>行号</td></tr>
+<tr><td>ledger_code</td><td>VARCHAR(8)</td><td>RLDNR</td><td>分类账 <b>主键维度</b></td></tr>
+<tr><td class="fk">comp_unit_id</td><td>BIGINT</td><td>RBUKRS</td><td>公司代码</td></tr>
+<tr><td>client_code / fiscal_year / period_code / posting_date</td><td>—</td><td>—</td><td>冗余定位维度（免 join 聚合）</td></tr>
+<tr><td class="fk">gl_account_id</td><td>BIGINT</td><td>RACCT</td><td>总账科目</td></tr>
+<tr><td>account_code</td><td>VARCHAR(20)</td><td>—</td><td>科目编码冗余（查询/分组）</td></tr>
+<tr><td>posting_key_code</td><td>VARCHAR(4)</td><td>BSCHL</td><td>记账码</td></tr>
+<tr><td>dc_code</td><td>CHAR(1)</td><td>DRCRK</td><td>S 借 / H 贷（冗余，便于筛选）</td></tr>
+<tr><td class="amt">entered_dr / entered_cr</td><td>DECIMAL(23,2)</td><td>WSL</td><td>交易币 借/贷</td></tr>
+<tr><td class="amt">local_dr / local_cr</td><td>DECIMAL(23,2)</td><td>HSL</td><td>本位币 借/贷 <b>（余额/报表主用）</b></td></tr>
+<tr><td class="amt">group_dr / group_cr</td><td>DECIMAL(23,2)</td><td>KSL</td><td>集团币 借/贷</td></tr>
+<tr><td>doc_currency_code / local_currency_code / group_currency_code</td><td>VARCHAR(8)</td><td>RWCUR/RHCUR/RKCUR</td><td>三币种键</td></tr>
+<tr><td class="amt">quantity / unit</td><td>DECIMAL / VARCHAR</td><td>MSL/RUNIT</td><td>数量金额（可空）</td></tr>
+<tr><td class="fk">cost_center_id / profit_ctr_id / segment_id</td><td>BIGINT</td><td>RCNTR/PRCTR/SEGMENT</td><td>CO/报表维度</td></tr>
+<tr><td class="fk">bus_area_id / func_area_id / int_order_id / wbs_element_id</td><td>BIGINT</td><td>RBUSA/RFAREA/AUFNR/PROJK</td><td>分析维度</td></tr>
+<tr><td class="fk">trading_partner_id / customer_id / supplier_id / bus_partner_id</td><td>BIGINT</td><td>RASSC/KUNNR/LIFNR</td><td>往来主体（合并抵消/子分类账）</td></tr>
+<tr><td>tax_code / spl_gl_ind_code</td><td>VARCHAR</td><td>MWSKZ/UMSKZ</td><td>税码/特别总账标识</td></tr>
+<tr><td class="fk">asset_id / dep_area_code / asset_txn_type</td><td>BIGINT/VARCHAR</td><td>ANLN1/AFABE/ANBWA</td><td>资产维度（折旧行）</td></tr>
+<tr><td>assignment / item_text</td><td>VARCHAR</td><td>ZUONR/SGTXT</td><td>分配号/行摘要</td></tr>
+<tr><td class="fk">clearing_doc_id / clearing_date / is_open_item</td><td>BIGINT/DATE/TINYINT</td><td>AUGBL/AUGDT</td><td>清账（未清项管理，AR/AP）</td></tr>
+<tr><td class="fk">source_cv_acc_line_id</td><td>BIGINT</td><td>—</td><td><b>来源科目行</b>（下钻）</td></tr>
+<tr><td>is_reversing / is_reversed</td><td>TINYINT</td><td>XREVERSING/XREVERSED</td><td>冲销标志</td></tr>
+<tr><td colspan="4" style="color:#9aa3b8">+ 审计字段集（<code>delete_flag</code> 逻辑删除仅供技术回滚，业务纠错一律走冲销）</td></tr>
+</tbody>
+</table>
+<p style="margin:6px 0 0;color:#9aa3b8"><b>核心聚合索引</b> <code>(ledger_code, comp_unit_id, gl_account_id, fiscal_year, period_code)</code> —— 余额重算、明细账、试算平衡全靠它。<b>下钻索引</b> <code>source_cv_header_id/doc_no</code>。</p>
+
+<h3 id="s8-3">8.3 ga_balance · 科目余额（← GLT0 / FAGLFLEXT）</h3>
+<p><code>ga_journal</code> 的滚动合计。基础粒度 = 科目级；扩展粒度 = 带分析维度（利润中心/段），供按维度出表。</p>
+<table class="fielddef">
+<thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="pk">id</td><td>BIGINT PK</td><td>代理主键</td></tr>
+<tr><td>ledger_code</td><td>VARCHAR(8)</td><td>分类账 <b>唯一键</b></td></tr>
+<tr><td class="fk">comp_unit_id</td><td>BIGINT</td><td>公司代码 <b>唯一键</b></td></tr>
+<tr><td>client_code / fiscal_year</td><td>—</td><td>客户端 / 年度</td></tr>
+<tr><td>period_code</td><td>VARCHAR(8)</td><td>期间 <b>唯一键</b>（含特殊期；期初用 <code>YYYY-00</code>）</td></tr>
+<tr><td class="fk">gl_account_id / account_code</td><td>BIGINT / VARCHAR(20)</td><td>科目 <b>唯一键</b>（code 冗余）</td></tr>
+<tr><td class="fk">profit_ctr_id / segment_id / cost_center_id</td><td>BIGINT</td><td>维度（<b>唯一键</b>，NULL=科目汇总级；用 <code>-1</code> 哨兵避免 NULL 破坏唯一约束）</td></tr>
+<tr><td>currency_code</td><td>VARCHAR(8)</td><td>币种口径（本位币行 + 可选交易币/集团币行）</td></tr>
+<tr><td class="amt">begin_balance</td><td>DECIMAL(23,2)</td><td>期初余额（有借贷方向）</td></tr>
+<tr><td class="amt">period_debit / period_credit</td><td>DECIMAL(23,2)</td><td>本期借方发生 / 贷方发生</td></tr>
+<tr><td class="amt">end_balance</td><td>DECIMAL(23,2)</td><td>期末 = 期初 + 借发生 − 贷发生（资产/成本类）或反向（负债/权益/损益类）</td></tr>
+<tr><td class="amt">ytd_debit / ytd_credit</td><td>DECIMAL(23,2)</td><td>年初至今累计借/贷</td></tr>
+<tr><td>doc_status</td><td>VARCHAR(16)</td><td>posted（报表按此过滤）</td></tr>
+<tr><td colspan="3" style="color:#9aa3b8">+ 审计字段集</td></tr>
+</tbody>
+</table>
+<p style="margin:6px 0 0;color:#9aa3b8"><b>唯一键</b> <code>(ledger_code, comp_unit_id, gl_account_id, period_code, profit_ctr_id, segment_id, cost_center_id, currency_code)</code> —— 过账 UPSERT 的冲突目标。维度列用 <code>-1</code> 哨兵表示「不细分」，既保留科目汇总行、又能存维度明细行。</p>
+
+<h3 id="s8-4">8.4 运行态支撑表</h3>
+<div class="grid2">
+<div class="card tight">
+<h4 style="margin-top:0"><code>ga_number_range_state</code> · 号码计数器（← NRIV）</h4>
+<div class="ld" style="color:#9aa3b8;font-size:12.8px">
+<code>id</code> · <code>range_code</code>(VARCHAR8,→cf_number_range) · <code>comp_unit_id</code> · <code>fiscal_year</code> · <code>from_no</code>/<code>to_no</code>(BIGINT 界) · <code>current_no</code>(BIGINT 当前) · <code>prefix</code>(号前缀) · <code>updated_at</code>。<br><b>唯一键</b> (range_code, comp_unit_id, fiscal_year)。行锁自增（§7.3）。
+</div>
+</div>
+<div class="card tight">
+<h4 style="margin-top:0"><code>ga_period_status</code> · 期间开关（← T001B）</h4>
+<div class="ld" style="color:#9aa3b8;font-size:12.8px">
+<code>id</code> · <code>comp_unit_id</code> · <code>ledger_code</code> · <code>period_code</code> · <code>account_type_code</code>(可空,按科目类型段控制,如 OB52) · <code>status</code>(open/closed/carried) · <code>opened_by/at</code> · <code>closed_by/at</code>。<br><b>唯一键</b> (comp_unit, ledger, period, account_type)。过账查开放、结账置 closed、反结账置 open。
+</div>
+</div>
+</div>
+<p style="margin:6px 0 0;color:#9aa3b8">资产两表 <code>ga_asset</code>/<code>ga_asset_dep</code> 见 §10.1。<code>ga_acct_determ</code>（账户确定）见 §4.3，推荐作为 <code>cf_acct_determ</code> DCT 字典。</p>
+
+<h3 id="s8-5">8.5 cv_gl_balance 兼容视图（闭合报表缺口）</h3>
+<p>三张 RPT 报表模板早已 <code>FROM cv_gl_balance</code> 取 <code>begin_balance/debit_amount/credit_amount/end_balance/account_code/account_name/entity_id/period_code/doc_status</code>。本方案把这张「假设表」正式落成 <code>ga_balance</code> 之上的<b>视图</b>，报表零改即接真实余额：</p>
+<div class="mono-block"><span class="k">CREATE VIEW</span> cv_gl_balance <span class="k">AS</span>
+<span class="k">SELECT</span> b.gl_account_id,
+       b.account_code,
+       a.name              <span class="k">AS</span> account_name,     <span class="c">-- join cf_gl_account 取名</span>
+       b.comp_unit_id      <span class="k">AS</span> entity_id,        <span class="c">-- 报表用 entity_id 命名组织</span>
+       b.period_code,
+       b.begin_balance,
+       b.period_debit      <span class="k">AS</span> debit_amount,
+       b.period_credit     <span class="k">AS</span> credit_amount,
+       b.end_balance,
+       b.doc_status
+<span class="k">FROM</span>   ga_balance b
+<span class="k">LEFT JOIN</span> cf_gl_account a <span class="k">ON</span> a.id = b.gl_account_id
+<span class="k">WHERE</span>  b.ledger_code = <span class="s">'0L'</span>                     <span class="c">-- 默认主账口径</span>
+  <span class="k">AND</span>  b.profit_ctr_id = -1 <span class="k">AND</span> b.segment_id = -1  <span class="c">-- 科目汇总级</span>
+  <span class="k">AND</span>  b.currency_code = <span class="s">'CNY'</span>;                <span class="c">-- 本位币</span>
+</div>
+<div class="callout key">
+<div class="t">一处视图，闭合一条断链</div>
+从此报表读的不再是 M2 手工塞的 8 行演示数据，而是<b>过账引擎实时滚出的真实余额</b>。「凭证→过账→余额→视图→报表」全链贯通。若报表将来要多分类账/多币种/按维度口径，视图加参数或改物化视图即可，<code>ga_balance</code> 本身不动。
+</div>
+</section>
+
+<!-- ================= §9 冲销 ================= -->
+<section id="s9">
+<h2 class="sec"><span class="num">§9</span>冲销（冲销）</h2>
+<p class="lead">已过账凭证不可直接改，纠错靠冲销：生成一张与原凭证相抵的凭证，二者双向勾稽。冲销<b>不是新引擎</b>——它构造一张「反向凭证」交给过账引擎（§7），所以余额、试算平衡自动跟着对。</p>
+
+<h3>两种冲销机制</h3>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#9ec1ff">① 标准反向冲销 Reverse Posting</h4>
+<p>生成一张<b>借贷方向对调、金额不变</b>的新凭证。原凭证与冲销凭证的借贷发生额都真实入账（发生额虚增，但余额归零）。</p>
+<table class="xl">
+<thead><tr><th></th><th>借</th><th>贷</th></tr></thead>
+<tbody>
+<tr><td class="txt">原:6602 管理费用</td><td class="dr">1200</td><td></td></tr>
+<tr><td class="txt">原:1002 银行存款</td><td></td><td class="cr">1200</td></tr>
+<tr><td class="txt">冲:1002 银行存款</td><td class="dr">1200</td><td></td></tr>
+<tr><td class="txt">冲:6602 管理费用</td><td></td><td class="cr">1200</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#fca5a5">② 负额红冲 Negative Posting</h4>
+<p>在<b>原方向的同一侧记负数</b>，直接冲减发生额（发生额不虚增，更贴近中式「红字冲销」）。需公司代码 + 冲销原因允许负额。</p>
+<table class="xl">
+<thead><tr><th></th><th>借</th><th>贷</th></tr></thead>
+<tbody>
+<tr><td class="txt">原:6602 管理费用</td><td class="dr">1200</td><td></td></tr>
+<tr><td class="txt">原:1002 银行存款</td><td></td><td class="cr">1200</td></tr>
+<tr><td class="txt">冲:6602 管理费用</td><td class="dr">−1200</td><td></td></tr>
+<tr><td class="txt">冲:1002 银行存款</td><td></td><td class="cr">−1200</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<h3>冲销处理流程</h3>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>选原凭证 + 冲销原因</b>：原 <code>ga_doc</code> 须 <code>posted</code> 且未被冲销（<code>is_reversal != 2</code>）。原因来自枚举（01 实际冲销 / 02 跨期冲销…）。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>定冲销期间</b>：默认冲到<b>原凭证期间</b>；若该期已结账，则冲到<b>当前开放期</b>（原因 02）。冲销凭证类型取原凭证类型的 <code>reversal_doc_type</code>（<code>cf_doc_type</code>）。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>构造冲销凭证</b>：按机制①或②生成一张 <code>audited</code> 的 <code>cv_header</code>（或直接构造过账入参），<code>source</code> 指向原凭证。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>走过账引擎</b>：冲销凭证过账 → 新 <code>ga_doc</code>（<code>is_reversal=1</code>）+ <code>ga_journal</code> + 余额自动更新。</div></div>
+  <div class="step"><div class="badge">5</div><div class="body"><b>双向勾稽</b>：原 <code>ga_doc.reverse_doc_id</code>=冲销id、<code>is_reversal=2</code>；冲销 <code>ga_doc.reverse_doc_id</code>=原id。原 <code>cv_header.doc_status</code> → <code>reversed</code>。</div></div>
+</div>
+<div class="callout warn">
+<div class="t">冲销的三条约束</div>
+① <b>不可二次冲销</b>：已冲销凭证不能再冲（闸门 <code>is_reversal=2</code>）。② <b>已清项不能冲</b>：若原凭证行已被清账（AR/AP <code>clearing_doc_id</code> 非空），须先重置清账。③ <b>冲销也走期间开放校验</b>：目标期间须 open。冲销凭证本身也是不可变账，错了只能再冲销冲销凭证（层层留痕）。
+</div>
+</section>
+
+<!-- ================= §10 折旧 ================= -->
+<section id="s10">
+<h2 class="sec"><span class="num">§10</span>折旧（折旧）</h2>
+<p class="lead">折旧是「系统按规则周期性自动生成凭证」的典型。资产主数据记原值与折旧参数，折旧运行按方法算出本期应提额，生成折旧凭证（借 折旧费用 / 贷 累计折旧）走过账引擎入账。</p>
+
+<h3 id="s10-1">10.1 资产主数据 ga_asset / ga_asset_dep（← ANLA/ANLB/ANLC）</h3>
+<div class="grid2">
+<div class="card tight">
+<h4 style="margin-top:0"><code>ga_asset</code> · 资产主数据（ANLA）</h4>
+<div class="ld" style="color:#9aa3b8;font-size:12.8px">
+<code>id</code> · <code>asset_no</code>/<code>sub_no</code> · <code>comp_unit_id</code> · <code>asset_class_code</code>(资产类别) · <code>asset_name</code> · <code>acct_determ_group</code>(账户确定组→ga_acct_determ) · <code>cost_center_id</code>/<code>profit_ctr_id</code>(折旧费用归属) · <code>capitalization_date</code>(资本化日) · <code>acquisition_value</code>(取得原值) · <code>status</code>(active/retired/AuC 在建) · 审计。
+</div>
+</div>
+<div class="card tight">
+<h4 style="margin-top:0"><code>ga_asset_dep</code> · 折旧参数与累计值（ANLB+ANLC）</h4>
+<div class="ld" style="color:#9aa3b8;font-size:12.8px">
+<code>id</code> · <code>asset_id</code>(→ga_asset) · <code>dep_area_code</code>(折旧范围/准则,如 01财务账/15税务账) · <code>fiscal_year</code> · <code>dep_key_code</code>(折旧方法:直线/双倍余额/年数总和/工作量) · <code>useful_life_years</code>/<code>_periods</code> · <code>dep_start_date</code> · <code>apc</code>(原值) · <code>accum_dep</code>(累计折旧) · <code>salvage_value</code>(残值) · <code>planned_dep_year</code>(本年计划折旧) · <code>posted_dep_year</code>(本年已提) · <code>last_posted_period</code>(已提到期,水位)。<br><b>唯一键</b> (asset_id, dep_area_code, fiscal_year)。
+</div>
+</div>
+</div>
+<div class="callout key">
+<div class="t">折旧范围 = 并行会计在资产侧的投影</div>
+一个资产可挂多个<b>折旧范围</b>（<code>dep_area_code</code>）——财务账（IFRS）15 年直线、税务账（CAS）10 年加速，各算各的。折旧范围与<b>分类账</b>对应：财务范围的折旧记 <code>0L</code>，税务范围记税务分类账。这就是「同一资产、两账不同折旧额」的实现，与 §4.2 的并行会计一脉相承。
+</div>
+
+<h3 id="s10-2">10.2 折旧计提运行</h3>
+<p>按 (公司, 折旧范围, 期间) 批量运行，接 <code>cmx-job</code> 异步任务（资产多时长跑、可续、幂等）：</p>
+<div class="mono-block"><span class="f">DepreciationRun::run</span>(comp_unit, dep_area, period) {
+  <span class="k">for</span> asset <span class="k">in</span> 本公司该范围的 active 资产 {
+     1. 计划折旧 = <span class="f">dep_method</span>(dep_key, apc, salvage, useful_life)   <span class="c">// 按方法算年额→月额</span>
+     2. 本期应提 = 计划折旧到本期累计 − posted 已提累计            <span class="c">// 差额法，自动追补/平滑</span>
+     3. <span class="k">if</span> 本期应提 == 0 <span class="k">or</span> period &lt;= last_posted_period { <span class="k">continue</span> }  <span class="c">// 幂等：水位挡重跑</span>
+     4. 累加到「按 (费用科目, 成本中心) 汇总」的分录桶
+  }
+  5. 账户确定：借方=ga_acct_determ[AFA, asset_class].debit（折旧费用）
+              贷方=ga_acct_determ[AFA, asset_class].credit（累计折旧）
+  6. 生成 1 张折旧凭证（按成本中心多借方行 / 累计折旧汇总贷方）
+  7. <span class="f">PostingEngine::post</span>(折旧凭证)   <span class="c">// ← 复用过账引擎，入 ga_journal（带 asset_id/dep_area）</span>
+  8. <span class="k">UPDATE</span> ga_asset_dep <span class="k">SET</span> posted_dep_year += 应提, last_posted_period = period
+}
+</div>
+<table class="xl">
+<thead><tr><th></th><th>科目</th><th>借</th><th>贷</th><th>维度</th></tr></thead>
+<tbody>
+<tr><td class="rh">1</td><td class="txt">6602.折旧费(管理)</td><td class="dr">8,000</td><td></td><td class="txt">CC-行政</td></tr>
+<tr><td class="rh">2</td><td class="txt">5101.制造费用(折旧)</td><td class="dr">12,000</td><td></td><td class="txt">CC-生产</td></tr>
+<tr><td class="rh">3</td><td class="txt">1602.累计折旧</td><td></td><td class="cr">20,000</td><td class="txt">—</td></tr>
+<tr><td class="rh tot" colspan="2">合计</td><td class="tot">20,000</td><td class="tot">20,000</td><td class="tot">平</td></tr>
+</tbody>
+</table>
+<div class="callout warn">
+<div class="t">折旧的幂等与重跑</div>
+以 <code>ga_asset_dep.last_posted_period</code> 为水位：同期重复运行不再生成凭证（差额为 0）。若需重算（改了折旧方法/年限），先冲销该期折旧凭证（§9），回退水位，再重跑。折旧运行本身<b>不直接改余额</b>——它只生成凭证，动账仍由过账引擎独占，保证「单一写账入口」。
+</div>
+</section>
+
+<!-- ================= §11 期末处理 ================= -->
+<section id="s11">
+<h2 class="sec"><span class="num">§11</span>期末处理：结账 / 结转 / 估值</h2>
+<p class="lead">期末把一个会计期间「封口」，并为跨期/跨年做数据搬运。菜单已预留<b>期末结转 / 期末结账 / 反结账</b>三节点。全部动账动作仍走过账引擎。</p>
+
+<div class="grid3">
+<div class="card tight">
+<h4 style="margin-top:0;color:#9ec1ff">外币估值 Valuation</h4>
+<p style="font-size:13px;color:#9aa3b8;margin:0">期末对外币货币性科目/未清项按期末汇率重估，差额记未实现汇兑损益（账户确定 <code>KDF</code>）。生成估值凭证走过账；可配置下期初自动冲回。</p>
+</div>
+<div class="card tight">
+<h4 style="margin-top:0;color:#fcd57a">结账 Close</h4>
+<p style="font-size:13px;color:#9aa3b8;margin:0">校验本期<b>全部凭证已过账、借贷平衡</b>，跑完折旧/估值后，把 <code>ga_period_status</code> 置 <code>closed</code>，禁止再过账到该期。可按科目类型段分步关（先关损益、后关往来）。</p>
+</div>
+<div class="card tight">
+<h4 style="margin-top:0;color:#86efac">余额结转 Carryforward</h4>
+<p style="font-size:13px;color:#9aa3b8;margin:0">年末：资产负债类科目期末余额→次年期初（<code>period_code=YYYY-00</code>）；损益类科目余额→「本年利润/未分配利润」，损益科目次年期初归零。</p>
+</div>
+</div>
+
+<h3>结账 / 反结账流程</h3>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>结账前检查</b>：本期无 <code>draft/audited</code> 未过账凭证；折旧/估值已跑；试算平衡通过（Σ期初借=贷、Σ发生借=贷、Σ期末借=贷）。任一不过 → 拒绝结账 + 清单。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>结账</b>：<code>ga_period_status</code> 该期置 <code>closed</code>；记录结账人/时间。下期自动成为当前开放期。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>年结转</b>（12 期或末special期后）：BS 科目 <code>end_balance</code> → 次年 <code>YYYY-00</code> 的 <code>begin_balance</code>；PL 科目结转本年利润；生成结转凭证入 <code>ga_journal</code>（余额皆有源）。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>反结账 Reopen</b>（<span class="tag mod">权限+审批</span>）：把 <code>closed</code> 退回 <code>open</code>，允许补录/冲销。反结账全程留痕；若已年结转，反结账需连带回滚结转凭证。</div></div>
+</div>
+<div class="callout">
+<div class="t">期初 period_code=YYYY-00 的约定</div>
+把「年初期初余额」建模为一个特殊期间 <code>YYYY-00</code>，让 <code>ga_balance</code> 的期初/发生/期末在<b>同一张表</b>用期间维度自然表达，查账与结转都统一。特殊调整期（13-16）同理用 <code>YYYY-13..16</code>，不干扰 12 期正常账。
+</div>
+</section>
+
+<!-- ================= §12 查账 ================= -->
+<section id="s12">
+<h2 class="sec"><span class="num">§12</span>查账：账簿查询（查账）</h2>
+<p class="lead">查账<b>只读不写</b>：从 <code>ga_balance</code>（合计）与 <code>ga_journal</code>（明细）出，全部走 ZmcDataSet 零拷贝列式管线。菜单已预留：总账 / 明细账 / 多栏账 / 科目余额表 / 试算平衡 / 科目汇总。</p>
+
+<table>
+<thead><tr><th>账簿</th><th>读源</th><th>形态</th><th>SQL 骨架</th></tr></thead>
+<tbody>
+<tr><td><b>科目余额表</b><br>（试算平衡口径）</td><td><code>ga_balance</code></td><td>每科目一行：期初/本期借/本期贷/期末</td><td><code>SELECT account_code, begin_balance, period_debit, period_credit, end_balance FROM ga_balance WHERE ledger,comp_unit,period ORDER BY account_code</code></td></tr>
+<tr><td><b>总账</b></td><td><code>ga_balance</code></td><td>单科目跨期：各期期初/发生/期末序列</td><td><code>... WHERE account_code=? ORDER BY period_code</code>（本年逐期）</td></tr>
+<tr><td><b>明细账</b></td><td><code>ga_journal</code></td><td>单科目逐笔：日期/凭证号/摘要/借/贷/<b>余额</b>（窗口累计）</td><td><code>SELECT posting_date, doc_no, item_text, local_dr, local_cr, SUM(local_dr-local_cr) OVER(ORDER BY posting_date,doc_no) FROM ga_journal WHERE account,period</code></td></tr>
+<tr><td><b>多栏账</b></td><td><code>ga_journal</code></td><td>明细账 + 按某维度（对方科目/成本中心）横向铺列</td><td>明细 + <code>PIVOT</code>（维度→列），或前端透视</td></tr>
+<tr><td><b>试算平衡表</b></td><td><code>ga_balance</code></td><td>全科目三栏合计校验</td><td><code>SELECT SUM(begin_balance) filter(借), ... 校验借贷三段各自相等</code></td></tr>
+<tr><td><b>科目汇总表</b></td><td><code>ga_balance</code></td><td>按 <code>fs_version</code>/科目层级上卷</td><td>沿 <code>cf_gl_account.parent_id</code> 层级汇总</td></tr>
+</tbody>
+</table>
+
+<h3>逐格下钻：数字→凭证→单据</h3>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>余额表某格</b>（6602 本期借方 3.2万）→ 记 <code>drill_key</code> = (ledger, comp_unit, account, period, [dims])。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>下钻明细</b>：用 drill_key 查 <code>ga_journal</code> 该科目该期全部行（去掉聚合、取明细）→ 逐笔列表。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>下钻凭证</b>：某明细行 <code>source_cv_header_id</code> → 打开 fico-ws 凭证视图，看完整分录树。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>下钻源单</b>：凭证 <code>awtyp/awkey</code> → 若来自 AR/AP/资产等源单，跳源单据。</div></div>
+</div>
+<div class="callout key">
+<div class="t">查账页复用四区工作台</div>
+账簿查询页照搬 fico-ws 四区骨架：explorer 选账簿类型+科目+期间，content 用 <code>cmx-spreadsheet</code> 或表格组件渲账页，property 放筛选/下钻。装载走 <code>/api/gl/data/tokio-zmc-msgpack</code>（复用 DOC 同名端点管线读 <code>ga_*</code>）。零拷贝列式 + tokio 并行，大账页也快。
+</div>
+</section>
+
+<!-- ================= §13 余额引擎 ================= -->
+<section id="s13">
+<h2 class="sec"><span class="num">§13</span>余额引擎（余额）</h2>
+<p class="lead">余额是查账与报表的主力读源，也是最容易出「与明细不一致」事故的地方。本方案的纪律：<b>余额是派生、日记账是权威</b>，增量维护求快、全量重算兜底。</p>
+
+<h3>两条维护路径</h3>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#86efac">① 增量维护（过账时，默认）</h4>
+<p>过账事务第 6 步对每 (分类账,科目,期间[,维度]) 做 UPSERT，实时把本笔借贷累加进 <code>ga_balance</code>。查得快，无需扫明细。</p>
+<div class="mono-block" style="margin:8px 0"><span class="k">INSERT INTO</span> ga_balance (...key..., period_debit, period_credit, ...)
+<span class="k">VALUES</span> (...)
+<span class="k">ON CONFLICT</span> (ledger_code,comp_unit_id,gl_account_id,
+             period_code,profit_ctr_id,segment_id,
+             cost_center_id,currency_code)
+<span class="k">DO UPDATE SET</span>
+  period_debit  = ga_balance.period_debit  + EXCLUDED.period_debit,
+  period_credit = ga_balance.period_credit + EXCLUDED.period_credit,
+  end_balance   = ga_balance.begin_balance
+                + (ytd 累计借 - ytd 累计贷) * 方向;
+</div>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#9ec1ff">② 全量重算（对账/修复）</h4>
+<p>怀疑不一致时，从 <code>ga_journal</code> 按分组求和，重建该 (公司,分类账,期间) 的余额，与增量值比对。接 <code>cmx-job</code> 异步。</p>
+<div class="mono-block" style="margin:8px 0"><span class="k">SELECT</span> ledger_code, gl_account_id, period_code,
+       <span class="k">SUM</span>(local_dr) period_debit,
+       <span class="k">SUM</span>(local_cr) period_credit
+<span class="k">FROM</span>   ga_journal
+<span class="k">WHERE</span>  comp_unit_id=? <span class="k">AND</span> fiscal_year=?
+<span class="k">GROUP BY</span> ledger_code, gl_account_id, period_code;
+<span class="c">-- 再叠加上期期末 → 本期期初 → 本期期末</span>
+</div>
+</div>
+</div>
+
+<h3>余额方向与期末公式</h3>
+<p>期末余额的算法取决于科目性质（<code>cf_gl_account.account_type_code</code> / <code>pl_bs_flag</code>）：</p>
+<table>
+<thead><tr><th>科目性质</th><th>期末余额公式</th><th>正常余额方向</th></tr></thead>
+<tbody>
+<tr><td>资产 / 成本 / 费用</td><td><code>期末 = 期初 + 借发生 − 贷发生</code></td><td>借方（<code>end_balance ≥ 0</code> 表示借余）</td></tr>
+<tr><td>负债 / 权益 / 收入</td><td><code>期末 = 期初 + 贷发生 − 借发生</code></td><td>贷方</td></tr>
+<tr><td>损益类（PL）</td><td>期内累计，年结转清零</td><td>随性质</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">多币种、多分类账的余额是「多行」不是「多列」</div>
+不同分类账（0L/税务账）、不同币种（本位/交易/集团）的余额，是 <code>ga_balance</code> 里 <code>ledger_code</code>/<code>currency_code</code> 不同的<b>多行</b>，而非一行多列。这让「加分类账/加币种」是加数据、不是改表结构（呼应 SAP 弹性域思想的反面：这里用行扩展）。查询按需筛 <code>ledger_code='0L' AND currency_code='CNY'</code>。
+</div>
+<div class="callout warn">
+<div class="t">按维度余额的粒度陷阱</div>
+若既要「科目汇总余额」又要「科目×利润中心明细余额」，用维度列 <code>-1</code> 哨兵区分两种粒度行：过账时<b>同时</b> UPSERT 汇总行（dims=-1）与明细行（真实 dims）。否则汇总 = Σ明细 需运行时聚合，慢。存两份的代价是写放大，换读简单——总账读多写少，值得。
+</div>
+</section>
+
+<!-- ================= §14 后端方案 ================= -->
+<section id="s14">
+<h2 class="sec"><span class="num">§14</span>后端方案：cmx-gl crate 群</h2>
+<p class="lead">遵循平台既有打法：把总账后端做成一组独立 crate（镜像 <code>cmx-doc</code>/<code>cmx-dct</code>/<code>cmx-rpt</code>/<code>cmx-flow</code> 的三层结构），在 web-server 合并路由破环。装载/DB/校验/铸号/任务全复用。</p>
+
+<h3>crate 群结构（crates/libs/cmx-gl/）</h3>
+<table>
+<thead><tr><th>crate</th><th>职责</th><th>对标 / 依赖</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><code>cmx-gl-model</code></td><td>DB-free：<code>base_gl_meta</code> 解析、金额/方向/期间纯函数、DTO、余额公式、账户确定解析</td><td>对标 <code>cmx-doc-model</code></td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>cmx-gl-store-pg</code></td><td>DB-touching：<b>过账引擎</b>（事务七步）、冲销、折旧运行、结账、余额增量/重算、号段行锁、查账读模型</td><td>依赖 <code>cmx-database-pg</code>/<code>cmx-rowsource</code>；对标 <code>cmx-doc-store-pg</code></td><td><span class="tag new">新增</span></td></tr>
+<tr><td><code>cmx-gl-api</code></td><td>薄 handler + <code>GlModule</code>（axum Router）+ HTTP 形状（envelope/violations）</td><td>对标 <code>cmx-rpt-api::ReportModule</code></td><td><span class="tag new">新增</span></td></tr>
+</tbody>
+</table>
+<div class="mono-block"><span class="c">// web-server/src/routes.rs 增一行（与既有模块并列，cmx-api 不反向依赖 → 无环）</span>
+<span class="k">use</span> cmx_gl_api::GlModule;
+router
+  .merge(ReportModule.routes())
+  .merge(FlowModule.routes())
+  .merge(DocModule.routes())
+  .merge(DctModule.routes())
+  .merge(<span class="g">GlModule</span>.routes())   <span class="c">// ← 新增</span>
+  ...
+<span class="c">// root Cargo.toml 加 3 members + 3 workspace.deps；web-server 只加 cmx-gl-api</span>
+</div>
+
+<h3>模型中心 compile_gl</h3>
+<p>在 <code>model_center.rs</code> 新增 <code>compile_gl(base)</code>，与 <code>compile_doc/dct/rpt</code> 并列。它<b>确保 ga_* 固定基础表存在</b>（不随凭证派生表）+ 登记台账，完全复刻 <code>compile_rpt</code> 的落地路径：</p>
+<div class="flow">
+  <div class="step"><div class="badge">1</div><div class="body"><b>建/校验物理表</b>：从 <code>base_gl_meta.storageTables</code> 读 7 张 <code>ga_*</code> 表定义，复用 <code>PgTableDefineExecutor</code> 建表（首次建、后续幂等升级）+ 建索引/唯一键。</div></div>
+  <div class="step"><div class="badge">2</div><div class="body"><b>建兼容视图</b>：<code>cv_gl_balance</code> 视图（§8.5），报表零改接真实余额。</div></div>
+  <div class="step"><div class="badge">3</div><div class="body"><b>校验配置依赖</b>：<code>cf_*</code> 配置表须已部署（科目/记账码/期间/号段/账户确定）。缺失编译报错。</div></div>
+  <div class="step"><div class="badge">4</div><div class="body"><b>登记台账</b>：<code>cmx_model_module.gl_version/gl_status</code>（镜像 rpt_version 台账列 + 幂等补列 <code>ADD COLUMN IF NOT EXISTS</code>）。</div></div>
+</div>
+
+<h3>switchpoint 清单（对齐 RPT M1 经验）</h3>
+<table>
+<thead><tr><th>文件</th><th>改动</th></tr></thead>
+<tbody>
+<tr><td><code>cmx-model/src/definitions/store.rs</code></td><td><code>infer_base_file</code> 加 <code>Some("GL")=&gt;"baseGlMetaRef"</code>；<code>summarize</code> 加 <code>"GL"</code> 臂</td></tr>
+<tr><td><code>cmx-model/src/flexible_combination/defs.rs</code></td><td>list gate 加 <code>|| want=="GL"</code></td></tr>
+<tr><td><code>model_center.rs</code></td><td>新增 <code>compile_gl</code>；<code>compile_definition</code> 加 GL 分支；INIT_DDL + db_state + available-modules 加 gl 扫描（同 rpt 三处）</td></tr>
+<tr><td><code>dev-local.toml</code></td><td><code>auth.whitelist</code> 加 <code>"/api/gl"</code>（同当年补 <code>/api/rpt</code>）</td></tr>
+<tr><td>SQL 文档</td><td><code>docs/sql/init/init_ddl.sql</code> + migration 同步加 gl 台账列</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">数据处理的三个技术要点（对齐既有踩坑经验）</div>
+① <b>过账事务</b>用 tokio-postgres 显式事务；号段 <code>SELECT ... FOR UPDATE</code> 行锁；余额 <code>ON CONFLICT DO UPDATE</code>。② <b>强类型写入</b>：金额用 <code>rust_decimal::Decimal</code>（DataValue::Decimal），日期/BIGINT 严格类型（tokio-postgres 类型敏感，参考报表两模式存储的类型坑清单）。③ <b>批量长任务</b>（月结过账/折旧/重算）接 <code>cmx-job</code>：SSE 进度、暂停/停止、崩溃恢复、多实例 SKIP LOCKED 抢占，不重跑。
+</div>
+</section>
+
+<!-- ================= §15 API 契约 ================= -->
+<section id="s15">
+<h2 class="sec"><span class="num">§15</span>API 契约（/api/gl/*）</h2>
+<p class="lead">端点镜像 <code>/api/doc/*</code> 与 <code>/api/rpt/*</code>，前缀 <code>/api/gl</code>。读用零拷贝列式管线，写（过账/冲销/折旧/结账）用事务化 handler。</p>
+<table>
+<thead><tr><th>端点</th><th>方法</th><th>用途</th><th>请求/响应要点</th></tr></thead>
+<tbody>
+<tr><td><code>/api/gl/post</code></td><td><span class="pill post">POST</span></td><td><b>过账</b>（记账）</td><td>body {cv_header_ids:[], post_date?, ledger_group?} → {posted:[{doc_no,ga_doc_id}], violations?}；批量原子/逐单事务</td></tr>
+<tr><td><code>/api/gl/reverse</code></td><td><span class="pill post">POST</span></td><td><b>冲销</b></td><td>body {ga_doc_id, reason, mode:reverse|negative, period?} → 冲销凭证 doc_no + 勾稽</td></tr>
+<tr><td><code>/api/gl/depreciation/run</code></td><td><span class="pill post">POST</span></td><td><b>折旧运行</b></td><td>body {comp_unit, dep_area, period} → job_id（异步）；完成回折旧凭证号</td></tr>
+<tr><td><code>/api/gl/period/close</code></td><td><span class="pill post">POST</span></td><td><b>结账</b></td><td>body {comp_unit, ledger, period} → {ok, checks:[]} 或拒绝清单</td></tr>
+<tr><td><code>/api/gl/period/reopen</code></td><td><span class="pill post">POST</span></td><td><b>反结账</b>（权限+审批）</td><td>body {comp_unit, ledger, period, reason} → 留痕</td></tr>
+<tr><td><code>/api/gl/carryforward</code></td><td><span class="pill post">POST</span></td><td><b>年结/余额结转</b></td><td>body {comp_unit, from_year} → 生成结转凭证 + 次年期初</td></tr>
+<tr><td><code>/api/gl/balance</code></td><td><span class="pill post">POST</span></td><td>查余额表 / 总账 / 试算平衡</td><td>body {comp_unit, ledger, period, dims?} → ga_balance 行集</td></tr>
+<tr><td><code>/api/gl/journal</code></td><td><span class="pill post">POST</span></td><td>查明细账 / 多栏账</td><td>body {account, period, filters} → ga_journal 逐笔 + 累计余额</td></tr>
+<tr><td><code>/api/gl/data/tokio-zmc-msgpack</code></td><td><span class="pill post">POST</span></td><td>零拷贝列式读账簿</td><td>复用 DOC 同名端点管线，读 ga_*（大账页）</td></tr>
+<tr><td><code>/api/gl/drill</code></td><td><span class="pill post">POST</span></td><td>下钻</td><td>body {level, drill_key} → 余额→明细→凭证→源单</td></tr>
+<tr><td><code>/api/gl/reconcile</code></td><td><span class="pill post">POST</span></td><td>余额重算对账</td><td>body {comp_unit, year} → job_id；比对增量 vs 重算</td></tr>
+<tr><td><code>/api/gl/init/*</code></td><td><span class="pill post">POST</span></td><td>初始化：期初余额/开期间/号段/资产接管</td><td>幂等；接任务中心</td></tr>
+<tr><td><code>/api/model/deploy</code>（扩展）</td><td><span class="pill post">POST</span></td><td>部署总账（compile_gl）</td><td>既有部署端点加 <code>kind:"GL"</code> 分支</td></tr>
+</tbody>
+</table>
+<div class="callout warn">
+<div class="t">写端点的错误契约</div>
+过账/冲销/结账的失败必须返回<b>结构化 violations</b>（复用 <code>CmxErrCode</code> 错误码库）：不平衡→<code>BALANCE_MISMATCH</code>（附差额）、期间关闭→<code>PERIOD_CLOSED</code>、重复过账→<code>ALREADY_POSTED</code>（409）、号段耗尽→<code>NUMBER_RANGE_EXHAUSTED</code>、科目失效→<code>ACCOUNT_INVALID</code>。前端用既有专业对话框（cmx-message-dialog）呈现，定位到具体凭证/行。
+</div>
+</section>
+
+<!-- ================= §16 前端工作台 ================= -->
+<section id="s16">
+<h2 class="sec"><span class="num">§16</span>前端工作台</h2>
+<p class="lead">前端<b>几乎零新组件</b>：做账复用 fico-ws 凭证工作台，查账复用四区骨架 + 表格/spreadsheet 组件，过账/冲销/折旧是 property 区的动作按钮 + 后端调用。</p>
+<table>
+<thead><tr><th>功能</th><th>前端落点</th><th>复用</th></tr></thead>
+<tbody>
+<tr><td>做账（凭证录入/审核）</td><td>fico-ws 四区（已有）</td><td><span class="tag reuse">完全复用</span></td></tr>
+<tr><td>过账 / 冲销</td><td>content 顶部动作条 + property「过账/冲销」按钮 → <code>/api/gl/post|reverse</code></td><td><span class="tag mod">加按钮+调用</span></td></tr>
+<tr><td>账簿查询（总账/明细/余额/试算）</td><td>新查账工作台（四区骨架）：explorer 选账簿+科目+期间 / content 渲账页 / property 筛选下钻</td><td><span class="tag mod">骨架复用+新页</span></td></tr>
+<tr><td>账页渲染</td><td><code>cmx-spreadsheet</code>（余额表/多栏账）或既有表格组件（明细账）</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>折旧运行 / 结账 / 反结账</td><td>期末处理页：参数表单 + 进度（SSE）+ 结果清单</td><td><span class="tag reuse">复用 job monitor</span></td></tr>
+<tr><td>资产主数据维护</td><td>字典/DOC 工作台维护 <code>ga_asset</code>（或作为 DOC 单据）</td><td><span class="tag reuse">复用</span></td></tr>
+<tr><td>配置维护（科目/记账码/期间/账户确定…）</td><td>字典维护工作台（已有，cf_* 走 /api/dict）</td><td><span class="tag reuse">完全复用</span></td></tr>
+</tbody>
+</table>
+<div class="mono-block"><span class="c">// 查账工作台四区（镜像 fico-ws / rpt-ws）</span>
+<span class="c">┌──────────────┬────────────────────────────────┬───────────┐</span>
+<span class="c">│</span> explorer     <span class="c">│</span>          content 区              <span class="c">│</span> property  <span class="c">│</span>
+<span class="c">│</span> 账簿类型      <span class="c">│</span>   <span class="f">科目余额表 / 明细账 网格</span>       <span class="c">│</span> ·期间筛选  <span class="c">│</span>
+<span class="c">│</span> ▸总账         <span class="c">│</span>  科目   期初    借    贷    期末  <span class="c">│</span> ·分类账    <span class="c">│</span>
+<span class="c">│</span> ▸明细账       <span class="c">│</span>  1001  10,000  ...              <span class="c">│</span> ·维度      <span class="c">│</span>
+<span class="c">│</span> ▸科目余额表   <span class="c">│</span>  1002  85,320  ...   [双击下钻] <span class="c">│</span> ·下钻      <span class="c">│</span>
+<span class="c">│</span> ▸试算平衡     <span class="c">│</span>  ...                            <span class="c">│</span>           <span class="c">│</span>
+<span class="c">└──────────────┴────────────────────────────────┴───────────┘</span>
+   model 区（隐藏）：装载中枢 loadBalance/loadJournal + 广播事件
+</div>
+</section>
+
+<!-- ================= §17 全流程范例 ================= -->
+<section id="s17">
+<h2 class="sec"><span class="num">§17</span>端到端全流程范例</h2>
+<p class="lead">串一遍从空库到出报表的完整链路，验证各功能咬合。以「华东子公司 2026 年 6 月」为例。</p>
+<div class="flow">
+  <div class="step"><div class="badge">配</div><div class="body"><b>配置</b>：科目表/公司代码/分类账 0L/凭证类型 SA/记账码 40·50/号段 01/期间 2026-06/账户确定（折旧 AFA→借6602贷1602）—— 全在 <code>cf_*</code> 维护完毕。</div></div>
+  <div class="step"><div class="badge">初</div><div class="body"><b>初始化</b>：deploy 建 <code>ga_*</code> 7 表 + <code>cv_gl_balance</code> 视图；开 2026-06 期间；号段 01 置 current_no=0；导期初余额（1002 银行 期初 800,000，试算平衡通过）。</div></div>
+  <div class="step"><div class="badge">做</div><div class="body"><b>做账</b>：录一张凭证——借 6602 管理费用 1,200（成本中心拆 800/400）/ 贷 1002 银行存款 1,200。借贷平衡校验通过，状态 <code>audited</code>。</div></div>
+  <div class="step"><div class="badge">记</div><div class="body"><b>记账</b>：过账 → 取号 <code>SA-2026-000001</code>，写 <code>ga_doc</code> + 3 行 <code>ga_journal</code>（0L），<code>ga_balance</code> 更新：6602 借发生 1,200 / 1002 期末 798,800。cv 锁定 posted。</div></div>
+  <div class="step"><div class="badge">折</div><div class="body"><b>折旧</b>：运行 6 月折旧 → 生成折旧凭证（借 6602/5101 20,000 / 贷 1602 累计折旧 20,000）→ 走过账入 <code>ga_journal</code>（带 asset_id）；累计折旧余额 +20,000。</div></div>
+  <div class="step"><div class="badge">查</div><div class="body"><b>查账</b>：科目余额表看 6602 本期借 21,200；双击下钻 → <code>ga_journal</code> 两笔（手工1,200 + 折旧20,000）→ 再下钻手工笔 → 打开凭证 SA-2026-000001。</div></div>
+  <div class="step"><div class="badge">冲</div><div class="body"><b>冲销</b>：发现手工凭证记错科目 → 冲销 SA-2026-000001（红冲）→ 生成 <code>SA-2026-000002</code>（6602 −1,200 / 1002 −1,200）→ 余额回退；原凭证标 reversed。重录正确凭证。</div></div>
+  <div class="step"><div class="badge">末</div><div class="body"><b>期末</b>：检查无未过账凭证、试算平衡通过 → 结账 2026-06（<code>ga_period_status</code>=closed）。年末做余额结转。</div></div>
+  <div class="step"><div class="badge">表</div><div class="body"><b>报表</b>：RPT 资产负债表 <code>QM('1002')</code> 从 <code>cv_gl_balance</code>（=<code>ga_balance</code> 视图）取到真实期末余额 → 出表。全链贯通。</div></div>
+</div>
+</section>
+
+<!-- ================= §18 复用/新增清单 ================= -->
+<section id="s18">
+<h2 class="sec"><span class="num">§18</span>复用 / 新增清单</h2>
+<div class="grid2">
+<div class="card">
+<h4 style="margin-top:0;color:#86efac">复用（不动）</h4>
+<ul>
+<li>35 部 <code>cf_*</code> 会计配置字典 + 字典维护工作台</li>
+<li>4 层 <code>cv_*</code> 凭证 DOC + fico-ws 做账工作台</li>
+<li>RPT 报表平台 + 三张报表模板</li>
+<li>ZmcDataSet 零拷贝管线 + tokio-postgres DB 层</li>
+<li>模型中心 <code>PgTableDefineExecutor</code> 建表器</li>
+<li>bigint 后端铸号、落库列校验、CmxErrCode 错误码库</li>
+<li>cmx-job 异步任务中心（批量过账/折旧/重算）</li>
+<li>cmx-flow 流程引擎（凭证审批/反结账审批）</li>
+<li>总账菜单树（凭证/账簿/期末/报表节点）</li>
+</ul>
+</div>
+<div class="card">
+<h4 style="margin-top:0;color:#9ec1ff">新增（本方案）</h4>
+<ul>
+<li><b>7 张 ga_* 物理表</b>：ga_doc / ga_journal / ga_balance / ga_number_range_state / ga_period_status / ga_asset / ga_asset_dep</li>
+<li><b>cv_gl_balance 兼容视图</b>（闭合报表缺口）</li>
+<li><b>1 部配置</b>：ga_acct_determ（账户确定，走 DCT）</li>
+<li><b>cmx-gl crate 群</b>（model / store-pg / api 三 crate）</li>
+<li><b>过账引擎</b>（事务七步）· 冲销引擎 · 折旧运行 · 期末结账/结转 · 余额引擎</li>
+<li><b>compile_gl</b> + <code>base_gl_meta_v1.json</code></li>
+<li><b>/api/gl/*</b> 端点族</li>
+<li><b>查账工作台</b>（四区骨架复用 + 账页渲染）</li>
+<li>switchpoint 分支（store/model_center/whitelist，对齐 RPT M1 清单）</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- ================= §19 落地阶段 ================= -->
+<section id="s19">
+<h2 class="sec"><span class="num">§19</span>落地阶段</h2>
+<table>
+<thead><tr><th>里程碑</th><th>范围</th><th>验收</th></tr></thead>
+<tbody>
+<tr><td><b>M1 表结构 + 编译</b></td><td><code>base_gl_meta</code> + <code>compile_gl</code> 建 7 张 <code>ga_*</code> 表 + <code>cv_gl_balance</code> 视图 + 台账列 + switchpoint</td><td>deploy 成功、PG 表/索引/唯一键正确、幂等；报表读视图不报错</td></tr>
+<tr><td><b>M2 过账引擎（核心）</b></td><td>cv_* → ga_journal + ga_balance 事务七步、取号行锁、平衡/期间校验、余额增量、单账 0L</td><td>一张凭证过账后 ga_journal/ga_balance 正确、幂等（重过 409）、试算平衡；curl + 单测</td></tr>
+<tr><td><b>M3 冲销 + 查账</b></td><td>反向/红冲、双向勾稽；余额表/明细账/试算平衡读模型 + 下钻；查账工作台</td><td>冲销后余额回退、勾稽正确；账簿真机出数、逐格下钻到凭证</td></tr>
+<tr><td><b>M4 折旧 + 期末</b></td><td>ga_asset(_dep) + 折旧运行 + 账户确定；结账/反结账/余额结转/外币估值；接 cmx-job</td><td>折旧凭证正确、幂等水位；结账拦截未过账、年结转次年期初对</td></tr>
+<tr><td><b>M5 初始化 + 并行账</b></td><td>期初余额导入 + 资产接管 + 号段/期间初始化；多分类账扇出 + 差异记账</td><td>期初试算平衡、可从旧系统接管；0L+税务账并行成账各自平衡</td></tr>
+<tr><td><b>M6 打磨</b></td><td>按维度余额、多币种、批量月结过账、余额重算对账作业、审批流集成</td><td>大数据量性能、增量 vs 重算一致、审批闭环</td></tr>
+</tbody>
+</table>
+<div class="callout key">
+<div class="t">最小可用闭环 = M1 + M2</div>
+只做 M1+M2 就能跑通「做账→记账→余额→报表」主链路（呼应 RPT 当年 M1 后端 + M2 取数即出真数）。冲销/折旧/期末是账务完整性的必需扩展，但主动脉在过账引擎。建议先把 M2 打穿、真机验证一张凭证从录入到报表出数，再铺开。
+</div>
+</section>
+
+<!-- ================= §20 风险 ================= -->
+<section id="s20">
+<h2 class="sec"><span class="num">§20</span>关键决策与风险</h2>
+<h3>关键决策（需产品/架构确认）</h3>
+<table>
+<thead><tr><th>决策点</th><th>建议</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>金额表达：借贷分列 vs 带符号</td><td><b>借贷分列 6 度量</b>（不学 SAP 带符号）</td><td>与既有 cv_*/报表/聚合语义一致，减少异构</td></tr>
+<tr><td>ga_journal 头是否独立表</td><td><b>独立 ga_doc 头 + ga_journal 行</b>（BKPF+BSEG 式）</td><td>头信息不必冗余到每行；冲销勾稽挂头更清晰；比纯 ACDOCA 大宽表易查</td></tr>
+<tr><td>余额维护：增量 vs 每次重算</td><td><b>增量为主 + 重算对账</b></td><td>查快；日记账为权威可随时重建校验</td></tr>
+<tr><td>按维度余额是否存明细行</td><td><b>存（汇总行 + 维度行双写）</b></td><td>总账读多写少，空间换读简单</td></tr>
+<tr><td>本期分类账范围</td><td><b>先 0L 单账，扇出逻辑预留</b></td><td>主链路优先；并行账数据接入 M5</td></tr>
+<tr><td>账户确定落点</td><td><b>作为 cf_acct_determ DCT 字典</b></td><td>与其它配置同库同管、字典工作台可维护</td></tr>
+</tbody>
+</table>
+<h3>风险与缓解</h3>
+<table>
+<thead><tr><th>风险</th><th>缓解</th></tr></thead>
+<tbody>
+<tr><td><b>重复过账/并发动账</b>导致重复记账或余额错乱</td><td>cv 状态闸门 + ga_doc 唯一键幂等；号段行锁；余额 UPSERT 原子；全程单事务</td></tr>
+<tr><td><b>余额与明细不一致</b>（增量维护漂移）</td><td>reconcile 重算对账作业（定时/按需）；日记账为唯一权威；不一致告警</td></tr>
+<tr><td><b>凭证号断号/跳号</b>（会计合规红线）</td><td>号段与过账同事务，回滚退号；严格连续默认；块号预取仅在业务接受时启用</td></tr>
+<tr><td><b>跨期冲销/反结账</b>破坏已结账期</td><td>冲销默认冲原期，已结账则冲当前期（原因02）；反结账权限+审批+留痕+连带回滚结转</td></tr>
+<tr><td><b>折旧重复计提</b></td><td>last_posted_period 水位 + 差额法；重算须先冲销回退水位</td></tr>
+<tr><td><b>tokio-postgres 类型敏感</b>写入报错</td><td>金额 rust_decimal::Decimal、日期/BIGINT 严格类型（参考既有报表存储类型坑清单）</td></tr>
+<tr><td><b>大数据量</b>（月结批量过账/大账页查询）</td><td>接 cmx-job 异步 + SSE；查账走 ZmcDataSet 零拷贝 + tokio 并行 + 聚合索引</td></tr>
+</tbody>
+</table>
+</section>
+
+<div class="foot">
+CMX 元数据平台 · 财务会计 · 总账系统设计方案（配置/初始化/做账/记账/冲销/折旧/查账/余额）· 参照 SAP FI / S/4HANA ACDOCA · 本文为设计文档，不含代码改动。<br>
+核心命题：总账系统 = 既有（配置 <code>cf_*</code> + 录入 <code>cv_*</code> + 报表 <code>cr_*</code>）+ 新增一层过账引擎（<code>ga_*</code> 通用日记账 + 余额），把「凭证→账→余额→报表」闭合成完整链路。
+</div>
+
+</main>
+</div>
+</body>
+</html>

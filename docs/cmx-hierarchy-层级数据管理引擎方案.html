@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cmx-hierarchy · 中立层级数据管理引擎 · 设计方案</title>
+<style>
+  :root{
+    --rust:#c65d21; --rust-2:#e08c4a; --ink:#1b2230; --muted:#5b6472; --line:#e3e7ee;
+    --bg:#f7f8fb; --card:#ffffff; --code-bg:#0f1524; --code-ink:#d6def0;
+    --keep:#1f8a56; --keep-bg:#e8f6ee; --drop:#b4433a; --drop-bg:#fbecea;
+    --move:#8a6d1f; --move-bg:#faf3df; --accent:#2f6fed;
+    --doc:#2f6fed; --dct:#c65d21; --front:#7c5cff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.7;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px}
+  header.hero{background:linear-gradient(135deg,#1b2230 0%,#2a2140 55%,#3a2418 100%);color:#fff;padding:56px 24px 46px;margin-bottom:0}
+  header.hero .inner{max-width:1080px;margin:0 auto}
+  header.hero h1{margin:0 0 10px;font-size:34px;letter-spacing:.5px}
+  header.hero .tag{display:inline-block;background:rgba(224,140,74,.22);color:var(--rust-2);
+       border:1px solid rgba(224,140,74,.4);padding:3px 12px;border-radius:999px;font-size:12.5px;margin-bottom:18px}
+  header.hero p.lead{font-size:16.5px;color:#c7cfdd;max-width:830px;margin:6px 0}
+  header.hero .meta{margin-top:20px;font-size:13px;color:#94a0b4}
+  header.hero .meta b{color:#e0e6f0;font-weight:600}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:28px 0 36px;
+       box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  nav.toc h4{margin:0 0 12px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:40px}
+  nav.toc li{margin:4px 0;break-inside:avoid}
+  nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent}
+  nav.toc a:hover{color:var(--rust);border-bottom-color:var(--rust)}
+  section{margin:0 0 44px}
+  h2{font-size:23px;margin:44px 0 14px;padding-top:14px;border-top:3px solid var(--rust);display:inline-block}
+  h2 .n{color:var(--rust);font-weight:800;margin-right:10px}
+  h3{font-size:17px;margin:26px 0 10px;color:#2b3345}
+  h4{font-size:14.5px;margin:18px 0 6px;color:#3a4451}
+  p{margin:9px 0}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;
+       background:#eef1f6;color:#334;padding:1.5px 6px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow:auto;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  .cmt{color:#7e8aa5}.kw{color:#e0955b}.str{color:#8fd08f}.ty{color:#6fb8e6}.fn{color:#e6c86f}.nu{color:#d98fd0}.at{color:#c7a0e0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--card);
+       border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{background:#f0f2f7;text-align:left;padding:10px 13px;font-weight:600;color:#3a4451;border-bottom:2px solid var(--line);font-size:12.5px;letter-spacing:.3px}
+  td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .pill.keep{background:var(--keep-bg);color:var(--keep)}
+  .pill.drop{background:var(--drop-bg);color:var(--drop)}
+  .pill.move{background:var(--move-bg);color:var(--move)}
+  .pill.add{background:#eaf1ff;color:var(--accent)}
+  .callout{border-radius:11px;padding:16px 20px;margin:18px 0;border:1px solid;position:relative}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .callout.dec{background:#fff8f2;border-color:#f0d3b8}
+  .callout.dec .h{color:var(--rust)}
+  .callout.warn{background:#fff9f0;border-color:#f0dcb0}
+  .callout.warn .h{color:#a5761f}
+  .callout.note{background:#f1f6ff;border-color:#c9dcfb}
+  .callout.note .h{color:var(--accent)}
+  .callout.win{background:#f0f8f2;border-color:#bfe3ca}
+  .callout.win .h{color:var(--keep)}
+  .rec{display:inline-block;background:var(--keep);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .box h4{margin-top:0}
+  ul.tight{margin:8px 0;padding-left:22px}ul.tight li{margin:4px 0}
+  .dag{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12.5px;background:#fbfcfe;border:1px solid var(--line);
+       border-radius:10px;padding:18px 20px;white-space:pre;overflow:auto;line-height:1.5;color:#334}
+  .mile td:first-child{font-weight:700;color:var(--rust);white-space:nowrap}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center}
+  .kbd{font-size:11.5px;color:var(--muted)}
+  .legend{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .legend .pill{margin-right:6px}
+  a.anchor{color:var(--rust);text-decoration:none}
+  .srctag{display:inline-block;font-family:"SF Mono",ui-monospace,monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;margin-right:6px}
+  .s-doc{background:var(--doc)}.s-dct{background:var(--dct)}.s-front{background:var(--front)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <div class="tag">设计方案 · DRAFT · 先方案后编码</div>
+    <h1>cmx-hierarchy · 中立层级数据管理引擎</h1>
+    <p class="lead">为前端 <code style="background:rgba(255,255,255,.12);color:#f0d9c4">CmxMasterSlave</code> 造一个 Rust 后端对等物：一个<strong>业务无感知、任意层级</strong>的层级数据管理引擎，吃下 <b>DOC 的层级单据</b>、<b>DCT 的分级/分类/分组</b>——乃至任何主从/树形结构。补齐三方共缺的<strong>服务端权威层间汇总</strong>。放在<strong>独立中立的 Rust 组件库</strong>，与 <code style="background:rgba(255,255,255,.12);color:#f0d9c4">cmx-container</code> 并列。</p>
+    <div class="meta">
+      对标源：<b>CmxMasterSlave</b>（TS，1530 行，主从协调器）&nbsp;·&nbsp;
+      落点：<b>presentation/cmx-hierarchy/</b>（独立 workspace，与 cmx-rust-sheet 平级）&nbsp;·&nbsp;
+      吃下：<b>DOC cv_*</b>（异构 upper_id 树）+ <b>DCT cf_*</b>（自引用 parent_id 树）&nbsp;·&nbsp;
+      本文档：<b>仅方案，不含实现代码</b>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="callout warn" style="margin:24px 0 0">
+  <div class="h">⚠ 方向修正（2026-08，已落地实现，本文档部分内容被取代）</div>
+  本方案初版把引擎做成<strong>独立 workspace（presentation/cmx-hierarchy）+ 自造新存储引擎 PgHierStore</strong>——<strong>方向错了</strong>。用户澄清："独立/中立" 是<em>依赖意义</em>的：前端 CmxMasterSlave 不依赖任何服务，<strong>是服务依赖它</strong>（箭头朝内）。<br>
+  <strong>已修正落地</strong>：后端主从协调器做成 cmx-container 叶子 crate <code>cmx-master-slave</code>（<code>struct CmxMasterSlave</code> + <code>trait HierService</code>，数据集用 <code>ZmcDataSet</code>），<strong>由 <code>cmx-doc-store-pg</code>/<code>cmx-dct-store-pg</code> impl HierService 复用其现成加载/保存</strong>——不新造存储引擎。本文档的 <code>hier-store-pg</code>/独立 workspace 章节已作废；<code>hier-agg</code> 汇总引擎作为叶子 crate 的 <code>agg</code> 模块保留。初版代码已归档 <code>_archive-cmx-hierarchy/</code>。
+</div>
+
+<nav class="toc">
+  <h4>目录</h4>
+  <ol>
+    <li><a href="#s1">背景与目标</a></li>
+    <li><a href="#s2">三方实测：DOC / DCT / 前端怎么做的</a></li>
+    <li><a href="#s3">统一抽象：一个引擎两种树形</a></li>
+    <li><a href="#s4">关键决策（含推荐）</a></li>
+    <li><a href="#s5">落点与 crate 划分</a></li>
+    <li><a href="#s6">核心数据模型（Rust）</a></li>
+    <li><a href="#s7">层级机制：邻接表 + 派生索引</a></li>
+    <li><a href="#s8">汇总引擎（对齐前端 · 服务端权威）</a></li>
+    <li><a href="#s9">ID 铸号 + 装载 / 保存契约</a></li>
+    <li><a href="#s10">四种层级形态的落地映射</a></li>
+    <li><a href="#s11">不变式（业务无感知底线）</a></li>
+    <li><a href="#s12">里程碑路线图</a></li>
+    <li><a href="#s13">测试与验收</a></li>
+    <li><a href="#s14">接入方式（DOC/DCT 如何复用）</a></li>
+    <li><a href="#s15">最终目录结构</a></li>
+    <li><a href="#s16">风险与开放问题</a></li>
+    <li><a href="#s17">附录：三方契约对照 / 规模</a></li>
+  </ol>
+</nav>
+
+<!-- ───────────────────────────── 1 ───────────────────────────── -->
+<section id="s1">
+  <h2><span class="n">01</span>背景与目标</h2>
+  <p>前端有一个久经验证的组件 <b>CmxMasterSlave</b>（<code>packages/cmx-data-comp/src/lib/cmx-master-slave.js</code>，1530 行）——"多张表的管家"：把主表 + 子表 + 孙表绑成一棵递归数据树，选行联动、改值自动<strong>层间汇总</strong>。它<strong>业务无感知</strong>，只认 <code>schema</code> 路径树 + <code>aggregations</code> 规则，不认"凭证/字典/订单"任何业务术语。</p>
+  <p>本方案要做的：<strong>为它造一个 Rust 后端对等物</strong>——一个可嵌入后端服务、可批量、可无头运行的<strong>任意层级数据管理引擎</strong>。它管的不只是"读一棵树"，而是这棵树的<strong>装载 / 校验 / 铸号 / 变更集保存 / 服务端权威汇总</strong>的完整生命周期，并且——像 CmxMasterSlave 一样——<strong>永不认识任何具体单据/字典</strong>。</p>
+
+  <div class="callout note">
+    <div class="h">◆ 一句话范围</div>
+    造一个中立引擎 <code>cmx-hierarchy</code>：输入<strong>定义（层级 schema + 汇总规则）</strong>+ <strong>数据（多层行）</strong>，输出<strong>装配好的树 / 校验结果 / 已上卷的落库变更</strong>。它<strong>吃下</strong> DOC 的 <code>upper_id</code> 异构树与 DCT 的 <code>parent_id</code> 自引用树，<strong>补齐</strong>三方共缺的服务端汇总，<strong>不碰</strong>任何 <code>cv_*/cf_*</code> 硬编码。
+  </div>
+
+  <h3>为什么现在做、为什么独立中立</h3>
+  <ul class="tight">
+    <li><b>唯一实缺已被点名</b>：cmx-container 内已有方案 <code>统一建模平台-RPT范式推广到DOC与DCT方案.html</code> 明确指出——DOC/DCT 后端骨架都已就位，<strong>唯一缺的是一个"定义声明、服务端权威、可落库"的层间汇总引擎 <code>cmx-agg</code></strong>。三个后台代理逐行核实：<strong>该 crate 至今不存在</strong>，DOC/DCT 都有 <code>agg</code>/<code>SummaryView</code>/<code>*_sum</code> 元数据却<strong>无任何代码计算级联小计</strong>。</li>
+    <li><b>你的需求 = 那份方案的超集</b>：不止 rollup 子引擎，而是 CmxMasterSlave 的<strong>完整</strong>后端对等物（树管理 + 汇总）。</li>
+    <li><b>独立中立</b>（你的明确指示）：放 <code>presentation/cmx-hierarchy/</code>，与 <code>cmx-container</code> 并列，镜像 <code>cmx-rust-sheet</code> 的独立姿态——纯库、只引公共 crate、可被任何 Rust 后端 <code>path</code> 引入当"层级算核"，不并入大 workspace。</li>
+    <li><b>低风险</b>：声明格式前端在用、DOC 定义里有占位；计算语义前端 <code>AGG_FUNCS</code>+<code>_cascade</code> 跑了很久；铸号/校验/落库通道 DOC/DCT 已共用——真正的新代码只有"树抽象 + 拓扑汇总"一小核。</li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────── 2 ───────────────────────────── -->
+<section id="s2">
+  <h2><span class="n">02</span>三方实测：DOC / DCT / 前端怎么做的</h2>
+  <p>下面每一条都经后台代理<strong>逐文件逐行核验</strong>（附 file:line）。这是本方案的事实地基。</p>
+
+  <h3><span class="srctag s-front">前端</span>CmxMasterSlave 的契约</h3>
+  <table>
+    <tr><th style="width:24%">要素</th><th>实测</th></tr>
+    <tr><td>层级表达</td><td>递归 <code>CmxDataSet</code> 树，经每行 <code>_children:{tableId:CmxDataSet}</code> 相连（<em>非</em>扁平数组、<em>非</em>行上 parent_id）。任意 N 层，无固定深度。</td></tr>
+    <tr><td>两个核心配置</td><td><code>schema</code>（点分路径树 <code>head.items.taxes</code>）+ <code>aggregations</code>（<code>{from,agg,field,to,toField,scope?}</code>）。</td></tr>
+    <tr><td>汇总引擎</td><td><code>AGG_FUNCS</code>=sum/avg/min/max/count（<code>:33-39</code>）；作用域解析 <code>_resolveSourcesForTarget</code>（<code>:905-929</code>）三种情形（to 是 from 祖先 / 共同 list 祖先 LCA / <code>scope:'all'</code>）；链式级联 <code>_cascade</code> 带环检测 + 深度 16 闸（<code>:836-861</code>）。</td></tr>
+    <tr><td>触发时机</td><td>setData 预热一次；cell-changed（按 from 反向索引，命中才跑）；row-added/removed（前缀匹配）。</td></tr>
+    <tr><td>两种喂数据</td><td><code>setData</code>（树，自己管 CmxDataSet）/ <code>setFlatData</code>（平铺 + relations，自动建树）。</td></tr>
+    <tr><td>后端缺口</td><td>汇总是<strong>纯前端</strong>；服务端权威重算引擎 <code>cmx-agg</code> <strong>不存在</strong>。</td></tr>
+  </table>
+
+  <h3><span class="srctag s-doc">DOC</span>层级单据（异构 path-tree）</h3>
+  <ul class="tight">
+    <li><b>层级列（每层相同骨架）</b>：<code>id</code> BIGINT PK · <code>upper_id</code> BIGINT（邻接表父指针，可空）· <code>line_no</code> BIGINT（父内排序）· 审计列 <code>create_by/create_time/update_by/update_time/delete_flag</code>。<strong>无</strong> <code>parent_id</code>（名字是 <code>upper_id</code>）、<strong>无</strong> level/path/depth 列、<strong>无</strong> DB 外键（应用层保证完整性）。</li>
+    <li><b>层是异构表</b>：主链 <code>cv_batch→cv_header→cv_acc_line</code>，同层还有兄弟表 <code>cv_aux_line/cv_zycb_line</code>（<code>LevelGroup.table_ids</code>，<code>[0]</code>=主）。level 是<strong>定义期</strong>概念（L1/L2/L3 标签），不落每行。</li>
+    <li><b>Rust 模型</b>（<code>cmx-doc-model/src/meta.rs</code>）：<code>DocMetaView{layer_order,layers,layer_groups,relations}</code> · <code>LayerView{table_name,level,parent_table,columns,summaries,agg_fields,spec}</code> · <code>RelationView{parent,child,parent_key="id",child_key="upper_id"}</code>。行是运行时 <code>DataSet/Row</code>，经 <code>Row::add_child</code> 建树，<em>非</em>编译期类型。</li>
+    <li><b>装载</b>：BFS，每层一条 <code>WHERE upper_id = ANY($parentIds)</code>（无 N+1），<code>attach_children</code> 按 upper_id 分桶挂 <code>_children</code>。<b>保存</b>：单事务拓扑序 merge（按 id UPSERT）或 replace（子树删+重插），乐观锁 <code>update_time</code> 基线 → 409，事务内版本快照。</li>
+    <li><b>汇总</b>：<code>agg:"sum"</code>/<code>SummaryView</code>/<code>*_sum</code> 表都是<strong>元数据</strong>，<strong>无代码</strong>计算级联小计。</li>
+  </ul>
+
+  <h3><span class="srctag s-dct">DCT</span>分级 / 分类 / 分组（同构自引用）</h3>
+  <ul class="tight">
+    <li><b>已是 schema 无关的动态 SQL 引擎</b>：<strong>零静态 <code>cf_*</code> DDL、零按 flavor 分支</strong>。平级/分级/分类/分组<strong>不是三条代码路径，而是同一引擎的配置</strong>，只由 <code>self_hierarchy</code>+<code>parent_field</code> 两布尔量决定。</li>
+    <li><b>层级列（一行内三种编码并存）</b>：<code>parent_id</code> BIGINT（权威邻接）+ 服务端派生 <code>full_path</code> VARCHAR(512)（物化路径，点分 code）+ <code>level_no</code> TINYINT + <code>is_leaf</code> TINYINT。任意深度。</li>
+    <li><b>四种 flavor 的真实差异</b>：<code>dictKind∈{BUSINESS,CLASSIFY,GROUP,RELATION}</code> + <code>selfHierarchy</code>。但 <strong><code>dictKind</code>/<code>classifyRegistry</code>/<code>groupRegistry</code> 后端存储层一行都不读</strong>——纯前端 UI 判别（决定用哪个工作台）。分类 = 目标表上一个指向另一字典的 FK 列；M:N 分组 = junction 表（已声明、<strong>未实现</strong>，对你是 greenfield）。</li>
+    <li><b>层级重算</b>：单条 <code>WITH RECURSIVE</code> CTE <code>recompute_hierarchy_subtree</code>（<code>hierarchy.rs:145</code>）在受影响子树上一次性重写 <code>level_no/full_path/is_leaf</code>，幂等。<b>读</b>是懒加载 <code>WHERE parent_id=$</code> 逐层下钻，<em>非</em>递归读。</li>
+    <li><b>Rust 模型</b>：<code>DictView{table_name,id_field,code_field,parent_field:Option,self_hierarchy:bool,columns,pk,spec}</code>——<code>self_hierarchy</code> 是引擎唯一读的 flavor 开关。</li>
+  </ul>
+
+  <div class="callout win">
+    <div class="h">✅ 三方汇合于同一套原语</div>
+    DOC 与 DCT <strong>本就用同一套层级原语</strong>：邻接表父指针（DOC 叫 <code>upper_id</code>、DCT 叫 <code>parent_id</code>）+ 定义驱动 + 52 位 JS 安全铸号 + temp→real <code>idMap</code> + 变更集事务保存 + 乐观锁 + 缓存 <code>TableSpec</code> 校验 → 结构化 <code>Violation</code>。差别只在<strong>异构（DOC 每层一表）vs 同构（DCT 单表自引用）</strong>与<strong>汇总有无</strong>。这正是"一个引擎两种树形"可成立的根据（见 §3）。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 3 ───────────────────────────── -->
+<section id="s3">
+  <h2><span class="n">03</span>统一抽象：一个引擎两种树形</h2>
+  <p>把三方差异收敛成<strong>两种拓扑形状</strong> + <strong>一个共享汇总核</strong>。引擎只认这两种形状，业务只是配置。</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="srctag s-doc">形状 A</span>异构 path-tree（每层一表）</h4>
+      <ul class="tight" style="font-size:13px">
+        <li>层间异构：head/items/taxes 各是不同表、不同列集。</li>
+        <li>父子经 <strong>FK</strong>：子行 <code>child_key</code>（默认 <code>upper_id</code>）指父 <code>id</code>。</li>
+        <li>点分路径 <code>a.b.c</code> 唯一定位一层。同层可多兄弟表。</li>
+        <li><b>对标</b>：CmxMasterSlave 的 <code>_children</code> 树 / DOC。</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4><span class="srctag s-dct">形状 B</span>同构自引用（单表 parent_id）</h4>
+      <ul class="tight" style="font-size:13px">
+        <li>层间同构：同一张表，行指行。</li>
+        <li>父子经 <strong>自 FK</strong>：<code>parent_id</code> 指同表 <code>id</code>。</li>
+        <li>深度不定，服务端派生 <code>full_path/level_no/is_leaf</code>。</li>
+        <li><b>对标</b>：前端 treegrid <code>buildTreeFromFlat</code> / DCT 自分级。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout dec">
+    <div class="h">▶ 统一视角：形状 A 是形状 B 的"层间版"</div>
+    两者都是<strong>邻接表</strong>——A 是"跨表邻接"（child 表.upper_id → parent 表.id），B 是"同表邻接"（row.parent_id → row.id）。引擎内部统一建模为一棵 <code>Node{ layer, row, parent, children }</code> 树；<strong>装载适配器</strong>负责把两种物理形状读成同一棵内存树，<strong>保存适配器</strong>反向写回。汇总引擎、铸号、校验、变更集<strong>只认这棵中立树</strong>，对 A/B 无感。
+  </div>
+
+  <h3>分类 / 分组 怎么归位（DCT 的第 3、4 种）</h3>
+  <table>
+    <tr><th style="width:18%">形态</th><th style="width:20%">本质</th><th>引擎怎么表达</th></tr>
+    <tr><td><b>分级</b>（自分级）</td><td>形状 B</td><td>单表 <code>parent_id</code> 自引用树，服务端维护派生列。<span class="pill keep">核心</span></td></tr>
+    <tr><td><b>分类</b>（带分类）</td><td>跨树引用</td><td>目标树的行带一个 <strong>FK 列</strong>指向"分类树"的某节点——即<strong>两棵独立树 + 一条引用</strong>，非父子层级。引擎提供"引用完整性可选校验"，不作层级维护。</td></tr>
+    <tr><td><b>分组</b>（M:N）</td><td>junction 关系</td><td>成员与组多对多，经 <strong>junction 表</strong>（<code>member_id,group_id</code>）。DCT 已声明 <code>dict_group_rel</code> 但<strong>未实现</strong> → 引擎新增一个 <code>RelationSet</code> 原语承接（greenfield）。</td></tr>
+    <tr><td><b>平级</b>（flat）</td><td>退化</td><td>形状 B 关掉 <code>self_hierarchy</code> = 无父子的单层列表。天然子集。</td></tr>
+  </table>
+  <p class="legend">结论：<b>层级 = 形状 A/B（引擎核心）；分类 = 树间 FK 引用；分组 = M:N junction。</b>三者正交，可叠加（一棵分级树的节点又可被分类/分组）。</p>
+</section>
+
+<!-- ───────────────────────────── 4 ───────────────────────────── -->
+<section id="s4">
+  <h2><span class="n">04</span>关键决策（含推荐）</h2>
+
+  <h3 id="s4-1">4.1&nbsp; 独立中立 workspace，与 cmx-container 并列 <span class="rec">已定·用户指示</span></h3>
+  <p>落 <code>presentation/cmx-hierarchy/</code>，镜像 <code>cmx-rust-sheet</code>：独立 <code>Cargo.toml [workspace]</code>、分层 <code>crates/</code>、Apache-2.0、只引公共 crate。<strong>不</strong>并入 cmx-container；需要接入时以 <code>path</code>/registry 单向引入。这既满足"独立中立组件库"的诉求，也让 DOC/DCT/RPT 乃至外部项目都能复用同一算核。</p>
+
+  <h3 id="s4-2">4.2&nbsp; 超集定位：不止 cmx-agg，而是 CmxMasterSlave 后端对等物 <span class="rec">已定</span></h3>
+  <p>cmx-container 那份方案的 <code>cmx-agg</code> 只是"拓扑排序 + 逐层重算"子引擎。本方案把它<strong>升级为完整层级管理引擎</strong>：树抽象（A/B）+ 装载/保存适配 + 铸号 + 校验 + <strong>汇总</strong>。<code>cmx-agg</code> 成为其中一个 crate（<code>hier-agg</code>），而非全部。</p>
+
+  <h3 id="s4-3">4.3&nbsp; 纯库优先 + 存储适配器 trait 化 <span class="rec">已定</span></h3>
+  <p>引擎核心（树/汇总/校验）<strong>不绑数据库</strong>，经 <code>trait HierStore</code> 抽象存取；提供一个 <code>hier-store-pg</code> 实现（tokio-postgres，复用 <code>cmx-database-pg</code> 的 <code>ZmcDataSet</code> 零拷贝）。这样核心可单测（mock store）、可换库、可无头批量。可选 <code>hier-service</code>（axum）/ <code>hier-cli</code> 后置。</p>
+
+  <h3 id="s4-4">4.4&nbsp; 依赖策略：吃公共 crate，语义对齐但不搬业务 <span class="rec">已定</span></h3>
+  <p>复用脊柱级公共 crate：<code>cmx-utils</code>（<code>Pk52Generator</code> 铸号）、<code>cmx-database-pg</code>（池 + ZmcDataSet）、<code>cmx-biz</code> 的 validation/errcode <strong>薄片</strong>（<code>TableSpec/validate_*/Violation/CmxErrCode</code>）。定义解析对齐 <code>cmx-model-meta</code> 的 resolve 语义，但引擎<strong>只吃已解析的中立视图</strong>（<code>HierSchema</code>），不直接依赖 DOC/DCT 的 <code>DocMetaView/DictView</code>——保持中立。</p>
+
+  <div class="callout dec">
+    <div class="h">▶ 落地前需用户拍板</div>
+    <b>①</b> 交付形态：纯库（推荐）／叠加 axum 服务／叠加 CLE？&nbsp;&nbsp;
+    <b>②</b> 校验/铸号：直接 <code>path</code> 复用 cmx-container 的 <code>cmx-utils</code>/<code>cmx-biz</code>（推荐，零重造），还是在中立库里独立重铸一份 <code>Pk52</code>/校验（更纯粹但重复）？&nbsp;&nbsp;
+    <b>③</b> 汇总时机默认：写时上卷（推荐 DOC 凭证类）还是读时现算，作为库级默认？
+  </div>
+</section>
+
+<!-- ───────────────────────────── 5 ───────────────────────────── -->
+<section id="s5">
+  <h2><span class="n">05</span>落点与 crate 划分</h2>
+  <div class="dag">presentation/cmx-hierarchy/            # 独立 workspace，与 cmx-container 并列
+│  （镜像 cmx-rust-sheet：resolver=2 · Apache-2.0 · [workspace.dependencies] 统管）
+├─ crates/
+│   ├─ hier-core          ← 中立树抽象 + 校验（纯逻辑，不碰 DB）
+│   │     HierSchema(层级定义) · Node/HierTree(内存树) · NodeId
+│   │     shape: PathTree(形状A) | SelfRef(形状B)
+│   │     validate(复用 cmx-biz TableSpec 薄片) · Violation
+│   │     deps: serde · thiserror   (+ cmx-biz-kernel 校验薄片)
+│   │                         ▲
+│   ├─ hier-agg            ← 汇总引擎（= 那份方案点名的 cmx-agg，升级版）
+│   │     AggRule{from,to,field,to_field,agg,scope} · AggFn(Sum/Avg/Min/Max/Count)
+│   │     topo_sort(成环即拒) · rollup(写时) · rollup_read(读时 SELECT SUM GROUP BY)
+│   │     语义与前端 AGG_FUNCS + _cascade 逐字对齐 · deps: 仅 hier-core
+│   │                         ▲
+│   ├─ hier-store-pg       ← 存储适配（trait HierStore 的 PG 实现）
+│   │     装载: 形状A BFS(WHERE upper_id=ANY) / 形状B 懒加载(WHERE parent_id=$)
+│   │     保存: 变更集事务(del→ins→upd) · 铸号 · 乐观锁 · 子树重算CTE
+│   │     deps: hier-core · hier-agg · cmx-database-pg · cmx-utils(Pk52)
+│   │                         ▲
+│   ├─ cmx-hierarchy       ← 门面 umbrella：重导出 + HierManager 高层 API + VERSION
+│   │     load_tree / save_changeset / rollup / expand / new_node …
+│   │                         ▲
+│   │         ┌───────────────┴───────────────┐  (可选，后置)
+│   └─ hier-service(axum)                └─ hier-cli(clap)
+│         REST: /load /save /children /rollup      批量转换 / 校验
+└─ docs/方案.html                       # ← 本文档</div>
+  <div class="callout note">
+    <div class="h">◆ 依赖纪律</div>
+    <code>hier-core</code> 纯逻辑（可 mock 单测）；<code>hier-agg</code> 只依赖 core（可独立复用为"那份方案的 cmx-agg"）；<strong>所有 DB 关切收口在 <code>hier-store-pg</code> 一层</strong>。核心对 A/B 两形状无感——形状差异是 store 层的装载/保存适配。<code>cmx-database-pg</code> 等以 <code>path</code>（或后续 registry）单向引入，<strong>不并入 cmx-container</strong>。
+  </div>
+
+  <h3>门面 API 形态（对应 CmxMasterSlave 的数据类方法）</h3>
+  <pre><code><span class="cmt">// cmx-hierarchy 门面：CmxMasterSlave 的数据类方法搬成纯 Rust（无视图/DOM/事件）</span>
+<span class="kw">let</span> schema = <span class="ty">HierSchema</span>::<span class="fn">from_definition</span>(def_json)?;   <span class="cmt">// 中立视图，A 或 B</span>
+<span class="kw">let</span> mgr = <span class="ty">HierManager</span>::<span class="fn">new</span>(schema, store);
+
+<span class="kw">let</span> tree = mgr.<span class="fn">load_tree</span>(&scope, &query).<span class="kw">await</span>?;      <span class="cmt">// ← loadDoc / loadDict</span>
+<span class="kw">let</span> kids = mgr.<span class="fn">expand</span>(&node_id).<span class="kw">await</span>?;             <span class="cmt">// ← 懒加载下钻（形状B/大树）</span>
+
+<span class="kw">let</span> plan = mgr.<span class="fn">stage_changeset</span>(changeset)?;         <span class="cmt">// 校验 + 铸号 temp→real</span>
+mgr.<span class="fn">rollup</span>(&<span class="kw">mut</span> plan)?;                            <span class="cmt">// ← 层间汇总(写时)，服务端权威</span>
+<span class="kw">let</span> out = mgr.<span class="fn">commit</span>(plan).<span class="kw">await</span>?;                 <span class="cmt">// 单事务落库 + 乐观锁 → idMap</span>
+
+<span class="kw">let</span> v = mgr.<span class="fn">rollup_read_only</span>(&scope, &rules).<span class="kw">await</span>?; <span class="cmt">// ← 读时现算(不落库)</span></code></pre>
+</section>
+
+<!-- ───────────────────────────── 6 ───────────────────────────── -->
+<section id="s6">
+  <h2><span class="n">06</span>核心数据模型（Rust）</h2>
+  <p>把三方实测结构收敛成一组中立类型。命名对齐前端语义（path/from/to），字段对齐实测列。</p>
+  <pre><code><span class="cmt">// ── 层级定义（中立视图，由 DOC/DCT 定义 JSON 解析而来，引擎不认业务）──</span>
+<span class="kw">pub struct</span> <span class="ty">HierSchema</span> {
+    <span class="kw">pub</span> shape:    <span class="ty">Shape</span>,               <span class="cmt">// PathTree(异构) | SelfRef(自引用)</span>
+    <span class="kw">pub</span> layers:   <span class="ty">Vec</span>&lt;<span class="ty">LayerDef</span>&gt;,       <span class="cmt">// 形状A：每层一表；形状B：单元素</span>
+    <span class="kw">pub</span> relations:<span class="ty">Vec</span>&lt;<span class="ty">RelationDef</span>&gt;,    <span class="cmt">// parent/child/parent_key/child_key</span>
+    <span class="kw">pub</span> aggs:     <span class="ty">Vec</span>&lt;<span class="ty">AggRule</span>&gt;,        <span class="cmt">// 汇总规则（可空）</span>
+}
+<span class="kw">pub enum</span> <span class="ty">Shape</span> { <span class="ty">PathTree</span>, <span class="ty">SelfRef</span>{ parent_field: <span class="ty">String</span> } }
+
+<span class="kw">pub struct</span> <span class="ty">LayerDef</span> {
+    <span class="kw">pub</span> path:       <span class="ty">String</span>,             <span class="cmt">// "head.items.taxes"（A）/ "dict"（B）</span>
+    <span class="kw">pub</span> table:      <span class="ty">String</span>,             <span class="cmt">// 物理表名（引擎只透传，不硬编码）</span>
+    <span class="kw">pub</span> pk:         <span class="ty">String</span>,             <span class="cmt">// "id" 或 code 字段</span>
+    <span class="kw">pub</span> child_key:  <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt;,     <span class="cmt">// 指父的 FK，默认 "upper_id"/"parent_id"</span>
+    <span class="kw">pub</span> order_key:  <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt;,     <span class="cmt">// "line_no"/"sort_no"</span>
+    <span class="kw">pub</span> derived:    <span class="ty">DerivedCols</span>,        <span class="cmt">// full_path/level_no/is_leaf 列名（可空）</span>
+    <span class="kw">pub</span> spec:       <span class="ty">Arc</span>&lt;<span class="ty">TableSpec</span>&gt;,      <span class="cmt">// 复用 cmx-biz 校验规格</span>
+    <span class="kw">pub</span> agg_fields: <span class="ty">Vec</span>&lt;<span class="ty">String</span>&gt;,        <span class="cmt">// 承接汇总的列</span>
+}
+
+<span class="cmt">// ── 内存树（装载后的中立结构，A/B 都装配成它）──</span>
+<span class="kw">pub struct</span> <span class="ty">HierTree</span> { <span class="kw">pub</span> roots: <span class="ty">Vec</span>&lt;<span class="ty">NodeId</span>&gt;, <span class="kw">pub</span> arena: <span class="ty">Arena</span>&lt;<span class="ty">Node</span>&gt; }
+<span class="kw">pub struct</span> <span class="ty">Node</span> {
+    <span class="kw">pub</span> id:       <span class="ty">NodeId</span>,               <span class="cmt">// 稳定键（真 id 或 temp id）</span>
+    <span class="kw">pub</span> layer:    <span class="ty">usize</span>,                <span class="cmt">// 层序（A 跨表 / B 深度）</span>
+    <span class="kw">pub</span> row:      <span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Value</span>&gt;,   <span class="cmt">// 行字段（JSON 值层，落库前）</span>
+    <span class="kw">pub</span> parent:   <span class="ty">Option</span>&lt;<span class="ty">NodeId</span>&gt;,
+    <span class="kw">pub</span> children: <span class="ty">Vec</span>&lt;<span class="ty">NodeId</span>&gt;,
+}
+
+<span class="cmt">// ── 汇总规则（与前端 AggregationRule + 那份方案 AggRule 逐字对齐）──</span>
+<span class="kw">pub struct</span> <span class="ty">AggRule</span> { <span class="kw">pub</span> from: <span class="ty">String</span>, <span class="kw">pub</span> to: <span class="ty">String</span>, <span class="kw">pub</span> field: <span class="ty">String</span>,
+                     <span class="kw">pub</span> to_field: <span class="ty">String</span>, <span class="kw">pub</span> agg: <span class="ty">AggFn</span>, <span class="kw">pub</span> scope: <span class="ty">Scope</span> }
+<span class="kw">pub enum</span> <span class="ty">AggFn</span> { <span class="ty">Sum</span>, <span class="ty">Avg</span>, <span class="ty">Min</span>, <span class="ty">Max</span>, <span class="ty">Count</span> }   <span class="cmt">// 语义 = AGG_FUNCS</span>
+<span class="kw">pub enum</span> <span class="ty">Scope</span> { <span class="ty">Siblings</span>, <span class="ty">All</span> }</code></pre>
+  <p class="legend">要点：<b>行不做强类型 struct</b>（对齐 DOC/DCT——运行时 <code>Map&lt;String,Value&gt;</code>，落库前在 JSON 值层校验），保中立与任意列。<code>NodeId</code> 兼容真 id 与 temp id（见 §9）。</p>
+</section>
+
+<!-- ───────────────────────────── 7 ───────────────────────────── -->
+<section id="s7">
+  <h2><span class="n">07</span>层级机制：邻接表 + 派生索引</h2>
+  <p>两形状统一为<strong>邻接表权威 + 派生列可选</strong>——与 DOC/DCT 实测完全一致，直接移植。</p>
+  <table>
+    <tr><th style="width:20%">机制</th><th style="width:40%">形状 A（DOC）</th><th>形状 B（DCT）</th></tr>
+    <tr><td>父指针</td><td>子表 <code>upper_id</code> → 父表 <code>id</code>（跨表）</td><td>行 <code>parent_id</code> → 同表 <code>id</code>（自引用）</td></tr>
+    <tr><td>排序</td><td><code>line_no</code></td><td><code>sort_no</code></td></tr>
+    <tr><td>层/深度</td><td>定义期 L1/L2/L3（不落行）</td><td>派生 <code>level_no</code>（落行）</td></tr>
+    <tr><td>路径</td><td>无（点分 path 是逻辑定位）</td><td>派生 <code>full_path</code>（物化，点分 code）</td></tr>
+    <tr><td>叶标记</td><td>无</td><td>派生 <code>is_leaf</code></td></tr>
+    <tr><td>装载</td><td>BFS，每层 <code>WHERE upper_id=ANY($ids)</code>，分桶挂 children（无 N+1）</td><td>懒加载 <code>WHERE parent_id=$</code> 逐层下钻</td></tr>
+    <tr><td>派生列重算</td><td>不需要（无派生列）</td><td>单条 <code>WITH RECURSIVE</code> CTE 在受影响子树一次性重写 level/path/leaf，幂等</td></tr>
+    <tr><td>完整性</td><td>无 DB 外键，应用层保证</td><td>同左；引擎可选做引用校验</td></tr>
+  </table>
+  <div class="callout note">
+    <div class="h">◆ 直接移植的两段成方</div>
+    ① DCT 的 <code>recompute_hierarchy_subtree</code>（<code>hierarchy.rs:145</code>，递归 CTE 重写派生列）几乎原样搬进 <code>hier-store-pg</code>，只把列名参数化（<code>derived</code> 字段驱动）。② DOC 的 <code>attach_children</code>（按父键分桶挂 <code>_children</code>）搬成中立树装配。<strong>都是已跑通逻辑，非新造。</strong>
+  </div>
+</section>
+
+<!-- ───────────────────────────── 8 ───────────────────────────── -->
+<section id="s8">
+  <h2><span class="n">08</span>汇总引擎（对齐前端 · 服务端权威）</h2>
+  <p>这是<strong>唯一实缺的新造核</strong>——但语义已被前端验证多年，只需在 Rust 侧忠实复现并升级为"落库权威"。</p>
+
+  <h3>8.1 声明（进定义 JSON，DOC/DCT/RPT 通用，前端同读一份）</h3>
+  <pre><code><span class="str">"aggregations"</span>: [
+  { <span class="str">"from"</span>:<span class="str">"cv_aux_line"</span>, <span class="str">"to"</span>:<span class="str">"cv_acc_line"</span>, <span class="str">"field"</span>:<span class="str">"local_dr"</span>, <span class="str">"toField"</span>:<span class="str">"local_dr"</span>, <span class="str">"agg"</span>:<span class="str">"sum"</span> },
+  { <span class="str">"from"</span>:<span class="str">"cv_acc_line"</span>, <span class="str">"to"</span>:<span class="str">"cv_header"</span>,   <span class="str">"field"</span>:<span class="str">"local_dr"</span>, <span class="str">"toField"</span>:<span class="str">"total_local_dr"</span>, <span class="str">"agg"</span>:<span class="str">"sum"</span> }
+  <span class="cmt">// 两条串联 = 辅助行→科目行→凭证头 逐层上卷（拓扑序自动推导）</span>
+]</code></pre>
+
+  <h3>8.2 三种作用域（与前端 <code>_resolveSourcesForTarget</code> 逐字对齐）</h3>
+  <table>
+    <tr><th style="width:30%">情形</th><th>行为（前端已实现，Rust 复现）</th></tr>
+    <tr><td><code>to</code> 是 <code>from</code> 祖先（case A）</td><td>对每个 target 行，source 限定在<strong>它的子树</strong>沿相对路径展开。</td></tr>
+    <tr><td><code>from</code>/<code>to</code> 有共同 list 祖先（case B）</td><td>找到包含 target 的<strong>最近公共祖先 A 行</strong>（LCA + DFS 定位），从 A 沿相对路径收集。</td></tr>
+    <tr><td><code>scope:'all'</code></td><td>整树聚合，忽略上下文。</td></tr>
+  </table>
+
+  <h3>8.3 执行（拓扑排序 + 逐层重算 + 链式级联）</h3>
+  <pre><code><span class="cmt">// 保存前：按 (from→to) 建 DAG 拓扑排序，逐层把子层聚合回写父层承接字段</span>
+<span class="kw">pub fn</span> <span class="fn">rollup</span>(tree: &<span class="kw">mut</span> <span class="ty">HierTree</span>, rules: &[<span class="ty">AggRule</span>]) -> <span class="ty">Result</span>&lt;()&gt; {
+    <span class="kw">let</span> order = <span class="fn">topo_sort</span>(rules)?;        <span class="cmt">// 子明细→明细→主表；成环即报错</span>
+    <span class="kw">for</span> rule <span class="kw">in</span> order {
+        <span class="kw">for</span> target <span class="kw">in</span> <span class="fn">resolve_targets</span>(tree, &rule) {
+            <span class="kw">let</span> src = <span class="fn">resolve_sources</span>(tree, &rule, target); <span class="cmt">// 三种作用域</span>
+            target.row[&rule.to_field] = <span class="fn">apply</span>(rule.agg, src, &rule.field);
+        }
+    }
+    <span class="ty">Ok</span>(())   <span class="cmt">// 链式：本规则写出的字段是下条 from → 拓扑序天然承接（对齐前端 _cascade）</span>
+}</code></pre>
+
+  <div class="callout note">
+    <div class="h">⚙️ 两种执行时机，一表一议</div>
+    <b>写时上卷（推荐 DOC 凭证类）</b>：saver 落库前对整棵变更树 <code>rollup</code>，承接字段随子层一并 UPSERT——脱离浏览器也对，报表取数直接读到已上卷值。<br>
+    <b>读时上卷（可选，省存储）</b>：装载时生成 <code>SELECT SUM(...) ... GROUP BY upper_id</code> 现算，不落库，适合纯展示维度。<br>
+    两者共用同一份 <code>AggRule</code> 声明，只是消费点不同。
+  </div>
+  <div class="callout warn">
+    <div class="h">⚠ 服务端计算为权威（安全底线）</div>
+    <strong>绝不信任前端上卷值直接落库</strong>（防篡改、防浏览器缺陷）。前端 <code>addAggregation</code> 是即时反馈，<code>hier-agg</code> 是落库前重算的<strong>最终裁判</strong>——语义对齐但后端说了算。汇总 DAG 必须拓扑可排（成环即拒），对齐前端 16 层级联安全阀。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 9 ───────────────────────────── -->
+<section id="s9">
+  <h2><span class="n">09</span>ID 铸号 + 装载 / 保存契约</h2>
+  <p>DOC/DCT <strong>已共用同一套</strong>铸号与保存契约，引擎原样承接（复用 <code>cmx-utils</code>）。</p>
+
+  <h3>9.1 52 位 JS 安全铸号 + temp→real 重映射</h3>
+  <ul class="tight">
+    <li><b>生成器</b>：<code>cmx_utils::Pk52Generator</code>——<code>[32位秒(epoch 2025-01-01) | 8位节点 | 12位序列]</code>，恒 <code>&lt; 2^53−1</code>，JSON→JS <code>Number</code> 无损（故意不用会截断的 63 位 snowflake）。节点号 per-deploy → 跨部署不撞、导出免改号。</li>
+    <li><b>仅整型 PK 铸号</b>：<code>pk_is_generated</code>（PK 类型含 INT）。业务 code 作 PK 的字典不铸号（code 是稳定跨系统键）。</li>
+    <li><b>两遍重映射</b>（DOC <code>saver.rs:1147</code> / DCT <code>lib.rs:320</code> 已实现）：① 给 temp 行（缺失/null/非纯数字串如 <code>"t3"</code>）铸真 id，记 <code>tempId→realId</code>；② 回指所有子行的 <code>upper_id/parent_id/命名FK</code>（行顶层 + <code>fields</code> 内都查）→ 父真 id。返回 <code>idMap</code> 给前端，temp 行免 reload 采用真 id。已是真数字 id 的不重铸（幂等）。</li>
+  </ul>
+
+  <h3>9.2 装载 / 保存 / 校验（trait HierStore）</h3>
+  <table>
+    <tr><th style="width:16%">动作</th><th>契约（DOC/DCT 实测，引擎统一）</th></tr>
+    <tr><td>装载</td><td>形状A：BFS 每层一查 + 内存分桶装配；形状B：懒加载逐层下钻。都回中立 <code>HierTree</code>。可选 COUNT 分页（根层）。零拷贝走 <code>ZmcDataSet</code>。</td></tr>
+    <tr><td>保存</td><td>变更集 <code>{path:{inserted,updated,deleted}}</code>，单事务拓扑序：父先 UPSERT，子先 DELETE；多行按列集分组 multi-value <code>INSERT … ON CONFLICT(pk) DO UPDATE</code>。"假成功"防护：影响行数须等于 N，否则回滚。</td></tr>
+    <tr><td>乐观锁</td><td>更新带 <code>baseline=update_time</code>，<code>… WHERE pk=$ AND update_time=$baseline</code>；短影响 → 区分 409 冲突 vs 缺行。</td></tr>
+    <tr><td>校验</td><td>落库前 JSON 值层：缓存 <code>TableSpec</code>（按定义版本键）→ <code>validate_insert_row/validate_update_fields</code> → 收集<strong>全部</strong> <code>Violation</code>（type/length/precision/scale/nullable）→ HTTP 422 带 <code>violations[]</code> 供逐格高亮。服务端填充列（id/审计/派生）跳校验。</td></tr>
+    <tr><td>派生列重算</td><td>形状B：删/插/改后，对受影响节点并集跑一次子树 CTE 重写 level/path/leaf。</td></tr>
+    <tr><td>审计</td><td>服务端强制 <code>create_by/create_time/update_by/update_time/delete_flag</code>，覆盖客户端值；<code>ON CONFLICT SET</code> 排除 create_* 不可变。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 10 ───────────────────────────── -->
+<section id="s10">
+  <h2><span class="n">10</span>四种层级形态的落地映射</h2>
+  <p>用户点名的"DOC 层级 / DCT 分级分类分组 / 任意层级"逐一落到引擎原语上。</p>
+  <table>
+    <tr><th style="width:16%">来源形态</th><th style="width:14%">引擎形状</th><th>配置要点</th><th style="width:14%">汇总</th></tr>
+    <tr><td><span class="srctag s-doc">DOC 层级单据</span></td><td>形状 A</td><td>N 层异构表，<code>child_key=upper_id</code>，<code>order_key=line_no</code>；同层多兄弟表经多条 relation。</td><td>写时上卷（六币种借贷逐层）</td></tr>
+    <tr><td><span class="srctag s-dct">DCT 分级</span></td><td>形状 B</td><td>单表，<code>Shape::SelfRef{parent_field:"parent_id"}</code>，<code>derived=full_path/level_no/is_leaf</code>。</td><td>可选（小计/计数上卷）</td></tr>
+    <tr><td><span class="srctag s-dct">DCT 分类</span></td><td>形状B×2 + 引用</td><td>两棵独立树 + 目标树行上一个 FK 列指分类树节点；引擎可选做引用完整性校验。</td><td>可选（按分类上卷）</td></tr>
+    <tr><td><span class="srctag s-dct">DCT 分组</span></td><td>RelationSet</td><td>成员↔组 M:N，junction 表 <code>{member_id,group_id}</code>；新增 <code>RelationSet</code> 原语（DCT 已声明未实现）。</td><td>可选（按组上卷）</td></tr>
+    <tr><td><span class="srctag s-dct">DCT 平级</span></td><td>形状 B（关 self_hierarchy）</td><td>无父子的单层列表，天然子集。</td><td>无</td></tr>
+    <tr><td>任意主从/BOM/组织树</td><td>A 或 B</td><td>业务只写 schema + aggregations，引擎无感。</td><td>按声明</td></tr>
+  </table>
+  <div class="callout win">
+    <div class="h">✅ 三者正交可叠加</div>
+    层级（A/B）、分类（树间 FK）、分组（M:N junction）是<strong>三个正交原语</strong>：一棵分级树的节点，既可被分类（挂到某分类节点）、又可被分组（进若干组）。引擎分别提供，业务按需组合——不为任何组合写 <code>if</code> 分支。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 11 ───────────────────────────── -->
+<section id="s11">
+  <h2><span class="n">11</span>不变式（业务无感知底线）</h2>
+  <table>
+    <tr><th style="width:42%">不变式</th><th>说明</th></tr>
+    <tr><td>① 引擎绝不认识具体业务</td><td>层数/表名/列名/层间关系/汇总规则<strong>只存在于定义</strong>；零 <code>cv_*/cf_*</code> 硬编码、零"为某类单据加 if"。这是从 cmx-doc/cmx-dct 继承的铁底线，破则架构倒退。</td></tr>
+    <tr><td>② 一个引擎两种形状</td><td>A/B 差异<strong>只在 store 装载/保存适配</strong>；core/agg 只认中立 <code>HierTree</code>。</td></tr>
+    <tr><td>③ 汇总语义与前端逐字对齐</td><td><code>AggFn</code> = <code>AGG_FUNCS</code>，三作用域 = <code>_resolveSourcesForTarget</code>，成环拒 = 16 层闸。同一声明前后端同读。</td></tr>
+    <tr><td>④ 服务端计算为权威</td><td>前端上卷值绝不直接落库，<code>hier-agg</code> 落库前重算裁定。</td></tr>
+    <tr><td>⑤ 稳定键 + 幂等保存</td><td>52 位铸号 + temp→real idMap；按 pk UPSERT，重存幂等；跨部署导出免改号。</td></tr>
+    <tr><td>⑥ 独立可移植</td><td>纯库、只引公共 crate、与 cmx-container 单向 path 依赖；核心可 mock 单测、可无头批量。</td></tr>
+    <tr><td>⑦ 校验/错误码复用</td><td>落库前列级校验 + 结构化 <code>Violation</code> + <code>CmxErrCode</code>，承接汇总字段天然纳入同一校验，不另起。</td></tr>
+  </table>
+</section>
+
+<!-- ───────────────────────────── 12 ───────────────────────────── -->
+<section id="s12">
+  <h2><span class="n">12</span>里程碑路线图</h2>
+  <p>先纵向打通形状 B（DCT 已最接近、可原样借力），再补形状 A 与汇总，最后接入验证。每步 <b>cargo test 全绿 + 与三方实测对拍</b>。</p>
+  <table class="mile">
+    <tr><th style="width:11%">里程碑</th><th style="width:32%">交付</th><th>说明</th></tr>
+    <tr><td>HM-0</td><td>workspace 脚手架 + <code>hier-core</code> 树抽象</td><td>HierSchema/Shape/Node/HierTree + 中立视图解析；纯逻辑单测。</td></tr>
+    <tr><td>HM-1</td><td><code>hier-core</code> 校验接线</td><td>复用 cmx-biz 校验薄片，落库前 JSON 值层校验 → Violation；mock 测。</td></tr>
+    <tr><td>HM-2</td><td><b><code>hier-agg</code> 汇总引擎</b></td><td>AggRule/AggFn/topo_sort/rollup + 三作用域；<strong>唯一新造核</strong>。单测覆盖 sum/avg/min/max/count + 多层级联 + 成环拒 + 与前端 golden 对拍。</td></tr>
+    <tr><td>HM-3</td><td><code>hier-store-pg</code> 形状 B（自引用）</td><td>装载懒加载 + 变更集保存 + 铸号 + 乐观锁 + 子树 CTE 重算。<strong>对拍 DCT 自分级</strong>真机数据。</td></tr>
+    <tr><td>HM-4</td><td><code>hier-store-pg</code> 形状 A（path-tree）</td><td>BFS 分层装载 + 拓扑序保存。<strong>对拍 DOC 凭证</strong>四层树。</td></tr>
+    <tr><td>HM-5</td><td>写时上卷落库闭环</td><td>saver 落库前 <code>rollup</code>，承接字段随子层 UPSERT；DOC 六币种逐层上卷回读一致 E2E。</td></tr>
+    <tr><td>HM-6</td><td>门面 <code>cmx-hierarchy</code> + 读时上卷</td><td>HierManager 高层 API；<code>SELECT SUM GROUP BY</code> 读时现算。</td></tr>
+    <tr><td>HM-7</td><td>分类（树间 FK）+ 引用校验</td><td>目标树 FK 指分类树；可选引用完整性。对拍 DCT 带分类。</td></tr>
+    <tr><td>HM-8</td><td>分组 <code>RelationSet</code>（M:N junction）</td><td>成员↔组 junction 保存 + 按组上卷。DCT 声明未实现，greenfield。</td></tr>
+    <tr><td style="color:#8a6d1f">HM-9+</td><td>（可选）<code>hier-service</code>(axum) / <code>hier-cli</code> / rayon 批量</td><td>REST 端点 / 批量转换校验 / 多树并行上卷。</td></tr>
+  </table>
+  <p class="kbd">关键顺序：HM-2（汇总）与 HM-3/4（存储）可并行；HM-5 依赖二者。分类/分组（HM-7/8）是正交增量，不阻塞主链。</p>
+</section>
+
+<!-- ───────────────────────────── 13 ───────────────────────────── -->
+<section id="s13">
+  <h2><span class="n">13</span>测试与验收</h2>
+  <div class="grid2">
+    <div class="box">
+      <h4>三关（每 crate）</h4>
+      <ul class="tight" style="font-size:13.5px">
+        <li><code>cargo test --workspace</code> 全绿</li>
+        <li><code>cargo clippy --workspace -- -D warnings</code></li>
+        <li><code>cargo build --release</code>（+ 可选 cargo-deny 许可审计）</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>跨端语义对拍（最强保障）</h4>
+      <ul class="tight" style="font-size:13.5px">
+        <li><b>汇总 golden</b>：同一 <code>aggregations</code> + 同一树，前端 <code>AGG_FUNCS</code>/<code>_cascade</code> 输出冻成 golden，Rust <code>rollup</code> 逐值对齐（含三作用域 + 多层级联）。</li>
+        <li><b>DCT 对拍</b>：自分级树装载/保存/派生列重算 与现 cmx-dct 语义等价（同库同请求）。</li>
+        <li><b>DOC 对拍</b>：四层凭证树 BFS 装载 + 拓扑保存 + 写时上卷回读，与现 cmx-doc 一致。</li>
+        <li><b>属性测试</b>：铸号唯一性/temp→real 幂等/拓扑排序无环 — <code>proptest</code>。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────── 14 ───────────────────────────── -->
+<section id="s14">
+  <h2><span class="n">14</span>接入方式（DOC/DCT 如何复用）</h2>
+  <p>引擎中立，接入方各自把定义映射成 <code>HierSchema</code>，其余全由引擎接管。三种接入姿态：</p>
+  <div class="grid3">
+    <div class="box">
+      <h4>① path 依赖引库</h4>
+      <p style="font-size:13px">cmx-doc/cmx-dct 的 store-pg 以 <code>path</code>（或 registry）引 <code>cmx-hierarchy</code>，把现有 <code>DocMetaView/DictView</code> 适配成 <code>HierSchema</code>，删掉自家重复的装载/保存/铸号，改调引擎。汇总从"无"变"有"。</p>
+    </div>
+    <div class="box">
+      <h4>② 独立 hier-service</h4>
+      <p style="font-size:13px">起 axum 服务，<code>/load /save /children /rollup</code> 端点，接入方经 HTTP 用。适合与主框架强隔离、或非 Rust 消费者。</p>
+    </div>
+    <div class="box">
+      <h4>③ 无头 CLI / 批量</h4>
+      <p style="font-size:13px"><code>hier-cli</code> 批量校验/上卷/转换；rayon 一次并行处理几千棵树。适合离线对账、迁移。</p>
+    </div>
+  </div>
+  <div class="callout note">
+    <div class="h">◆ 与那份"统一建模"方案的关系</div>
+    cmx-container 内 <code>统一建模平台-RPT范式推广到DOC与DCT方案.html</code> 的 P2「新 cmx-agg 中立 crate」= 本方案的 <code>hier-agg</code>；其 P3「DOC 接汇总」= 本方案 HM-5 的接入姿态①。本方案<strong>把它从"cmx-container 内一个 crate"升级为"独立中立 workspace 的一层"</strong>，并扩出完整树管理 + 分类/分组，契约与语义完全兼容——那份方案的路线图可直接嫁接为本引擎的消费方。
+  </div>
+</section>
+
+<!-- ───────────────────────────── 15 ───────────────────────────── -->
+<section id="s15">
+  <h2><span class="n">15</span>最终目录结构</h2>
+  <div class="dag">presentation/cmx-hierarchy/           # 独立 workspace（与 cmx-container / cmx-rust-sheet 并列）
+├─ Cargo.toml                      # [workspace] resolver=2 · edition 2021/2024 · Apache-2.0
+│                                  # [workspace.dependencies] 统管 serde/thiserror/tokio…
+├─ .cargo/config.toml              # 复用 aliyun 镜像源
+├─ README.md                       # 对标 cmx-rust-sheet 的 情怀 + 能力总览
+├─ docs/方案.html                  # ← 本文档
+├─ crates/
+│   ├─ hier-core/                  # deps: serde · thiserror (+ cmx-biz-kernel 校验薄片)
+│   │   └─ src/{lib, schema, shape, tree, node, validate}.rs
+│   ├─ hier-agg/                   # deps: 仅 hier-core（可独立复用为 cmx-agg）
+│   │   └─ src/{lib, rule, topo, rollup, scope}.rs
+│   ├─ hier-store-pg/              # deps: hier-core · hier-agg · cmx-database-pg · cmx-utils
+│   │   └─ src/{lib, store_trait, load_pathtree, load_selfref, save,
+│   │            mint_ids, recompute_cte, oplock}.rs
+│   └─ cmx-hierarchy/              # 门面 umbrella：重导出 + HierManager + VERSION
+│       └─ src/{lib, manager}.rs
+├─ tests/                          # 集成 + parity（前端 golden / DOC / DCT 对拍）
+│   ├─ golden/                     # 冻结的汇总输出金样
+│   └─ parity/                     # 与 cmx-doc / cmx-dct 同库对拍
+└─ (可选) crates/hier-service(axum) · crates/hier-cli(clap)
+
+复用（path 引，不并入 cmx-container）：
+  cmx-utils(Pk52Generator) · cmx-database-pg(池+ZmcDataSet) · cmx-biz-kernel(校验薄片)</div>
+</section>
+
+<!-- ───────────────────────────── 16 ───────────────────────────── -->
+<section id="s16">
+  <h2><span class="n">16</span>风险与开放问题</h2>
+  <table>
+    <tr><th style="width:26%">议题</th><th style="width:12%">程度</th><th>应对</th></tr>
+    <tr><td>汇总作用域移植保真（case B 的 LCA）</td><td><b>中</b></td><td>前端 <code>_ancestorRowOf/_dfsFindAncestor</code> 是最绕的一段；以前端输出做 golden 逐值对拍，多层级联专项覆盖。</td></tr>
+    <tr><td>形状 A/B 统一树的抽象成本</td><td><b>中</b></td><td>先 B（DCT 最接近）跑通再上 A；两者共用 <code>HierTree</code>，装载/保存分适配器，避免核心分叉。</td></tr>
+    <tr><td>复用 cmx-utils/cmx-biz vs 中立重铸</td><td><b>待定</b></td><td>推荐 path 复用（零重造、语义天然一致）；若求"绝对中立无 cmx 依赖"则重铸 Pk52+校验薄片（重复但纯）。见决策 ②。</td></tr>
+    <tr><td>分组 M:N（DCT 声明未实现）</td><td><b>低</b></td><td>greenfield，无历史包袱；<code>RelationSet</code> 独立原语，后置 HM-8。</td></tr>
+    <tr><td>写时 vs 读时上卷默认</td><td><b>待定</b></td><td>一表一议：凭证类写时落库，纯展示读时现算；库级默认由决策 ③ 定。</td></tr>
+    <tr><td>与 RPT 汇总的语义统一</td><td><b>低</b></td><td>RPT 有自己的 cr_* 上卷；本引擎语义对齐后 RPT 可选反哺复用，非阻塞。</td></tr>
+    <tr><td>定义解析是否内置</td><td><b>待定</b></td><td>引擎只吃已解析的 <code>HierSchema</code>；DOC/DCT 定义→HierSchema 的适配放接入方还是引擎带一个 <code>hier-adapter</code>？倾向接入方，保中立。</td></tr>
+    <tr><td>交付形态（库/服务/CLI）</td><td><b>待定</b></td><td>默认纯库；service/cli 后置。见决策 ①。</td></tr>
+  </table>
+  <div class="callout dec">
+    <div class="h">▶ 落地前需用户拍板的三点</div>
+    <b>①</b> 交付形态：纯库（推荐）／+axum 服务／+CLI？&nbsp;&nbsp;
+    <b>②</b> 依赖姿态：path 复用 cmx-utils/cmx-biz（推荐）还是中立重铸？&nbsp;&nbsp;
+    <b>③</b> 汇总默认时机：写时上卷（推荐）还是读时现算？
+  </div>
+</section>
+
+<!-- ───────────────────────────── 17 ───────────────────────────── -->
+<section id="s17">
+  <h2><span class="n">17</span>附录</h2>
+  <h3>A. 三方契约对照（实测）</h3>
+  <table>
+    <tr><th>维度</th><th><span class="srctag s-front">前端 MasterSlave</span></th><th><span class="srctag s-doc">DOC</span></th><th><span class="srctag s-dct">DCT</span></th></tr>
+    <tr><td>层级形状</td><td>递归 _children 树</td><td>异构 path-tree（每层一表）</td><td>同构自引用（单表）</td></tr>
+    <tr><td>父指针</td><td>_children 挂载</td><td><code>upper_id</code>（跨表）</td><td><code>parent_id</code>（自）</td></tr>
+    <tr><td>排序</td><td>行序</td><td><code>line_no</code></td><td><code>sort_no</code></td></tr>
+    <tr><td>派生列</td><td>无</td><td>无</td><td><code>full_path/level_no/is_leaf</code></td></tr>
+    <tr><td>铸号</td><td>temp id（t/r 前缀）</td><td>Pk52 + idMap</td><td>Pk52 + idMap</td></tr>
+    <tr><td>汇总</td><td><b>有</b>（前端引擎）</td><td>元数据有、<b>计算无</b></td><td>元数据有、<b>计算无</b></td></tr>
+    <tr><td>保存</td><td>ChangeSetCollector</td><td>变更集单事务 + 乐观锁</td><td>变更集单事务 + 乐观锁</td></tr>
+    <tr><td>校验</td><td>—</td><td>TableSpec→Violation→422</td><td>TableSpec→Violation→422</td></tr>
+  </table>
+
+  <h3>B. 规模与工作量估算</h3>
+  <table>
+    <tr><th>crate</th><th>预估 LOC</th><th>来源 / 备注</th></tr>
+    <tr><td><code>hier-core</code></td><td>~1.2–1.6k</td><td>树抽象 + 校验接线；校验复用 cmx-biz 薄片。</td></tr>
+    <tr><td><code>hier-agg</code></td><td>~0.6–0.9k</td><td><strong>唯一新造核</strong>：拓扑 + 三作用域 + 级联，对齐前端 ~200 行聚合逻辑。</td></tr>
+    <tr><td><code>hier-store-pg</code></td><td>~2–2.8k</td><td>两形状装载/保存/铸号/CTE 重算；大量移植 DOC saver + DCT hierarchy。</td></tr>
+    <tr><td>门面 + tests</td><td>~0.8–1.2k</td><td>HierManager + parity/golden。</td></tr>
+    <tr><td colspan="3" style="background:#f0f2f7"><b>合计 ~5–6.5k 行 Rust</b>。真正的<strong>新逻辑</strong>集中在 <code>hier-agg</code>（~0.7k）+ 两形状适配；其余是 DOC/DCT 已跑通逻辑的中立化移植。依赖：serde/thiserror/tokio + cmx-utils/cmx-database-pg/cmx-biz-kernel。</td></tr>
+  </table>
+
+  <h3>C. 溯源（关键 file:line，均经代理核验）</h3>
+  <ul class="tight" style="font-size:12.5px;color:var(--muted)">
+    <li>前端：<code>packages/cmx-data-comp/src/lib/cmx-master-slave.js</code>（AGG_FUNCS :33 · 作用域 :905 · 级联 :836 · collectRows :631）</li>
+    <li>DOC：<code>cmx-doc/cmx-doc-model/src/meta.rs</code>（LayerView/RelationView）· <code>cmx-doc-store-pg/src/{loader,saver}.rs</code>（BFS 装载 · 铸号 :1147 · 乐观锁）</li>
+    <li>DCT：<code>cmx-dct/cmx-dct-store-pg/src/{resolve,write,hierarchy}.rs</code>（recompute_hierarchy_subtree :145 · 铸号 :320）· <code>cmx-dct-model/src/lib.rs</code>（DictView）</li>
+    <li>铸号：<code>cmx-utils/src/id/pk52.rs</code>&nbsp;·&nbsp;校验：<code>cmx-biz/src/validation/mod.rs</code>&nbsp;·&nbsp;既有方案：<code>cmx-container/docs/统一建模平台-RPT范式推广到DOC与DCT方案.html</code></li>
+  </ul>
+</section>
+
+<div class="foot">
+  cmx-hierarchy · 中立层级数据管理引擎 · 设计方案（DRAFT v1）· CmxMasterSlave 后端对等物 · 独立中立、与 cmx-container 并列 · 结论均基于三方真实代码核验 · 本文档不含实现代码<br>
+  下一步：用户就 §4/§16 三点拍板确认后，进入 HM-0（workspace 脚手架 + hier-core 树抽象）。
+</div>
+
+</div>
+</body>
+</html>

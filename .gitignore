@@ -1,0 +1,26 @@
+/backend/
+/frontend/
+.e2e-shots
+/backups/
+node_modules/
+dist/
+__pycache__/
+.DS_Store
+.idea/
+.zcode/
+.superpowers/
+.playwright-cli
+/.qoder/better-harness/
+/_archive-cmx-hierarchy/
+/moddle-test/
+/.claude/plans/
+.mimosa/
+/.claude/projects/
+/logs/
+cmx-launcher/
+
+# docs-site（Oink 文档门户）构建产物
+docs-site/public/
+docs-site/resources/
+docs-site/.hugo_build.lock
+/package-lock.json

@@ -1,0 +1,24 @@
+{
+  "_comment": "样例1：三级审批 + 金额排他网关 + 按组织路由子流程（对齐差旅报销场景）",
+  "key": "expense_v2",
+  "name": "报销审批v2",
+  "nodes": [
+    {"id": "mgr", "type": "userTask", "name": "部门经理审批", "assignee": "u_mgr"},
+    {"id": "gw", "type": "exclusiveGateway", "name": "金额判断", "defaultTo": "fin"},
+    {"id": "director", "type": "userTask", "name": "总监审批", "assignee": "u_director"},
+    {"id": "fin", "type": "callActivity", "name": "财务复核（按组织路由）", "calledKey": "fin_review",
+     "inVars": "amount:subAmount", "outVars": "finResult"},
+    {"id": "cashier", "type": "userTask", "name": "出纳打款", "assignee": "u_cashier"},
+    {"id": "done", "type": "endEvent", "name": "报销完成"}
+  ],
+  "flows": [
+    {"from": "mgr", "to": "gw"},
+    {"from": "gw", "to": "director", "condition": "${amount > 20000}", "name": "大额"},
+    {"from": "gw", "to": "fin"},
+    {"from": "director", "to": "fin"},
+    {"from": "fin", "to": "cashier"}
+  ],
+  "deploy": {"server": "http://127.0.0.1:8091", "note": "cmx-flow-toolkit 样例", "publishedBy": "agent"},
+  "smoke": {"orgId": "zongbu", "businessKey": "SMOKE-EXPV2-001",
+            "variables": {"amount": 50000, "initiator": "u_emp"}, "expectActive": ["mgr"]}
+}

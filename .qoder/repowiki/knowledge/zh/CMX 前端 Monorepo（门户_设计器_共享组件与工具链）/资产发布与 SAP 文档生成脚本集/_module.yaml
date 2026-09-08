@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: scripts_and_tooling
+title: 资产发布与 SAP 文档生成脚本集
+scope:
+    - scripts/
+    - .agents/
+    - .claude/
+source_files: []
+depends_on: []
+related_to:
+    - path: docs_and_documents

@@ -1,0 +1,47 @@
+<svg viewBox="0 0 820 460" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs><filter id="s" x="-3%" y="-3%" width="106%" height="112%"><feDropShadow dx="0" dy="1" stdDeviation="1.6" flood-color="#0f172a" flood-opacity="0.09"/></filter></defs>
+<rect x="0" y="0" width="820" height="460" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="34" font-size="15" font-weight="700" fill="#0f172a">cmx-data-auth 全面测试结果总览　·　2026-09-01　·　真机（PostgreSQL fico）</text>
+<text x="40" y="55" font-size="11" fill="#64748b">五层测试全绿：静态 · 单元 · 后端功能(off/jwt) · 前端工作台 · 安全专项</text>
+
+<!-- band template -->
+<!-- 1 静态 -->
+<g filter="url(#s)"><rect x="30" y="70" width="760" height="52" rx="10" fill="#ecfdf5" stroke="#6ee7b7"/></g>
+<circle cx="58" cy="96" r="11" fill="#10b981"/><path d="M53,96 l3.5,3.5 L63,92" stroke="#fff" stroke-width="2" fill="none"/>
+<text x="80" y="92" font-size="12.5" font-weight="700" fill="#065f46">① 静态分析</text>
+<text x="80" y="110" font-size="10.5" fill="#047857">cargo build --workspace ✓　·　cargo clippy --all-targets ✓ 0 警告</text>
+<rect x="690" y="82" width="86" height="28" rx="14" fill="#10b981"/><text x="733" y="100" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">PASS</text>
+
+<!-- 2 单元 -->
+<g filter="url(#s)"><rect x="30" y="130" width="760" height="52" rx="10" fill="#eef2ff" stroke="#c7d2fe"/></g>
+<circle cx="58" cy="156" r="11" fill="#6366f1"/><path d="M53,156 l3.5,3.5 L63,152" stroke="#fff" stroke-width="2" fill="none"/>
+<text x="80" y="152" font-size="12.5" font-weight="700" fill="#3730a3">② 单元测试（cargo test）</text>
+<text x="80" y="170" font-size="10.5" fill="#4338ca">47 通过 / 0 失败 / 1 ignored　·　core 44（AST/SQL/RowFilter/ES/PDP/mask/RLS/维度）+ app 3（D3）</text>
+<rect x="672" y="142" width="104" height="28" rx="14" fill="#6366f1"/><text x="724" y="160" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">47 / 47</text>
+
+<!-- 3 后端功能 -->
+<g filter="url(#s)"><rect x="30" y="190" width="760" height="52" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/></g>
+<circle cx="58" cy="216" r="11" fill="#0ea5e9"/><path d="M53,216 l3.5,3.5 L63,212" stroke="#fff" stroke-width="2" fill="none"/>
+<text x="80" y="212" font-size="12.5" font-weight="700" fill="#0369a1">③ 后端功能（真机 E2E）</text>
+<text x="80" y="230" font-size="10.5" fill="#0c4a6e">dataauth.sh（off）64/64　·　dataauth-auth.sh（jwt）10/10　—— 决策/编译/维度/ReBAC/脱敏/缓存/治理/生效期</text>
+<rect x="672" y="202" width="104" height="28" rx="14" fill="#0ea5e9"/><text x="724" y="220" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">74 / 74</text>
+
+<!-- 4 前端 -->
+<g filter="url(#s)"><rect x="30" y="250" width="760" height="52" rx="10" fill="#faf5ff" stroke="#d8b4fe"/></g>
+<circle cx="58" cy="276" r="11" fill="#a855f7"/><path d="M53,276 l3.5,3.5 L63,272" stroke="#fff" stroke-width="2" fill="none"/>
+<text x="80" y="272" font-size="12.5" font-weight="700" fill="#7e22ce">④ 前端工作台（CDP 驱动）</text>
+<text x="80" y="290" font-size="10.5" fill="#6b21a8">8/8 标签 live 渲染真实 DB 数据，0 错误　·　OpenAPI 3.0 有效 · /console · /swagger 可达</text>
+<rect x="684" y="262" width="92" height="28" rx="14" fill="#a855f7"/><text x="730" y="280" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">8 / 8</text>
+
+<!-- 5 安全 -->
+<g filter="url(#s)"><rect x="30" y="310" width="760" height="52" rx="10" fill="#fef2f2" stroke="#fecaca"/></g>
+<circle cx="58" cy="336" r="11" fill="#ef4444"/><path d="M53,336 l3.5,3.5 L63,332" stroke="#fff" stroke-width="2" fill="none"/>
+<text x="80" y="332" font-size="12.5" font-weight="700" fill="#b91c1c">⑤ 安全专项</text>
+<text x="80" y="350" font-size="10.5" fill="#991b1b">撤销即失效(无陈旧放行) · 管理面 403 · JWT exp/错误密钥/无令牌 401 · RLS 防注入 · HIDE 不泄露 · inherit fail-closed</text>
+<rect x="690" y="322" width="86" height="28" rx="14" fill="#ef4444"/><text x="733" y="340" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">PASS</text>
+
+<!-- totals -->
+<rect x="30" y="374" width="760" height="62" rx="10" fill="#0f172a"/>
+<text x="52" y="400" font-size="14" font-weight="800" fill="#6ee7b7">全部通过 · 0 失败</text>
+<text x="52" y="422" font-size="11" fill="#94a3b8">47 单元 + 74 后端 E2E + 8 前端标签 + 6 安全专项 = <tspan fill="#e2e8f0" font-weight="700">135 项断言全绿</tspan>　·　构建/静态 0 警告　·　store-pg 单测 DB-gated（走 E2E 覆盖）</text>
+</svg>

@@ -1,0 +1,63 @@
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+  <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+  <marker id="ab2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+  <filter id="s2" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.09"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="400" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="30" y="30" font-size="15" font-weight="700" fill="#0f172a">W1 · 服务端编译流水线（Build Service）时序 —— 取代本地 cargo / 扩展内 cp.exec</text>
+<rect x="0" y="46" width="820" height="58" fill="#fffbeb" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/><text x="10" y="79" font-size="10" font-weight="700" fill="#92400e" transform="rotate(-90,10,79)" text-anchor="middle">开发者</text>
+<rect x="0" y="104" width="820" height="58" fill="#f5f3ff" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/><text x="10" y="137" font-size="10" font-weight="700" fill="#5b21b6" transform="rotate(-90,10,137)" text-anchor="middle">Build Service</text>
+<rect x="0" y="162" width="820" height="58" fill="#ecfdf5" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/><text x="10" y="195" font-size="10" font-weight="700" fill="#065f46" transform="rotate(-90,10,195)" text-anchor="middle">平台注册</text>
+<rect x="0" y="220" width="820" height="58" fill="#ecfeff" fill-opacity="0.5" stroke="#e2e8f0" stroke-width="0.6"/><text x="10" y="253" font-size="10" font-weight="700" fill="#155e75" transform="rotate(-90,10,253)" text-anchor="middle">运行时</text>
+<g filter="url(#s2)"><rect x="44" y="54" width="128" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="108" y="72" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">① 提交构建</text>
+<text x="108" y="86" font-size="9" fill="#92400e" text-anchor="middle" opacity="0.85">扩展/CLI/门户</text>
+<g filter="url(#s2)"><rect x="190" y="54" width="128" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/></g>
+<text x="254" y="72" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">⑩ 看流式日志</text>
+<text x="254" y="86" font-size="9" fill="#92400e" text-anchor="middle" opacity="0.85">SSE/WS 回传</text>
+<g filter="url(#s2)"><rect x="44" y="112" width="120" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="104" y="130" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">② 入队</text>
+<text x="104" y="144" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">cmx-job 排队</text>
+<g filter="url(#s2)"><rect x="178" y="112" width="128" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="242" y="130" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">③ 隔离沙箱</text>
+<text x="242" y="144" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">checkout+缓存</text>
+<g filter="url(#s2)"><rect x="320" y="112" width="148" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="394" y="130" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">④ cargo build</text>
+<text x="394" y="144" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">wasm32-wasip1 --release</text>
+<g filter="url(#s2)"><rect x="482" y="112" width="120" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="542" y="130" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">⑤ doc scan</text>
+<text x="542" y="144" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">API 文档</text>
+<g filter="url(#s2)"><rect x="616" y="112" width="120" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6"/></g>
+<text x="676" y="130" font-size="10.5" font-weight="700" fill="#5b21b6" text-anchor="middle">⑥ Ed25519 签名</text>
+<text x="676" y="144" font-size="9" fill="#5b21b6" text-anchor="middle" opacity="0.85">wasm+manifest ZIP</text>
+<g filter="url(#s2)"><rect x="320" y="170" width="148" height="40" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="394" y="188" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑦ /api/plugin/deploy</text>
+<text x="394" y="202" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">校验签名+签名者</text>
+<g filter="url(#s2)"><rect x="482" y="170" width="120" height="40" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="542" y="188" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑧ 落 DB 注册表</text>
+<text x="542" y="202" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">force_reinstall</text>
+<g filter="url(#s2)"><rect x="616" y="170" width="120" height="40" rx="8" fill="#ecfdf5" stroke="#10b981"/></g>
+<text x="676" y="188" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">⑨ 生命周期事件</text>
+<text x="676" y="202" font-size="9" fill="#065f46" text-anchor="middle" opacity="0.85">REINSTALLED 广播</text>
+<g filter="url(#s2)"><rect x="616" y="228" width="120" height="40" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="676" y="246" font-size="10.5" font-weight="700" fill="#155e75" text-anchor="middle">⑪ 池失效</text>
+<text x="676" y="260" font-size="9" fill="#155e75" text-anchor="middle" opacity="0.85">unload_module</text>
+<g filter="url(#s2)"><rect x="482" y="228" width="120" height="40" rx="8" fill="#ecfeff" stroke="#06b6d4"/></g>
+<text x="542" y="246" font-size="10.5" font-weight="700" fill="#155e75" text-anchor="middle">⑫ 下次调用命中新版</text>
+<text x="542" y="260" font-size="9" fill="#155e75" text-anchor="middle" opacity="0.85">不重启</text>
+<line x1="172" y1="74" x2="190" y2="74" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="104" y1="90" x2="104" y2="112" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="164" y1="132" x2="178" y2="132" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="306" y1="132" x2="320" y2="132" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="468" y1="132" x2="482" y2="132" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="602" y1="132" x2="616" y2="132" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="676" y1="152" x2="450" y2="170" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="468" y1="190" x2="482" y2="190" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="602" y1="190" x2="616" y2="190" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="676" y1="210" x2="676" y2="228" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="616" y1="248" x2="602" y2="248" stroke="#64748b" stroke-width="1.2" marker-end="url(#a2)"/>
+<line x1="380" y1="150" x2="240" y2="74" stroke="#8b5cf6" stroke-width="1.1" stroke-dasharray="3 3" marker-end="url(#a2)"/>
+<text x="30" y="374" font-size="11" fill="#64748b">Build Service 独立于请求路径（平台运行时不 spawn 进程）；编译在隔离沙箱执行，产物经既有 /api/plugin/deploy 落库。缓存 target/ 与 crates 加速增量构建。</text>
+</svg>

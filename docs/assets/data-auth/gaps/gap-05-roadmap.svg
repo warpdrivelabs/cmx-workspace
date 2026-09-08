@@ -1,0 +1,76 @@
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+  <marker id="ag5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+  <filter id="g5" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#0f172a" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="820" height="400" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="32" font-size="15" font-weight="700" fill="#0f172a">补齐路线　P0 → P4　·　先堵安全，再通主线，后规模化/治理/收尾</text>
+
+<!-- P0 -->
+<g filter="url(#g5)"><rect x="30" y="52" width="144" height="256" rx="10" fill="#fef2f2" stroke="#fca5a5"/></g>
+<rect x="30" y="52" width="144" height="34" rx="10" fill="#ef4444"/>
+<text x="102" y="74" font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">P0 先堵安全</text>
+<text x="44" y="106" font-size="9.6" fill="#7f1d1d">1 admin 门 + 禁 off</text>
+<text x="44" y="128" font-size="9.6" fill="#7f1d1d">2 JWT exp/密钥/租户</text>
+<text x="44" y="150" font-size="9.6" fill="#7f1d1d">3 修 inherit 语义</text>
+<text x="44" y="172" font-size="9.6" fill="#7f1d1d">4 写/删/导出接缝</text>
+<rect x="44" y="264" width="116" height="30" rx="7" fill="#ffffff" stroke="#fca5a5"/>
+<text x="102" y="283" font-size="9.4" font-weight="700" fill="#b91c1c" text-anchor="middle">✓ 可对外部署</text>
+
+<!-- P1 -->
+<g filter="url(#g5)"><rect x="182" y="52" width="144" height="256" rx="10" fill="#fff7ed" stroke="#fdba74"/></g>
+<rect x="182" y="52" width="144" height="34" rx="10" fill="#f97316"/>
+<text x="254" y="74" font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">P1 通主线</text>
+<text x="196" y="106" font-size="9.6" fill="#7c2d12">5 报表/流程注入 ★</text>
+<text x="196" y="128" font-size="9.6" fill="#7c2d12">9 ORG/POST 主体</text>
+<text x="196" y="150" font-size="9.6" fill="#7c2d12">7 条件 Deny</text>
+<text x="196" y="172" font-size="9.6" fill="#7c2d12">6 ReBAC 多跳</text>
+<text x="196" y="194" font-size="9.6" fill="#7c2d12">8 列隐藏 · 11 RLS</text>
+<rect x="196" y="264" width="116" height="30" rx="7" fill="#ffffff" stroke="#fdba74"/>
+<text x="254" y="283" font-size="9.4" font-weight="700" fill="#c2410c" text-anchor="middle">✓ ERP 落地</text>
+
+<!-- P2 -->
+<g filter="url(#g5)"><rect x="334" y="52" width="144" height="256" rx="10" fill="#fffbeb" stroke="#fcd34d"/></g>
+<rect x="334" y="52" width="144" height="34" rx="10" fill="#f59e0b"/>
+<text x="406" y="74" font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">P2 规模化</text>
+<text x="348" y="106" font-size="9.6" fill="#78350f">12 decide L1/L2 缓存</text>
+<text x="348" y="128" font-size="9.6" fill="#78350f">13 审计异步 + TTL</text>
+<text x="348" y="150" font-size="9.6" fill="#78350f">14 列表分页/检索</text>
+<text x="348" y="172" font-size="9.6" fill="#78350f">15 展开跨请求记忆</text>
+<rect x="348" y="264" width="116" height="30" rx="7" fill="#ffffff" stroke="#fcd34d"/>
+<text x="406" y="283" font-size="9.4" font-weight="700" fill="#b45309" text-anchor="middle">✓ 抗压</text>
+
+<!-- P3 -->
+<g filter="url(#g5)"><rect x="486" y="52" width="144" height="256" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/></g>
+<rect x="486" y="52" width="144" height="34" rx="10" fill="#0ea5e9"/>
+<text x="558" y="74" font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">P3 治理运维</text>
+<text x="500" y="106" font-size="9.6" fill="#0c4a6e">16 门户 · 17 工作台</text>
+<text x="500" y="128" font-size="9.6" fill="#0c4a6e">18 OpenAPI/Swagger</text>
+<text x="500" y="150" font-size="9.6" fill="#0c4a6e">19 explain/overlap</text>
+<text x="500" y="172" font-size="9.6" fill="#0c4a6e">20 审计上下文</text>
+<text x="500" y="194" font-size="9.6" fill="#0c4a6e">21 变更审计/生效期</text>
+<rect x="500" y="264" width="116" height="30" rx="7" fill="#ffffff" stroke="#7dd3fc"/>
+<text x="558" y="283" font-size="9.4" font-weight="700" fill="#0369a1" text-anchor="middle">✓ 可管可视</text>
+
+<!-- P4 -->
+<g filter="url(#g5)"><rect x="638" y="52" width="144" height="256" rx="10" fill="#f8fafc" stroke="#cbd5e1"/></g>
+<rect x="638" y="52" width="144" height="34" rx="10" fill="#94a3b8"/>
+<text x="710" y="74" font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">P4 健壮收尾</text>
+<text x="652" y="106" font-size="9.6" fill="#334155">22 测试补齐</text>
+<text x="652" y="128" font-size="9.6" fill="#334155">23 HMAC 脱敏</text>
+<text x="652" y="150" font-size="9.6" fill="#334155">24 SQL 侧脱敏</text>
+<text x="652" y="172" font-size="9.6" fill="#334155">25 结构化错误码</text>
+<text x="652" y="194" font-size="9.6" fill="#334155">26-28 语义/覆盖</text>
+<rect x="652" y="264" width="116" height="30" rx="7" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="710" y="283" font-size="9.4" font-weight="700" fill="#475569" text-anchor="middle">✓ 生产级</text>
+
+<!-- arrows -->
+<line x1="174" y1="220" x2="182" y2="220" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag5)"/>
+<line x1="326" y1="220" x2="334" y2="220" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag5)"/>
+<line x1="478" y1="220" x2="486" y2="220" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag5)"/>
+<line x1="630" y1="220" x2="638" y2="220" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#ag5)"/>
+
+<text x="40" y="338" font-size="10.5" fill="#334155">依赖：<tspan font-weight="700" fill="#b91c1c">P0 是硬前置</tspan>（不修不能对外）；<tspan font-weight="700" fill="#c2410c">P1#5 是价值前置</tspan>（不接报表/流程，引擎再全也悬空）。P2-P4 大多可并行。</text>
+<text x="40" y="358" font-size="10.5" fill="#64748b">★ = 单项最高杠杆。本次先交付 P0 四项（#1-#4），逐条真机绿后再进 P1。</text>
+<text x="40" y="380" font-size="10" fill="#94a3b8">注：#10 priority、#26 grant 语义等"澄清类"可随手在对应阶段一并处理，不单列里程碑。</text>
+</svg>
