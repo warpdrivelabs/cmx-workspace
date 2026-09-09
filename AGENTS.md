@@ -92,7 +92,7 @@
    - CI / Review 一票否决：暗色掉队、tone 切换失效、色值硬编码，任一命中即拒收。
    - 权威真源（必读，本文不复述细节）：技能 `cmx-components-guide` → `references/{neo-theme-onboarding,frontend-conventions,page-style-guide}.md`。
 6. **新接口禁用可变路径段，禁用 PUT/PATCH/DELETE**：路径只允许固定资源段，资源标识 / 过滤 / 操作参数走 query 或 body；更新 / 删除一律 `POST`，默认 `POST` + JSON body（仅取详情 / 极少参数只读可退 `GET`）。只约束**新增接口**，既有接口保持原样。
-7. **前端 / 数据资产真源发布**：`backend/cmx-container/assets/<svc>/` 是**唯一真源**；各主应用仓 `web/` / `data/` 下与真源同名的顶层子目录是发布产物，**禁止直接修改**。改真源后 `./scripts/publish-assets.sh <portal|model|mdm|flow|report|rules>` 同步（同步粒度 = 真源顶层子目录整目录替换，目标侧多余内容不删不改）。⚠️ 两个根级脚本内部仍是旧平铺路径，**新结构下运行会失败**，需先改 `$ROOT/backend/...` 再用。各仓 toml `[assets]` 已直指工作区真源，脚本拷贝仅打包归档用——可选跑。仅约束资源文件，不约束 Rust 源码 / `Cargo.toml` / `.env`。
+7. **前端 / 数据资产真源发布**：`backend/cmx-container/assets/<svc>/` 是**唯一真源**；各主应用仓 `web/` / `data/` 下与真源同名的顶层子目录是发布产物，**禁止直接修改**。改真源后 `./scripts/publish-assets.sh <portal|model|mdm|flow|report|rules>` 同步（同步粒度 = 真源顶层子目录整目录替换，目标侧多余内容不删不改）。各仓 toml `[assets]` 已直指工作区真源，脚本拷贝仅打包归档用——可选跑。仅约束资源文件，不约束 Rust 源码 / `Cargo.toml` / `.env`。
 8. **方案文档统一归档根目录 `documents/`**（命名按 `plan-naming`：`yyyyMMdd_模块名_中文标题.md`）：方案 / 计划进 `documents/plans/`，其它按主题子目录。❌ 禁止塞子仓 `docs/` 或随代码提交；根 `docs/` 是历史资料区，新方案不写入。仅跨子项目、长期留档的才进 `documents/`。
 
 ## 五、集群部署与无状态约束（前后端通用）

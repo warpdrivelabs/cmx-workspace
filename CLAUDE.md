@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **权威导航是 `AGENTS.md`**（15.8K，9 章：目录规范 / 技能索引 / 全局硬约束 / Git 多仓规则 / 联调运维 / 命令速查 / 文档路径）。本文件只做最小提炼与硬约束前置；进任意子目录开发前先读该目录的 `AGENTS.md`（就近优先）。**用中文回复。**
+> **权威导航是 `AGENTS.md`**（9 章：目录规范 / 技能索引 / 全局硬约束 / Git 多仓规则 / 联调运维 / 命令速查 / 文档路径）。本文件只做最小提炼与硬约束前置；进任意子目录开发前先读该目录的 `AGENTS.md`（就近优先）。**用中文回复。**
 
 ## 这是什么仓：工作区根仓（无构建产物）
 
@@ -52,7 +52,7 @@ cargo run --offline -p cmx-agent-cli           # cmx-agent 专用（一律 --off
 
 **联调控制台（推荐）**：`cd cmx-launcher && ./run.sh` → http://127.0.0.1:8100（自动发现服务，一键启停 / toml 切换 / 日志 / target 磁盘治理；Windows 用 `run.bat` / `run.ps1`）。
 
-**资产发布**（改真源后同步发布产物）：`./scripts/publish-assets.sh <portal|model|mdm|flow|report|rules>` ——⚠️ 两个根级脚本内部仍是旧平铺路径，新结构下会失败，需先改 `$ROOT/backend/...`。
+**资产发布**（改真源后同步发布产物）：`./scripts/publish-assets.sh <portal|model|mdm|flow|report|rules>`（发布前自动跑 `scripts/check-asset-ownership.py` 归属守护；各仓 toml `[assets]` 已直指工作区真源，此拷贝仅打包归档用）。
 
 ## 硬约束（违反即打回；完整清单见 `AGENTS.md` §四~六）
 

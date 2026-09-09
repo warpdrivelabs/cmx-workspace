@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 发布：把 cmx-container/assets/<svc>/ 下的 web/、data/ 同步到对应主应用仓目录。
+# 发布：把 backend/cmx-container/assets/<svc>/ 下的 web/、data/ 同步到对应主应用仓目录。
 # 同步粒度（按顶层子目录，不做整个 web/ 镜像替换）：
 #   · 真源 web/（data/）下有哪些顶层子目录（如 ui-html/、ui-native/、definitions/），
 #     就只对它们逐个「整目录替换」——先删目标同名子目录，再放入新内容（内部完全按真源重建）；
@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WS="$ROOT/cmx-container/assets"
+WS="$ROOT/backend/cmx-container/assets"
 
 declare -A REPO=(
   [portal]=cmx-portalservice [model]=cmx-model [mdm]=cmx-mdm
@@ -20,7 +20,7 @@ declare -A REPO=(
 
 svc="${1:?用法: $0 <portal|model|mdm|flow|report|rules>}"
 [ -d "$WS/$svc" ] || { echo "工作区不存在: $WS/$svc"; exit 1; }
-dst="$ROOT/${REPO[$svc]:-}"
+dst="$ROOT/backend/${REPO[$svc]:-}"
 [ -n "$dst" ] && [ -d "$dst" ] || { echo "未知服务或仓库缺失: $svc"; exit 1; }
 
 # 发布前守护：页面归属校验（id 前缀匹配服务目录 / 跨服务去重 / html 业务坐标防污染，全量 ~1s；违规退出码 1 即中止发布）

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""资产归属守护（W6）：校验 cmx-container/assets 工作区内
+"""资产归属守护（W6）：校验 backend/cmx-container/assets 工作区内
 1. 每个页面 id 匹配其所属服务文件夹的唯一前缀（防新页面走散）；
 2. 任一 id 不允许跨文件夹重复出现；
 3. html v2 行的 domain/app/module 字段与 id 前缀一致。
@@ -9,7 +9,7 @@
 import json, glob, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WS = os.path.join(ROOT, "cmx-container", "assets")
+WS = os.path.join(ROOT, "backend", "cmx-container", "assets")
 
 # 服务 → 允许的 id 精确前缀（native 与 html 同规）
 PREFIX = {
