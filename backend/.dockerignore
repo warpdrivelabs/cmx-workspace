@@ -1,0 +1,18 @@
+# Docker 构建上下文白名单（上下文 = backend/，供 7 个引擎仓 docker/ 构建共用）。
+# 默认全排除，仅放行参与 docker 构建的仓，再剔除仓内构建产物与本地噪音。
+# ★ 新增可容器化服务仓时在此追加放行行。
+**
+!cmx-container
+!cmx-portalservice
+!cmx-flowengine
+!cmx-report
+!cmx-model
+!cmx-rulesengine
+!cmx-mdm
+!cmx-ontology
+!cmx-data-auth
+**/target
+**/.git
+**/logs
+**/qa-assets
+**/node_modules

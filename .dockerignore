@@ -1,0 +1,12 @@
+# Docker 构建上下文白名单（上下文 = 工作区根，目前仅门户镜像构建使用：
+# backend/cmx-portalservice/docker/）。默认全排除，只放行门户编译所需内容。
+**
+!backend/cmx-container
+!backend/cmx-portalservice
+!frontend/cmx-enterprise-portal/cmx-portal-manager/dist
+!frontend/cmx-enterprise-portal/cmx-html-designer/dist
+!frontend/cmx-enterprise-portal/packages/cmx-ui5-runtime/dist
+**/target
+**/.git
+**/logs
+**/node_modules
