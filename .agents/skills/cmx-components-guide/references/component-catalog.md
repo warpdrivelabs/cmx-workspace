@@ -177,7 +177,7 @@ new C.CmxColumn({ id: 'progress', caption: '进度', dataType: 'INT', width: '16
 | cmx-split-pane | `<cmx-split-pane>` | **可调分栏**——horizontal/vertical，slot="first"/"second"，带 splitter |
 | cmx-view-tabs | `<cmx-view-tabs>` | **Tab 切换**——slot="tabs" 放切换按钮（data-view），子元素 data-view-panel |
 | cmx-embed-page | `<cmx-embed-page>` | **嵌入展示** workspace.embed 区的 html_pages 视图（多视图带 tab） |
-| cmx-pager | `<cmx-pager>` | **分页栏**——双模式（独立自管 / 协作协调器），派发 page-change |
+| cmx-pager | `<cmx-pager>` | **分页栏**——双模式（独立自管 / 协作协调器），派发 page-change；`no-total` 隐藏总数文案保留页码（窄容器防换行截断） |
 
 ### 布局场景选型
 

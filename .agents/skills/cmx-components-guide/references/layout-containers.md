@@ -154,6 +154,7 @@
 | `page-sizes` | string | `'50,100,200'` | 可选每页条数，逗号分隔 |
 | `total` | number | `null` | 总条数；`null` 表示未知（显示「第 N 页」） |
 | `compact` | boolean | — | 紧凑模式，隐藏首页/末页按钮 |
+| `no-total` | boolean | — | 隐藏总数文案：信息段只显示「第 x / y 页」，不显示「（共 N 条）」；默认显示总数。窄容器（侧栏等）关掉它避免换行/截断，总条数可由页面自身计数补足 |
 | `master-slave-id` | string | — | 协作模式协调器属性名（设此值即进入协作模式） |
 | `layer` | string | — | 协作模式绑定层 id；缺省时用协调器根层 |
 
@@ -167,7 +168,7 @@
 | `size` | 每页条数下拉 |
 | `suffix` | “条/页”后缀 |
 
-窄容器（如 explorer 侧栏）可配合 `compact`，并通过 `::part(size)` / `::part(suffix)` 隐藏每页条数区域。
+窄容器（如 explorer 侧栏）优先加 `no-total` 隐藏总数、保留页码（单行更易容纳）；仍不够时再配合 `compact` 与 `::part(size)` / `::part(suffix)` 隐藏或收窄每页条数区域。
 
 ### 4.3 双模式
 
