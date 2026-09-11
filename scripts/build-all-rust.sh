@@ -8,7 +8,7 @@
 #   - 默认 check —— 对齐 AGENTS.md §四.4「Rust 检查用 cargo check/clippy，禁止 cargo build」。
 #   - 共享 target（~/.cargo-shared-target）由全局 ~/.cargo/config.toml 配置，本脚本不覆盖（见 CLAUDE.md）。
 #   - cmx-container 先编（公用库，预热共享 target 供 8 个下游 path 引用仓复用）。
-#   - cmx-agent 收尾并加 --offline（平台约定；其余仓允许联网补依赖）。
+#   - cmx-agent 收尾（无特殊处理，与其余仓一致）。
 #   - 单仓失败不中断，末尾汇总 OK/FAIL + 耗时；有任一失败则退出码非 0。
 #   - 需 Homebrew bash 5+（关联/普通数组 + SECONDS）；shebang 走 env，PATH 已优先 /opt/homebrew/bin。
 set -uo pipefail
@@ -25,7 +25,7 @@ esac
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# 编译顺序：cmx-container 先（预热共享 target）→ 其余按名 → cmx-agent 收尾（--offline）。
+# 编译顺序：cmx-container 先（预热共享 target）→ 其余按名 → cmx-agent 收尾。
 ORDER=()
 [ -f "backend/cmx-container/Cargo.toml" ] && ORDER+=(cmx-container)
 for d in backend/*/; do
@@ -41,12 +41,10 @@ echo "顺序: ${ORDER[*]}"
 OK_LIST=(); FAIL_LIST=()
 START_ALL=$SECONDS
 for r in "${ORDER[@]}"; do
-  extra=()
-  [ "$r" = "cmx-agent" ] && extra=(--offline)
   echo ""
-  echo ">>> [$r] cargo ${CARGO_ARGS[*]} ${extra[*]:-}"
+  echo ">>> [$r] cargo ${CARGO_ARGS[*]}"
   t0=$SECONDS
-  if ( cd "backend/$r" && cargo "${CARGO_ARGS[@]}" ${extra[@]+"${extra[@]}"} ); then
+  if ( cd "backend/$r" && cargo "${CARGO_ARGS[@]}" ); then
     el=$((SECONDS - t0)); OK_LIST+=("$r(${el}s)");        echo "<<< [$r] OK  ${el}s"
   else
     rc=$?; el=$((SECONDS - t0)); FAIL_LIST+=("$r(rc=$rc,${el}s)"); echo "<<< [$r] FAIL rc=$rc ${el}s"
