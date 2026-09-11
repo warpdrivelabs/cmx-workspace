@@ -124,7 +124,7 @@
 ## 七、联调与后端运维默认信息
 
 - **一键控制台（推荐）**：`cd cmx-launcher && ./run.sh` → http://127.0.0.1:8100（自动发现服务，启停 / toml 切换 / 日志 / 磁盘治理；Windows 用 `run.bat` / `run.ps1`）。
-- **前端联调**：`frontend/cmx-enterprise-portal/` 下 `npm run dev:portal` → http://127.0.0.1:5173/，账号 `admin` / `Admin@12345`。
+- **前端联调**：`frontend/cmx-enterprise-portal/` 下 `npm run dev:portal` → http://127.0.0.1:5173/，账号 `admin` / `Admin@12345`。开发时页面直开 dev 地址（如本体工作室 http://127.0.0.1:5173/view/onto-studio）。走门户后端访问是 http://127.0.0.1:8080/portal，**必须先 `npm run build:portal` 打包出 dist 才能访问**——未打包时 :8080 上没有前端，不能直接访问。
 - **后端配置**：主服务读 `backend/cmx-portalservice/.env`（蓝本 `backend/cmx-container/.env`，cmx-container 资源相对路径前缀 `../cmx-container/`）→ `CONFIG_FILE`（当前 `./portal-server-dev.toml`）确定生效 toml；各引擎同理 `<svc>-server-dev.toml`。资产路径在生效 toml `[assets]`（`root` + `ui_native_dir` / `ui_html_dir`；portal 另有三个前端 `dist/`），不在 `WEB_FOLDER`。`[[databases]]`：`default = true` 平台库，`source_type = "biz"` 业务库；连库 URL 从 `db_url` 解析，**不硬编码地址**。
 - **后端启动**：`cd backend/cmx-portalservice && ./portal.sh`（`--release` 发布）；七引擎各仓 `*.sh`（flow :8091 / report :8092 / model :8093 / rules :8094 / mdm :8095 / onto :8097 / dataauth :8098），门户经 `[center_client.services]` 反代——**联调最小集 = portal + model 同起**。`cmx-agent` 无 HTTP：`cargo run -p cmx-agent-cli`。
 - **API 鉴权**：`http://127.0.0.1:8080`（前缀 `/api`）；`POST /api/auth/login`（`{"username":"admin","password":"Admin@12345"}`）取 `data.access_token` 带 Bearer，或请求头 `X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6`（开发免登录）。
