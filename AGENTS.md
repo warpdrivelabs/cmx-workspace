@@ -28,7 +28,7 @@
 | `cmx-mdm` | 主数据治理（:8095），中立核 `cmx-mdm-app` + 门户反代壳 |
 | `cmx-ontology` | 本体平台（:8097）：对象 / 关系 / 接口 / 动作 / 函数，一芯多壳 |
 | `cmx-data-auth` | 数据权限引擎（:8098）：PDP 部分求值 + 约束 AST 多后端编译（SQL / 内存谓词 / ES）+ 列脱敏 + ReBAC，一芯多壳 |
-| `cmx-agent` | 企业桌面智能体（edition 2024，当前 M1；**无 HTTP 端口**，CLI / 桌面壳；构建测试一律 `--offline`）。有自己的 `AGENTS.md`，与 cmx-container 无跨仓引用 |
+| `cmx-agent` | 企业桌面智能体（edition 2024，当前 M1；**无 HTTP 端口**，CLI / 桌面壳）。有自己的 `AGENTS.md`，与 cmx-container 无跨仓引用 |
 
 ### 1.3 `frontend/` —— 前端仓（4 个）
 
@@ -85,7 +85,7 @@
 1. **禁止自动提交代码**：完成任务仅汇报改动，等用户明确指令（"提交" / "commit"）才 `git commit`。任何情况下 `.env` 只能用户自己提交。
 2. **使用中文回复。**
 3. **改 `package.json` / `Cargo.toml` 后先装再构建**：先 `npm install` / `cargo check` 再 build（npm 命令在 `frontend/cmx-enterprise-portal/` 下执行，§八）。
-4. **Rust 检查用 `cargo check` / `clippy`，禁止 `cargo build`**（耗时数倍；仅运行服务 / 集成测试 / release 例外）。`backend/cmx-agent` 一律加 `--offline`。
+4. **Rust 检查用 `cargo check` / `clippy`，禁止 `cargo build`**（耗时数倍；仅运行服务 / 集成测试 / release 例外）。`backend/cmx-agent` 额外要求 clippy 零告警。
 5. **页面 / 组件必须双主题通路兼容（UI5 + Neo），禁止硬编码色值**，"先不接主题"的提交一律打回：
    - UI5 大主题：色值一律 `var(--sap*, fallback)` 派生，零硬编码 `#xxx` / `rgb()` / `hsl()`，禁止为亮 / 暗各写一份。
    - Neo 皮肤 / 色调：展示类组件必须接 Neo 皮肤，支持 `data-cmx-skin="plain|none"` 与 `data-cmx-skin-tone` 切换。
@@ -126,7 +126,7 @@
 - **一键控制台（推荐）**：`cd cmx-launcher && ./run.sh` → http://127.0.0.1:8100（自动发现服务，启停 / toml 切换 / 日志 / 磁盘治理；Windows 用 `run.bat` / `run.ps1`）。
 - **前端联调**：`frontend/cmx-enterprise-portal/` 下 `npm run dev:portal` → http://127.0.0.1:5173/，账号 `admin` / `Admin@12345`。
 - **后端配置**：主服务读 `backend/cmx-portalservice/.env`（蓝本 `backend/cmx-container/.env`，cmx-container 资源相对路径前缀 `../cmx-container/`）→ `CONFIG_FILE`（当前 `./portal-server-dev.toml`）确定生效 toml；各引擎同理 `<svc>-server-dev.toml`。资产路径在生效 toml `[assets]`（`root` + `ui_native_dir` / `ui_html_dir`；portal 另有三个前端 `dist/`），不在 `WEB_FOLDER`。`[[databases]]`：`default = true` 平台库，`source_type = "biz"` 业务库；连库 URL 从 `db_url` 解析，**不硬编码地址**。
-- **后端启动**：`cd backend/cmx-portalservice && ./portal.sh`（`--release` 发布）；七引擎各仓 `*.sh`（flow :8091 / report :8092 / model :8093 / rules :8094 / mdm :8095 / onto :8097 / dataauth :8098），门户经 `[center_client.services]` 反代——**联调最小集 = portal + model 同起**。`cmx-agent` 无 HTTP：`cargo run --offline -p cmx-agent-cli`。
+- **后端启动**：`cd backend/cmx-portalservice && ./portal.sh`（`--release` 发布）；七引擎各仓 `*.sh`（flow :8091 / report :8092 / model :8093 / rules :8094 / mdm :8095 / onto :8097 / dataauth :8098），门户经 `[center_client.services]` 反代——**联调最小集 = portal + model 同起**。`cmx-agent` 无 HTTP：`cargo run -p cmx-agent-cli`。
 - **API 鉴权**：`http://127.0.0.1:8080`（前缀 `/api`）；`POST /api/auth/login`（`{"username":"admin","password":"Admin@12345"}`）取 `data.access_token` 带 Bearer，或请求头 `X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6`（开发免登录）。
 
 ## 八、构建与测试命令速查
@@ -143,7 +143,7 @@ npm workspace 在 `frontend/cmx-enterprise-portal/`（不是工作区根），�
 | `npm test` / `npm test -w cmx-data-comp` / `-w cmx-html-designer` / `-w cmx-shared` | 全量 / 组件库 / 设计器 / shared 测试 |
 | `npm run lint` / `npx eslint <file>` | ESLint / 单文件 lint |
 
-> `frontend/cmx-mega-sheet` 不在 workspace：进目录单独 `npm test` / `build` / `typecheck`。`backend/cmx-agent`：cargo 命令一律 `--offline`，clippy 零告警，e2e 用 `./e2e-serve.sh`。Vite 8：Portal build ~5s、Designer ~27s；**Portal 无自动化测试网**，重构后靠 build + lint + 手动 dev 验证。
+> `frontend/cmx-mega-sheet` 不在 workspace：进目录单独 `npm test` / `build` / `typecheck`。`backend/cmx-agent`：clippy 零告警，e2e 用 `./e2e-serve.sh`。Vite 8：Portal build ~5s、Designer ~27s；**Portal 无自动化测试网**，重构后靠 build + lint + 手动 dev 验证。
 
 ## 九、文档与知识库路径（动手前先查）
 

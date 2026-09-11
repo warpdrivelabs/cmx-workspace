@@ -22,7 +22,7 @@ bash .agents/skills/workspace-init/scripts/init-workspace.sh   # 幂等克隆 15
 
 - **`backend/cmx-container` 是轴心**：公用库 + 插件平台，**无 server bin**。8 个下游后端仓经 `path = "../cmx-container/crates/..."` **跨工作区引用**它。它还是**前端 / 页面 / 种子资产的唯一真源** `assets/<svc>/`（portal / model / mdm / flow / report / rules / onto 七组）。
 - **门户主应用 `cmx-portalservice`（:8080）是薄壳**，通过 `[center_client.services]` **反代**七个微服务引擎：flow :8091 / report :8092 / model :8093 / rules :8094 / mdm :8095 / onto :8097 / dataauth :8098。**联调最小集 = portal + model 同起**。
-- **`cmx-agent`（桌面智能体）是孤岛**：无 HTTP 端口，无 cmx-container 引用，有自己的 `AGENTS.md`；所有 cargo 命令一律加 `--offline`。
+- **`cmx-agent`（桌面智能体）是孤岛**：无 HTTP 端口，无 cmx-container 引用，有自己的 `AGENTS.md`。
 - **前端 `cmx-enterprise-portal` 是 npm workspace**（包名 `cmx-monorepo`）：Portal 管理端 + HTML 设计器 + 共享包。`packages/cmx-ui5-runtime`（UI5+Tabler 运行时）是 Portal / Designer 的**构建前置——必须先建它**。`packages/cmx-data-comp` 是组件库封装源头（97 元素）。另有 3 个独立前端仓（`cmx-mega-sheet` 电子表格 / `cmx-ontology-graph` 本体图 / `cmx-decision-graph` 决策图）被对应后端引用。
 
 ## 常用命令
@@ -45,7 +45,7 @@ npm run lint                # ESLint；npx eslint <file> 单文件
 ```bash
 cd backend/cmx-portalservice && cargo check    # 检查用 check/clippy，禁用 cargo build（见硬约束）
 cd backend/cmx-portalservice && ./portal.sh    # 起门户主应用（--release 发布）；各引擎用各仓 *.sh
-cargo run --offline -p cmx-agent-cli           # cmx-agent 专用（一律 --offline）
+cargo run -p cmx-agent-cli                     # cmx-agent 专用
 ```
 
 **共享 target（省磁盘，勿在各仓覆盖）**：全工作区 Rust 编译产物统一到 `~/.cargo-shared-target`，由**全局** `~/.cargo/config.toml` 的 `[build]` 段配置（`target-dir` + `incremental = false` + `rustc-wrapper = sccache`），与 sibling 工作区 `Workspace/presentation` 共用同一目录——同名仓 / 重合依赖只编一份。各 backend 仓的仓内 `.cargo/config.toml` **只配镜像源 / registry，禁止加 `[build] target-dir` 覆盖**（一覆盖就与全局分家、依赖重编、白占几十 G）。故各仓目录下**不会生成 `target/`**（无误提交风险）；磁盘紧张用 `cmx-launcher` 的 target 治理或 `sccache --show-stats` 看命中。依赖此机制需两个前置：`sccache` 已装（全局配了 `rustc-wrapper`，缺则所有 cargo 命令直接失败）、macOS 用 Homebrew bash 5+（`/bin/bash` 仍是 3.2）。
@@ -57,7 +57,7 @@ cargo run --offline -p cmx-agent-cli           # cmx-agent 专用（一律 --off
 ## 硬约束（违反即打回；完整清单见 `AGENTS.md` §四~六）
 
 1. **禁止自动提交**：任务完成只汇报改动，等用户明确说「提交 / commit」才动 git；`.env` 只能用户自己提交。
-2. **Rust 检查用 `cargo check` / `clippy`，禁止 `cargo build`**（耗时数倍；仅运行服务 / 集成测试 / release 例外）。`cmx-agent` 全部命令加 `--offline` 且 clippy 零告警。
+2. **Rust 检查用 `cargo check` / `clippy`，禁止 `cargo build`**（耗时数倍；仅运行服务 / 集成测试 / release 例外）。`cmx-agent` 要求 clippy 零告警。
 3. **改 `cmx-container` 公用库 API 必须下游验证**：至少主应用 + 一个引擎各跑 `cargo check`（改 core/sql/web/rpc 等共用 crate 则逐仓全跑）；改 `cmx-rulesengine` 的 rule-feel/rule-model/rule-engine 须到 `cmx-data-auth` 补跑。
 4. **页面 / 组件必须双主题通路兼容（UI5 + Neo），禁止硬编码色值**：UI5 色值一律 `var(--sap*, fallback)` 派生；Neo 展示类组件须支持 `data-cmx-skin` / `data-cmx-skin-tone` 切换。CI/Review 对暗色掉队、tone 失效、硬编码色值一票否决。真源：技能 `cmx-components-guide` 的 `references/{neo-theme-onboarding,frontend-conventions,page-style-guide}.md`。
 5. **新增接口禁用可变路径段，禁用 PUT/PATCH/DELETE**：路径只允许固定资源段，标识 / 过滤 / 操作参数走 query 或 body；更新 / 删除一律 `POST` + JSON body（只取详情可退 `GET`）。仅约束新增接口。
