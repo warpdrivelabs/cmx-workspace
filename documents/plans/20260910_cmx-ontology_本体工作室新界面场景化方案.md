@@ -516,3 +516,32 @@ om_draft 草稿工作区 ──发布──▶ om_*（已发布真源，表结�
 **草稿 JSONB 读写基准 spike（1077 对象，草稿 1.1MB）**：GET /draft 首次 fork 5.9s / 直读 2.5s；POST /draft/save 整包写回 1.9s；releases/preview 2.5s。千级规模可用（秒级），编辑保存无阻塞感；更大规模的分段/压缩 fallback 维持 §八 P5 编辑态压测口径观察。
 
 **待办移交**：门户权限注入 `__PORTAL_PERMISSION_IDS` 与「场景视图」菜单节点（props entryCtx=scene）+ 测试账号造数（§八 P2 权限链交付项，前端 403 降级已就绪）；旧版本快照无 views 段的 restore 场景保持现状路径已实现，待 P2 前旧版本真实数据走查（v36 即可复验）。
+
+### P4 实施记录（20260911，全量虚拟化画布——组件虚拟管线 + studio「全量视图」入口 + 压测达标；P3 经用户裁决暂缓顺延）
+
+**用户裁决（20260911）**：① P3（导入向导）暂缓、先做 P4（全量虚拟化画布）；② 移除「超出单屏渲染上限」止血守卫——canvas 组件 `MAX_VISIBLE_NODES=200` 展开拒绝与 studio 底座 `CANVAS_CAP=300` 截断均删除，分组展开不再受限（用户实测性能可接受；P4 虚拟化接管全量场景）。
+
+**组件（frontend/cmx-ontology-graph，`src/canvas/virtual.ts` 新增 + element.ts 虚拟模式接线；旧组件零改动）**：
+
+- **布局预计算**：`virtualLayout` 按 DAM 顶级域分桶（接口归 `__interfaces__`、无域进「未分组」）+ 域内 √n 确定性网格（节点按完整卡标称 232×190 占位，任何 LOD 零重叠）+ 域盒 4 列流式排布；O(n+e) 千级毫秒级一次算好缓存（`_vl`），平移缩放零重算；域对聚合边（`pairCounts`）布局期预聚合。
+- **空间索引**：`SpaceGrid` uniform grid（512 单元）矩形插入/查询，视口命中 O(覆盖格数)。
+- **LOD 三级 + 滞回**：`lodFor(scale, prev)` —— far↔mid 升 0.42/降 0.32、mid↔near 升 0.85/降 0.72，按前档选阈值防边界闪烁。far=域盒（screen-space 恒定字号标签）+ 居中胶囊（远观不渲染名字，hover title 保留全名）+ 域间聚合边（盒缘直线+计数）；mid=标题卡（232×54 复用 og-card 状态色）+ 端侧中点贝塞尔边；near=完整属性卡（复用 objectCard）+ 完整语义边（避让障碍物仅视口内矩形）。
+- **视口剔除**：`renderVirtual` 只产出视口矩形（含 256 缓冲）内节点/边/相交域盒；`debugStats()` 暴露 lod/renderedNodes/renderedEdges/viewportNodes/detailsLoaded 供自动化断言。
+- **增量渲染（压测驱动优化）**：初版每次视口集变化 innerHTML 全量替换，far 档 989 胶囊（~4000 SVG 元素）单次建/毁 200ms+ 长任务。改为 **keyed 差量 patch**（renderVirtual 输出 nodeFragments/edgeFragments/boxFragments；vPaint 按几何指纹比较只增删差量片段，SVG 上下文 insertAdjacentHTML；仅选中变化走 class 级切换；详情装载回填才整体重建且此时可见集小）——交互中单帧从 210ms 降到 <17ms。
+- **detailLoader 批量装载**（§5.3.2 口径）：近 LOD 视口内未装载集合 → 150ms 去抖 → ≤500/批串行（并发 1）→ `setDetailLoader` 回调取数回填 model 节点 properties → `_detailLoaded` 防重拉；远/中档零请求。
+- **虚拟模式交互约束**：只读总览——节点不可拖/拉线禁用（port 分支拦截）/Delete 拦截提示；拖画布=平移、轻点=选中、双击域盒=钻取（`zoomToBox`）；zoom 下限放宽 0.05（千级世界 fit 全局）；首开自动 fitView；`virtual` 属性激活。
+- 单测 104/104（新增 10：布局分桶/零重叠/千级 O(n)/SpaceGrid/LOD 滞回边界/三档视口外零 DOM 断言/viewportOf 换算/元素级千级 setSpec 剔除断言/非虚拟回归基线）。
+
+**studio.js 接线**：底座上下文工具条新增「🌐 全量 / ⊡ 域盒」切换（`S.canvasMode`，仅 base 上下文渲染——消费角色天然不可达；独立态固定消费形态无底座入口）；切换时组件设 `virtual` 属性 + `setDetailLoader(loadObjectDetails)`（POST /object-types/batch 纯数组 → ObjectTypeDef→GraphNode 投影：properties 补 isPrimaryKey/isTitle 标记）；虚拟形态强制 readonly。
+
+**压测与走查（dev 库 1034 造数+存量=1077 对象/244 关系/12 域盒，seed_scale.py）**：
+
+- **打开 124ms**（点击「全量」→ far 首帧 989 胶囊渲染完成；验收 <3s）✓
+- **域内巡游（mid 档平移+小幅缩放，196 帧采样）：p95=16.8ms（验收 <24ms）、>50ms 长任务=0、>24ms 帧 3/196** ✓
+- far 全图交替缩放极端压测：p95 16.8ms、长任务 1 个 77ms（LOD 档位切换大差量帧，一次性成本，非稳态交互）；
+- **视口外零渲染**：钻取销售域 viewportNodes 989→168→54→28，DOM 计数与 debugStats 逐档一致（单测同口径断言）✓
+- **LOD 走查**：far（0.05 域盒+胶囊+聚合边+screen-space 标签 13.5px）→ mid（0.47 标题卡）→ near（0.92 完整卡+112 属性行）滞回切换无闪烁 ✓
+- **近 LOD 装载**：near 档 28 视口节点单批（≤500）装载，detailsLoaded=28，Inspector 属性/画布卡同步生效 ✓
+- **回归**：切回域盒模式 12 盒正常；场景画布（普通管线）全展开 125 卡+31 边/344ms ✓；点选节点→type-select→Inspector 联动 ✓；双主题——虚拟样式全部复用 `--og-*`→`--sap*` 派生令牌（与 og-card/og-refcard 同源通路，无硬编码色值）✓；console 零报错 ✓。
+
+**遗留**：底座域盒/场景组折叠为 P1「默认收起→纯钻取」设计（isCollapsed 缺省 true），场景打开呈收起盒态、双击展开——本次未改动该语义；LOD 档位切换瞬间的大差量帧（77ms）如需进一步压平，二期可做分档过渡渐变或按需中断渲染。
