@@ -104,6 +104,14 @@
   p{margin-bottom:12px;max-width:48em}
   p.dim{color:var(--ink2)}
   .mono{font-family:var(--mono);font-size:.92em;background:#E9EDE6;padding:1px 5px;border-radius:2px}
+  .code{
+    background:var(--ink);color:#E6EDE8;font-family:var(--mono);
+    font-size:12.5px;line-height:1.8;padding:16px 20px;border-radius:6px;
+    overflow-x:auto;white-space:pre;margin:14px 0 6px;
+  }
+  .code .c{color:#8AA596}
+  .code .k{color:#E8A56B;font-weight:700}
+  .code .v{color:#9CC3DE}
   .hl{color:var(--route);font-weight:600}
   .bl{color:var(--water);font-weight:600}
   .gn{color:var(--pine);font-weight:600}
@@ -272,7 +280,7 @@
       <a href="#s5"><b>5</b>问题与要补的课</a>
       <a href="#s6"><b>6</b>这几天改了什么</a>
     </nav>
-    <div class="routenote">按 1→6 顺序讲约 25 分钟；只讲第 3、4 站约 10 分钟。文中数字均来自代码实测与 8-31 全量测试报告。</div>
+    <div class="routenote">文中数字均来自代码实测与 8-31 全量测试报告。</div>
   </header>
 
   <main>
@@ -317,7 +325,7 @@
     <div class="legend-group">第三组 · 查数据（道路与导航）</div>
     <div class="legend">
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><circle cx="6" cy="20" r="3" fill="#C75B12"/><circle cx="20" cy="6" r="3" fill="#C75B12"/><path d="M8 18 L18 8" stroke="#C75B12" stroke-width="2"/></svg>
-        <div><div class="nm">关系<span class="en">LinkType / 边</span></div><div class="ex">地图上的<b>"道路"</b>：有方向（客户—下单→订单）、有基数（1对1 / 1对多 / 多对多）、两端各有角色名。所有关系统一存一张边表，<b>加关系不用建新表</b>。</div></div></div>
+        <div><div class="nm">关系<span class="en">LinkType / 边</span></div><div class="ex">地图上的<b>"道路"</b>，<b>定义在对象类型之间</b>（客户类型—下单→订单类型，存在定义表里，带方向、基数、角色名）。按它产生的一条条实际连线（哪条数据连哪条数据）默认统一存一张边表，<b>加关系不用建新表</b>；声明外键落库的关系则直走对象表外键列，连边表行都不加。</div></div></div>
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><circle cx="11" cy="11" r="6" fill="none" stroke="#C75B12" stroke-width="2"/><path d="M15.5 15.5 L22 22" stroke="#C75B12" stroke-width="2.4"/></svg>
         <div><div class="nm">对象集<span class="en">ObjectSet</span></div><div class="ex">一次查询的<b>"导航指令"</b>：从哪类对象出发、按什么条件过滤、顺路走到哪。最后编译成<b>一条</b> SQL，一次往返出结果。</div></div></div>
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><path d="M4 20 C8 20 8 6 13 6 C18 6 18 20 22 20" stroke="#C75B12" stroke-width="2" fill="none"/><circle cx="4" cy="20" r="2.4" fill="#C75B12"/></svg>
@@ -333,7 +341,7 @@
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><rect x="4" y="6" width="18" height="14" fill="none" stroke="#C75B12" stroke-width="2"/><path d="M8 10 L11 13 L8 16 M13 16 H18" stroke="#C75B12" stroke-width="1.8" fill="none"/></svg>
         <div><div class="nm">函数<span class="en">Function</span></div><div class="ex">一段<b>可复用的计算</b>，配置即生效不改代码。如"延误风险 = 金额大于 1000 则 0.8 否则 0.2"。支持 FEEL / Rhai 脚本 / Rust 原生三种跑法。</div></div></div>
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><rect x="4" y="5" width="18" height="12" fill="none" stroke="#C75B12" stroke-width="2"/><path d="M4 9 H22 M8 21 H18" stroke="#C75B12" stroke-width="2"/></svg>
-        <div><div class="nm">副作用 / 发件箱<span class="en">sideEffects / outbox</span></div><div class="ex">办完正事的<b>"附带动作"</b>：起审批流、算报表、回调外部地址、发通知。先写进"待发清单"（和数据改动<b>同一个事务，绝不丢</b>），后台再挨个真正发出去。</div></div></div>
+        <div><div class="nm">副作用 / 发件箱<span class="en">sideEffects / outbox</span></div><div class="ex">办完正事的<b>"附带动作"</b>，共 6 种：起审批流、算报表、回调外部地址、发通知、发事件、调函数。先写进"待发清单"（和数据改动<b>同一个事务，绝不丢</b>），后台再挨个真正发出去。</div></div></div>
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><path d="M13 4 C7 10 5 14 5 17 A8 5 0 0 0 21 17 C21 14 19 10 13 4 Z" fill="none" stroke="#C75B12" stroke-width="2"/></svg>
         <div><div class="nm">漏斗 / 隔离区<span class="en">funnel / quarantine</span></div><div class="ex"><b>数据搬运管道</b>：从外部表按映射规则灌进来，合格的落库，不合格的（主键空、必填缺）进"不合格品区"等人工复核，<b>不污染好数据</b>。</div></div></div>
       <div class="term"><svg class="sw" viewBox="0 0 26 26"><path d="M4 18 L4 8 L13 13 L22 8 L22 18 Z" fill="none" stroke="#C75B12" stroke-width="2" stroke-linejoin="round"/></svg>
@@ -379,9 +387,10 @@
     <h3>三个"反常识"，也是最省钱的三个决定</h3>
     <div class="card">
       <h4>① 没有图数据库</h4>
-      <p>逻辑上是图，物理上<b>就是 PostgreSQL</b>——没引入 Neo4j 等任何新数据库。关系全存一张边表
-      （一行 = 一条边，如 <span class="mono">{"link":"客户下单","aPk":"1","bPk":"101"}</span>，即"1 号客户下了 101 号订单"），
-      所以<b>加一种关系不用建任何表</b>，运维只维护一种数据库。</p>
+      <p>逻辑上是图，物理上<b>就是 PostgreSQL</b>——没引入 Neo4j 等任何新数据库。关系的<b>定义</b>（客户类型—下单→订单类型）存定义表；
+      按定义产生的<b>实际连线</b>（哪条数据连哪条数据）默认进一张共用的边表——一行 = 一条连线，如
+      <span class="mono">{"link":"customerPlacesOrder","aPk":"1","bPk":"101"}</span>，即"1 号客户实例 连到 101 号订单实例"。
+      所以<b>加一种关系不用建任何表</b>，运维只维护一种数据库。9-10 起另有第二种落法：声明外键落库的关系不进边表，查询直接按外键列 JOIN 对象表。</p>
     </div>
     <div class="card">
       <h4>② 属性不建数据库列，全塞一个 JSON</h4>
@@ -390,9 +399,10 @@
       建模时加字段<b>纯定义层操作，一行动态表结构都不用改</b>。代价是按字段过滤没有数据库索引——这条代价我们记在第 5 站的账上（Q1）。</p>
     </div>
     <div class="card">
-      <h4>③ 权限不是"事后过滤"，是"查询的一部分"</h4>
-      <p>行级权限（哪些行你看不见）直接编译进查询 SQL，字段脱敏（手机号只给看后四位）在返回前打码——
-      权限和取数是<b>同一条 SQL 里完成的</b>，不存在"先查出来再筛、筛漏了就泄露"的后门。动作执行前还有一道"谁能点这个按钮"的强校验。</p>
+      <h4>③ 权限不是"事后过滤"，是"查询的一部分"——9-10 起还是一扇硬门</h4>
+      <p>行级权限（哪些行你看不见）直接编译进查询 SQL；9-10 合并读侧硬门后更进一步：主链路查询（列表 / 聚合 / 钻取）
+      查库前先过策略——命中 deny 直接 <b>403 拒绝</b>、被策略管控的类型未授权<b>默认拒绝</b>、敏感列<b>直接从响应里移除</b>
+      （不止打码）。动作执行前还有一道"谁能点这个按钮"的强校验。不存在"先查出来再筛、筛漏了就泄露"的后门。</p>
     </div>
 
     <div class="callout">
@@ -415,6 +425,30 @@
       <div class="s"><i>STEP 6</i><b>办事</b><span>360 工作台点按钮，试算→执行→留痕</span></div>
     </div>
 
+    <h3>平台固定的 12 张静态表</h3>
+    <p>
+      不管地图上放多少东西，平台自身的家当就这 12 张表。另有按类型动态建的 <span class="mono">oo_&lt;类型&gt;</span> 数据表
+      和全库共用的关系连线表 <span class="mono">ol_edge</span>，属于"数据侧"，不在这 12 张里。
+      <span class="mono">ol_edge</span> 的行全部产生在<b>数据时刻</b>：动作执行"加关系/断关系"时写入或删除、
+      外部系统显式调 <span class="mono">POST / DELETE /links</span> 时写入或删除、删对象时连带清掉它参与的边；
+      <b>画本体图（建模）不碰它</b>——建模只写上面的定义表，"声明的哪两类对象之间有关系"和"数据之间实际连了线"是两回事。
+    </p>
+    <table>
+      <tr><th style="width:4.5em">组</th><th style="width:15em">表</th><th>作用</th></tr>
+      <tr><td rowspan="7"><b>定义</b><br>7 张</td><td><span class="mono">om_object_type</span></td><td>对象类型定义：有哪些字段、主键、标题字段</td></tr>
+      <tr><td><span class="mono">om_link_type</span></td><td>关系类型定义：哪两类对象之间、什么方向和基数、两端角色名</td></tr>
+      <tr><td><span class="mono">om_interface</span></td><td>接口定义：横切能力标签（如"可开票"）及其挂的属性集</td></tr>
+      <tr><td><span class="mono">om_shared_property</span></td><td>共享属性定义：全局标准字段，一处定义、多处引用</td></tr>
+      <tr><td><span class="mono">om_action_type</span></td><td>动作定义：办事按钮的参数、校验规则、改数声明、副作用</td></tr>
+      <tr><td><span class="mono">om_function</span></td><td>函数定义：FEEL / Rhai 写的可复用计算逻辑</td></tr>
+      <tr><td><span class="mono">om_version</span></td><td>发布版本：整套定义的快照存档，只增不改、可回看</td></tr>
+      <tr><td rowspan="5"><b>运行</b><br>5 张</td><td><span class="mono">om_policy</span></td><td>权限策略：行级过滤、列脱敏、动作禁用（allow / deny）</td></tr>
+      <tr><td><span class="mono">om_source_mapping</span></td><td>漏斗映射：源查询 + 字段对应关系，数据搬运的规则</td></tr>
+      <tr><td><span class="mono">oe_action_log</span></td><td>动作审计：谁在何时点了什么按钮、改了哪些数据，可查可回放</td></tr>
+      <tr><td><span class="mono">oe_outbox</span></td><td>副作用发件箱：待投递清单，与业务改动同事务落库，后台逐条投递重试</td></tr>
+      <tr><td><span class="mono">oo_quarantine</span></td><td>隔离区：漏斗校验不过的行先搁这儿，不污染好数据，人工复核后重放</td></tr>
+    </table>
+
     <h3>重点一：数据表是"写时自动建"的（懒物化）</h3>
     <p>
       新建对象类型时<b>并不建数据库表</b>，只往定义表写一行；<b>第一次往该类型写数据时</b>才自动建物理表
@@ -430,8 +464,39 @@
 
     <h3>重点二：一条查询是怎么跑的</h3>
     <p>
-      查询不写 SQL，写"导航指令"。例：<b>北区客户 → 顺着"下单"关系 → 金额 ≥ 1000 的订单</b>，两跳穿越，
-      平台把它编译成<b>一条</b> SQL、一次往返出结果（嵌套子查询自动生成）。防注入双保险：
+      查询不写 SQL，写"导航指令"——一段 JSON 的<b>对象集代数</b>：算子一层套一层，
+      最里层是出发点（哪类对象的全量），往外每层做一件事：过滤、顺关系走、或做集合运算。
+      例：<b>北区客户 → 顺着"下单"关系 → 金额 ≥ 1000 的订单</b>，两跳穿越，指令长这样：
+    </p>
+    <pre class="code">{
+  <span class="k">"op"</span>: <span class="v">"searchAround"</span>,   <span class="c">// 本层做什么：顺着关系走一跳</span>
+  <span class="k">"link"</span>: <span class="v">"customerPlacesOrder"</span>, <span class="k">"direction"</span>: <span class="v">"forward"</span>,   <span class="c">// 走哪条关系、朝哪个方向</span>
+  <span class="k">"source"</span>: {              <span class="c">// 出发点：还是一条指令，一层层往里剥</span>
+    <span class="k">"op"</span>: <span class="v">"filter"</span>,
+    <span class="k">"predicate"</span>: { <span class="k">"kind"</span>: <span class="v">"ge"</span>, <span class="k">"property"</span>: <span class="v">"amount"</span>, <span class="k">"value"</span>: <span class="v">1000</span> },   <span class="c">// 金额 ≥ 1000</span>
+    <span class="k">"source"</span>: {
+      <span class="k">"op"</span>: <span class="v">"filter"</span>,
+      <span class="k">"predicate"</span>: { <span class="k">"kind"</span>: <span class="v">"eq"</span>, <span class="k">"property"</span>: <span class="v">"region"</span>, <span class="k">"value"</span>: <span class="v">"north"</span> },   <span class="c">// 北区</span>
+      <span class="k">"source"</span>: { <span class="k">"op"</span>: <span class="v">"base"</span>, <span class="k">"objectType"</span>: <span class="v">"Customer"</span> }   <span class="c">// 最里层：从全部客户出发</span>
+    } }
+}
+<span class="c">// 读法：全部客户 → 挑出北区的 → 顺着"下单"走到订单 → 挑出金额 ≥ 1000 的</span></pre>
+    <p>7 种算子，每种管一件事，套娃组合出任意查询：</p>
+    <table>
+      <tr><th style="width:13em">算子</th><th>作用</th></tr>
+      <tr><td><span class="mono">base</span></td><td>查询起点：某类对象的全部数据</td></tr>
+      <tr><td><span class="mono">filter</span></td><td>按条件筛掉不合格的行</td></tr>
+      <tr><td><span class="mono">searchAround</span></td><td>顺着关系走一跳、到另一端的对象——本体的灵魂算子</td></tr>
+      <tr><td><span class="mono">union</span></td><td>两批对象合并，按主键去重</td></tr>
+      <tr><td><span class="mono">intersect</span></td><td>取交集：两批里都有的</td></tr>
+      <tr><td><span class="mono">subtract</span></td><td>取差集：前一批里去掉后一批也有的</td></tr>
+      <tr><td><span class="mono">static</span></td><td>不查库，直接点名一组主键（外部带来的固定清单）</td></tr>
+    </table>
+    <p>
+      条件（<span class="mono">predicate</span>）共 <b>12 种</b>：
+      比较 <span class="mono">eq / ne / gt / ge / lt / le</span>、集合判断 <span class="mono">in / contains / isNull</span>、
+      组合 <span class="mono">and / or / not</span>（可嵌套成条件树）。
+      平台把指令编译成<b>一条</b> SQL、一次往返出结果（多跳就是自动生成的嵌套子查询）。防注入双保险：
       表名/字段名过白名单，所有值一律 <span class="mono">$N</span> 参数绑定；分页每页最多 1000 条。
       聚合也有：计数、分组计数、分组求和——"各区域有多少客户"一句话的事。
     </p>
@@ -449,6 +514,16 @@
       执行前可点"试算"（dry-run）：先<b>预演</b>一遍"会编辑 N 条、触发 M 条副作用"，不动任何真数据。
       副作用由后台派发器逐条投递（多节点用 <span class="mono">FOR UPDATE SKIP LOCKED</span> 抢任务，不重复不遗漏），失败标失败、可重试。
     </p>
+    <p>动作可以声明"办完正事后附带做什么"，共 <b>6 种</b>选项，按需组合：</p>
+    <table>
+      <tr><th style="width:11em">选项</th><th>干什么</th></tr>
+      <tr><td><b>起审批流</b></td><td>调流程引擎，真实创建一条流程实例——点按钮就发起审批</td></tr>
+      <tr><td><b>算报表</b></td><td>调报表服务，真实计算并落库（如关账动作顺手算关账报表）</td></tr>
+      <tr><td><b>回调外部地址</b></td><td>把结果 POST 给外部系统的 URL（主机白名单管控，防乱调）</td></tr>
+      <tr><td><b>发通知</b></td><td>按模板发一条通知，页面实时收到</td></tr>
+      <tr><td><b>发事件</b></td><td>往本体的实时广播流发消息——别的页面听到就自动刷新</td></tr>
+      <tr><td><b>调函数</b></td><td>触发本体里配好的函数，再算一段自己的逻辑</td></tr>
+    </table>
 
     <h3>体感数字：该往地图上放多少东西</h3>
     <p>
@@ -515,7 +590,7 @@
     </p>
 
     <div class="callout warn">
-      <div class="t">现状边界（如实说，免得演示翻车）</div>
+      <div class="t">现状边界</div>
       目前同步是<b>全量</b>（无增量）、<b>手动/外部触发</b>（平台自己不会到点干活）、<b>单向</b>（MDM → 本体，改了传不回去）、
       ①③两条导入通道目前<b>连调用方都没有</b>（模型中心不会自动推、本体不主动拉、界面也无入口——见第 5 站 T5）、
       字典导入是快照式；漏斗的源查询会真实执行配置的 SQL——只允许可信管理员配置、只配 SELECT。
@@ -533,7 +608,7 @@
     <h3>🔴 P0 · 两扇安全门（建议最优先修）</h3>
     <table>
       <tr><th style="width:5em">编号</th><th style="width:14em">问题</th><th>说明与对策</th></tr>
-      <tr><td class="sev p0">S1</td><td>身份可自报</td><td>某种认证模式下，调用方"自己说自己是谁"就能绕过行级权限和动作禁令——<b>保安不查证件</b>。临时对策：生产网关强制剥离 subjects 头；根治：服务端从登录令牌推导身份。</td></tr>
+      <tr><td class="sev p0">S1</td><td>身份可自报</td><td>调用方"自己说自己是谁"仍会被采纳，绕过行级权限和动作禁令——<b>保安不查证件</b>。9-10 部署姿态已收紧：四份配置鉴权 off→jwt，门户链身份来自<b>验签的委托令牌</b>；但代码层请求自报 subjects 仍未强制忽略，口子没关完。对策不变：网关剥离 subjects + 服务端一律从令牌推导身份。</td></tr>
       <tr><td class="sev p0">S2</td><td>漏斗的 SQL 注入面</td><td>数据同步有一处拼接 SQL、且源查询语句任意填——全平台唯一不走参数化的地方，<b>门都上锁就这扇窗没关</b>。临时对策：仅管理员可配、只配 SELECT、端点不对普通用户开放。</td></tr>
     </table>
 
@@ -583,7 +658,6 @@
       <tr><th style="width:16em">能力</th><th>现状说明</th></tr>
       <tr><td>Wasm 函数运行时</td><td>FEEL / Rhai / Rust 原生三种跑法 9-09 已补齐；第四种 Wasm 插件还是占位（为接现成插件生态预留）。</td></tr>
       <tr><td>派生属性落库</td><td>派生属性<b>算得出、存不了、也不会自动重算</b>——只能现用现算。</td></tr>
-      <tr><td>更硬的权限门</td><td>行级过滤、字段脱敏有了；"直接硬拒绝你访问这类数据"的门还没做。另：360 工作台执行动作目前固定以管理员身份发起（写侧禁用清单对它不生效，已知决策，等鉴权上下文贯通后移除）。</td></tr>
       <tr><td>性能压测</td><td>功能全测了（351 项），但"1000 人同时用 / 百万级数据"的压力测试<b>一次没做</b>。</td></tr>
       <tr><td>大图规模</td><td>设计器目前全量加载：<b>41 个类型体验良好；涨到 500 个明显变卡、1000 个不可用</b>（瓶颈不是数据拉不动，是"画布画不动 + 人看不清"）。"按域装载 + 邻域视图"的改造方案已立（9-09），待实施。</td></tr>
       <tr><td>浏览器/360 的进阶交互</td><td>两页面 9-10 已按企业级重写（真分页计数、类型感知过滤、试算+执行双按钮、关系懒加载）；但"页面上直接编辑对象属性/新建对象"这类直写能力还在可选项里没做。</td></tr>
@@ -601,8 +675,8 @@
   <section id="s6">
     <div class="stop"><span class="no">06</span><h2>这几天做了什么（09-08 ~ 09-10）</h2><span class="tag">CHANGELOG · 改动</span></div>
     <p class="dim">
-      三天共 <b>26 个提交</b>（后端 3 + 图组件 11 + 页面资产 12），<b>全部已合入 main</b>。
-      一条主线：<b>把"能跑"变成"好用、安全、看得懂"</b>——并发安全加固、三端交互重构、数据库可读性。
+      三天共 <b>27 个提交</b>（后端 4 + 图组件 11 + 页面资产 12），<b>全部已合入 main</b>。
+      一条主线：<b>把"能跑"变成"好用、安全、看得懂"</b>——并发安全加固、三端交互重构、数据库可读性、权限硬门上线。
     </p>
 
     <div class="tl">
@@ -623,11 +697,12 @@
         </ul>
       </div>
       <div class="day">
-        <h4>09-10 · 浏览器/360 企业级重写 + 收尾</h4>
+        <h4>09-10 · 浏览器/360 企业级重写 + 权限硬门上线</h4>
         <ul>
           <li><b>对象浏览器、对象360 重写</b>：新增共享地基（统一主题变量/分页器/弹框/通知）；钻取改<b>快照栈</b>（返回按钮不再失灵）；<b>真分页真计数</b>（之前超 500 条静默截断还把截断数当总数——"说谎"问题根治）；过滤条件按字段类型给控件（日期给日期选、数字给数字框）；动作执行前<b>试算+执行双按钮</b>；360 视图关系卡<b>懒加载</b>（之前串行等全部，现在先进先看）。</li>
           <li><b>弹框体验两轮修复</b>：暗色下发光白晕、弹框高度虚高、关按钮缺失、动作弹框试算按钮位置等一批细节。</li>
           <li><b>交互细节收尾</b>：对象浏览器详情改单列竖排（窄面板不再挤字）、钻取面包屑移到列表表头可见处、设计器域/应用/模块下拉换组件（选项单行不换行）。</li>
+          <li><b>鉴权配置升级 + 权限硬门上线</b>：四份 toml 鉴权 off→jwt，打通门户委托令牌验签链（登录用户身份可进入策略判定）；并合并远端安全批次——接口实现强校验（实现接口必须具备要求的共享属性）、外键落库关系查询直走外键 JOIN、<b>读侧权限硬门</b>（deny 真 403 / 受控类型默认拒绝 / 敏感列硬移除，+1030 行）。</li>
           <li><b>版本链路巡检</b>：发现发布按钮"隐身"（渲染在门户永久隐藏的 model 区，git 考古确认自首次入库即如此、非改丢）与版本表"只写不读"（OSDK 读草稿出码、快照无任何消费端）两个断点，记入第 5 站账（V1/V2）；发布按钮挪进可见区、OSDK 按版本出码为下一步改造项。</li>
           <li><b>导入链路核实</b>：确认 DOC/DCT 反向导入两条接口（<span class="mono">import/doc</span>、<span class="mono">import/dct</span>）目前<b>无任何调用方</b>——模型中心源码零引用本体、无对外 HTTP 客户端，本体只被动收归一化 JSON 保持解耦，界面也无导入入口；接线方案（模型中心 deploy 后回调 push，或设计器加导入按钮 pull）记入第 5 站账（T5）。</li>
           <li><b>设计器小修</b>：新建对象类型/接口后画布自动定位到新节点（focusNode 居中，不用再"建完找不到"）；弹框去除背景模糊、点背景不再误关。</li>
@@ -657,7 +732,7 @@
         <tr><td>按域装载/大图方案</td><td><span class="mono">documents/plans/20260909_cmx-ontology_本体设计器大图规模架构优化方案.md</span></td></tr>
       </table>
     </div>
-    <div class="sig">CMX · 本体平台介绍 · 依据 2026-09-08 代码实测与 2026-08-31 全量测试报告整理 · 2026-09-10</div>
+    <div class="sig">CMX · 本体平台介绍 · 依据 2026-09-10 代码实测（含权限硬门批次）与 2026-08-31 全量测试报告整理 · 2026-09-10</div>
   </footer>
 
   </main>
