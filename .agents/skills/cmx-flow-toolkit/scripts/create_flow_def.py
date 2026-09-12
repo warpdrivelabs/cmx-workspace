@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-cmx-flowengine 流程定义创建器
+cmx-flowengine 流程定义创建器（P0 契约：流程定义 × 审批定义分离）
 ============================
 
 作用：把声明式 spec（JSON）编译成**语义 BPMN 2.0 XML**（无 DI，设计器打开自动布局），
-可选经 REST 三步（validate → draft → publish 热装载）部署到 flow-server，并可起一个
-冒烟实例验证首节点停留位置。
+可选经 REST **五步**部署到 flow-server 并起冒烟实例验证首节点停留位置。
 
-语法契约源：backend/cmx-flowengine/docs/usage/{02,03,04,05}-*.md（完整语法表见技能
-references/bpmn-def-guide.md）。只支持引擎白名单元素；黑名单元素（task/scriptTask/
-sendTask/…）直接拒绝。
+P0 核心契约（与旧版的关键差异）：
+  1. **BPMN 零审批属性**：办理人/抄送一律走审批定义（approvalDefs），spec 节点出现
+     assignee/candidateUsers/candidateGroups/candidates/cc 直接拒绝（REJECTED_KEYS）。
+  2. **五步部署链**：validate → draft → publish（key 在 body）→ approval-defs/save →
+     forms/save（可选）→ approval-defs/startable 发起预检。
+  3. **发起闸**：所有 userTask 节点都需要审批定义（静态 assignee 不豁免——本脚本已禁止
+     在 BPMN 写审批属性，漏配会在 startable 预检暴露，运行期则 400）。
+  4. **M1 拓扑**：userTask 出边必须恰 1 条；分支语义用排他/包容网关表达。
+  5. 实例端点改为 /instances/start 与 /instances/cancel（body 带 id）。
+
+语法契约源：backend/cmx-flowengine 路由表（cmx-flow-app/src/lib.rs RouteDef）与
+cmx-flow-model/src/approval.rs；完整速查见技能 references/bpmn-def-guide.md。
 
 spec 结构（examples/def-spec-*.json 为可运行样例）：
 {
@@ -18,37 +26,48 @@ spec 结构（examples/def-spec-*.json 为可运行样例）：
   "name":  "报销审批v2",
   "start": {"id":"s","name":"发起"},            // 可省：自动补 s → 首节点
   "nodes": [
-    {"id":"mgr","type":"userTask","name":"经理审批","assignee":"u_mgr"},
-    {"id":"fin","type":"userTask","name":"财务会办","candidates":"role(finance)",
-     "cc":"user(u_auditor1)","formKey":"fin_form","formMode":"approve"},
-    {"id":"sign","type":"userTask","name":"会签","assignee":"${approver}",
-     "mi":{"collection":"approvers","elementVar":"approver","sequential":false,
-           "completion":"${nrOfCompletedInstances/nrOfInstances >= 0.5}"}},
+    {"id":"mgr","type":"userTask","name":"经理审批","formMode":"approve"},
+    {"id":"sign","type":"userTask","name":"会签"},   // 会签/或签由审批定义 mode 驱动，勿写 mi
     {"id":"risk","type":"serviceTask","name":"风控","delegate":"riskDelegate"},
     {"id":"level","type":"businessRuleTask","name":"定级","decisionRef":"approval_matrix"},
     {"id":"gw","type":"exclusiveGateway","name":"金额","defaultTo":"fin"},   // 缺省边指向的目标节点
-    {"id":"fork","type":"parallelGateway"}, {"id":"join","type":"parallelGateway"},
     {"id":"call","type":"callActivity","name":"财务复核","calledKey":"fin_review",
      "inVars":"amount:subAmount, applicant","outVars":"subResult:reviewResult"},
     {"id":"wait","type":"messageCatch","name":"等外部","message":"verdictReceived",
      "correlationVar":"orderId"},
     {"id":"ok","type":"endEvent","name":"通过"},
     {"id":"rej","type":"endEvent","name":"否决","terminate":true},
-    {"id":"mgr2","type":"userTask","name":"限时审批","assignee":"u_mgr",
-     "timers":[{"duration":"PT30S","to":"director"},                 // 中断型升级
+    {"id":"mgr2","type":"userTask","name":"限时审批",
+     "timers":[{"duration":"PT30S","to":"director"},               // 中断型升级
                {"duration":"PT20S","cancelActivity":false,"to":"notify"}]}  // 非中断催办
   ],
   "flows": [
     {"from":"s","to":"mgr"},
-    {"from":"mgr","to":"gw"},
-    {"from":"gw","to":"dir","condition":"${amount > 20000}","name":"大额"},
-    {"from":"gw","to":"fin"}
+    {"from":"gw","to":"dir","condition":"${amount > 20000}","name":"大额"}
   ],
+  // 审批定义（办理人真源）。orgId 必须真实存在于组织树；USER value 必须是**用户 id**（非账号名）。
+  "approvalDefs": {
+    "orgId": "org-root",
+    "note": "v1 单签",
+    "nodes": {
+      "mgr":  {"inherit": false, "mode": "SINGLE",
+               "objects": [{"kind": "USER", "value": "7503326638169403392"}],
+               "emptyPolicy": "INCIDENT"},
+      "sign": {"inherit": false, "mode": "PARALLEL_COUNTERSIGN",
+               "collectionVar": "reviewers", "elementVar": "reviewer",
+               "completionCondition": "${nrOfCompletedInstances/nrOfInstances >= 0.5}"},
+      "mgr2": {"inherit": false, "mode": "SINGLE",
+               "objects": [{"kind": "ROLE", "value": "manager"}],
+               "cc": [{"kind": "USER", "value": "u_auditor1"}]}
+    }
+  },
+  // 表单绑定（可选；不写 formKey → 待办中心走通用办结 UI，无需本段）
+  "forms": [{"formKey": "fin_form", "kind": "NATIVE", "nativePage": "…"}],
   "deploy": {"server":"http://127.0.0.1:8091","apiKey":"cmx_sk_dev_...",
              "note":"上线 v1","publishedBy":"agent","name":"报销审批v2",
              "domain":"fi","application":"cmxfico","module":"gl"},
-  "smoke":  {"orgId":"zongbu","businessKey":"SMOKE-001",
-             "variables":{"amount":50000,"initiator":"u_emp"},
+  "smoke":  {"orgId":"org-root","businessKey":"SMOKE-001",
+             "variables":{"amount":50000,"initiator":"7503326638169403392"},
              "expectActive":["mgr"]}       // 起完断言 activeNodes；可另加 "cancel": true 收尾
 }
 
@@ -57,8 +76,8 @@ spec 结构（examples/def-spec-*.json 为可运行样例）：
          [--deploy] [--smoke] [--server URL] [--api-key KEY]
 
 校验（写文件前必过）：唯一 startEvent；flows 端点存在；排他/包容网关 defaultTo 可解析；
-至少一个 endEvent；XML 良构（ElementTree 自检）。部署信封 code==0 且 validate
-data.valid==true 才继续（软失败也是 HTTP 200，必须看 valid）。
+至少一个 endEvent；userTask 出边恰 1 条（M1 拓扑）；无 BPMN 审批属性；XML 良构。
+部署信封 code==0 且 validate data.valid==true 才继续（软失败也是 HTTP 200，必须看 valid）。
 """
 import argparse
 import json
@@ -77,7 +96,8 @@ NODE_TYPES = {
 }
 BLACKLIST = {"task", "scriptTask", "sendTask", "receiveTask", "manualTask",
              "eventBasedGateway", "complexGateway", "intermediateThrowEvent"}
-TIMER_TARGETS = {}  # node_id -> [timer spec...]（发射时挂边界事件用）
+# P0：BPMN 零审批属性——办理人/抄送真源在审批定义，spec 出现即拒
+REJECTED_KEYS = {"assignee", "candidateUsers", "candidateGroups", "candidates", "cc"}
 
 
 class SpecError(Exception):
@@ -95,6 +115,22 @@ def build_bpmn(spec):
     if len(ids) != len(set(ids)):
         dup = [x for x in ids if ids.count(x) > 1]
         raise SpecError(f"节点 id 重复: {sorted(set(dup))}")
+
+    # P0：BPMN 零审批属性——出现即拒，指路 approvalDefs
+    for n in nodes:
+        hit = REJECTED_KEYS & set(n)
+        if hit:
+            raise SpecError(
+                f"节点 {n['id']} 含 BPMN 审批属性 {sorted(hit)}（P0 已废除）："
+                f"办理人/抄送改写 spec.approvalDefs.nodes.{n['id']}（见 references/bpmn-def-guide.md §3）")
+
+    # 会签/或签由审批定义 mode 驱动（编译器生成 MI 域），spec 级 mi 与其互斥
+    ad_nodes = ((spec.get("approvalDefs") or {}).get("nodes") or {})
+    for n in nodes:
+        if n.get("mi") and n["id"] in ad_nodes:
+            raise SpecError(
+                f"节点 {n['id']} 同时有 mi 与审批定义：会签由 approvalDefs 的 mode/collectionVar 驱动，"
+                f"请删除 spec 级 mi（编译器自动生成 MI 域）")
 
     # 自动补 start / end
     has_start = any(n.get("type") == "startEvent" for n in nodes)
@@ -148,6 +184,16 @@ def build_bpmn(spec):
         if f["from"] in end_events:
             raise SpecError(f"终点 {f['from']} 不能有出边")
 
+    # M1 拓扑：userTask 出边必须恰 1 条（分支语义走网关；定时器出边是边界事件不算）
+    out_deg = {}
+    for f in flows:
+        out_deg[f["from"]] = out_deg.get(f["from"], 0) + 1
+    for n in nodes:
+        if n.get("type") == "userTask" and out_deg.get(n["id"], 0) > 1:
+            raise SpecError(
+                f"userTask {n['id']} 出边 {out_deg[n['id']]} 条（M1 拓扑要求恰 1 条）："
+                f"分支语义请加排他/包容网关")
+
     # 网关 defaultTo → default 边 id
     flow_id = {}
     for i, f in enumerate(flows):
@@ -183,15 +229,22 @@ def build_bpmn(spec):
     clash2 = [x for x in flow_id if x in gen_ids]
     if clash2:
         raise SpecError(f"flow id 与定时器生成 id 冲突: {clash2}")
-    # 节点未知键告警（防 candiates 之类笔误静默丢属性）
-    KNOWN = {"id", "type", "name", "assignee", "candidateUsers", "candidateGroups", "candidates",
-             "cc", "formKey", "formMode", "formFields", "mi", "timers", "delegate", "decision",
-             "decisionRef", "defaultTo", "calledKey", "calledElement", "inVars", "outVars",
-             "in", "out", "message", "correlationVar", "terminate", "_default_flow"}
+    # 节点未知键告警（防笔误静默丢属性）
+    KNOWN = {"id", "type", "name", "formKey", "formMode", "formFields",
+             "delegate", "decision", "decisionRef", "defaultTo", "calledKey",
+             "calledElement", "inVars", "outVars", "in", "out", "message",
+             "correlationVar", "terminate", "timers", "_default_flow"}
     for n in nodes:
         unknown = set(n) - KNOWN
         if unknown:
             print(f"WARNING: 节点 {n.get('id')} 有未识别键 {sorted(unknown)}（属性将被忽略）", file=sys.stderr)
+    # 审批定义覆盖预检：userTask 节点漏配在本地就提醒（运行期发起闸 400）
+    if spec.get("approvalDefs") is not None:
+        missing = [n["id"] for n in nodes
+                   if n.get("type") == "userTask" and n["id"] not in ad_nodes]
+        if missing:
+            print(f"WARNING: userTask 节点 {missing} 无审批定义（发起闸将拒绝发起，"
+                  f"继承上级组织除外——本地无法校验组织树，请以 startable 预检为准）", file=sys.stderr)
 
     # —— 发射 XML ——
     L = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -220,16 +273,6 @@ def build_bpmn(spec):
                 L.append(f'    <bpmn:endEvent id="{nid}" name="{name}"/>')
         elif t == "userTask":
             attrs = []
-            if n.get("assignee"):
-                attrs.append(f'flowable:assignee="{esc(n["assignee"])}"')
-            if n.get("candidateUsers"):
-                attrs.append(f'flowable:candidateUsers="{esc(n["candidateUsers"])}"')
-            if n.get("candidateGroups"):
-                attrs.append(f'flowable:candidateGroups="{esc(n["candidateGroups"])}"')
-            if n.get("candidates"):
-                attrs.append(f'cmx:candidates="{esc(n["candidates"])}"')
-            if n.get("cc"):
-                attrs.append(f'cmx:cc="{esc(n["cc"])}"')
             if n.get("formKey"):
                 attrs.append(f'cmx:formKey="{esc(n["formKey"])}"')
             if n.get("formMode"):
@@ -237,19 +280,8 @@ def build_bpmn(spec):
             if n.get("formFields"):
                 attrs.append(f'cmx:formFields="{esc(n["formFields"])}"')
             a = (" " + " ".join(attrs)) if attrs else ""
-            mi = n.get("mi")
-            if mi:
-                seq = "true" if mi.get("sequential") else "false"
-                L.append(f'    <bpmn:userTask id="{nid}" name="{name}"{a}>')
-                L.append(f'      <bpmn:multiInstanceLoopCharacteristics isSequential="{seq}"'
-                         f' flowable:collection="{esc(mi.get("collection") or "")}"'
-                         f' flowable:elementVariable="{esc(mi.get("elementVar") or "")}">')
-                if mi.get("completion"):
-                    L.append(f'        <bpmn:completionCondition>{esc(mi["completion"])}</bpmn:completionCondition>')
-                L.append('      </bpmn:multiInstanceLoopCharacteristics>')
-                L.append('    </bpmn:userTask>')
-            else:
-                L.append(f'    <bpmn:userTask id="{nid}" name="{name}"{a}/>')
+            # P0：办理人/会签由审批定义编译期注入，spec 级 mi 已拒绝
+            L.append(f'    <bpmn:userTask id="{nid}" name="{name}"{a}/>')
         elif t == "serviceTask":
             if not n.get("delegate"):
                 raise SpecError(f"serviceTask {n['id']} 缺 delegate")
@@ -365,15 +397,18 @@ def _open(req, path):
 
 
 def deploy(xml, spec, server, api_key):
+    """五步部署链：validate → draft → publish → approval-defs/save → forms/save → startable 预检。"""
     key = spec["key"]
+    # 1) validate（软失败必须看 data.valid）
     r = call(server, "/definitions/validate", {"bpmnXml": xml}, api_key)
     if r.get("code") != 0:
         raise SpecError(f"validate 信封异常: {r}")
     d = r.get("data") or {}
     if not d.get("valid"):
         raise SpecError(f"BPMN 校验失败: {d.get('error')}")
-    print(f"validate OK key={d.get('key')}")
+    print(f"[1/6] validate OK key={d.get('key')}")
     dp = (spec.get("deploy") or {})
+    # 2) draft（key 由 BPMN process id 派生，服务端双编译对账）
     dr = call(server, "/definitions/draft", {
         "name": dp.get("name") or spec.get("name") or key, "bpmnXml": xml,
         "updatedBy": dp.get("publishedBy") or "agent",
@@ -381,28 +416,59 @@ def deploy(xml, spec, server, api_key):
     }, api_key)
     if dr.get("code") != 0:
         raise SpecError(f"draft 失败: {dr}")
-    pr = call(server, f"/definitions/{key}/publish", {
+    print("[2/6] draft OK")
+    # 3) publish（key 在 body；版本 +1 热装载）
+    pr = call(server, "/definitions/publish", {
+        "key": key,
         "note": dp.get("note") or "created by cmx-flow-toolkit",
         "publishedBy": dp.get("publishedBy") or "agent",
     }, api_key)
     if pr.get("code") != 0:
         raise SpecError(f"publish 失败: {pr}")
     pd = pr.get("data") or {}
-    if not pd.get("hotLoaded"):
-        raise SpecError(f"publish 未热装载: {pr}")
-    print(f"publish OK version={pd.get('version')} hotLoaded={pd.get('hotLoaded')}")
+    print(f"[3/6] publish OK version={pd.get('version')} hotLoaded={pd.get('hotLoaded')}")
+    # 4) approval-defs/save（办理人真源；P0 起为必做——发起闸按 userTask 节点全量校验）
+    ad = spec.get("approvalDefs")
+    if ad:
+        ar = call(server, "/approval-defs/save", {
+            "defKey": key, "orgId": ad.get("orgId"),
+            "content": {"nodes": ad.get("nodes") or {}},
+            **({"note": ad["note"]} if ad.get("note") else {}),
+        }, api_key)
+        if ar.get("code") != 0:
+            raise SpecError(f"approval-defs/save 失败: {ar}")
+        print(f"[4/6] approval-defs/save OK orgId={ad.get('orgId')} nodes={sorted((ad.get('nodes') or {}).keys())}")
+    else:
+        print("[4/6] 无 approvalDefs（跳过）——若流程含 userTask 节点且该组织无历史审批定义，发起将被闸拒绝")
+    # 5) forms/save（可选表单绑定；不写 formKey → 待办中心走通用办结 UI）
+    for fb in spec.get("forms") or []:
+        fr = call(server, "/forms/save", dict(fb), api_key)
+        if fr.get("code") != 0:
+            raise SpecError(f"forms/save 失败: {fr}")
+        print(f"[5/6] forms/save OK formKey={fb.get('formKey')}")
+    if not (spec.get("forms") or []):
+        print("[5/6] 无 forms 绑定（跳过）")
+    # 6) startable 发起预检（orgId 口径逐节点校验；漏配在此暴露而非运行期 400）
+    if ad:
+        sr = call(server, "/approval-defs/startable", {"defKey": key, "orgId": ad.get("orgId")}, api_key)
+        if sr.get("code") != 0:
+            raise SpecError(f"startable 预检失败: {sr}")
+        bad = [x for x in (sr.get("data") or {}).get("nodes") or [] if not x.get("ok")]
+        if bad:
+            raise SpecError(f"startable 预检不通过（以下节点解析不出办理人）: {bad}")
+        print("[6/6] startable 预检 OK（全部 userTask 节点可解析办理人）")
     return pd.get("version")
 
 
 def smoke(spec, server, api_key):
     sm = spec.get("smoke") or {}
-    r = call(server, "/instances", {
+    r = call(server, "/instances/start", {
         "definitionKey": spec["key"], "orgId": sm.get("orgId"),
         "businessKey": sm.get("businessKey") or f"SMOKE-{spec['key']}",
         "variables": sm.get("variables") or {},
     }, api_key)
     if r.get("code") != 0:
-        raise SpecError(f"发起失败: {r}")
+        raise SpecError(f"发起失败（发起闸/审批定义缺失会在此 400）: {r}")
     d = r.get("data") or {}
     iid = d.get("id")
     active = d.get("activeNodes") or []
@@ -415,16 +481,18 @@ def smoke(spec, server, api_key):
     open_ = [(t.get("nodeBpmnId"), t.get("assignee")) for t in d.get("openTasks") or []]
     print(f"smoke OK instance={iid} activeNodes={active} openTasks={open_}")
     if sm.get("cancel"):
-        c = call(server, f"/instances/{iid}/cancel", {}, api_key)
+        c = call(server, "/instances/cancel", {"id": iid, "reason": "smoke cleanup"}, api_key)
         print(f"cancel -> code={c.get('code')}")
     return iid
 
 
 def main():
-    ap = argparse.ArgumentParser(description="cmx-flowengine 流程定义创建器（spec JSON → BPMN → 部署/冒烟）")
+    ap = argparse.ArgumentParser(
+        description="cmx-flowengine 流程定义创建器（spec JSON → BPMN → 五步部署/冒烟；P0：定义×审批定义分离）")
     ap.add_argument("--spec", required=True, help="spec JSON 路径")
     ap.add_argument("--out", help="输出 BPMN 路径（缺省 <key>.bpmn，写到 spec 同目录）")
-    ap.add_argument("--deploy", action="store_true", help="部署（validate→draft→publish）")
+    ap.add_argument("--deploy", action="store_true",
+                    help="部署（validate→draft→publish→approval-defs/save→forms/save→startable 预检）")
     ap.add_argument("--smoke", action="store_true", help="起冒烟实例并断言 activeNodes")
     ap.add_argument("--server", help="覆盖 spec.deploy.server")
     ap.add_argument("--api-key", help="覆盖 spec.deploy.apiKey")
@@ -448,7 +516,7 @@ def main():
         deploy(xml, spec, server, api_key)
     if args.smoke:
         if not args.deploy:
-            r = get(server, f"/definitions/{spec['key']}", api_key)
+            r = call(server, "/definitions/detail", {"key": spec["key"]}, api_key)
             if r.get("code") != 0:
                 raise SpecError(f"定义 {spec['key']} 未部署且未加 --deploy: {r.get('msg')}")
         smoke(spec, server, api_key)

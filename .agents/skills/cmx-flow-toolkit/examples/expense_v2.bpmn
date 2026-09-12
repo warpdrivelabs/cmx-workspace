@@ -6,11 +6,11 @@
                   id="defs_expense_v2">
   <bpmn:process id="expense_v2" name="报销审批v2" isExecutable="true">
     <bpmn:startEvent id="s" name="发起"/>
-    <bpmn:userTask id="mgr" name="部门经理审批" flowable:assignee="u_mgr"/>
+    <bpmn:userTask id="mgr" name="部门经理审批"/>
     <bpmn:exclusiveGateway id="gw" name="金额判断" default="f4"/>
-    <bpmn:userTask id="director" name="总监审批" flowable:assignee="u_director"/>
+    <bpmn:userTask id="director" name="总监审批"/>
     <bpmn:callActivity id="fin" name="财务复核（按组织路由）" cmx:calledKey="fin_review" cmx:inVars="amount:subAmount" cmx:outVars="finResult"/>
-    <bpmn:userTask id="cashier" name="出纳打款" flowable:assignee="u_cashier"/>
+    <bpmn:userTask id="cashier" name="出纳打款"/>
     <bpmn:endEvent id="done" name="报销完成"/>
     <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="mgr"/>
     <bpmn:sequenceFlow id="f2" sourceRef="mgr" targetRef="gw"/>

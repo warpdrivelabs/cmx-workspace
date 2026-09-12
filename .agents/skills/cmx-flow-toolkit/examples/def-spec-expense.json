@@ -1,14 +1,14 @@
 {
-  "_comment": "样例1：三级审批 + 金额排他网关 + 按组织路由子流程（对齐差旅报销场景）",
+  "_comment": "样例1：三级审批 + 金额排他网关 + 按组织路由子流程（对齐差旅报销场景）。P0：办理人全在 approvalDefs（USER value=用户 id，示例沿用测试库账号风格，部署前按目标库替换）；callActivity 子流程路由依赖 subflow_binding（无绑定改 calledElement 直调）",
   "key": "expense_v2",
   "name": "报销审批v2",
   "nodes": [
-    {"id": "mgr", "type": "userTask", "name": "部门经理审批", "assignee": "u_mgr"},
+    {"id": "mgr", "type": "userTask", "name": "部门经理审批"},
     {"id": "gw", "type": "exclusiveGateway", "name": "金额判断", "defaultTo": "fin"},
-    {"id": "director", "type": "userTask", "name": "总监审批", "assignee": "u_director"},
+    {"id": "director", "type": "userTask", "name": "总监审批"},
     {"id": "fin", "type": "callActivity", "name": "财务复核（按组织路由）", "calledKey": "fin_review",
      "inVars": "amount:subAmount", "outVars": "finResult"},
-    {"id": "cashier", "type": "userTask", "name": "出纳打款", "assignee": "u_cashier"},
+    {"id": "cashier", "type": "userTask", "name": "出纳打款"},
     {"id": "done", "type": "endEvent", "name": "报销完成"}
   ],
   "flows": [
@@ -18,6 +18,15 @@
     {"from": "director", "to": "fin"},
     {"from": "fin", "to": "cashier"}
   ],
+  "approvalDefs": {
+    "orgId": "zongbu",
+    "note": "样例：三级单签",
+    "nodes": {
+      "mgr": {"inherit": false, "mode": "SINGLE", "objects": [{"kind": "USER", "value": "u_mgr"}], "emptyPolicy": "INCIDENT"},
+      "director": {"inherit": false, "mode": "SINGLE", "objects": [{"kind": "USER", "value": "u_director"}], "emptyPolicy": "INCIDENT"},
+      "cashier": {"inherit": false, "mode": "SINGLE", "objects": [{"kind": "USER", "value": "u_cashier"}], "emptyPolicy": "INCIDENT"}
+    }
+  },
   "deploy": {"server": "http://127.0.0.1:8091", "note": "cmx-flow-toolkit 样例", "publishedBy": "agent"},
   "smoke": {"orgId": "zongbu", "businessKey": "SMOKE-EXPV2-001",
             "variables": {"amount": 50000, "initiator": "u_emp"}, "expectActive": ["mgr"]}

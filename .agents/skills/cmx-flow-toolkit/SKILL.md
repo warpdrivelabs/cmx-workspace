@@ -7,7 +7,9 @@ description: 当用户要求为 cmx-flowengine 创建/定义/部署新审批流�
 
 ## 概述
 
-cmx-flowengine 的双模式工具箱：**模式A 按需求创建/部署流程定义**（spec JSON → 语义 BPMN → validate/draft/publish → 冒烟验证）；**模式B 保真复原测试数据**（流水/报告/BPMN 重放 → 可执行 SQL）。核心原则：A 生成的定义可被 B 纳入下一轮复原，B 复原的绑定/身份供 A 的子流程路由使用——两模式互通。
+cmx-flowengine 的双模式工具箱：**模式A 按需求创建/部署流程定义**（spec JSON → 语义 BPMN → **五步部署链** validate → draft → publish → approval-defs/save → forms/save → startable 预检 → 冒烟验证）；**模式B 保真复原测试数据**（流水/报告/BPMN 重放 → 可执行 SQL）。核心原则：A 生成的定义可被 B 纳入下一轮复原，B 复原的绑定/身份供 A 的子流程路由使用——两模式互通。
+
+**P0 契约（流程定义 × 审批定义分离）**：BPMN 零审批属性（办理人/抄送/会签全在 `approvalDefs`，spec 出现 `assignee`/`candidates`/`cc`/`mi` 直接拒绝）；发起闸按 userTask 节点**全量**校验审批定义（无静态豁免）；userTask 出边恰 1 条（分支走网关）；USER value 必须填**用户 id**。
 
 基准（可对照）：examples/ 下 spec 与 manifest 样例；`backend/cmx-flowengine/docs/flow-test-data-20260816.sql`（92 实例 / 23 定义 / 683 INSERT，空库零错误）。产物不可跨脚本版本 byte 级复现，"确定性"仅指同版本脚本 + 同参数。
 
@@ -29,9 +31,9 @@ python3 .agents/skills/cmx-flow-toolkit/scripts/create_flow_def.py \
   [--deploy] [--smoke] [--server http://127.0.0.1:8091] [--api-key <key>]
 ```
 
-- spec 结构与完整语法（节点/候选人七类/网关条件/会签/子流程映射/定时器/部署契约/鉴权）→ **`references/bpmn-def-guide.md`**（重参考，写 spec 前必读）。
-- 可运行样例：`def-spec-expense.json`（网关+组织路由子流程）、`def-spec-contract.json`（并行+会签+终止终点）、`def-spec-escalation.json`（定时器升级/催办+决策表+消息等待）。
-- 关键契约（细节见参考）：validate 软失败要查 `data.valid`；办理类 E2E 需 jwt 模式 + 委托令牌（带 `exp`）；语义 BPMN 无 DI，设计器自动布局。
+- spec 结构与完整语法（节点/**审批定义 NodeApproval 全字段/办理人七类**/网关条件/子流程映射/定时器/五步部署契约/鉴权）→ **`references/bpmn-def-guide.md`**（重参考，写 spec 前必读）。
+- 可运行样例：`def-spec-supplier-review.json`（**P0 最小样例**：单节点审批+排他网关，本体演示在用）、`def-spec-expense.json`（网关+组织路由子流程）、`def-spec-contract.json`（并行+会签 collectionVar+终止终点）、`def-spec-escalation.json`（定时器升级/催办+决策表+消息等待）。
+- 关键契约（细节见参考）：**五步部署链** validate → draft → publish（key 在 body）→ approval-defs/save → forms/save → `/approval-defs/startable` 预检；validate 软失败要查 `data.valid`；发起/取消走 `/instances/start`、`/instances/cancel {id}`；办理类 E2E 需 jwt 模式 + 委托令牌（带 `exp`）；语义 BPMN 无 DI，设计器自动布局。
 - E2E 实测链（2026-08-18）：spec → publish v1 热装载 → 冒烟断言首节点 → 办结过网关 → callActivity 按组织绑定路由到 fin_review_hq 子流程，父子状态全部正确。
 - 生成物落盘：`backend/cmx-flowengine/docs/<测试集>/defs/<key>.bpmn` + spec 同目录留存。
 
@@ -62,6 +64,9 @@ python3 .agents/skills/cmx-flow-toolkit/scripts/rebuild_flow_testdata.py \
 
 | 坑 | 正解 |
 |---|---|
+| spec 写 `assignee`/`candidates`/`cc`/`mi`（P0 已废除） | 脚本直接拒：办理人/抄送/会签写 `approvalDefs.nodes.<id>`（见参考 §3） |
+| 漏配审批定义就发起 | 发起闸按 userTask 全量校验，400；部署后必跑 `/approval-defs/startable` 预检 |
+| USER value 填账号名 / orgId 随手填 | value 必须是用户 id；orgId 必须存在于组织树且与发起一致 |
 | 以为库里还有测试数据 | 先探库；空/不可达 → 模式B。用户已明确要重建可跳过探库 |
 | psql 验证命令接 `\| head` | SIGPIPE 截断执行却看似成功；一律 `> log 2>&1` 后看退出码 |
 | 目标库不存在 / DROP 卡占用 | 先 CREATE DATABASE；重跑 `DROP DATABASE ... WITH (FORCE)` |

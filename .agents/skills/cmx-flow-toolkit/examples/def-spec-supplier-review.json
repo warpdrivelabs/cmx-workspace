@@ -1,0 +1,30 @@
+{
+  "_comment": "样例4（本仓实测样例）：单节点审批最小流程——本体平台动作发起供应商评审用。要点：BPMN 零审批属性；审批定义 USER value 必须填用户 id（admin=7503326638169403392，非账号名！）；orgId 须存在于组织树且发起时 orgId 一致，否则发起闸 400；不写 formKey → 待办中心走通用办结 UI，免 forms/save",
+  "key": "supplier_review",
+  "name": "供应商评审",
+  "nodes": [
+    {"id": "review", "type": "userTask", "name": "供应商评审", "formMode": "approve"},
+    {"id": "gw", "type": "exclusiveGateway", "name": "评审结果", "defaultTo": "ok"},
+    {"id": "ok", "type": "endEvent", "name": "评审通过"},
+    {"id": "rej", "type": "endEvent", "name": "评审否决"}
+  ],
+  "flows": [
+    {"from": "review", "to": "gw"},
+    {"from": "gw", "to": "ok"},
+    {"from": "gw", "to": "rej", "condition": "${lastDecision == 'reject'}", "name": "否决"}
+  ],
+  "approvalDefs": {
+    "orgId": "org-root",
+    "note": "供应商评审：admin 单签",
+    "nodes": {
+      "review": {"inherit": false, "mode": "SINGLE",
+                 "objects": [{"kind": "USER", "value": "7503326638169403392"}],
+                 "emptyPolicy": "INCIDENT"}
+    }
+  },
+  "deploy": {"server": "http://127.0.0.1:8091", "apiKey": "cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6",
+             "note": "供应商评审 v1", "publishedBy": "agent", "name": "供应商评审"},
+  "smoke": {"orgId": "org-root", "businessKey": "SUP0002",
+            "variables": {"initiator": "7503326638169403392", "supplierName": "苏州精工机械有限公司"},
+            "expectActive": ["review"], "cancel": true}
+}

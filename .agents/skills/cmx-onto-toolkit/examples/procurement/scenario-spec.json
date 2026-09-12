@@ -1,0 +1,1736 @@
+{
+  "_comment": "采购供应链演示场景规格（cmx-onto-toolkit 第一份范例）。段执行顺序由 onto_seed.py 固定：sharedProperties→interfaces→objectTypes→linkTypes→functions→actions→dctImports→funnelMappings→objects→links→views→snapshot→docImports。全部 upsert 幂等。Supplier 实例来自漏斗（fico 库 cm_supplier，SQL 内 CASE 派生 rating/onTimeRate/status，UNION 一行 NULL name 演示隔离区拦截）。",
+  "dam": {
+    "domain": "supplychain",
+    "application": "procurement",
+    "module": "demo"
+  },
+  "sharedProperties": [
+    {
+      "apiName": "lifecycleStatus",
+      "displayName": "生命周期状态",
+      "baseType": "string",
+      "description": "主数据生命周期（draft/published/deprecated）"
+    },
+    {
+      "apiName": "sourceSystem",
+      "displayName": "来源系统",
+      "baseType": "string",
+      "description": "该对象由哪个业务系统治理"
+    },
+    {
+      "apiName": "governedBy",
+      "displayName": "治理方",
+      "baseType": "string",
+      "description": "主数据治理责任部门"
+    }
+  ],
+  "interfaces": [
+    {
+      "apiName": "GovernedMaster",
+      "displayName": "可治理主数据",
+      "properties": [
+        "lifecycleStatus",
+        "sourceSystem",
+        "governedBy"
+      ],
+      "status": "active"
+    }
+  ],
+  "objectTypes": [
+    {
+      "apiName": "Supplier",
+      "displayName": "供应商",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "供应商管理"
+      },
+      "primaryKey": "supplierCode",
+      "titleProperty": "name",
+      "implements": [
+        "GovernedMaster"
+      ],
+      "properties": [
+        {
+          "apiName": "supplierCode",
+          "displayName": "供应商编码",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "name",
+          "displayName": "供应商名称",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "shortName",
+          "displayName": "简称",
+          "baseType": "string"
+        },
+        {
+          "apiName": "industry",
+          "displayName": "所属行业",
+          "baseType": "string"
+        },
+        {
+          "apiName": "legalPerson",
+          "displayName": "法定代表人",
+          "baseType": "string"
+        },
+        {
+          "apiName": "address",
+          "displayName": "地址",
+          "baseType": "string"
+        },
+        {
+          "apiName": "phone",
+          "displayName": "联系电话",
+          "baseType": "string"
+        },
+        {
+          "apiName": "riskLevel",
+          "displayName": "风险等级",
+          "baseType": "string"
+        },
+        {
+          "apiName": "category",
+          "displayName": "供应商类别",
+          "baseType": "string"
+        },
+        {
+          "apiName": "rating",
+          "displayName": "综合评分",
+          "baseType": "double"
+        },
+        {
+          "apiName": "onTimeRate",
+          "displayName": "准时交付率%",
+          "baseType": "double"
+        },
+        {
+          "apiName": "status",
+          "displayName": "合作状态",
+          "baseType": "string"
+        },
+        {
+          "apiName": "lifecycleStatus",
+          "displayName": "生命周期状态",
+          "baseType": "string",
+          "sharedProperty": "lifecycleStatus"
+        },
+        {
+          "apiName": "sourceSystem",
+          "displayName": "来源系统",
+          "baseType": "string",
+          "sharedProperty": "sourceSystem"
+        },
+        {
+          "apiName": "governedBy",
+          "displayName": "治理方",
+          "baseType": "string",
+          "sharedProperty": "governedBy"
+        },
+        {
+          "apiName": "reviewStatus",
+          "displayName": "评审状态",
+          "baseType": "string",
+          "description": "流程审批回写（Loop⑥ 落点）"
+        },
+        {
+          "apiName": "lastReviewAt",
+          "displayName": "最近评审时间",
+          "baseType": "timestamp"
+        }
+      ]
+    },
+    {
+      "apiName": "Material",
+      "displayName": "物料",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "供应商管理"
+      },
+      "primaryKey": "materialCode",
+      "titleProperty": "name",
+      "implements": [
+        "GovernedMaster"
+      ],
+      "properties": [
+        {
+          "apiName": "materialCode",
+          "displayName": "物料编码",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "name",
+          "displayName": "物料名称",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "category",
+          "displayName": "物料类别",
+          "baseType": "string"
+        },
+        {
+          "apiName": "spec",
+          "displayName": "规格型号",
+          "baseType": "string"
+        },
+        {
+          "apiName": "unit",
+          "displayName": "计量单位",
+          "baseType": "string"
+        },
+        {
+          "apiName": "safetyStock",
+          "displayName": "安全库存",
+          "baseType": "long"
+        },
+        {
+          "apiName": "refPrice",
+          "displayName": "参考单价",
+          "baseType": "double"
+        },
+        {
+          "apiName": "status",
+          "displayName": "状态",
+          "baseType": "string"
+        },
+        {
+          "apiName": "lifecycleStatus",
+          "displayName": "生命周期状态",
+          "baseType": "string",
+          "sharedProperty": "lifecycleStatus"
+        },
+        {
+          "apiName": "sourceSystem",
+          "displayName": "来源系统",
+          "baseType": "string",
+          "sharedProperty": "sourceSystem"
+        },
+        {
+          "apiName": "governedBy",
+          "displayName": "治理方",
+          "baseType": "string",
+          "sharedProperty": "governedBy"
+        }
+      ]
+    },
+    {
+      "apiName": "Warehouse",
+      "displayName": "仓库",
+      "dam": {
+        "domain": "供应链",
+        "application": "仓储管理",
+        "module": "库存管理"
+      },
+      "primaryKey": "warehouseCode",
+      "titleProperty": "name",
+      "implements": [
+        "GovernedMaster"
+      ],
+      "properties": [
+        {
+          "apiName": "warehouseCode",
+          "displayName": "仓库编码",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "name",
+          "displayName": "仓库名称",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "type",
+          "displayName": "仓库类型",
+          "baseType": "string"
+        },
+        {
+          "apiName": "address",
+          "displayName": "地址",
+          "baseType": "string"
+        },
+        {
+          "apiName": "manager",
+          "displayName": "负责人",
+          "baseType": "string"
+        },
+        {
+          "apiName": "area",
+          "displayName": "面积㎡",
+          "baseType": "double"
+        },
+        {
+          "apiName": "lifecycleStatus",
+          "displayName": "生命周期状态",
+          "baseType": "string",
+          "sharedProperty": "lifecycleStatus"
+        },
+        {
+          "apiName": "sourceSystem",
+          "displayName": "来源系统",
+          "baseType": "string",
+          "sharedProperty": "sourceSystem"
+        },
+        {
+          "apiName": "governedBy",
+          "displayName": "治理方",
+          "baseType": "string",
+          "sharedProperty": "governedBy"
+        }
+      ]
+    },
+    {
+      "apiName": "Contract",
+      "displayName": "采购合同",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "采购执行"
+      },
+      "primaryKey": "contractNo",
+      "titleProperty": "name",
+      "properties": [
+        {
+          "apiName": "contractNo",
+          "displayName": "合同编号",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "name",
+          "displayName": "合同名称",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "supplierCode",
+          "displayName": "供应商编码",
+          "baseType": "string"
+        },
+        {
+          "apiName": "signDate",
+          "displayName": "签订日期",
+          "baseType": "date"
+        },
+        {
+          "apiName": "amount",
+          "displayName": "合同金额",
+          "baseType": "double"
+        },
+        {
+          "apiName": "status",
+          "displayName": "状态",
+          "baseType": "string"
+        }
+      ]
+    },
+    {
+      "apiName": "Employee",
+      "displayName": "员工",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "采购执行"
+      },
+      "primaryKey": "empNo",
+      "titleProperty": "name",
+      "properties": [
+        {
+          "apiName": "empNo",
+          "displayName": "工号",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "name",
+          "displayName": "姓名",
+          "baseType": "string",
+          "required": true
+        },
+        {
+          "apiName": "department",
+          "displayName": "部门",
+          "baseType": "string"
+        },
+        {
+          "apiName": "position",
+          "displayName": "岗位",
+          "baseType": "string"
+        },
+        {
+          "apiName": "phone",
+          "displayName": "电话",
+          "baseType": "string"
+        }
+      ]
+    }
+  ],
+  "linkTypes": [
+    {
+      "apiName": "supplierOf",
+      "displayName": "供应",
+      "objectTypeA": "Supplier",
+      "objectTypeB": "Material",
+      "cardinality": "manyToMany",
+      "roleA": "供应商",
+      "roleB": "供应物料"
+    },
+    {
+      "apiName": "signContract",
+      "displayName": "签订合同",
+      "objectTypeA": "Supplier",
+      "objectTypeB": "Contract",
+      "cardinality": "oneToMany",
+      "roleA": "签订",
+      "roleB": "归属供应商"
+    },
+    {
+      "apiName": "coverMaterial",
+      "displayName": "覆盖物料",
+      "objectTypeA": "Contract",
+      "objectTypeB": "Material",
+      "cardinality": "manyToMany",
+      "roleA": "覆盖",
+      "roleB": "用于合同"
+    },
+    {
+      "apiName": "storeIn",
+      "displayName": "存放",
+      "objectTypeA": "Warehouse",
+      "objectTypeB": "Material",
+      "cardinality": "oneToMany",
+      "roleA": "存放",
+      "roleB": "存于"
+    },
+    {
+      "apiName": "buyerOf",
+      "displayName": "采购对接",
+      "objectTypeA": "Employee",
+      "objectTypeB": "Supplier",
+      "cardinality": "oneToMany",
+      "roleA": "对接",
+      "roleB": "对接人"
+    },
+    {
+      "apiName": "useUom",
+      "displayName": "使用计量单位",
+      "objectTypeA": "Material",
+      "objectTypeB": "Uom",
+      "cardinality": "manyToMany",
+      "roleA": "使用",
+      "roleB": "物料计量单位"
+    },
+    {
+      "apiName": "contractCurrency",
+      "displayName": "计价币种",
+      "objectTypeA": "Contract",
+      "objectTypeB": "Currency",
+      "cardinality": "manyToMany",
+      "roleA": "以该币种计价",
+      "roleB": "用于合同"
+    },
+    {
+      "apiName": "contractPaymentTerm",
+      "displayName": "付款条件",
+      "objectTypeA": "Contract",
+      "objectTypeB": "PaymentTerm",
+      "cardinality": "manyToMany",
+      "roleA": "适用",
+      "roleB": "约定付款条件"
+    }
+  ],
+  "functions": [
+    {
+      "apiName": "supplierGrade",
+      "displayName": "供应商评级",
+      "runtime": "feel",
+      "kind": "derivedProperty",
+      "inputs": [
+        {
+          "name": "supplier",
+          "type": "object"
+        }
+      ],
+      "body": "if supplier.rating >= 4.5 then \"A\" else if supplier.rating >= 3.5 then \"B\" else if supplier.rating >= 2.5 then \"C\" else \"D\"",
+      "status": "active"
+    },
+    {
+      "apiName": "supplierRiskScore",
+      "displayName": "供应商风险分",
+      "runtime": "rhai",
+      "kind": "derivedProperty",
+      "inputs": [
+        {
+          "name": "supplier",
+          "type": "object"
+        }
+      ],
+      "body": "let riskDed = if supplier.riskLevel == \"high\" { 40.0 } else if supplier.riskLevel == \"medium\" { 20.0 } else { 0.0 };\nlet otDed = (100.0 - supplier.onTimeRate) * 2.0;\nlet lowDed = if supplier.rating < 3.0 { 15.0 } else { 0.0 };\nlet s = 100.0 - riskDed - otDed - lowDed;\nif s < 0.0 { 0.0 } else { s }",
+      "status": "active"
+    },
+    {
+      "apiName": "contractSpendBySupplier",
+      "displayName": "按供应商汇总合同额",
+      "runtime": "feel",
+      "kind": "aggregation",
+      "inputs": [
+        {
+          "name": "contracts",
+          "type": "objectSet"
+        }
+      ],
+      "body": "{\"kind\":\"groupSum\",\"groupBy\":\"supplierName\",\"sum\":\"amount\"}",
+      "status": "active"
+    },
+    {
+      "apiName": "materialFullLabel",
+      "displayName": "物料全称标签",
+      "runtime": "feel",
+      "kind": "derivedProperty",
+      "inputs": [
+        {
+          "name": "material",
+          "type": "object"
+        }
+      ],
+      "body": "material.category + \" / \" + material.name + \"（\" + material.unit + \"）\"",
+      "status": "active"
+    }
+  ],
+  "actions": [
+    {
+      "apiName": "submitSupplierReview",
+      "displayName": "提交供应商评审（发起流程）",
+      "description": "供应商置评审中并发起 supplier_review 审批流；审批通过后由 flow-callback 回写 reviewStatus=已通过",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "modifyObject",
+          "objectType": "Supplier",
+          "pk": "$supplierId",
+          "set": {
+            "reviewStatus": "评审中",
+            "status": "评审中"
+          }
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "startBusinessProcess",
+          "flowDefKey": "supplier_review",
+          "businessKey": "$supplierId",
+          "orgId": "org-root",
+          "initiator": "7503326638169403392",
+          "supplierId": "$supplierId"
+        }
+      ]
+    },
+    {
+      "apiName": "pauseSupplier",
+      "displayName": "暂停合作",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "modifyObject",
+          "objectType": "Supplier",
+          "pk": "$supplierId",
+          "set": {
+            "status": "暂停",
+            "remark": "$reason"
+          }
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "notification",
+          "template": "供应商暂停合作通知",
+          "reason": "$reason"
+        }
+      ]
+    },
+    {
+      "apiName": "adjustSupplierRating",
+      "displayName": "调整供应商评分",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "newRating",
+          "type": "double",
+          "required": true
+        }
+      ],
+      "validations": [
+        {
+          "expression": "newRating >= 0 and newRating <= 5",
+          "message": "评分必须在 0~5 之间"
+        }
+      ],
+      "logic": [
+        {
+          "op": "modifyObject",
+          "objectType": "Supplier",
+          "pk": "$supplierId",
+          "set": {
+            "rating": "$newRating"
+          }
+        }
+      ]
+    },
+    {
+      "apiName": "createMaterial",
+      "displayName": "新增物料并挂供应关系",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "materialCode",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "unit",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "createObject",
+          "objectType": "Material",
+          "pk": "$materialCode",
+          "title": "$name",
+          "properties": {
+            "category": "$category",
+            "unit": "$unit",
+            "status": "启用"
+          }
+        },
+        {
+          "op": "addLink",
+          "link": "supplierOf",
+          "aPk": "$supplierId",
+          "bPk": "$materialCode"
+        }
+      ]
+    },
+    {
+      "apiName": "adjustSafetyStock",
+      "displayName": "调整安全库存",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "materialId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "newStock",
+          "type": "long",
+          "required": true
+        }
+      ],
+      "validations": [
+        {
+          "expression": "newStock >= 0",
+          "message": "安全库存不能为负数"
+        }
+      ],
+      "logic": [
+        {
+          "op": "modifyObject",
+          "objectType": "Material",
+          "pk": "$materialId",
+          "set": {
+            "safetyStock": "$newStock"
+          }
+        }
+      ]
+    },
+    {
+      "apiName": "linkSupplier",
+      "displayName": "建立供应关系",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "materialId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "addLink",
+          "link": "supplierOf",
+          "aPk": "$supplierId",
+          "bPk": "$materialId"
+        }
+      ]
+    },
+    {
+      "apiName": "unlinkSupplier",
+      "displayName": "解除供应关系",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "supplierId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "materialId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "removeLink",
+          "link": "supplierOf",
+          "aPk": "$supplierId",
+          "bPk": "$materialId"
+        }
+      ]
+    },
+    {
+      "apiName": "removeDraftMaterial",
+      "displayName": "删除物料",
+      "description": "仅限草稿态物料；执行前人工确认（validations 看不到对象状态）",
+      "status": "active",
+      "parameters": [
+        {
+          "name": "materialId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "logic": [
+        {
+          "op": "deleteObject",
+          "objectType": "Material",
+          "pk": "$materialId"
+        }
+      ]
+    }
+  ],
+  "dctImports": [
+    {
+      "apiName": "Currency",
+      "displayName": "币种",
+      "items": [
+        {
+          "code": "CNY",
+          "name": "人民币"
+        },
+        {
+          "code": "USD",
+          "name": "美元"
+        },
+        {
+          "code": "EUR",
+          "name": "欧元"
+        },
+        {
+          "code": "JPY",
+          "name": "日元"
+        }
+      ]
+    },
+    {
+      "apiName": "Uom",
+      "displayName": "计量单位",
+      "items": [
+        {
+          "code": "GE",
+          "name": "个"
+        },
+        {
+          "code": "JIAN",
+          "name": "件"
+        },
+        {
+          "code": "KG",
+          "name": "千克"
+        },
+        {
+          "code": "M",
+          "name": "米"
+        },
+        {
+          "code": "L",
+          "name": "升"
+        }
+      ]
+    },
+    {
+      "apiName": "PaymentTerm",
+      "displayName": "付款条件",
+      "items": [
+        {
+          "code": "net30",
+          "name": "月结30天"
+        },
+        {
+          "code": "net60",
+          "name": "月结60天"
+        },
+        {
+          "code": "prepaid",
+          "name": "预付款"
+        },
+        {
+          "code": "cod",
+          "name": "货到付款"
+        }
+      ]
+    }
+  ],
+  "funnelMappings": [
+    {
+      "objectType": "Supplier",
+      "sourceDbId": "fico-db",
+      "sourceQuery": "SELECT code, name, short_name, industry, legal_person, address, phone, risk_level, supplier_category, lifecycle_status, (CASE WHEN risk_level='low' THEN 4.6 WHEN risk_level='medium' THEN 3.8 ELSE 2.4 END)::double precision AS rating, (CASE WHEN risk_level='low' THEN 96.5 WHEN risk_level='medium' THEN 88.0 ELSE 70.0 END)::double precision AS on_time_rate, (CASE WHEN status=1 THEN '合作中' ELSE '已停用' END) AS status FROM cm_supplier UNION ALL SELECT 'SUP-BAD', NULL, NULL, NULL, NULL, NULL, NULL, 'low', 'normal', 'published', 4.0::double precision, 90.0::double precision, '合作中'",
+      "keyColumns": [
+        "code"
+      ],
+      "titleColumn": "name",
+      "propertyMap": [
+        {
+          "source": "code",
+          "property": "supplierCode"
+        },
+        {
+          "source": "name",
+          "property": "name"
+        },
+        {
+          "source": "short_name",
+          "property": "shortName"
+        },
+        {
+          "source": "industry",
+          "property": "industry"
+        },
+        {
+          "source": "legal_person",
+          "property": "legalPerson"
+        },
+        {
+          "source": "address",
+          "property": "address"
+        },
+        {
+          "source": "phone",
+          "property": "phone"
+        },
+        {
+          "source": "risk_level",
+          "property": "riskLevel"
+        },
+        {
+          "source": "supplier_category",
+          "property": "category"
+        },
+        {
+          "source": "lifecycle_status",
+          "property": "lifecycleStatus"
+        },
+        {
+          "source": "rating",
+          "property": "rating"
+        },
+        {
+          "source": "on_time_rate",
+          "property": "onTimeRate"
+        },
+        {
+          "source": "status",
+          "property": "status"
+        }
+      ],
+      "required": [
+        "name",
+        "lifecycleStatus"
+      ]
+    }
+  ],
+  "objects": {
+    "Material": [
+      {
+        "pk": "GYL-001",
+        "title": "45号碳钢圆钢",
+        "properties": {
+          "materialCode": "GYL-001",
+          "name": "45号碳钢圆钢",
+          "category": "棒材",
+          "spec": "Φ45×6000mm",
+          "unit": "千克",
+          "safetyStock": 500,
+          "refPrice": 180.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "GYL-002",
+        "title": "Q235钢板",
+        "properties": {
+          "materialCode": "GYL-002",
+          "name": "Q235钢板",
+          "category": "板材",
+          "spec": "8×1500×3000mm",
+          "unit": "千克",
+          "safetyStock": 800,
+          "refPrice": 100.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "LJ-001",
+        "title": "高强度螺栓M12",
+        "properties": {
+          "materialCode": "LJ-001",
+          "name": "高强度螺栓M12",
+          "category": "紧固件",
+          "spec": "M12×40 8.8级",
+          "unit": "个",
+          "safetyStock": 20000,
+          "refPrice": 1.25,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "ZC-001",
+        "title": "轴承6204",
+        "properties": {
+          "materialCode": "ZC-001",
+          "name": "轴承6204",
+          "category": "标准件",
+          "spec": "6204-2RS",
+          "unit": "个",
+          "safetyStock": 1000,
+          "refPrice": 25.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "LH-001",
+        "title": "铝合金型材",
+        "properties": {
+          "materialCode": "LH-001",
+          "name": "铝合金型材",
+          "category": "型材",
+          "spec": "6061-T6 40×40",
+          "unit": "米",
+          "safetyStock": 600,
+          "refPrice": 60.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "HG-001",
+        "title": "环氧树脂",
+        "properties": {
+          "materialCode": "HG-001",
+          "name": "环氧树脂",
+          "category": "化工原料",
+          "spec": "E-44 25kg/桶",
+          "unit": "千克",
+          "safetyStock": 300,
+          "refPrice": 100.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "TL-001",
+        "title": "防锈漆",
+        "properties": {
+          "materialCode": "TL-001",
+          "name": "防锈漆",
+          "category": "化工原料",
+          "spec": "铁红醇酸 18L/桶",
+          "unit": "升",
+          "safetyStock": 200,
+          "refPrice": 100.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "DZ-001",
+        "title": "铜接线端子",
+        "properties": {
+          "materialCode": "DZ-001",
+          "name": "铜接线端子",
+          "category": "电气件",
+          "spec": "DT-10 平方毫米",
+          "unit": "个",
+          "safetyStock": 5000,
+          "refPrice": 2.1,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "MF-001",
+        "title": "橡胶密封圈",
+        "properties": {
+          "materialCode": "MF-001",
+          "name": "橡胶密封圈",
+          "category": "密封件",
+          "spec": "NBR Φ50×3",
+          "unit": "件",
+          "safetyStock": 2000,
+          "refPrice": 3.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "BZ-001",
+        "title": "瓦楞纸箱",
+        "properties": {
+          "materialCode": "BZ-001",
+          "name": "瓦楞纸箱",
+          "category": "包装材料",
+          "spec": "五层AA 400×300×250",
+          "unit": "个",
+          "safetyStock": 3000,
+          "refPrice": 1.4,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "BZ-002",
+        "title": "缠绕膜",
+        "properties": {
+          "materialCode": "BZ-002",
+          "name": "缠绕膜",
+          "category": "包装材料",
+          "spec": "PE 50cm×300m",
+          "unit": "件",
+          "safetyStock": 150,
+          "refPrice": 5.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      },
+      {
+        "pk": "YH-001",
+        "title": "工业润滑油",
+        "properties": {
+          "materialCode": "YH-001",
+          "name": "工业润滑油",
+          "category": "油品",
+          "spec": "L-HM46 170kg/桶",
+          "unit": "升",
+          "safetyStock": 400,
+          "refPrice": 20.0,
+          "status": "启用",
+          "lifecycleStatus": "published",
+          "sourceSystem": "MDM",
+          "governedBy": "采购部"
+        }
+      }
+    ],
+    "Warehouse": [
+      {
+        "pk": "WH-01",
+        "title": "华东原料一库",
+        "properties": {
+          "warehouseCode": "WH-01",
+          "name": "华东原料一库",
+          "type": "原料库",
+          "address": "江苏省苏州市相城区黄埭镇潘阳工业园兴业路22号",
+          "manager": "王建国",
+          "area": 12000.0,
+          "lifecycleStatus": "published",
+          "sourceSystem": "WMS",
+          "governedBy": "物流部"
+        }
+      },
+      {
+        "pk": "WH-02",
+        "title": "华东原料二库",
+        "properties": {
+          "warehouseCode": "WH-02",
+          "name": "华东原料二库",
+          "type": "原料库",
+          "address": "江苏省昆山市玉山镇新城路8号",
+          "manager": "李晓峰",
+          "area": 8000.0,
+          "lifecycleStatus": "published",
+          "sourceSystem": "WMS",
+          "governedBy": "物流部"
+        }
+      },
+      {
+        "pk": "WH-03",
+        "title": "成品立体库",
+        "properties": {
+          "warehouseCode": "WH-03",
+          "name": "成品立体库",
+          "type": "立体库",
+          "address": "江苏省苏州工业园区港田路99号",
+          "manager": "陈静",
+          "area": 15000.0,
+          "lifecycleStatus": "published",
+          "sourceSystem": "WMS",
+          "governedBy": "物流部"
+        }
+      }
+    ],
+    "Contract": [
+      {
+        "pk": "CT-2026-001",
+        "title": "2026年度钢材框架采购合同",
+        "properties": {
+          "contractNo": "CT-2026-001",
+          "name": "2026年度钢材框架采购合同",
+          "supplierCode": "SUP0001",
+          "signDate": "2026-01-15",
+          "amount": 1200000.0,
+          "status": "履行中"
+        }
+      },
+      {
+        "pk": "CT-2026-002",
+        "title": "电子元器件年度采购协议",
+        "properties": {
+          "contractNo": "CT-2026-002",
+          "name": "电子元器件年度采购协议",
+          "supplierCode": "SUP0004",
+          "signDate": "2026-02-01",
+          "amount": 580000.0,
+          "status": "履行中"
+        }
+      },
+      {
+        "pk": "CT-2026-003",
+        "title": "化工原料采购合同",
+        "properties": {
+          "contractNo": "CT-2026-003",
+          "name": "化工原料采购合同",
+          "supplierCode": "SUP0003",
+          "signDate": "2026-03-10",
+          "amount": 760000.0,
+          "status": "履行中"
+        }
+      }
+    ],
+    "Employee": [
+      {
+        "pk": "EMP-001",
+        "title": "王建国",
+        "properties": {
+          "empNo": "EMP-001",
+          "name": "王建国",
+          "department": "采购部",
+          "position": "采购经理",
+          "phone": "13800000001"
+        }
+      },
+      {
+        "pk": "EMP-002",
+        "title": "李晓峰",
+        "properties": {
+          "empNo": "EMP-002",
+          "name": "李晓峰",
+          "department": "采购部",
+          "position": "采购专员",
+          "phone": "13800000002"
+        }
+      },
+      {
+        "pk": "EMP-003",
+        "title": "张雅雯",
+        "properties": {
+          "empNo": "EMP-003",
+          "name": "张雅雯",
+          "department": "采购部",
+          "position": "采购专员",
+          "phone": "13800000003"
+        }
+      },
+      {
+        "pk": "EMP-004",
+        "title": "刘志强",
+        "properties": {
+          "empNo": "EMP-004",
+          "name": "刘志强",
+          "department": "质量部",
+          "position": "SQE工程师",
+          "phone": "13800000004"
+        }
+      },
+      {
+        "pk": "EMP-005",
+        "title": "陈静",
+        "properties": {
+          "empNo": "EMP-005",
+          "name": "陈静",
+          "department": "物流部",
+          "position": "仓储主管",
+          "phone": "13800000005"
+        }
+      }
+    ]
+  },
+  "links": [
+    {
+      "link": "signContract",
+      "aPk": "SUP0001",
+      "bPk": "CT-2026-001"
+    },
+    {
+      "link": "signContract",
+      "aPk": "SUP0004",
+      "bPk": "CT-2026-002"
+    },
+    {
+      "link": "signContract",
+      "aPk": "SUP0003",
+      "bPk": "CT-2026-003"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-001",
+      "bPk": "GYL-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-001",
+      "bPk": "GYL-002"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-001",
+      "bPk": "LJ-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-002",
+      "bPk": "DZ-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-002",
+      "bPk": "ZC-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-003",
+      "bPk": "HG-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-003",
+      "bPk": "TL-001"
+    },
+    {
+      "link": "coverMaterial",
+      "aPk": "CT-2026-003",
+      "bPk": "YH-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0001",
+      "bPk": "GYL-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0001",
+      "bPk": "GYL-002"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0001",
+      "bPk": "LJ-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0001",
+      "bPk": "ZC-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0002",
+      "bPk": "LH-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0002",
+      "bPk": "HG-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0002",
+      "bPk": "DZ-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0003",
+      "bPk": "HG-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0003",
+      "bPk": "TL-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0003",
+      "bPk": "YH-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0004",
+      "bPk": "DZ-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0004",
+      "bPk": "ZC-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0005",
+      "bPk": "MF-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0006",
+      "bPk": "BZ-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0006",
+      "bPk": "BZ-002"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0009",
+      "bPk": "LJ-001"
+    },
+    {
+      "link": "supplierOf",
+      "aPk": "SUP0010",
+      "bPk": "ZC-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-01",
+      "bPk": "GYL-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-01",
+      "bPk": "GYL-002"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-01",
+      "bPk": "HG-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-01",
+      "bPk": "TL-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-01",
+      "bPk": "YH-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-02",
+      "bPk": "LJ-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-02",
+      "bPk": "ZC-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-02",
+      "bPk": "LH-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-02",
+      "bPk": "DZ-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-02",
+      "bPk": "MF-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-03",
+      "bPk": "BZ-001"
+    },
+    {
+      "link": "storeIn",
+      "aPk": "WH-03",
+      "bPk": "BZ-002"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-001",
+      "bPk": "SUP0001"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-001",
+      "bPk": "SUP0003"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-002",
+      "bPk": "SUP0002"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-002",
+      "bPk": "SUP0005"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-003",
+      "bPk": "SUP0004"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-003",
+      "bPk": "SUP0009"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-004",
+      "bPk": "SUP0010"
+    },
+    {
+      "link": "buyerOf",
+      "aPk": "EMP-005",
+      "bPk": "SUP0006"
+    },
+    {
+      "link": "useUom",
+      "aPk": "GYL-001",
+      "bPk": "KG"
+    },
+    {
+      "link": "useUom",
+      "aPk": "GYL-002",
+      "bPk": "KG"
+    },
+    {
+      "link": "useUom",
+      "aPk": "HG-001",
+      "bPk": "KG"
+    },
+    {
+      "link": "useUom",
+      "aPk": "YH-001",
+      "bPk": "L"
+    },
+    {
+      "link": "useUom",
+      "aPk": "TL-001",
+      "bPk": "L"
+    },
+    {
+      "link": "useUom",
+      "aPk": "MF-001",
+      "bPk": "JIAN"
+    },
+    {
+      "link": "useUom",
+      "aPk": "BZ-002",
+      "bPk": "JIAN"
+    },
+    {
+      "link": "useUom",
+      "aPk": "BZ-001",
+      "bPk": "GE"
+    },
+    {
+      "link": "useUom",
+      "aPk": "ZC-001",
+      "bPk": "GE"
+    },
+    {
+      "link": "useUom",
+      "aPk": "DZ-001",
+      "bPk": "GE"
+    },
+    {
+      "link": "useUom",
+      "aPk": "LJ-001",
+      "bPk": "GE"
+    },
+    {
+      "link": "useUom",
+      "aPk": "LH-001",
+      "bPk": "M"
+    },
+    {
+      "link": "contractCurrency",
+      "aPk": "CT-2026-001",
+      "bPk": "CNY"
+    },
+    {
+      "link": "contractCurrency",
+      "aPk": "CT-2026-002",
+      "bPk": "USD"
+    },
+    {
+      "link": "contractCurrency",
+      "aPk": "CT-2026-003",
+      "bPk": "CNY"
+    },
+    {
+      "link": "contractPaymentTerm",
+      "aPk": "CT-2026-001",
+      "bPk": "net60"
+    },
+    {
+      "link": "contractPaymentTerm",
+      "aPk": "CT-2026-002",
+      "bPk": "net30"
+    },
+    {
+      "link": "contractPaymentTerm",
+      "aPk": "CT-2026-003",
+      "bPk": "prepaid"
+    }
+  ],
+  "views": [
+    {
+      "apiName": "view-supplier-master",
+      "displayName": "供应商主数据",
+      "description": "供应商及其供应网络、合同与对接人",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "供应商管理"
+      },
+      "source": "manual",
+      "members": {
+        "objects": [
+          "Supplier",
+          "Material",
+          "Contract",
+          "Employee"
+        ],
+        "interfaces": []
+      }
+    },
+    {
+      "apiName": "view-material-procurement",
+      "displayName": "物料与采购协议",
+      "description": "物料仓储布局与采购协议覆盖",
+      "dam": {
+        "domain": "供应链",
+        "application": "仓储管理",
+        "module": "库存管理"
+      },
+      "source": "manual",
+      "members": {
+        "objects": [
+          "Material",
+          "Warehouse",
+          "Supplier",
+          "Contract"
+        ],
+        "interfaces": []
+      }
+    }
+  ],
+  "snapshot": {
+    "summary": "采购供应链演示基线：类型/关系/接口/函数/动作/字典/漏斗/实例全量就绪"
+  },
+  "docImports": [
+    {
+      "apiName": "PurchaseOrder",
+      "displayName": "采购订单",
+      "dam": {
+        "domain": "供应链",
+        "application": "采购管理",
+        "module": "采购执行"
+      },
+      "entities": [
+        {
+          "apiName": "PoHead",
+          "displayName": "采购订单头",
+          "primaryKey": "docNo",
+          "titleProperty": "docNo",
+          "properties": [
+            {
+              "apiName": "docNo",
+              "baseType": "string"
+            },
+            {
+              "apiName": "orderDate",
+              "baseType": "date"
+            },
+            {
+              "apiName": "expectedDate",
+              "baseType": "date"
+            },
+            {
+              "apiName": "status",
+              "baseType": "string"
+            },
+            {
+              "apiName": "buyer",
+              "baseType": "string"
+            },
+            {
+              "apiName": "currency",
+              "baseType": "string"
+            },
+            {
+              "apiName": "totalAmount",
+              "baseType": "double"
+            },
+            {
+              "apiName": "remark",
+              "baseType": "string"
+            }
+          ]
+        },
+        {
+          "apiName": "PoLine",
+          "displayName": "订单明细行",
+          "primaryKey": "lineId",
+          "titleProperty": "materialName",
+          "properties": [
+            {
+              "apiName": "lineId",
+              "baseType": "string"
+            },
+            {
+              "apiName": "lineNo",
+              "baseType": "long"
+            },
+            {
+              "apiName": "materialCode",
+              "baseType": "string"
+            },
+            {
+              "apiName": "materialName",
+              "baseType": "string"
+            },
+            {
+              "apiName": "qty",
+              "baseType": "double"
+            },
+            {
+              "apiName": "unitPrice",
+              "baseType": "double"
+            },
+            {
+              "apiName": "amount",
+              "baseType": "double"
+            },
+            {
+              "apiName": "receivedQty",
+              "baseType": "double"
+            }
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "from": "PoHead",
+          "to": "PoLine",
+          "cardinality": "oneToMany",
+          "role": "lines",
+          "displayName": "订单行"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:flowable="http://flowable.org/bpmn"
+                  xmlns:cmx="http://cmx.io/bpmn"
+                  targetNamespace="http://cmx.io/flow/created"
+                  id="defs_supplier_review">
+  <bpmn:process id="supplier_review" name="供应商评审" isExecutable="true">
+    <bpmn:startEvent id="s" name="发起"/>
+    <bpmn:userTask id="review" name="供应商评审" cmx:formMode="approve"/>
+    <bpmn:exclusiveGateway id="gw" name="评审结果" default="f3"/>
+    <bpmn:endEvent id="ok" name="评审通过"/>
+    <bpmn:endEvent id="rej" name="评审否决"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="review"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="review" targetRef="gw"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="gw" targetRef="ok"/>
+    <bpmn:sequenceFlow id="f4" name="否决" sourceRef="gw" targetRef="rej">
+      <bpmn:conditionExpression>${lastDecision == 'reject'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+</bpmn:definitions>

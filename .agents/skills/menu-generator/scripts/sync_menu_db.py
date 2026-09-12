@@ -80,8 +80,10 @@ def parse_url(url):
     m = re.match(r"postgres(?:ql)?://([^:]+):([^@]+)@([^:/]+):(\d+)/(.+)$", url)
     if not m:
         raise SystemExit(f"无法解析 db_url: {url}")
-    return {"user": m.group(1), "password": m.group(2), "host": m.group(3),
-            "port": m.group(4), "dbname": m.group(5)}
+    # db_url 遵循 PG 连接串约定做百分号编码（如密码 Pg@Pansoft_0909 → Pg%40Pansoft_0909），取值后须解码
+    from urllib.parse import unquote
+    return {"user": unquote(m.group(1)), "password": unquote(m.group(2)), "host": m.group(3),
+            "port": m.group(4), "dbname": unquote(m.group(5))}
 
 def snowflake():
     return (int(time.time() * 1000) << 22) | random.getrandbits(22)

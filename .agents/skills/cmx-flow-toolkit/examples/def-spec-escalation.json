@@ -1,17 +1,17 @@
 {
-  "_comment": "样例3：限时审批（边界定时器中断升级）+ 决策表定级 + 消息等待外部回调。决策表须先 POST /api/flow/v1/decisions 注册（见 references/bpmn-def-guide.md §5），否则 businessRuleTask 宽容跳过、网关恒走 default",
+  "_comment": "样例3：限时审批（边界定时器中断升级）+ 决策表定级 + 消息等待外部回调。P0：定时器仍在 BPMN（边界事件），办理人在 approvalDefs（INITIATOR/ROLE/INITIATOR_LEADER 关系型引用）。决策表须先 POST /api/flow/v1/decisions 注册（见 references/bpmn-def-guide.md §5），否则 businessRuleTask 宽容跳过、网关恒走 default",
   "key": "escalation_flow",
   "name": "限时升级审批",
   "nodes": [
-    {"id": "apply", "type": "userTask", "name": "发起申请", "candidates": "initiator"},
+    {"id": "apply", "type": "userTask", "name": "发起申请"},
     {"id": "grade", "type": "businessRuleTask", "name": "决策表定级", "decisionRef": "approval_matrix"},
-    {"id": "mgr", "type": "userTask", "name": "经理审批", "candidates": "role(manager)",
+    {"id": "mgr", "type": "userTask", "name": "经理审批",
      "timers": [
        {"duration": "PT20S", "cancelActivity": false, "to": "remind"},
        {"duration": "PT30S", "to": "boss"}
      ]},
     {"id": "remind", "type": "serviceTask", "name": "发催办通知", "delegate": "notifyDelegate"},
-    {"id": "boss", "type": "userTask", "name": "上级升级审批", "candidates": "initiatorLeader"},
+    {"id": "boss", "type": "userTask", "name": "上级升级审批"},
     {"id": "wait_ext", "type": "messageCatch", "name": "等外部系统回执", "message": "verdictReceived",
      "correlationVar": "orderId"},
     {"id": "done", "type": "endEvent", "name": "完成"}
@@ -23,6 +23,15 @@
     {"from": "boss", "to": "wait_ext"},
     {"from": "wait_ext", "to": "done"}
   ],
+  "approvalDefs": {
+    "orgId": "zongbu",
+    "note": "样例：发起人确认 → 角色或签（定时器升级/催办）→ 发起人领导",
+    "nodes": {
+      "apply": {"inherit": false, "mode": "SINGLE", "objects": [{"kind": "INITIATOR", "value": ""}]},
+      "mgr": {"inherit": false, "mode": "ANY", "objects": [{"kind": "ROLE", "value": "manager"}]},
+      "boss": {"inherit": false, "mode": "SINGLE", "objects": [{"kind": "INITIATOR_LEADER", "value": ""}]}
+    }
+  },
   "deploy": {"server": "http://127.0.0.1:8091", "note": "cmx-flow-toolkit 样例", "publishedBy": "agent"},
   "smoke": {"orgId": "zongbu", "businessKey": "SMOKE-ESC-001",
             "variables": {"initiator": "u_emp", "orderId": "ORD-1"}, "expectActive": ["apply"]}

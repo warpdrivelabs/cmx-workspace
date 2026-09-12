@@ -6,11 +6,11 @@
                   id="defs_escalation_flow">
   <bpmn:process id="escalation_flow" name="限时升级审批" isExecutable="true">
     <bpmn:startEvent id="s" name="发起"/>
-    <bpmn:userTask id="apply" name="发起申请" cmx:candidates="initiator"/>
+    <bpmn:userTask id="apply" name="发起申请"/>
     <bpmn:businessRuleTask id="grade" name="决策表定级" flowable:decisionRef="approval_matrix"/>
-    <bpmn:userTask id="mgr" name="经理审批" cmx:candidates="role(manager)"/>
+    <bpmn:userTask id="mgr" name="经理审批"/>
     <bpmn:serviceTask id="remind" name="发催办通知" flowable:delegateExpression="${notifyDelegate}"/>
-    <bpmn:userTask id="boss" name="上级升级审批" cmx:candidates="initiatorLeader"/>
+    <bpmn:userTask id="boss" name="上级升级审批"/>
     <bpmn:intermediateCatchEvent id="wait_ext" name="等外部系统回执" cmx:correlationVar="orderId">
       <bpmn:messageEventDefinition messageRef="verdictReceived"/>
     </bpmn:intermediateCatchEvent>

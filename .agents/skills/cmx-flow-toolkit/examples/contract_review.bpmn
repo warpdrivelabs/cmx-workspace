@@ -6,16 +6,12 @@
                   id="defs_contract_review">
   <bpmn:process id="contract_review" name="合同评审" isExecutable="true">
     <bpmn:startEvent id="s" name="发起"/>
-    <bpmn:userTask id="apply" name="发起申请" cmx:candidates="initiator" cmx:cc="user(u_auditor1)"/>
+    <bpmn:userTask id="apply" name="发起申请"/>
     <bpmn:parallelGateway id="fork" name="fork"/>
-    <bpmn:userTask id="legal" name="法务审核" cmx:candidates="role(finance)"/>
-    <bpmn:userTask id="sign" name="评审会签" flowable:assignee="${reviewer}">
-      <bpmn:multiInstanceLoopCharacteristics isSequential="false" flowable:collection="reviewers" flowable:elementVariable="reviewer">
-        <bpmn:completionCondition>${nrOfCompletedInstances/nrOfInstances &gt;= 0.5}</bpmn:completionCondition>
-      </bpmn:multiInstanceLoopCharacteristics>
-    </bpmn:userTask>
+    <bpmn:userTask id="legal" name="法务审核"/>
+    <bpmn:userTask id="sign" name="评审会签"/>
     <bpmn:parallelGateway id="join" name="join"/>
-    <bpmn:userTask id="boss" name="总经理审批" cmx:candidates="orgLeader"/>
+    <bpmn:userTask id="boss" name="总经理审批"/>
     <bpmn:exclusiveGateway id="gw2" name="结果" default="f10"/>
     <bpmn:endEvent id="pass" name="通过"/>
     <bpmn:endEvent id="veto" name="一票否决">
