@@ -5,7 +5,7 @@
 
 ## 演示顺序（重要约束）
 
-**幕⑤（MDM 闭环+漏斗 sync）→ 幕⑥（action 发起流程）**。漏斗 sync 会整体覆盖对象 props——评审状态（reviewStatus）必须在最后一次 sync 之后产生。已彩排消耗掉的素材：CR …032（已 activated，铸号 SUP202609120001）、SUP0002（reviewStatus 已被 sync 清掉，status=合作中）。**演示日用 CR …033（宁波海天精工）走幕⑤页面流程；幕⑥用 SUP0009（东华链条）。**
+**幕⑤（MDM 闭环+漏斗 sync）→ 幕⑦（双向打通）→ 幕⑥（action 发起流程）**。漏斗 sync 会整体覆盖对象 props——评审状态（reviewStatus）必须在最后一次 sync 之后产生。已彩排消耗掉的素材：CR …032（已 activated，铸号 SUP202609120001）、SUP0002（reviewStatus 已被 sync 清掉，status=合作中）。**演示日用 CR …033（宁波海天精工）走幕⑤页面流程；幕⑥用 SUP0009（东华链条）。**
 
 ## 幕① 元数据同源（业务系统）
 
@@ -15,19 +15,20 @@
 
 ## 幕② 字典入本体
 
-- 简单字典：`POST /api/onto/v1/import/dct`（Currency/Uom/PaymentTerm 已导入，字典项当场物化）
-- 漏斗（主菜）：explorer 左树 供应链 ▸ 采购管理 ▸ 供应商管理 ▸ 供应商（**共 11 个**）
+- 漏斗（主菜，**八类全漏斗**）：explorer 左树 供应链 ▸ 采购管理 ▸ … 八个类型全部来自 fico 库 cm_* 表：
+  Supplier 11 / Material 10 / Warehouse 3 / Contract 3 / Employee 8 / Currency 6 / Uom 14 / PaymentTerm 5
   - `GET /funnel/pipeline-status/Supplier`：extract/map/index 三段 ready + objects=11 + quarantined=1
   - `GET /funnel/quarantine?objectType=Supplier`：SUP-BAD 行 + violations（name 缺失被拦）——数据质量闸门
   - `POST /funnel/sync/Supplier` 现场 re-sync：read=12/written=11/quarantined=1
-- 讲：源是 fico 库 cm_supplier（sourceDbId 跨库），SQL CASE 派生评分/准时率；本体只存主数据
+- 讲：源是 fico 库 cm_* 主数据表（sourceDbId 跨库），SQL LEFT JOIN 派生显示列（物料分类/单位、部门/岗位）、CASE 派生评分/准时率；**类型定义与数据全部以主数据平台为真源**——MDM 元数据（DCT）deploy 建表，漏斗拉取进本体
+- ⚠️ 演示日铁律：全场只允许这一处 sync（幕⑤ Supplier），其余八类一律不再 sync、不重跑 onto_seed
 
 ## 幕③ 工作室建模治理（直改 live + 存档/回滚架构）
 
 - 页面：`/view/onto-studio`
 - 上下文切换器：「供应商主数据（手动）」场景画布（4 成员+接口 GovernedMaster）→ ⟲ 重排 → ⤢ 适配
 - ⌘K 搜索「Contract」定位；点左栏「物料」→ Inspector 看共享属性挂接（lifecycleStatus 等 3 项）
-- 元素库：关系 8 / 接口 1 / 共享属性 3 / 动作 8 / 函数 4
+- 元素库：关系 9 / 接口 1 / 共享属性 3 / 动作 8 / 函数 4
 - 编辑演示：开「编辑」开关 → 给 Contract 加一属性「备注 remark」→ 即时生效（直改 live）→「存档」打版本检查点 →「版本」回看/对比/回滚
 - 讲：元数据变更不占停机、存档即版本、回滚整体恢复
 
@@ -35,8 +36,9 @@
 
 - explorer `/view/onto-explorer`：
   - 过滤构造器：riskLevel = low → 供应商列表
-  - **下钻主菜**：选 SUP0001 → 详情区「供应 → Material」（3 物料）→ 任选物料 →「覆盖物料 · 反向 → Contract」→ 面包屑逐级回退
-  - 字典关系挂接（三个字典类型不再孤立）：任选物料 →「使用计量单位 → Uom」（如轴承 6204 → 个）；合同 →「计价币种 → Currency」（CT-2026-002 → 美元）+「付款条件 → PaymentTerm」（CT-2026-001 → 月结60天）；仓库 →「存放 → Material」
+  - **下钻主菜**：选 SUP0001（中信重工）→ 详情区「供应 → Material」（3 物料：六角螺栓/钢板/壳体毛坯）→ 任选物料 →「覆盖物料 · 反向 → Contract」→ 面包屑逐级回退
+  - **数据驱动关系**（引用列→关系，随主数据刷新）：供应商 →「结算币种 → Currency」（11 个供应商全部结算人民币）+「采购对接 · 反向 → Employee」（SUP0001 → EMP0001 王建国）；物料 →「使用计量单位 → Uom」（六角螺栓 → 个 pcs）；合同 →「计价币种 → Currency」（CT-2026-002 → 美元）+「付款条件 → PaymentTerm」（CT-2026-001 → 月结60）
+  - 手工语义关系：仓库 →「存放 → Material」（原料库存钢板/液压油/不锈钢管…）
   - 单据溯源：切「采购订单头 PoHead」→ 共 0 个（定义入本体、实例在业务库）→ 表头**「在业务系统中查看 ↗」**跳 doc-loader 看真实单据行
 - workshop `/view/onto-workshop`：
   - 选 SUP0001 → 360 关系块（采购对接·反向/签订合同/供应…）
@@ -44,8 +46,8 @@
   - 函数求值（Inspector 或 curl）：
     - supplierGrade（FEEL）：SUP0001 rating 4.6 → **"A"**
     - supplierRiskScore（Rhai）：SUP0002 → **93**（100−(100−96.5)×2）
-    - contractSpendBySupplier（聚合）：groupSum by supplierCode → SUP0001 120万 / SUP0003 76万 / SUP0004 58万
-    - materialFullLabel（FEEL）：GYL-001 → 「棒材 / 45号碳钢圆钢（千克）」
+    - contractSpendBySupplier（聚合）：groupSum by supplierName → 中信重工 120万 / 华胜信息 76万 / 晨光办公 58万
+    - materialFullLabel（FEEL）：MAT0002 → 「钢材类 / Q235B 热轧钢板 δ10（千克）」
 
 ## 幕⑤ 主数据治理闭环（页面操作，用 CR …033 宁波海天精工）
 
@@ -53,8 +55,18 @@
 2. 提交 → 自动发起 mdm_cr_approval 流程（提交时自动确认发起节点）
 3. **待办中心** `/view/gl-flow-todo-center` → 我的待办出现「主数据审批」→ 点办理打开 cr-form 审批页 → 同意
 4. 见证：CR → activated；cm_supplier 自动新增行（编码引擎 MDM_GYS 铸号，如 SUP202609120002）——`SELECT * FROM cm_supplier ORDER BY id DESC LIMIT 1`
-5. 漏斗 sync → 本体 explorer 出现新供应商（ written=12）
+5. 漏斗 sync → 本体 explorer 出现新供应商（ written=12；新行引用列（币种/采购员）为空 → 结算币种/采购对接关系无新边属正常，页面补全引用列后重跑 links 段即可）
 - 兜底：webhook 丢失时 `GET /api/mdm/change-requests/flow-status?crIds=…` 读时自愈
+
+## 幕⑦ 双向打通（本体动作 → MDM 治理 → 事件自动回流）★高光
+
+- 前置：MDM 分发订阅已配（mdm/subscriptions → onto /funnel/push）；本体动作「新增供应商申请」已发布
+- workshop（SUP0001 或任一对象）→ 动作中心 →「新增供应商申请（发起主数据治理）」→ 填名称/税号/电话 → **试算（编辑 0 条=本体不直写黄金记录）** → 执行
+- 台后 dispatch → MDM webhook-create 建 CR 并提交（create_by=admin）→ **待办中心出现「发起人确认」**（页面办理：保存并提交）→ **「主数据审批」**（Javier 账号审批，或 API 委托令牌）→ 激活器铸号写 cm_supplier
+- **见证自动回流：不手动 sync**——MDM Outbox 事件 → webhook → 本体 funnel/push 自动 sync → explorer/workshop **2 秒内出现新供应商**
+- 台后证据：`md_event_log` 事件 / `md_dispatch_log` delivered / onto 日志 `funnel/push 200`
+- 讲：动作发起的是治理申请（不绕过 MDM 唯一写入口）→ 审批 → 黄金记录 → 事件驱动秒级回流；**双向打通全程零手动集成**
+- 兜底：分发投递失败自动退避重试（幂等）；极端情况手动 `POST /funnel/sync/Supplier` 兜底
 
 ## 幕⑥ 本体 action 发起流程（用 SUP0009 东华链条）
 
@@ -66,6 +78,7 @@
    - 本体对象状态自动回写：workshop 360 中 SUP0009 → **reviewStatus=已通过 / status=合作中 / lastReviewAt=刚刚**
    - oe_action_log 审计：`GET /api/onto/v1/action-logs`
 - 讲：本体是业务语义层——动作在本体发起、流程在引擎审批、结果经事件回写本体对象，全链路无硬编码集成
+- ⚠️ **幕⑥之后严禁再审批任何供应商 CR / 再 sync**（自动 push 会清掉回写的 reviewStatus）
 
 ## curl 备份（页面万一失灵时）
 

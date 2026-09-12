@@ -292,3 +292,9 @@ Supplier×10（漏斗）、Material×12、Warehouse×3（华东原料一库/二�
 - **DAM 中文化**：6 个类型 + 2 个场景视图 DAM 全部改为中文分组（供应链 ▸ 采购管理 ▸ 供应商管理等）；重灌口径已同步 scenario-spec.json。注意 PurchaseOrder 只是 docType.code，单据定义 apiName 是根实体 PoHead。
 - **关系补强**：storeIn 显示名「存放于」→「存放」；新增 useUom（物料→计量单位，12 条）/ contractCurrency（合同→币种，3 条）/ contractPaymentTerm（合同→付款条件，3 条），三字典类型不再孤立，linkTypes 5→8、links 48→66，已存档 v6。
 - **flow-toolkit 修订重做**：此前被工作区还原波及，已按 P0 契约重做并实测通过（publish v3 热装载、approval-defs/save、startable 预检、冒烟 cancel 收尾全绿）。
+
+### 12.8 元数据真源补齐（9-12 晚）
+
+- 对照检查：cmx-container 资产中本方案创建的未跟踪文件 = 单据元数据 purchase_doc_meta_v1.json + 采购菜单 purchase-menu.json + 门户模块 module.json 三组，与改动清单一致（explorer.js 用户已提交；vendor 画布改动与本方案无关）。
+- **PoHead 无 ol_edge 关联属正常**：按口径单据定义经 import/doc 入本体（单对象模型，不导实例、不产关系），实例在业务库；单据↔主数据关联体现在业务库字段（supplier_code），本体侧用法=溯源下钻「在业务系统中查看」。
+- **字典元数据补缺**：mdm seed 原有 supplier/material/employee/currency/uom/payment_term 等 22 个字典，缺仓库与采购合同——已在 dataplatform_dct_meta_v1.json 登记 cm_warehouse/cm_contract（BUSINESS 类，refDict 声明 employee/supplier/currency/payment_term 引用）+ 生成 seed/cm_warehouse.json、seed/cm_contract.json（与演示数据同码 WH-01..03、CT-2026-001..003）。本体侧关系（contractCurrency/contractPaymentTerm/useUom）即这些 refDict 的对象化表达。未 deploy 到业务库（演示不依赖；需要时走模型中心 deploy）。
