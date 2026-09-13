@@ -1,5 +1,5 @@
 {
-  "_comment": "采购供应链演示场景规格 v2（主数据真源口径）。八类对象全部经漏斗自 fico 库 cm_* 表拉取；objects/dctImports 段已删除（sync 覆盖 props，属性必须全部来自 propertyMap）；演示层属性（rating/onTimeRate 为漏斗 SQL CASE 派生，reviewStatus/lastReviewAt 为流程回写属性——演示日铁律：只允许幕⑤ sync/Supplier 一次，其余类型不再 sync）。链接段=数据驱动(引用列 JOIN 翻译)+手工语义关系两部分。",
+  "_comment": "采购供应链演示场景规格 v6（极简口径）。7 对象类型 / 6 条关系，全部 oneToMany FK backing（外键属性存真实 cm_*.id 外键值，目标端带 id 主键属性，JOIN 语义与底层库一致），零多对多、零中间表。v5 删除 PaymentTerm（类型+contractPaymentTerm 关系+漏斗）与供应商标签（Tag 类型+supplierTag 关系+打标动作+14 条 ol_edge）；v6 进一步删除供应记录（SupplyRecord 类型 + supplierSupply/materialSupply 两条关系 + cm_supply_record 中间表 + 漏斗），ol_edge 空表——凡关系必有字段关联，图上只有业务真实存在的一对多。演示层属性（rating/onTimeRate 为漏斗 CASE 派生，reviewStatus/lastReviewAt 为流程回写，只允许幕⑤ sync/Supplier 一次）。",
   "dam": {
     "domain": "supplychain",
     "application": "procurement",
@@ -59,6 +59,11 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "供应商名称",
           "baseType": "string",
@@ -105,6 +110,16 @@
           "baseType": "string"
         },
         {
+          "apiName": "settleCurrencyId",
+          "displayName": "结算币种ID",
+          "baseType": "long"
+        },
+        {
+          "apiName": "buyerId",
+          "displayName": "采购对接人ID",
+          "baseType": "long"
+        },
+        {
           "apiName": "supplierType",
           "displayName": "供应商类型",
           "baseType": "string"
@@ -131,7 +146,7 @@
         },
         {
           "apiName": "status",
-          "displayName": "合作状态",
+          "displayName": "启用状态",
           "baseType": "string"
         },
         {
@@ -190,6 +205,11 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "物料名称",
           "baseType": "string",
@@ -209,6 +229,11 @@
           "apiName": "unit",
           "displayName": "计量单位",
           "baseType": "string"
+        },
+        {
+          "apiName": "baseUomId",
+          "displayName": "基本计量单位ID",
+          "baseType": "long"
         },
         {
           "apiName": "safetyStock",
@@ -261,6 +286,11 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "仓库名称",
           "baseType": "string",
@@ -280,6 +310,11 @@
           "apiName": "area",
           "displayName": "面积㎡",
           "baseType": "double"
+        },
+        {
+          "apiName": "managerId",
+          "displayName": "仓库主管ID",
+          "baseType": "long"
         },
         {
           "apiName": "lifecycleStatus",
@@ -319,10 +354,20 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "合同名称",
           "baseType": "string",
           "required": true
+        },
+        {
+          "apiName": "supplierId",
+          "displayName": "供应商ID",
+          "baseType": "long"
         },
         {
           "apiName": "supplierName",
@@ -338,6 +383,11 @@
           "apiName": "amount",
           "displayName": "合同金额",
           "baseType": "double"
+        },
+        {
+          "apiName": "currencyId",
+          "displayName": "币种ID",
+          "baseType": "long"
         },
         {
           "apiName": "status",
@@ -368,6 +418,11 @@
           "displayName": "工号",
           "baseType": "string",
           "required": true
+        },
+        {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
         },
         {
           "apiName": "name",
@@ -410,6 +465,11 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "名称",
           "baseType": "string",
@@ -440,6 +500,11 @@
           "required": true
         },
         {
+          "apiName": "id",
+          "displayName": "MDM主键",
+          "baseType": "long"
+        },
+        {
           "apiName": "name",
           "displayName": "名称",
           "baseType": "string",
@@ -451,43 +516,9 @@
           "baseType": "string"
         }
       ]
-    },
-    {
-      "apiName": "PaymentTerm",
-      "displayName": "付款条件",
-      "dam": {
-        "domain": "供应链",
-        "application": "采购管理",
-        "module": "供应商管理"
-      },
-      "primaryKey": "code",
-      "titleProperty": "name",
-      "properties": [
-        {
-          "apiName": "code",
-          "displayName": "代码",
-          "baseType": "string",
-          "required": true
-        },
-        {
-          "apiName": "name",
-          "displayName": "名称",
-          "baseType": "string",
-          "required": true
-        }
-      ]
     }
   ],
   "linkTypes": [
-    {
-      "apiName": "supplierOf",
-      "displayName": "供应",
-      "objectTypeA": "Supplier",
-      "objectTypeB": "Material",
-      "cardinality": "manyToMany",
-      "roleA": "供应商",
-      "roleB": "供应物料"
-    },
     {
       "apiName": "signContract",
       "displayName": "签订合同",
@@ -495,25 +526,14 @@
       "objectTypeB": "Contract",
       "cardinality": "oneToMany",
       "roleA": "签订",
-      "roleB": "归属供应商"
-    },
-    {
-      "apiName": "coverMaterial",
-      "displayName": "覆盖物料",
-      "objectTypeA": "Contract",
-      "objectTypeB": "Material",
-      "cardinality": "manyToMany",
-      "roleA": "覆盖",
-      "roleB": "用于合同"
-    },
-    {
-      "apiName": "storeIn",
-      "displayName": "存放",
-      "objectTypeA": "Warehouse",
-      "objectTypeB": "Material",
-      "cardinality": "oneToMany",
-      "roleA": "存放",
-      "roleB": "存于"
+      "roleB": "归属供应商",
+      "backing": {
+        "fk": {
+          "sourceProperty": "supplierId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
     },
     {
       "apiName": "buyerOf",
@@ -522,43 +542,78 @@
       "objectTypeB": "Supplier",
       "cardinality": "oneToMany",
       "roleA": "对接",
-      "roleB": "对接人"
+      "roleB": "对接人",
+      "backing": {
+        "fk": {
+          "sourceProperty": "buyerId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
     },
     {
       "apiName": "useUom",
       "displayName": "使用计量单位",
-      "objectTypeA": "Material",
-      "objectTypeB": "Uom",
-      "cardinality": "manyToMany",
-      "roleA": "使用",
-      "roleB": "物料计量单位"
+      "objectTypeA": "Uom",
+      "objectTypeB": "Material",
+      "cardinality": "oneToMany",
+      "roleA": "作为计量单位",
+      "roleB": "使用该单位的物料",
+      "backing": {
+        "fk": {
+          "sourceProperty": "baseUomId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
     },
     {
       "apiName": "contractCurrency",
       "displayName": "计价币种",
-      "objectTypeA": "Contract",
-      "objectTypeB": "Currency",
-      "cardinality": "manyToMany",
-      "roleA": "以该币种计价",
-      "roleB": "用于合同"
-    },
-    {
-      "apiName": "contractPaymentTerm",
-      "displayName": "付款条件",
-      "objectTypeA": "Contract",
-      "objectTypeB": "PaymentTerm",
-      "cardinality": "manyToMany",
-      "roleA": "适用",
-      "roleB": "约定付款条件"
+      "objectTypeA": "Currency",
+      "objectTypeB": "Contract",
+      "cardinality": "oneToMany",
+      "roleA": "作为计价币种",
+      "roleB": "计价合同",
+      "backing": {
+        "fk": {
+          "sourceProperty": "currencyId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
     },
     {
       "apiName": "settleCurrency",
       "displayName": "结算币种",
-      "objectTypeA": "Supplier",
-      "objectTypeB": "Currency",
-      "cardinality": "manyToMany",
-      "roleA": "以该币种结算",
-      "roleB": "结算供应商"
+      "objectTypeA": "Currency",
+      "objectTypeB": "Supplier",
+      "cardinality": "oneToMany",
+      "roleA": "作为结算币种",
+      "roleB": "结算供应商",
+      "backing": {
+        "fk": {
+          "sourceProperty": "settleCurrencyId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
+    },
+    {
+      "apiName": "managerOf",
+      "displayName": "主管仓库",
+      "objectTypeA": "Employee",
+      "objectTypeB": "Warehouse",
+      "cardinality": "oneToMany",
+      "roleA": "主管",
+      "roleB": "仓库主管",
+      "backing": {
+        "fk": {
+          "sourceProperty": "managerId",
+          "targetProperty": "id",
+          "side": "b"
+        }
+      }
     }
   ],
   "functions": [
@@ -587,7 +642,7 @@
           "type": "object"
         }
       ],
-      "body": "let riskDed = if supplier.riskLevel == \"high\" { 40.0 } else if supplier.riskLevel == \"medium\" { 20.0 } else { 0.0 };\nlet otDed = (100.0 - supplier.onTimeRate) * 2.0;\nlet lowDed = if supplier.rating < 3.0 { 15.0 } else { 0.0 };\nlet s = 100.0 - riskDed - otDed - lowDed;\nif s < 0.0 { 0.0 } else { s }",
+      "body": "let riskDed = if supplier.riskLevel == \"高\" { 40.0 } else if supplier.riskLevel == \"中\" { 20.0 } else { 0.0 };\nlet otDed = (100.0 - supplier.onTimeRate) * 2.0;\nlet lowDed = if supplier.rating < 3.0 { 15.0 } else { 0.0 };\nlet s = 100.0 - riskDed - otDed - lowDed;\nif s < 0.0 { 0.0 } else { s }",
       "status": "active"
     },
     {
@@ -638,8 +693,7 @@
           "objectType": "Supplier",
           "pk": "$supplierId",
           "set": {
-            "reviewStatus": "评审中",
-            "status": "评审中"
+            "reviewStatus": "评审中"
           }
         }
       ],
@@ -676,7 +730,7 @@
           "objectType": "Supplier",
           "pk": "$supplierId",
           "set": {
-            "status": "暂停",
+            "status": "停用",
             "remark": "$reason"
           }
         }
@@ -724,7 +778,7 @@
     },
     {
       "apiName": "createMaterial",
-      "displayName": "新增物料并挂供应关系",
+      "displayName": "新增物料",
       "status": "active",
       "parameters": [
         {
@@ -746,11 +800,6 @@
           "name": "unit",
           "type": "string",
           "required": true
-        },
-        {
-          "name": "supplierId",
-          "type": "string",
-          "required": true
         }
       ],
       "logic": [
@@ -764,12 +813,6 @@
             "unit": "$unit",
             "status": "启用"
           }
-        },
-        {
-          "op": "addLink",
-          "link": "supplierOf",
-          "aPk": "$supplierId",
-          "bPk": "$materialCode"
         }
       ]
     },
@@ -803,56 +846,6 @@
           "set": {
             "safetyStock": "$newStock"
           }
-        }
-      ]
-    },
-    {
-      "apiName": "linkSupplier",
-      "displayName": "建立供应关系",
-      "status": "active",
-      "parameters": [
-        {
-          "name": "supplierId",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "materialId",
-          "type": "string",
-          "required": true
-        }
-      ],
-      "logic": [
-        {
-          "op": "addLink",
-          "link": "supplierOf",
-          "aPk": "$supplierId",
-          "bPk": "$materialId"
-        }
-      ]
-    },
-    {
-      "apiName": "unlinkSupplier",
-      "displayName": "解除供应关系",
-      "status": "active",
-      "parameters": [
-        {
-          "name": "supplierId",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "materialId",
-          "type": "string",
-          "required": true
-        }
-      ],
-      "logic": [
-        {
-          "op": "removeLink",
-          "link": "supplierOf",
-          "aPk": "$supplierId",
-          "bPk": "$materialId"
         }
       ]
     },
@@ -928,7 +921,7 @@
         "name",
         "lifecycleStatus"
       ],
-      "sourceQuery": "SELECT code, name, short_name, industry, legal_person, address, phone, tax_no, (CASE invoice_type WHEN 'vat_special' THEN '增值税专用发票' WHEN 'vat_common' THEN '增值税普通发票' ELSE invoice_type END) AS invoice_type, payment_term, supplier_type, (CASE supplier_category WHEN 'strategic' THEN '战略' WHEN 'normal' THEN '普通' WHEN 'temporary' THEN '临时' WHEN 'restricted' THEN '受限' ELSE supplier_category END) AS supplier_category, risk_level, lifecycle_status, (CASE WHEN risk_level='low' THEN 4.6 WHEN risk_level='medium' THEN 3.8 ELSE 2.4 END)::double precision AS rating, (CASE WHEN risk_level='low' THEN 96.5 WHEN risk_level='medium' THEN 88.0 ELSE 70.0 END)::double precision AS on_time_rate, (CASE WHEN status=1 THEN '合作中' ELSE '已停用' END) AS status FROM cm_supplier UNION ALL SELECT 'SUP-BAD', NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'low','published',4.0::double precision,90.0::double precision,'合作中'",
+      "sourceQuery": "SELECT code, name, short_name, industry, legal_person, address, phone, tax_no, (CASE invoice_type WHEN 'vat_special' THEN '增值税专用发票' WHEN 'vat_common' THEN '增值税普通发票' ELSE invoice_type END) AS invoice_type, payment_term, (CASE supplier_type WHEN 'manufacturer' THEN '生产厂商' WHEN 'trader' THEN '贸易商' WHEN 'service' THEN '服务商' WHEN 'other' THEN '其他' ELSE supplier_type END) AS supplier_type, (CASE supplier_category WHEN 'strategic' THEN '战略供应商' WHEN 'normal' THEN '普通供应商' WHEN 'temporary' THEN '临时供应商' WHEN 'restricted' THEN '受限供应商' ELSE supplier_category END) AS supplier_category, (CASE risk_level WHEN 'low' THEN '低' WHEN 'medium' THEN '中' WHEN 'high' THEN '高' ELSE risk_level END) AS risk_level, lifecycle_status, (CASE WHEN risk_level='low' THEN 4.6 WHEN risk_level='medium' THEN 3.8 ELSE 2.4 END)::double precision AS rating, (CASE WHEN risk_level='low' THEN 96.5 WHEN risk_level='medium' THEN 88.0 ELSE 70.0 END)::double precision AS on_time_rate, (CASE WHEN status=1 THEN '启用' ELSE '停用' END) AS status, id, settle_currency_id, buyer_id FROM cm_supplier UNION ALL SELECT 'SUP-BAD', NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'published',4.0::double precision,90.0::double precision,'启用',NULL,NULL,NULL",
       "propertyMap": [
         {
           "source": "code",
@@ -971,6 +964,18 @@
           "property": "paymentTerm"
         },
         {
+          "source": "lifecycle_status",
+          "property": "lifecycleStatus"
+        },
+        {
+          "source": "settle_currency_id",
+          "property": "settleCurrencyId"
+        },
+        {
+          "source": "buyer_id",
+          "property": "buyerId"
+        },
+        {
           "source": "supplier_type",
           "property": "supplierType"
         },
@@ -983,10 +988,6 @@
           "property": "riskLevel"
         },
         {
-          "source": "lifecycle_status",
-          "property": "lifecycleStatus"
-        },
-        {
           "source": "rating",
           "property": "rating"
         },
@@ -997,6 +998,10 @@
         {
           "source": "status",
           "property": "status"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1011,7 +1016,7 @@
         "name",
         "lifecycleStatus"
       ],
-      "sourceQuery": "SELECT m.code, m.name, COALESCE(m.spec,'-') AS spec, COALESCE(mc.name,'未分类') AS category, COALESCE(u.name,'-') AS unit, m.safety_stock, m.ref_price, m.lifecycle_status FROM cm_material m LEFT JOIN cm_material_class mc ON m.class_id=mc.id LEFT JOIN cm_uom u ON m.base_uom_id=u.id",
+      "sourceQuery": "SELECT m.code, m.name, COALESCE(m.spec,'-') AS spec, COALESCE(mc.name,'未分类') AS category, COALESCE(u.name,'-') AS unit, m.base_uom_id, m.safety_stock, m.ref_price, m.lifecycle_status, m.id FROM cm_material m LEFT JOIN cm_material_class mc ON m.class_id=mc.id LEFT JOIN cm_uom u ON m.base_uom_id=u.id",
       "propertyMap": [
         {
           "source": "code",
@@ -1034,6 +1039,10 @@
           "property": "unit"
         },
         {
+          "source": "base_uom_id",
+          "property": "baseUomId"
+        },
+        {
           "source": "safety_stock",
           "property": "safetyStock"
         },
@@ -1044,6 +1053,10 @@
         {
           "source": "lifecycle_status",
           "property": "lifecycleStatus"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1058,7 +1071,7 @@
         "name",
         "lifecycleStatus"
       ],
-      "sourceQuery": "SELECT code, name, (CASE warehouse_type WHEN 'raw' THEN '原料库' WHEN 'finished' THEN '成品库' WHEN 'stereo' THEN '立体库' WHEN 'transit' THEN '中转库' ELSE warehouse_type END) AS type, address, area, lifecycle_status FROM cm_warehouse",
+      "sourceQuery": "SELECT code, name, (CASE warehouse_type WHEN 'raw' THEN '原料库' WHEN 'finished' THEN '成品库' WHEN 'stereo' THEN '立体库' WHEN 'transit' THEN '中转库' ELSE warehouse_type END) AS type, address, area, manager_id, lifecycle_status, id FROM cm_warehouse",
       "propertyMap": [
         {
           "source": "code",
@@ -1081,8 +1094,16 @@
           "property": "area"
         },
         {
+          "source": "manager_id",
+          "property": "managerId"
+        },
+        {
           "source": "lifecycle_status",
           "property": "lifecycleStatus"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1097,7 +1118,7 @@
         "name",
         "lifecycleStatus"
       ],
-      "sourceQuery": "SELECT c.code, c.name, COALESCE(s.name,'-') AS supplier_name, c.sign_date::text AS sign_date, c.amount, (CASE c.contract_status WHEN 'executing' THEN '履行中' WHEN 'completed' THEN '已完成' WHEN 'terminated' THEN '已终止' ELSE c.contract_status END) AS status, c.lifecycle_status FROM cm_contract c LEFT JOIN cm_supplier s ON c.supplier_id=s.id",
+      "sourceQuery": "SELECT c.code, c.name, c.supplier_id, COALESCE(s.name,'-') AS supplier_name, c.sign_date::text AS sign_date, c.amount, c.currency_id, (CASE c.contract_status WHEN 'executing' THEN '履行中' WHEN 'completed' THEN '已完成' WHEN 'terminated' THEN '已终止' ELSE c.contract_status END) AS status, c.lifecycle_status, c.id FROM cm_contract c LEFT JOIN cm_supplier s ON c.supplier_id=s.id",
       "propertyMap": [
         {
           "source": "code",
@@ -1106,6 +1127,10 @@
         {
           "source": "name",
           "property": "name"
+        },
+        {
+          "source": "supplier_id",
+          "property": "supplierId"
         },
         {
           "source": "supplier_name",
@@ -1120,12 +1145,20 @@
           "property": "amount"
         },
         {
+          "source": "currency_id",
+          "property": "currencyId"
+        },
+        {
           "source": "status",
           "property": "status"
         },
         {
           "source": "lifecycle_status",
           "property": "lifecycleStatus"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1139,7 +1172,7 @@
       "required": [
         "name"
       ],
-      "sourceQuery": "SELECT code, name, symbol FROM cm_currency",
+      "sourceQuery": "SELECT code, name, symbol, id FROM cm_currency",
       "propertyMap": [
         {
           "source": "code",
@@ -1152,6 +1185,10 @@
         {
           "source": "symbol",
           "property": "symbol"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1165,7 +1202,7 @@
       "required": [
         "name"
       ],
-      "sourceQuery": "SELECT code, name, unit_type FROM cm_uom",
+      "sourceQuery": "SELECT code, name, unit_type, id FROM cm_uom",
       "propertyMap": [
         {
           "source": "code",
@@ -1178,28 +1215,10 @@
         {
           "source": "unit_type",
           "property": "unitType"
-        }
-      ]
-    },
-    {
-      "objectType": "PaymentTerm",
-      "sourceDbId": "fico-db",
-      "keyColumns": [
-        "code"
-      ],
-      "titleColumn": "name",
-      "required": [
-        "name"
-      ],
-      "sourceQuery": "SELECT code, name FROM cm_payment_term",
-      "propertyMap": [
-        {
-          "source": "code",
-          "property": "code"
         },
         {
-          "source": "name",
-          "property": "name"
+          "source": "id",
+          "property": "id"
         }
       ]
     },
@@ -1213,7 +1232,7 @@
       "required": [
         "name"
       ],
-      "sourceQuery": "SELECT e.emp_no, e.name, COALESCE(e.mobile,'-') AS mobile, COALESCE(d.name,'-') AS department, COALESCE(p.name,'-') AS position FROM cm_employee e LEFT JOIN cm_department d ON e.dept_id=d.id LEFT JOIN cm_position p ON e.position_id=p.id",
+      "sourceQuery": "SELECT e.emp_no, e.name, COALESCE(e.mobile,'-') AS mobile, COALESCE(d.name,'-') AS department, COALESCE(p.name,'-') AS position, e.id FROM cm_employee e LEFT JOIN cm_department d ON e.dept_id=d.id LEFT JOIN cm_position p ON e.position_id=p.id",
       "propertyMap": [
         {
           "source": "emp_no",
@@ -1234,357 +1253,19 @@
         {
           "source": "position",
           "property": "position"
+        },
+        {
+          "source": "id",
+          "property": "id"
         }
       ]
-    }
-  ],
-  "links": [
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0001",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0002",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0003",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0004",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0005",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0006",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0007",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0008",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0009",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP0010",
-      "bPk": "CNY"
-    },
-    {
-      "link": "settleCurrency",
-      "aPk": "SUP202609120001",
-      "bPk": "CNY"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0001",
-      "bPk": "SUP0001"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0002",
-      "bPk": "SUP0002"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0003",
-      "bPk": "SUP0003"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0004",
-      "bPk": "SUP0004"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0005",
-      "bPk": "SUP0005"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0006",
-      "bPk": "SUP0006"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0007",
-      "bPk": "SUP0007"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0008",
-      "bPk": "SUP0008"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0001",
-      "bPk": "SUP0009"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0002",
-      "bPk": "SUP0010"
-    },
-    {
-      "link": "buyerOf",
-      "aPk": "EMP0003",
-      "bPk": "SUP202609120001"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0001",
-      "bPk": "pcs"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0002",
-      "bPk": "kg"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0003",
-      "bPk": "kg"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0004",
-      "bPk": "pcs"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0005",
-      "bPk": "unit"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0006",
-      "bPk": "strip"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0007",
-      "bPk": "box"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0008",
-      "bPk": "roll"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0009",
-      "bPk": "drum"
-    },
-    {
-      "link": "useUom",
-      "aPk": "MAT0010",
-      "bPk": "m"
-    },
-    {
-      "link": "signContract",
-      "aPk": "SUP0001",
-      "bPk": "CT-2026-001"
-    },
-    {
-      "link": "signContract",
-      "aPk": "SUP0004",
-      "bPk": "CT-2026-002"
-    },
-    {
-      "link": "signContract",
-      "aPk": "SUP0003",
-      "bPk": "CT-2026-003"
-    },
-    {
-      "link": "contractCurrency",
-      "aPk": "CT-2026-001",
-      "bPk": "CNY"
-    },
-    {
-      "link": "contractCurrency",
-      "aPk": "CT-2026-002",
-      "bPk": "USD"
-    },
-    {
-      "link": "contractCurrency",
-      "aPk": "CT-2026-003",
-      "bPk": "CNY"
-    },
-    {
-      "link": "contractPaymentTerm",
-      "aPk": "CT-2026-001",
-      "bPk": "net60"
-    },
-    {
-      "link": "contractPaymentTerm",
-      "aPk": "CT-2026-002",
-      "bPk": "net30"
-    },
-    {
-      "link": "contractPaymentTerm",
-      "aPk": "CT-2026-003",
-      "bPk": "prepaid"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0001",
-      "bPk": "MAT0001"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0001",
-      "bPk": "MAT0002"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0001",
-      "bPk": "MAT0004"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0003",
-      "bPk": "MAT0003"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0005",
-      "bPk": "MAT0005"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0006",
-      "bPk": "MAT0009"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0008",
-      "bPk": "MAT0007"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0008",
-      "bPk": "MAT0008"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0009",
-      "bPk": "MAT0006"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0010",
-      "bPk": "MAT0004"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP0010",
-      "bPk": "MAT0010"
-    },
-    {
-      "link": "supplierOf",
-      "aPk": "SUP202609120001",
-      "bPk": "MAT0002"
-    },
-    {
-      "link": "coverMaterial",
-      "aPk": "CT-2026-001",
-      "bPk": "MAT0001"
-    },
-    {
-      "link": "coverMaterial",
-      "aPk": "CT-2026-001",
-      "bPk": "MAT0002"
-    },
-    {
-      "link": "coverMaterial",
-      "aPk": "CT-2026-001",
-      "bPk": "MAT0004"
-    },
-    {
-      "link": "coverMaterial",
-      "aPk": "CT-2026-002",
-      "bPk": "MAT0003"
-    },
-    {
-      "link": "coverMaterial",
-      "aPk": "CT-2026-003",
-      "bPk": "MAT0009"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-01",
-      "bPk": "MAT0002"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-01",
-      "bPk": "MAT0009"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-01",
-      "bPk": "MAT0010"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-02",
-      "bPk": "MAT0001"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-02",
-      "bPk": "MAT0003"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-02",
-      "bPk": "MAT0004"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-02",
-      "bPk": "MAT0006"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-03",
-      "bPk": "MAT0005"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-03",
-      "bPk": "MAT0007"
-    },
-    {
-      "link": "storeIn",
-      "aPk": "WH-03",
-      "bPk": "MAT0008"
     }
   ],
   "views": [
     {
       "apiName": "view-supplier-master",
       "displayName": "供应商主数据",
-      "description": "供应商及其供应网络、合同与对接人",
+      "description": "供应商、物料、合同与对接人",
       "dam": {
         "domain": "供应链",
         "application": "采购管理",
@@ -1623,7 +1304,7 @@
     }
   ],
   "snapshot": {
-    "summary": "采购供应链演示基线：类型/关系/接口/函数/动作/字典/漏斗/实例全量就绪"
+    "summary": "采购供应链演示基线 v6 极简版：7 类型/6 关系全 FK 一对多，零多对多零中间表"
   },
   "docImports": [
     {

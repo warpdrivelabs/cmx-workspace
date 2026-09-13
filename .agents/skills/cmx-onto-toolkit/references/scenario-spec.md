@@ -35,6 +35,25 @@
      "objectTypeA": "Supplier", "objectTypeB": "Material",
      "cardinality": "manyToMany",       // oneToOne | oneToMany(缺省) | manyToMany
      "roleA": "供应商", "roleB": "供应物料"}
+    // ── 基数铁律：cardinality 跟物理事实走。源表里只有一个外键列的关系一律 oneToMany
+    //   （A=被引用端、B=持键端），严禁把单外键关系标成 manyToMany。业务含义的多对多
+    //   必须有中间表：建真实中间表（如 cm_supply_record）+ 对象类型，拆成两条一对多 FK
+    //   关系（中间对象模式，对标 Palantir join table / backing object type）；只有无业务
+    //   语义的标签类关系才可直接 manyToMany——缺省 Edge backing 的 ol_edge 就是平台内置
+    //   连接表，业务库没有中间表支撑的多对多不要硬造。
+    // ── backing（关系落存储方式，缺省=Edge 物化 ol_edge）──
+    // 页面口径（唯一对外形状，与 designer 速建气泡「属性映射」同构，两端各选一个字段）：
+    //   {"fk": {"sourceProperty": "settleCurrencyId", "targetProperty": "id", "side": "b"}}
+    //   sourceProperty = 持键端对象的外键属性（存来源表的真实外键值，不翻译不改写）；
+    //   targetProperty = 对端匹配属性，缺省 = 对端 primaryKey（Palantir Key 语义）；
+    //   键在对端（B 端）时写 "side": "b"。遍历时读侧实时编译属性对属性 JOIN，不落 ol_edge，
+    //   links 段无需为该关系造边。
+    // ★ 真源口径约定：凡来源表有代理主键 id 的，目标类型漏斗必带 id 列（属性 id=cm_*.id），
+    //   外键属性存真实外键值、JOIN 走 targetProperty:"id"——语义与底层库完全一致；
+    //   来源表只有自然键的（如 cm_payment_term 以 code 为锚）直接 targetProperty:"code"。
+    //   外键属性必须同时在对象类型 properties 里声明（否则 UI 不可见）；外键值为空的行
+    //   关系自然不出现（不报错）。
+    // 历史/工具直写的内部口径 {"kind":"foreignKey","property","side"} 仍可解析（兼容）。
   ],
 
   "functions": [                      // POST /functions
