@@ -50,16 +50,19 @@
 
   "actions": [                        // POST /action-types
     {"apiName": "pauseSupplier", "displayName": "暂停合作", "description": "…", "status": "active",
-     "parameters": [{"name": "supplierId", "type": "string", "required": true},
+     "parameters": [{"name": "supplier", "type": "object", "objectType": "Supplier", "required": true},
                     {"name": "reason", "type": "string", "required": true}],
-     "logic": [                          // 五原子：createObject/modifyObject/deleteObject/addLink/removeLink
-       {"op": "modifyObject", "objectType": "Supplier", "pk": "$supplierId",
-        "set": {"status": "暂停", "remark": "$reason"}}],  // 任意 "$name" 递归替换为参数
-     "validations": [{"expression": "newRating >= 0 and newRating <= 5", "message": "…"}],
-                                         // FEEL 谓词，上下文只有参数（看不到对象状态！）
+                                         // ★ object 参数务必带 objectType：保存时派生进 om_action_type.target_object_types
+                                         //   （物化列，勿手写），workshop 动作中心据此分区 + 选中对象自动绑定；
+                                         //   只写 string pk 的动作 targets 为空，不会出现在“适用于 X”分区
+     "logic": [                          // 五原子：createObject/createOrModifyObject/modifyObject/deleteObject/addLink/removeLink
+       {"op": "modifyObject", "objectType": "Supplier", "pk": "$supplier",
+        "set": {"status": "暂停", "remark": "$reason"}}],  // 任意 "$name" 递归替换为参数；值可写 {"src":"param|static|currentUser|currentTime|paramProperty",…}
+     "validations": [{"expression": "objects.supplier.status == '在营'", "message": "…"}],
+                                         // FEEL 谓词；上下文=参数平铺 + params.* + objects.<object参数>（自动装载的对象状态）
      "sideEffects": [                    // 六类：startBusinessProcess/notification/webhook/callFunction/emitEvent/computeReport
        {"kind": "startBusinessProcess", "flowDefKey": "supplier_review",
-        "businessKey": "$supplierId",    // 回调按它找对象 → 放对象 pk
+        "businessKey": "$supplier",      // 回调按它找对象 → 放对象 pk
         "orgId": "org-root",             // 显式发起组织（发起闸按 (defKey,orgId) 解析审批定义）
         "initiator": "<用户id>"}         // 其余键原样进流程变量
      ]}

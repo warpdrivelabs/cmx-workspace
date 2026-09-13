@@ -24,7 +24,8 @@ description: 指导 AI 为任意企业业务场景设计并生成本体平台（
 - [ ] 动作覆盖增（createObject）/删（deleteObject）/改（modifyObject）/建边（addLink）/断边（removeLink）五种编辑原子
 - [ ] 至少 1 个 FEEL 函数、1 个 Rhai 函数、1 个 aggregation 函数
 - [ ] 至少 1 条 ≥2 跳下钻链（如 供应商→物料→合同）
-- [ ] 动作 parameters 表完整（name/type/required + 示例值），供演示时照填
+- [ ] 动作 parameters 表完整（name/type/required + 示例值），供演示时照填；**object 参数必须带 `objectType`**——保存时自动派生进 `om_action_type.target_object_types`（物化列，勿手写），workshop 动作中心据此做“适用于当前类型”分区与选中对象自动绑定；纯 string pk 参数的动作 targets 为空，不会进该分区
+- [ ] 至少 1 个动作的 validations 引用 `objects.<object参数>.<属性>`（对象状态校验），演示“仅 open 状态可提交”类拦截
 - [ ] 每条实例数据都有讲解意义（正式中文企业数据，不用 foo/bar）
 
 ### ② 元数据桥接决策树
@@ -57,7 +58,7 @@ python3 .agents/skills/cmx-onto-toolkit/scripts/onto_seed.py \
 
 ### ⑥ 验证
 
-API 级：漏斗 SyncReport 三数（read/written/quarantined）、4 类函数各 evaluate 一次、动作 dry-run（含校验拦截负例）、≥2 跳对象集查询、聚合。页面级：studio（场景画布/Inspector/动作试算执行/函数求值）、explorer（类型树/过滤/钻取/单据跳转按钮）、workshop（360/动作中心带参试算）。
+API 级：漏斗 SyncReport 三数（read/written/quarantined）、4 类函数各 evaluate 一次、动作 dry-run（含校验拦截负例）、≥2 跳对象集查询、聚合。页面级：studio（场景画布/Inspector/动作试算执行/函数求值）、explorer（类型树/过滤/钻取/单据跳转按钮）、workshop（360/动作中心“适用于当前类型”分区 + 对象自动绑定 + 试算 diff）。
 
 ### ⑦ 走查手册
 

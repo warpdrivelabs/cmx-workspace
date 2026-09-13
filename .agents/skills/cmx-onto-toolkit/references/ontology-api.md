@@ -32,7 +32,9 @@
 | `POST /funnel/mappings` | `{objectType, sourceDbId?, sourceQuery, keyColumns, titleColumn, propertyMap, required}` |
 | `POST /funnel/sync/{type}` | 全量同步；返回 `{read, written, quarantined}`；违规入 oo_quarantine；**sync 覆盖对象全部 props** |
 | `GET /funnel/quarantine?objectType=` / `GET /funnel/pipeline-status/{type}` | 隔离区 / 管道三段状态 |
-| `POST /action-types/{api}/dry-run` \| `/execute` | `{params:{…}, actor}`；dryRun 返回编辑集预演；校验失败 code=1 + msg |
+| `POST /action-types/{api}/dry-run` \| `/execute` | `{params:{…}, actor, subjects?}`；校验上下文含 `objects.<参数>`（object 参数自动装载对象状态，表达式可写 `objects.doc.status=='open'`）；dry-run/execute 响应含 `proposedChanges`（from→to diff）+ `executionLog` + `sideEffectPreview`，校验失败错误体带 `adminDetail`/`executionLog` |
+| `POST /action-types/execute-batch` | 同事务逐项批量执行（`{apiName, items:[{params}], dryRun?}`）；任一项失败整批回滚；上限 `ONTO_ACTION_BATCH_MAX`（默认 100） |
+| `POST /action-types/check-permission` | 动作可见性 PEP 预检 `{actions:[…], subjects:[…]}` → `{results:[{action, allowed, deniedBy, scopes}]}`；workshop 据此不渲染被拒动作 |
 | `POST /action-outbox/dispatch` | **手动**分发发件箱（无 poller）；返回 `{dispatched, deferred, failed}` |
 | `POST /functions/{api}/evaluate` | derivedProperty：`{objects:{<input>:{objectType,pk}}}`；aggregation：顶层 `objectSet` + `aggregation` |
 | `POST /snapshots` | `{summary}`；存档检查点（内容同上一版时去重不涨版本） |
