@@ -73,6 +73,7 @@
 - 台后证据：`md_event_log` 事件 / `md_dispatch_log` delivered / onto 日志 `funnel/push 200`
 - 讲：动作发起的是治理申请（不绕过 MDM 唯一写入口）→ 审批 → 黄金记录 → 事件驱动秒级回流；**双向打通全程零手动集成**
 - 兜底：分发投递失败自动退避重试（幂等）；极端情况手动 `POST /funnel/sync/Supplier` 兜底
+- 排查（2026-09-13 实测踩坑）：订阅行 `channel_config` 是保存时的**快照**，改端点后需重存订阅才刷新——残留旧地址会投递 404 直接置 dead（不重试）。自检 `GET /api/mdm/dispatches/stats`；重投 `POST /api/mdm/dispatches/retry {"ids":[…]}`（dead 行也可重投，重投后 delivered 即通）。两动作 E2E 已当日彩排验证：submitSupplierReview（SUP0008→已通过回写）与 applyNewSupplier（CR 激活→铸号→自动回流对象出现）全链路通。
 
 ## 幕⑥ 本体 action 发起流程（用 SUP0009 东华链条）
 
