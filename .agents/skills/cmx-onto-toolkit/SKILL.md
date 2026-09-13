@@ -90,6 +90,7 @@ psql "$ONTO_DB_URL" -c "DO \$\$ DECLARE t text; BEGIN FOR t IN SELECT tablename 
 | launcher 重启 | `POST {sid}/restart` 用的是**保存的 toml 设置**；显式传 toml 前先 `PUT /settings`，看响应 `injected` 字段确认 |
 | 外部进程占 8097 | launcher 重启杀不掉用户手动起的进程——先 `ss -tlnp \| grep 8097` 找 pid kill 再走 launcher |
 | studio ⚠1 告警 | 状态栏 ⚠ 计数来自类型定义校验（如 PurchaseOrder 嵌套层块），演示前看一眼 Inspector 消除 |
+| 动作 logic 落库成 `[null]` | om_action_type.logic 必须是干净对象数组：空编辑集写 `[]`，禁止 null/`[null]`（脏项让 studio Inspector 渲染崩、执行解析挂）；onto_seed.py POST 前自动剔除，DB 手修参照 `UPDATE om_action_type SET logic='[]' WHERE api_name='…'` |
 
 ## 交付约定
 

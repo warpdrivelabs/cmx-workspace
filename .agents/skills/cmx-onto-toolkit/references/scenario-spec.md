@@ -77,6 +77,9 @@
      "logic": [                          // 五原子：createObject/createOrModifyObject/modifyObject/deleteObject/addLink/removeLink
        {"op": "modifyObject", "objectType": "Supplier", "pk": "$supplier",
         "set": {"status": "暂停", "remark": "$reason"}}],  // 任意 "$name" 递归替换为参数；值可写 {"src":"param|static|currentUser|currentTime|paramProperty",…}
+                                         // ★ logic 必须是干净对象数组：空编辑集写 []，禁止 null / [null]——
+                                         //   om_action_type.logic 落 [null] 会让 studio Inspector 渲染崩、执行解析挂
+                                         //   （onto_seed.py POST 前自动剔除脏项兜底）
      "validations": [{"expression": "objects.supplier.status == '在营'", "message": "…"}],
                                          // FEEL 谓词；上下文=参数平铺 + params.* + objects.<object参数>（自动装载的对象状态）
      "sideEffects": [                    // 六类：startBusinessProcess/notification/webhook/callFunction/emitEvent/computeReport

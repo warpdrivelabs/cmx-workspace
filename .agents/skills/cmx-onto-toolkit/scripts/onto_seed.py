@@ -47,6 +47,21 @@ class SeedError(Exception):
     pass
 
 
+# 动作/函数定义数组字段的脏项剔除（对齐 studio normalizeDefArrays）：logic/parameters/
+# validations/sideEffects/inputs 必须是干净对象数组——om_action_type.logic 落 [null] 会让
+# 工作室 Inspector 渲染崩、执行解析挂；空编辑集必须写 []，禁止 null / [null]。
+DEF_ARRAY_FIELDS = ("parameters", "logic", "validations", "sideEffects", "inputs")
+
+
+def sanitize_def(item):
+    if isinstance(item, dict):
+        for k in DEF_ARRAY_FIELDS:
+            v = item.get(k)
+            if isinstance(v, list):
+                item[k] = [x for x in v if isinstance(x, dict)]
+    return item
+
+
 def call(base, path, body, api_key, method="POST"):
     req = urllib.request.Request(
         base.rstrip("/") + "/api/onto/v1" + path,
@@ -77,7 +92,7 @@ def run_section(name, spec, base, key, summary):
         if isinstance(items, dict):  # 单对象段
             items = [items]
         for i, item in enumerate(items):
-            call(base, path, item, key)
+            call(base, path, sanitize_def(item), key)
             label = item.get("apiName") or item.get("objectType") or f"#{i + 1}"
             summary.append(f"{name}: {label}")
     elif name == "funnelMappings":
