@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrueMate 设置中心 · 重构原型（20260913）</title>
+<style>
+  /* ═══════ tokens：深浅双主题，零硬编码色值（全 var 派生）═══════ */
+  :root{
+    --radius:12px; --radius-s:8px;
+    --font:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"Cascadia Code",Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#111417; --bg2:#171b1f; --panel:#1c2126; --panel2:#22282e;
+    --hover:#2a3138; --border:#2e353d; --border2:#3a434d;
+    --text:#e8ecef; --muted:#8b96a0; --faint:#5c666f;
+    --aqua:#39c5cf; --aqua-strong:#4fd8e2; --aqua-dim:rgba(57,197,207,.14);
+    --danger:#e5695f; --danger-dim:rgba(229,105,95,.12);
+    --ok:#5fbf77; --warn:#d9a441;
+    --shadow:0 24px 64px rgba(0,0,0,.55), 0 4px 16px rgba(0,0,0,.4);
+    --code-bg:#14181c;
+  }
+  html[data-theme="light"]{
+    --bg:#eef1f3; --bg2:#e6eaed; --panel:#ffffff; --panel2:#f4f6f8;
+    --hover:#e9edf0; --border:#d9dee3; --border2:#c6cdd4;
+    --text:#22282e; --muted:#5f6b76; --faint:#9aa4ad;
+    --aqua:#0e97a3; --aqua-strong:#0b7f8a; --aqua-dim:rgba(14,151,163,.10);
+    --danger:#c94f46; --danger-dim:rgba(201,79,70,.10);
+    --ok:#2e8b57; --warn:#b07d1e;
+    --shadow:0 24px 64px rgba(30,40,50,.18), 0 4px 16px rgba(30,40,50,.10);
+    --code-bg:#f0f3f5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;font-size:14px}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select{font-family:inherit;font-size:13px;color:var(--text);background:var(--bg2);
+    border:1px solid var(--border);border-radius:var(--radius-s);padding:7px 10px;outline:none;width:100%}
+  input:focus{border-color:var(--aqua)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px;border:2px solid transparent;background-clip:content-box}
+
+  /* ═══════ 仿 TrueMate 主窗口 ═══════ */
+  .app{position:fixed;inset:44px 12px 12px;display:flex;flex-direction:column;border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;background:var(--bg);box-shadow:var(--shadow)}
+  .titlebar{height:38px;display:flex;align-items:center;padding:0 10px;background:var(--bg2);
+    border-bottom:1px solid var(--border);flex:none;user-select:none}
+  .tb-title{font-size:12px;color:var(--muted)}
+  .tb-sp{flex:1}
+  .tb-btn{width:34px;height:28px;border-radius:6px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px}
+  .tb-btn:hover{background:var(--hover);color:var(--text)}
+  .win-ctrls{display:flex}
+  .win-btn{width:40px;height:38px;color:var(--muted);font-size:12px}
+  .win-btn:hover{background:var(--hover)}
+  .win-close:hover{background:var(--danger);color:#fff}
+
+  .workspace{flex:1;display:flex;min-height:0}
+  /* 活动栏：底部只剩一个 logo（本次重构核心） */
+  .activitybar{width:48px;background:var(--bg2);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:4px;flex:none}
+  .act{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:17px;color:var(--muted);position:relative;transition:background .12s,color .12s}
+  .act:hover{background:var(--hover);color:var(--text)}
+  .act.on{color:var(--aqua);background:var(--aqua-dim)}
+  .act-sp{flex:1}
+  /* 新：唯一 logo 按钮 + 未登录红点 */
+  .logo-act{width:36px;height:36px;border-radius:50%;overflow:visible;display:flex;align-items:center;justify-content:center}
+  .logo-act:hover{background:var(--hover)}
+  .logo-mark{width:24px;height:24px;border-radius:50%;display:block}
+  .logo-dot{position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;
+    background:var(--danger);border:2px solid var(--bg2);display:none}
+  .logo-dot.show{display:block}
+  .act-tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);background:var(--panel2);
+    border:1px solid var(--border);color:var(--text);font-size:12px;padding:4px 9px;border-radius:6px;
+    white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:50}
+  .act:hover .act-tip{opacity:1}
+
+  /* 左侧栏 */
+  .sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;flex:none;min-height:0}
+  .brand{padding:14px 14px 8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .brand .v{margin-left:auto;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:10px}
+  .newbtn{margin:4px 12px 10px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-s);
+    color:var(--text);font-size:13px;display:flex;align-items:center;gap:7px;background:var(--panel)}
+  .newbtn:hover{border-color:var(--aqua);color:var(--aqua)}
+  .navitem{padding:7px 14px;font-size:13px;color:var(--muted);display:flex;gap:9px;align-items:center}
+  .navitem:hover{background:var(--hover);color:var(--text)}
+  .seclabel{padding:12px 14px 6px;font-size:11px;color:var(--faint);letter-spacing:.4px}
+  .tasklist{flex:1;overflow-y:auto;padding:0 8px 8px}
+  .titem{padding:7px 8px;border-radius:var(--radius-s);font-size:13px;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .titem:hover{background:var(--hover);color:var(--text)}
+  .titem.on{background:var(--aqua-dim);color:var(--aqua)}
+
+  /* 主聊天区（示意） */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .chat{flex:1;overflow-y:auto;padding:26px 12%}
+  .bubble{max-width:78%;padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.65;margin-bottom:14px}
+  .bubble.user{margin-left:auto;background:var(--aqua-dim);color:var(--text);border:1px solid var(--border)}
+  .bubble.ai{background:var(--panel);border:1px solid var(--border)}
+  .bubble .who{font-size:11px;color:var(--faint);margin-bottom:4px}
+  .composer{margin:0 12% 18px;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--panel);padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .composer input{border:none;background:none;padding:0}
+  .chip{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;
+    padding:4px 12px;white-space:nowrap}
+  .chip:hover{border-color:var(--aqua);color:var(--aqua)}
+  .send{background:var(--aqua);color:#04262a;font-weight:600;border-radius:8px;padding:6px 14px;font-size:13px}
+  html[data-theme="light"] .send{color:#fff}
+
+  /* ═══════ 设置中心 ═══════ */
+  .overlay{position:fixed;inset:0;background:rgba(8,10,12,.55);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:100}
+  .overlay.open{display:flex}
+  html[data-theme="light"] .overlay{background:rgba(40,52,64,.35)}
+  .settings{width:min(940px,94vw);height:min(660px,90vh);background:var(--panel);border:1px solid var(--border2);
+    border-radius:16px;box-shadow:var(--shadow);display:flex;overflow:hidden;animation:pop .16s ease}
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+  .s-nav{width:212px;flex:none;background:var(--bg2);border-right:1px solid var(--border);
+    padding:16px 10px;overflow-y:auto;display:flex;flex-direction:column}
+  .s-nav h3{font-size:11px;color:var(--faint);letter-spacing:.4px;padding:10px 10px 6px;font-weight:600}
+  .s-nav h3:first-child{padding-top:0}
+  .s-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-s);
+    font-size:13.5px;color:var(--muted);text-align:left;width:100%}
+  .s-item:hover{background:var(--hover);color:var(--text)}
+  .s-item.on{background:var(--aqua-dim);color:var(--aqua);font-weight:600}
+  .s-item .ico{font-size:15px;width:18px;text-align:center}
+  .s-main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .s-head{padding:18px 26px 12px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:12px}
+  .s-head h2{font-size:17px}
+  .s-head p{font-size:12px;color:var(--muted)}
+  .s-close{margin-left:auto;width:28px;height:28px;border-radius:7px;color:var(--muted);font-size:13px;align-self:center}
+  .s-close:hover{background:var(--hover);color:var(--text)}
+  .s-body{flex:1;overflow-y:auto;padding:20px 26px 28px}
+  .section{display:none}
+  .section.on{display:block}
+
+  /* 账户 */
+  .acc-card{display:flex;align-items:center;gap:16px;background:var(--panel2);border:1px solid var(--border);
+    border-radius:var(--radius);padding:18px}
+  .acc-av{width:56px;height:56px;border-radius:50%;background:var(--aqua-dim);display:flex;
+    align-items:center;justify-content:center;font-size:28px;flex:none;border:1px solid var(--border)}
+  .acc-name{font-size:16px;font-weight:600}
+  .acc-mail{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .acc-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .btn{border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 16px;font-size:13px;
+    color:var(--text);background:var(--panel2);display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--aqua);color:var(--aqua)}
+  .btn.primary{background:var(--aqua);border-color:var(--aqua);color:#04262a;font-weight:600}
+  html[data-theme="light"] .btn.primary{color:#fff}
+  .btn.danger{color:var(--danger);border-color:var(--danger);background:var(--danger-dim)}
+  .btn.danger:hover{background:var(--danger);color:#fff}
+  .acc-danger{margin-top:26px;padding-top:18px;border-top:1px dashed var(--border)}
+  .hint{font-size:12px;color:var(--faint);line-height:1.7;margin-top:8px}
+
+  /* 模型 */
+  .models{display:flex;gap:18px;min-height:380px}
+  .m-list{width:210px;flex:none;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--bg2);overflow-y:auto;max-height:430px}
+  .m-item{padding:11px 13px;border-bottom:1px solid var(--border);width:100%;text-align:left}
+  .m-item:last-child{border-bottom:none}
+  .m-item:hover{background:var(--hover)}
+  .m-item.on{background:var(--aqua-dim)}
+  .m-item .n{font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:7px}
+  .m-item.on .n{color:var(--aqua)}
+  .m-item .d{font-size:11px;color:var(--faint);margin-top:3px}
+  .tag{font-size:10px;border:1px solid var(--border2);color:var(--muted);border-radius:4px;padding:0 5px}
+  .tag.ok{color:var(--ok);border-color:var(--ok)}
+  .m-detail{flex:1;min-width:0}
+  .form-row{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+  .form-row label{width:92px;flex:none;font-size:13px;color:var(--muted);text-align:right}
+  .form-row .ipt{flex:1;min-width:0}
+  .m-toolbar{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center}
+  .key-row{display:flex;gap:8px;flex:1}
+  .key-row .btn{flex:none;padding:7px 10px}
+
+  /* IM 遥控 */
+  .im-cards{display:flex;gap:12px;margin-bottom:20px}
+  .im-card{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;
+    background:var(--bg2);text-align:left}
+  .im-card:hover{border-color:var(--border2)}
+  .im-card.on{border-color:var(--aqua);background:var(--aqua-dim)}
+  .im-card .t{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);margin-left:auto}
+  .dot.on{background:var(--ok)}
+  .im-card .d{font-size:11.5px;color:var(--faint);margin-top:6px}
+  .qr-wrap{display:none;align-items:center;gap:18px;margin-top:4px}
+  .qr-wrap.show{display:flex}
+  .qr-box{width:150px;height:150px;border:1px dashed var(--border2);border-radius:var(--radius-s);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--faint);
+    background:var(--code-bg);text-align:center;line-height:1.7;flex:none}
+
+  /* 外观主题卡 */
+  .theme-cards{display:flex;gap:14px}
+  .theme-card{flex:1;border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;background:var(--bg2)}
+  .theme-card.on{border-color:var(--aqua)}
+  .theme-prev{height:74px;display:flex;align-items:flex-end;gap:4px;padding:8px}
+  .theme-prev i{border-radius:3px;display:block}
+  .theme-card .cap{padding:9px 12px;font-size:13px;display:flex;align-items:center}
+  .theme-card .cap .ck{margin-left:auto;color:var(--aqua);opacity:0;font-weight:700}
+  .theme-card.on .cap .ck{opacity:1}
+
+  /* 通用 / 关于 */
+  .set-line{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .set-line:last-child{border-bottom:none}
+  .set-line .info{flex:1}
+  .set-line .info b{font-size:13.5px;font-weight:600;display:block}
+  .set-line .info span{font-size:12px;color:var(--muted);display:block;margin-top:3px}
+  .switch{width:38px;height:22px;border-radius:999px;background:var(--border2);position:relative;transition:background .15s;flex:none}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:left .15s}
+  .switch.on{background:var(--aqua)}
+  .switch.on::after{left:18px}
+  .about{display:flex;flex-direction:column;align-items:center;padding:34px 0 10px;gap:6px}
+  .about .logo-mark{width:64px;height:64px;margin-bottom:8px}
+  .about h2{font-size:19px}
+  .about p{font-size:12.5px;color:var(--muted)}
+  .about .ver{font-size:12px;color:var(--faint);font-family:var(--mono)}
+
+  /* 原型演示控制浮条（顶部横条，不遮窗内内容） */
+  .demo-bar{position:fixed;right:16px;top:8px;z-index:200;background:var(--panel2);border:1px solid var(--border2);
+    border-radius:10px;padding:7px 12px;display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted);
+    box-shadow:var(--shadow)}
+  .demo-bar .seg{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+  .demo-bar .seg button{padding:3px 10px;font-size:12px;color:var(--muted)}
+  .demo-bar .seg button.on{background:var(--aqua-dim);color:var(--aqua)}
+  /* toast */
+  .toast{position:fixed;left:50%;top:26px;transform:translateX(-50%);background:var(--panel2);
+    border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:10px;font-size:13px;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s;z-index:300}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ═══════ 仿主窗口（示意，重点是左下角只剩一个 logo）═══════ -->
+<div class="app">
+  <div class="titlebar">
+    <span class="tb-title">TrueMate - 专注工作，真心伙伴</span>
+    <span class="tb-sp"></span>
+    <button class="tb-btn" title="浅色/深色主题" onclick="toggleThemeQuick()">☀</button>
+    <div class="win-ctrls">
+      <button class="win-btn">─</button><button class="win-btn">□</button><button class="win-btn win-close">✕</button>
+    </div>
+  </div>
+  <div class="workspace">
+    <div class="activitybar">
+      <div class="act on" title="Agent">🤖</div>
+      <div class="act" title="即时通讯">💬</div>
+      <div class="act" title="插件管理">🧩</div>
+      <div class="act-sp"></div>
+      <!-- 重构后：唯一入口 logo（原头像按钮已删除） -->
+      <button class="act logo-act" onclick="openSettings()" title="设置中心">
+        <svg class="logo-mark" viewBox="0 0 48 48"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#4fd8e2"/><stop offset="1" stop-color="#1f8f9b"/></linearGradient></defs>
+          <circle cx="24" cy="24" r="22" fill="url(#lg)"/>
+          <path d="M15 16h18v5h-6.5v14h-5V21H15z" fill="#04262a"/></svg>
+        <span class="logo-dot" id="logo-dot"></span>
+        <span class="act-tip">设置中心</span>
+      </button>
+    </div>
+    <div class="sidebar">
+      <div class="brand"><span>Agent</span><span class="v" id="ver">0.1.1</span></div>
+      <button class="newbtn"><span>⊕</span> 新建任务</button>
+      <div class="navitem"><span>🧩</span> 专家·技能·连接器</div>
+      <div class="seclabel">空间</div>
+      <div class="tasklist">
+        <div class="titem on">📊 九月经营分析报告</div>
+        <div class="titem">🔧 排查门户登录慢的问题</div>
+        <div class="titem">📝 整理本周会议纪要</div>
+        <div class="titem">🌐 竞品功能调研</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="chat">
+        <div class="bubble ai"><div class="who">TrueMate</div>你好！我是 TrueMate。左下角点 logo 可以打开设置中心，账户、模型、IM 遥控都在里面。</div>
+        <div class="bubble user">帮我把这份周报整理成三要点</div>
+        <div class="bubble ai"><div class="who">TrueMate</div>好的，已读取你拖入的文件，整理如下：<br>1. ……<br>2. ……<br>3. ……</div>
+      </div>
+      <div class="composer">
+        <input placeholder="输入消息，@ 唤起文件…">
+        <button class="chip" onclick="toast('模型选择弹层保持现状；底部入口改为「管理模型…」')">◎ 模型</button>
+        <button class="send">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 设置中心 ═══════ -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings">
+    <nav class="s-nav">
+      <h3>账户与模型</h3>
+      <button class="s-item" data-sec="account"   onclick="showSection('account')"><span class="ico">👤</span>账户</button>
+      <button class="s-item" data-sec="models"    onclick="showSection('models')"><span class="ico">🧠</span>模型</button>
+      <button class="s-item" data-sec="im"        onclick="showSection('im')"><span class="ico">💬</span>IM 遥控</button>
+      <h3>通用</h3>
+      <button class="s-item" data-sec="appearance" onclick="showSection('appearance')"><span class="ico">🎨</span>外观</button>
+      <button class="s-item" data-sec="general"   onclick="showSection('general')"><span class="ico">⚙</span>通用</button>
+      <button class="s-item" data-sec="about"     onclick="showSection('about')"><span class="ico">ⓘ</span>关于</button>
+    </nav>
+    <div class="s-main">
+      <div class="s-head">
+        <h2 id="sec-title">账户</h2><p id="sec-desc"></p>
+        <button class="s-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="s-body">
+
+        <!-- ── 账户 ── -->
+        <div class="section" id="sec-account">
+          <div id="acc-logged-in">
+            <div class="acc-card">
+              <div class="acc-av">🐷</div>
+              <div><div class="acc-name">张钦</div><div class="acc-mail">zhangqin@pansoft.com · cmx 门户</div></div>
+            </div>
+            <div class="acc-actions">
+              <button class="btn" onclick="toast('打开现有「修改密码」弹框（逻辑不变）')">🔑 修改密码</button>
+              <button class="btn" onclick="toast('打开现有「切换账户」流程（逻辑不变）')">⇄ 切换账户</button>
+              <button class="btn" onclick="toast('调用 open_workspace_folder 命令')">🗂 打开空间文件夹</button>
+            </div>
+            <div class="acc-danger">
+              <button class="btn danger" onclick="toast('走现有 logoutConfirm 确认弹框')">⎋ 退出登录</button>
+              <div class="hint">退出后需重新登录才能继续使用；确认弹框与现状一致。</div>
+            </div>
+          </div>
+          <div id="acc-logged-out" style="display:none">
+            <div class="acc-card">
+              <div class="acc-av">👤</div>
+              <div><div class="acc-name">未登录</div><div class="acc-mail">登录 cmx 门户后可同步账户与权限</div></div>
+            </div>
+            <div class="acc-actions">
+              <button class="btn primary" onclick="toast('跳转现有登录页')">去登录</button>
+            </div>
+            <div class="hint">未登录时，左下角 logo 会带红点提醒，点开即落在本页。</div>
+          </div>
+        </div>
+
+        <!-- ── 模型（原「配置模型」Modal 内容平移）── -->
+        <div class="section" id="sec-models">
+          <div class="models">
+            <div class="m-list" id="m-list"></div>
+            <div class="m-detail" id="m-detail"></div>
+          </div>
+        </div>
+
+        <!-- ── IM 遥控（原「设置」Modal 内容平移）── -->
+        <div class="section" id="sec-im">
+          <div class="im-cards" id="im-cards"></div>
+          <div id="im-detail"></div>
+        </div>
+
+        <!-- ── 外观 ── -->
+        <div class="section" id="sec-appearance">
+          <div class="theme-cards" id="theme-cards">
+            <div class="theme-card" data-t="dark" onclick="setTheme('dark')">
+              <div class="theme-prev" style="background:#111417">
+                <i style="width:22px;height:52px;background:#1c2126"></i>
+                <i style="flex:1;height:52px;background:#171b1f"></i>
+                <i style="width:30px;height:10px;background:#39c5cf;border-radius:999px"></i>
+              </div>
+              <div class="cap">深色<span class="ck">✓</span></div>
+            </div>
+            <div class="theme-card" data-t="light" onclick="setTheme('light')">
+              <div class="theme-prev" style="background:#eef1f3">
+                <i style="width:22px;height:52px;background:#fff;border:1px solid #d9dee3"></i>
+                <i style="flex:1;height:52px;background:#fff;border:1px solid #d9dee3"></i>
+                <i style="width:30px;height:10px;background:#0e97a3;border-radius:999px"></i>
+              </div>
+              <div class="cap">浅色<span class="ck">✓</span></div>
+            </div>
+            <div class="theme-card" data-t="system" onclick="setTheme('system')">
+              <div class="theme-prev" style="background:linear-gradient(90deg,#111417 50%,#eef1f3 50%)">
+                <i style="width:100%;height:10px;background:transparent"></i>
+              </div>
+              <div class="cap">跟随系统<span class="ck">✓</span></div>
+            </div>
+          </div>
+          <div class="hint">点主题卡立即生效（本原型里是真切换）。原 logo 菜单的「切换主题」由本页取代。</div>
+        </div>
+
+        <!-- ── 通用 ── -->
+        <div class="section" id="sec-general">
+          <div class="set-line">
+            <div class="info"><b>自动下载并安装更新</b><span>有新版本时后台下载，重启应用后生效</span></div>
+            <button class="switch" id="sw-auto" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="set-line">
+            <div class="info"><b>数据文件夹</b><span>%APPDATA%\pansoft\cmx-agent\data</span></div>
+            <button class="btn" onclick="toast('调用 open_data_dir 命令')">打开</button>
+          </div>
+          <div class="set-line">
+            <div class="info"><b>工作空间目录</b><span>任务与空间文件所在位置</span></div>
+            <button class="btn" onclick="toast('调用 open_workspace_folder 命令')">打开</button>
+          </div>
+        </div>
+
+        <!-- ── 关于 ── -->
+        <div class="section" id="sec-about">
+          <div class="about">
+            <svg class="logo-mark" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="url(#lg)"/>
+              <path d="M15 16h18v5h-6.5v14h-5V21H15z" fill="#04262a"/></svg>
+            <h2>TrueMate</h2>
+            <p>专注工作，真心伙伴</p>
+            <p class="ver">版本 0.1.1 · Pansoft</p>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn" onclick="toast('已检查：当前已是最新版本（演示）')">检查更新</button>
+              <button class="btn" onclick="toast('打开反馈表单（演示）')">问题反馈</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原型演示控制（仅评审用，非产品 UI） -->
+<div class="demo-bar">
+  <span>原型演示</span>
+  <div class="seg">
+    <button id="seg-in" class="on" onclick="setLogin(true)">已登录</button>
+    <button id="seg-out" onclick="setLogin(false)">未登录</button>
+  </div>
+  <div class="seg">
+    <button id="seg-dark" class="on" onclick="setTheme('dark')">深色</button>
+    <button id="seg-light" onclick="setTheme('light')">浅色</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════ 设置中心壳 ═══════ */
+const SEC_META = {
+  account:   ["账户","登录账号、密码与账户切换"],
+  models:    ["模型","模型服务（Provider）管理：内置预设 + 自定义"],
+  im:        ["IM 遥控","飞书 / QQ / 微信 机器人接入，保存后热重载即时生效"],
+  appearance:["外观","主题外观"],
+  general:   ["通用","自动更新与数据目录"],
+  about:     ["关于","版本与反馈"]
+};
+const LS_KEY = "truemate.settings-section";
+let lastSection = localStorage.getItem(LS_KEY) || "account";
+let loggedIn = true;
+
+function openSettings(sec){
+  showSection(sec || lastSection);
+  document.getElementById("overlay").classList.add("open");
+}
+function closeSettings(){ document.getElementById("overlay").classList.remove("open"); }
+function showSection(sec){
+  lastSection = sec; localStorage.setItem(LS_KEY, sec);
+  document.querySelectorAll(".s-item").forEach(b=>b.classList.toggle("on", b.dataset.sec===sec));
+  document.querySelectorAll(".section").forEach(s=>s.classList.toggle("on", s.id==="sec-"+sec));
+  document.getElementById("sec-title").textContent = SEC_META[sec][0];
+  document.getElementById("sec-desc").textContent  = SEC_META[sec][1];
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeSettings(); });
+
+function setLogin(v){
+  loggedIn = v;
+  document.getElementById("acc-logged-in").style.display  = v?"":"none";
+  document.getElementById("acc-logged-out").style.display = v?"none":"";
+  document.getElementById("logo-dot").classList.toggle("show", !v);
+  document.getElementById("seg-in").classList.toggle("on", v);
+  document.getElementById("seg-out").classList.toggle("on", !v);
+  if(!v && document.getElementById("overlay").classList.contains("open")) showSection("account");
+}
+let themePref = "dark";
+function setTheme(t){
+  themePref = t;
+  if(t==="system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light":"dark";
+  document.documentElement.dataset.theme = t;
+  document.getElementById("seg-dark").classList.toggle("on", t==="dark");
+  document.getElementById("seg-light").classList.toggle("on", t==="light");
+  document.querySelectorAll(".theme-card").forEach(c=>c.classList.toggle("on", c.dataset.t===themePref));
+}
+function toggleThemeQuick(){ setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"); }
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* ═══════ 模型分区（原 mcfg 内容示意）═══════ */
+const PROVIDERS = [
+  {id:"mlamp", name:"MLamp 网关", kind:"内置预设", url:"https://mlamp.example/v1", key:"sk-****-9f2c",
+   model:"glm-5.2", temp:0.7, timeout:120, ok:true},
+  {id:"deepseek", name:"DeepSeek", kind:"内置预设", url:"https://api.deepseek.com/v1", key:"（未配置）",
+   model:"deepseek-v4-flash", temp:0.7, timeout:120, ok:false},
+  {id:"custom-relay", name:"我的中转", kind:"自定义", url:"https://relay.example.cn/v1", key:"sk-****-a1b2",
+   model:"glm-5.3-flash", temp:0.5, timeout:60, ok:true}
+];
+let curProvider = "mlamp";
+function renderModels(){
+  const list = document.getElementById("m-list");
+  list.innerHTML = PROVIDERS.map(p=>`
+    <button class="m-item ${p.id===curProvider?"on":""}" onclick="pickProvider('${p.id}')">
+      <div class="n">${p.name} ${p.kind==="内置预设"?`<span class="tag">预设</span>`:`<span class="tag">自定义</span>`}
+        ${p.ok?`<span class="tag ok">已连</span>`:""}</div>
+      <div class="d">${p.model}</div>
+    </button>`).join("") + `
+    <button class="m-item" onclick="toast('新增自定义 Provider（演示）')" style="color:var(--aqua)">＋ 新增自定义</button>`;
+  const p = PROVIDERS.find(x=>x.id===curProvider);
+  document.getElementById("m-detail").innerHTML = `
+    <div class="form-row"><label>名称</label><div class="ipt"><input value="${p.name}" ${p.kind==="内置预设"?"disabled":""}></div></div>
+    <div class="form-row"><label>API 地址</label><div class="ipt"><input value="${p.url}"></div></div>
+    <div class="form-row"><label>API Key</label><div class="key-row"><input type="password" value="${p.key==="（未配置）"?"":p.key}" placeholder="${p.key}">
+      <button class="btn" title="显示/隐藏">👁</button></div></div>
+    <div class="form-row"><label>模型 ID</label><div class="ipt"><input value="${p.model}"></div></div>
+    <div class="form-row"><label>温度</label><div class="ipt" style="display:flex;align-items:center;gap:10px">
+      <input type="range" min="0" max="1" step="0.1" value="${p.temp}" style="padding:0"><span style="font-size:12px;color:var(--muted)">${p.temp}</span></div></div>
+    <div class="form-row"><label>超时(秒)</label><div class="ipt"><input value="${p.timeout}" style="width:120px"></div></div>
+    <div class="m-toolbar">
+      <button class="btn primary" onclick="toast('保存并写回模型配置（逻辑不变）')">保存</button>
+      <button class="btn" onclick="toast('测试连接成功（演示）')">测试连接</button>
+      ${p.kind==="自定义"?`<button class="btn danger" onclick="toast('删除自定义 Provider（演示）')">删除</button>`
+        :`<span class="hint" style="margin-top:0">内置预设不可删除，可改 Key 与模型</span>`}
+    </div>`;
+}
+function pickProvider(id){ curProvider = id; renderModels(); }
+
+/* ═══════ IM 遥控分区（原「设置」Modal 内容示意）═══════ */
+const CHANNELS = [
+  {id:"feishu", name:"飞书", on:true, fields:[
+    ["App ID","cli_a5xxxxxxxx"],["App Secret","••••••••••••"]], note:"在飞书开放平台创建企业自建应用后填入凭证。"},
+  {id:"qq", name:"QQ", on:true, fields:[
+    ["AppID","1234567890"],["AppSecret","••••••••••••"]], note:"官方推荐扫码：点「扫码登录」→ 手机 QQ 扫码确认 → 凭证自动获取（免开发者注册，一个 QQ 号最多 5 个机器人）。", qr:true},
+  {id:"wechat", name:"微信", on:false, fields:[
+    ["登录状态","（未扫码登录）"]], note:"bot_token 仅能扫码获得（腾讯下发，无法手填）；一次登录长期有效，失效后回到这里重扫。二维码约 5 分钟过期，自动刷新。", qr:true}
+];
+let curChannel = "feishu";
+function renderIm(){
+  document.getElementById("im-cards").innerHTML = CHANNELS.map(c=>`
+    <button class="im-card ${c.id===curChannel?"on":""}" onclick="pickChannel('${c.id}')">
+      <div class="t">${c.name}<span class="dot ${c.on?"on":""}"></span></div>
+      <div class="d">${c.on?"已启用":"未启用"}</div>
+    </button>`).join("");
+  const c = CHANNELS.find(x=>x.id===curChannel);
+  document.getElementById("im-detail").innerHTML = `
+    <div class="set-line">
+      <div class="info"><b>启用 ${c.name} 通道</b><span>关闭后该通道不再接收/回复消息</span></div>
+      <button class="switch ${c.on?"on":""}" onclick="toggleChannel('${c.id}',this)"></button>
+    </div>
+    ${c.fields.map(f=>`
+      <div class="form-row" style="margin-top:13px"><label>${f[0]}</label>
+        <div class="ipt"><input value="${f[1]}" ${f[0]==="登录状态"?"readonly":""}></div></div>`).join("")}
+    ${c.qr?`
+      <div class="set-line">
+        <div class="info"><b>扫码登录</b><span>${c.id==="qq"?"用手机 QQ 扫码并确认":"用微信扫码，凭证自动获取"}</span></div>
+        <button class="btn primary" onclick="document.getElementById('qr-${c.id}').classList.add('show')">扫码登录</button>
+      </div>
+      <div class="qr-wrap" id="qr-${c.id}">
+        <div class="qr-box">二维码占位<br>（真机渲染 qrcode）</div>
+        <div class="hint" style="margin-top:0">扫码成功后凭证自动写入并热重载，本行状态将刷新。</div>
+      </div>`:""}
+    <div class="hint">${c.note}</div>`;
+}
+function pickChannel(id){ curChannel = id; renderIm(); }
+function toggleChannel(id, el){ const c = CHANNELS.find(x=>x.id===id); c.on = !c.on; el.classList.toggle("on", c.on); renderIm(); toast("已保存 im.json 并热重载（演示）"); }
+
+/* 初始化 */
+renderModels(); renderIm(); setLogin(true); setTheme("dark");
+</script>
+</body>
+</html>
