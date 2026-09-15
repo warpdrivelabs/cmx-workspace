@@ -1,0 +1,44 @@
+[
+  {
+    "name": "ResolveBusinessContext",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/context/resolve",
+    "implementation": "reference/foundation.py, not installed HTTP endpoint",
+    "authorization": "FND_CONTEXT_RESOLVE + organization read scope"
+  },
+  {
+    "name": "ActivateMasterChange",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/master/activate",
+    "implementation": "Design contract; bind to existing MDM Approved CR",
+    "authorization": "FND_MASTER_ACTIVATE and approved immutable payload"
+  },
+  {
+    "name": "ValidateFoundationRelease",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/release/validate",
+    "implementation": "Design contract; not a generic DCT save",
+    "authorization": "FND_CONFIG_VALIDATE"
+  },
+  {
+    "name": "PublishFoundationRelease",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/release/publish",
+    "implementation": "Design contract + DB immutability guards",
+    "authorization": "FND_CONFIG_PUBLISH + SoD + dependency validation"
+  },
+  {
+    "name": "CloseOrReopenPeriod",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/period/change",
+    "implementation": "Design contract + DB period guards",
+    "authorization": "FND_PERIOD_CLOSE or FND_PERIOD_REOPEN + approval"
+  },
+  {
+    "name": "ExplainContext",
+    "method": "POST",
+    "proposed_path": "/api/erp/foundation/context/explain",
+    "implementation": "Design contract over protected context_snapshot",
+    "authorization": "FND_CONTEXT_READ + subject/organization scope"
+  }
+]

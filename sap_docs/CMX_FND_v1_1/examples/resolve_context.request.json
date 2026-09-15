@@ -1,0 +1,17 @@
+{
+  "requestId": "DEMO-GR-001",
+  "action": "POST_GOODS_RECEIPT",
+  "expectedRelease": "22222222-2222-2222-2222-222222222222",
+  "postingDate": "2026-09-14",
+  "valuationDate": "2026-09-14",
+  "plant": "1100",
+  "storageLocation": "0001",
+  "purchasingOrganization": "P100",
+  "companyCode": "1000",
+  "businessArea": "",
+  "supplier": "0000200001",
+  "material": "CMX-MATERIAL-0001",
+  "valuationType": "",
+  "quantity": "5",
+  "unit": "BOX"
+}

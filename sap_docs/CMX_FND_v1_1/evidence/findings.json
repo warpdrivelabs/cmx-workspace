@@ -1,0 +1,114 @@
+[
+  {
+    "id": "E01",
+    "title": "工厂→估值范围→公司",
+    "objects": "T001W、T001K、T001、SI_T001K",
+    "observed": "T001W键MANDT/WERKS；BWKEY外键到T001K。T001K键MANDT/BWKEY，BUKRS引用T001。",
+    "cmx_change": "按BWKEY连接，不能假定WERKS=BWKEY=BUKRS；公司的权威归属不在一个随意填写的工厂BUKRS字段。"
+  },
+  {
+    "id": "E02",
+    "title": "采购与销售分配的不同粒度",
+    "objects": "T024E、T024W、TVKO/SI_TVKO、TVTA、TVKWZ",
+    "observed": "T024W键MANDT/WERKS/EKORG；TVTA含VKORG/VTWEG/SPART；TVKWZ含VKORG/VTWEG/WERKS而不含SPART。",
+    "cmx_change": "分别校验销售范围与供货工厂授权；采购组织无公司限制不代表全工厂许可。"
+  },
+  {
+    "id": "E03",
+    "title": "控制范围与利润中心公司分配",
+    "objects": "TKA02、CEPC_BUKRS",
+    "observed": "TKA02主键为MANDT/BUKRS/GSBER，KOKRS为关联字段。CEPC_BUKRS主键包含MANDT/KOKRS/PRCTR/BUKRS。",
+    "cmx_change": "保留GSBER；拒绝有歧义的公司控制范围；利润中心不能硬编码为单一公司。"
+  },
+  {
+    "id": "E04",
+    "title": "BP与客商的身份不相等",
+    "objects": "CVI_CUST_LINK、CVI_VEND_LINK、BUT100",
+    "observed": "CVI映射键为CLIENT/PARTNER_GUID，业务字段CUSTOMER或VENDOR；BUT100键含MANDT/PARTNER/RLTYP/DFVAL。",
+    "cmx_change": "创建稳定GUID映射；不要按BP编码等于客商编号推导关系；保留CLIENT与MANDT源列区别。"
+  },
+  {
+    "id": "E05",
+    "title": "主数据日期粒度不能统一成DATE",
+    "objects": "CSKS、BUS100_NCHR、BU_ROLE_VALID_FROM/TO",
+    "observed": "CSKS键含DATBI，并有DATAB。BP角色日期经数据元素核实为TZNTSTMPS域、DEC(15,0)时间戳。",
+    "cmx_change": "成本中心采用日期区间；BP角色按时间戳处理。源端上界包含性须按对象核验，不能统一加一天。"
+  },
+  {
+    "id": "E06",
+    "title": "统驭科目是完整的关系校验",
+    "objects": "KNB1/SI_KNB1、LFB1/SI_LFB1、SKB1、SKA1",
+    "observed": "客商公司视图AKONT关联公司SKB1；SKB1科目关联SKA1时科目表由T001-KTOPL提供。SKB1含MITKZ/XOPVW/XINTB/XSPEB等控制。",
+    "cmx_change": "AKONT不只是科目选择器；验证公司扩展、科目表、D/K统驭类型和冻结状态；核算敏感字段变更走迁移。"
+  },
+  {
+    "id": "E07",
+    "title": "期间开放变式不是公司代码",
+    "objects": "T001B、SI_T001、FINSC_LD_CMP；配置表抽样",
+    "observed": "T001B名为BUKRS的列实际使用OPVAR数据元素并关联T010O；FINSC_LD_CMP样本公司1300的OPVAR是1310。",
+    "cmx_change": "内核使用明确的posting_period_variant；SAP兼容层再映射到T001B-BUKRS。"
+  },
+  {
+    "id": "E08",
+    "title": "财年和期间由边界表解析",
+    "objects": "DATE_TO_PERIOD_CONVERT（ADAT）、T009、T009B",
+    "observed": "函数按XKALE/XJABH和T009B边界处理；T009B键PERIV/BDATJ/BUMON/BUTAG，结果POPER及RELJR。",
+    "cmx_change": "发布时编译具体年度日期区间，运行时按账本PERIV和实际过账日期查期间，不能按月份取值。"
+  },
+  {
+    "id": "E09",
+    "title": "开放期间的头检查、行检查和授权",
+    "objects": "FI_PERIOD_CHECK（FACS）、T001B",
+    "observed": "源码先检查+头级记录；明细按科目类型与账号范围。明细无匹配不必然失败。间隔1/2和间隔1授权组有不同作用；COFI另有间隔3处理。",
+    "cmx_change": "先通用门，再适用的明细门；保留授权；CMX发布时拒绝重叠区间，不复制源程序依赖首命中顺序的行为。"
+  },
+  {
+    "id": "E10",
+    "title": "UPA跨账本期间分支",
+    "objects": "FI_PERIOD_CHECK（FACS）",
+    "observed": "源码存在fins_parallel_accounting_rs分支，遍历相关账本，以过账日期和账本年度方案重新确定期间；含增强和特殊分支。",
+    "cmx_change": "CMX必须显式携带postingDate并逐账本解析；本次未执行该分支，也未核验客户BAdI实现。"
+  },
+  {
+    "id": "E11",
+    "title": "账本币种槽与功能币类型",
+    "objects": "FINSC_LEDGER、FINSC_LD_CMP、FINSC_CURTYPE；FINSC_LD_CMP抽样",
+    "observed": "账本公司配置含PERIV/OPVAR/ACC_PRINCIPLE及CURTPH/K/O/V/B..G槽；FUNCTIONAL_CURRENCY引用币种类型；样本值10不是ISO币种。",
+    "cmx_change": "槽位转币种角色行，保留内外币种类型；不可直接把功能币字段当作CNY/USD。"
+  },
+  {
+    "id": "E12",
+    "title": "物流币种映射的内外类型区别",
+    "objects": "FMLV_CURTP_ML、FMLT_CURTP_ML、FINSC_CURTYPE",
+    "observed": "CDS连接FMLT_CURTP_ML、FINSC_LEDGER、FINSC_CURTYPE及FMLC_TOGGLE，按开关选择返回类型；FMLT_CURTP_ML键包含RBUKRS/CURTP/RLDNR。",
+    "cmx_change": "用公司＋账本＋外部币种类型定位映射，不能在整个公司范围按10/30去重。"
+  },
+  {
+    "id": "E13",
+    "title": "物料价格不是一个STPRS字段",
+    "objects": "FMLT_PRICE及其FMLS_PRICE_*包含结构",
+    "observed": "价格键展开为MANDT/KALNR/RLDNR/EXT_CURTYPE/PRICE_TYPE/PRICE_SUBTYPE/DATE_FROM；有DATE_TO、PRICE、WAERS、PEINH、VALUM、PRICE_NUMERATOR/DENOMINATOR及特殊库存引用。",
+    "cmx_change": "独立价值对象与版本化价格；按账本、币种角色、价格类型和日期解析；字段存在不证明所有价格类型的读写优先级已验证。"
+  },
+  {
+    "id": "E14",
+    "title": "历史价格键与功能标识不同",
+    "objects": "FMLT_PRICE_HIST、FMLS_PRICE_HIST_KEY、FMLS_PRICE_HIST_IDENTIFIER",
+    "observed": "历史表物理键是MANDT/PRICE_HISTORY_ID，功能标识另含KALNR/RLDNR/EXT_CURTYPE/价格类型/DATE_FROM/TIME_STAMP。",
+    "cmx_change": "不能照当前价格自然键设计一个会覆盖历史的history表。"
+  },
+  {
+    "id": "E15",
+    "title": "DDIC包含、域与替代对象",
+    "objects": "MBEW、MARC、MARA、MARM/EMARM、MATNR域",
+    "observed": "MBEW声明mbv_mbew替代对象；MARC声明nsdm_e_marc；MATNR域为CHAR40、MATN1转换例程；MARM换算字段UMREZ/UMREN在EMARM内。",
+    "cmx_change": "元数据提取递归解析INCLUDE；区分真实key与foreignKey.keyType注解；不凭表名推断持久化来源；不将物料号强制转整数或截18位。"
+  },
+  {
+    "id": "E16",
+    "title": "币种参考数据有非客户端对象",
+    "objects": "TCURX、TCURR、TCURF、GDATU_INV域",
+    "observed": "TCURX主键CURRKEY，不含MANDT；TCURR/TCURF含GDATU倒置日期，GDATU_INV域为NUMC8、INVDT转换例程。",
+    "cmx_change": "显式源语义适配，不能统一把日期NUMC作为日期或把UKURS直接当标准倍率；本轮未实现完整原始SAP汇率解码器。"
+  }
+]

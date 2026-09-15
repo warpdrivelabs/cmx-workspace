@@ -1,0 +1,199 @@
+{
+  "type": "object",
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "status": {
+      "const": "RESOLVED_NOT_POSTED"
+    },
+    "releaseId": {
+      "type": "string"
+    },
+    "knownAt": {
+      "type": "string"
+    },
+    "organization": {
+      "type": "object",
+      "properties": {
+        "company": {
+          "type": "string"
+        },
+        "plant": {
+          "type": "string"
+        },
+        "valuation_area": {
+          "type": "string"
+        },
+        "storage_location": {
+          "type": "string"
+        },
+        "controlling_area": {
+          "type": "string"
+        },
+        "purchasing_organization": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "company",
+        "plant",
+        "valuation_area",
+        "storage_location",
+        "controlling_area",
+        "purchasing_organization"
+      ],
+      "additionalProperties": false
+    },
+    "material": {
+      "type": "string"
+    },
+    "inputQuantity": {
+      "type": "string"
+    },
+    "inputUnit": {
+      "type": "string"
+    },
+    "baseQuantity": {
+      "type": "string"
+    },
+    "baseUnit": {
+      "type": "string"
+    },
+    "valuationObject": {
+      "type": "string"
+    },
+    "books": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ledger": {
+            "type": "string"
+          },
+          "accountingPrinciple": {
+            "type": "string"
+          },
+          "valuationView": {
+            "type": "string"
+          },
+          "fiscalYearVariant": {
+            "type": "string"
+          },
+          "fiscalYear": {
+            "type": "integer"
+          },
+          "period": {
+            "type": "integer"
+          },
+          "postingPeriodVariant": {
+            "type": "string"
+          },
+          "currencyValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "currencyType": {
+                  "type": "string"
+                },
+                "internalCurrencyType": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "priceRevision": {
+                  "type": "string"
+                },
+                "priceNumerator": {
+                  "type": "string"
+                },
+                "priceDenominator": {
+                  "type": "string"
+                },
+                "priceUnit": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "currencyType",
+                "internalCurrencyType",
+                "currency",
+                "amount",
+                "priceRevision",
+                "priceNumerator",
+                "priceDenominator",
+                "priceUnit"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "ledger",
+          "accountingPrinciple",
+          "valuationView",
+          "fiscalYearVariant",
+          "fiscalYear",
+          "period",
+          "postingPeriodVariant",
+          "currencyValues"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "gateVersions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "version"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "masterRevisions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contextHash": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "requestId",
+    "status",
+    "releaseId",
+    "knownAt",
+    "organization",
+    "material",
+    "inputQuantity",
+    "inputUnit",
+    "baseQuantity",
+    "baseUnit",
+    "valuationObject",
+    "books",
+    "gateVersions",
+    "masterRevisions",
+    "contextHash"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CMX FND independently executable resolver output",
+  "description": "Read-only resolution; no context persistence or business posting. contextHash is not an authorization token."
+}

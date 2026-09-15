@@ -1,0 +1,93 @@
+{
+  "date": "2026-09-14",
+  "connection": "s4f-810",
+  "system": "S4F",
+  "client": "810",
+  "environment": "quality",
+  "source_objects_read": 63,
+  "functions_read_not_executed": [
+    "DATE_TO_PERIOD_CONVERT",
+    "FI_PERIOD_CHECK"
+  ],
+  "writes_performed": false,
+  "sap_runtime_business_tests_performed": false,
+  "s4core_release": "not_confirmed; CVERS query denied by connector policy",
+  "access_denied": [
+    {
+      "operation": "abap_run_query",
+      "source": "CVERS",
+      "error": "ACCESS_DATA_SOURCE_OUTSIDE_SCOPE"
+    },
+    {
+      "operation": "abap_run_query",
+      "source": "DD03L",
+      "error": "ACCESS_DATA_SOURCE_OUTSIDE_SCOPE"
+    }
+  ],
+  "not_found": [
+    {
+      "type": "TABL",
+      "name": "FINSC_LD_CUR"
+    },
+    {
+      "type": "DOMA",
+      "name": "BU_ROLE_VALID_FROM",
+      "resolution": "Correct DTEL object later read successfully"
+    }
+  ],
+  "data_previews": [
+    {
+      "table": "FINSC_LD_CMP",
+      "row_count": 3,
+      "has_more": true,
+      "rows": [
+        {
+          "MANDT": "810",
+          "RLDNR": "0C",
+          "BUKRS": "0001",
+          "CURTPH": "10",
+          "CURTPK": "",
+          "PERIV": "K4",
+          "OPVAR": "1310",
+          "ACC_PRINCIPLE": "",
+          "FUNCTIONAL_CURRENCY": ""
+        },
+        {
+          "MANDT": "810",
+          "RLDNR": "0C",
+          "BUKRS": "1300",
+          "CURTPH": "10",
+          "CURTPK": "30",
+          "PERIV": "K4",
+          "OPVAR": "1310",
+          "ACC_PRINCIPLE": "CNAP",
+          "FUNCTIONAL_CURRENCY": "10"
+        },
+        {
+          "MANDT": "810",
+          "RLDNR": "0C",
+          "BUKRS": "1310",
+          "CURTPH": "10",
+          "CURTPK": "30",
+          "PERIV": "K4",
+          "OPVAR": "1310",
+          "ACC_PRINCIPLE": "CNAP",
+          "FUNCTIONAL_CURRENCY": "10"
+        }
+      ]
+    },
+    {
+      "table": "FMLC_TOGGLE",
+      "row_count": 0,
+      "has_more": false
+    }
+  ],
+  "upa_activation": "not_confirmed; presence of code and empty ML toggle table do not establish activated UPA",
+  "source_export_policy": "Normalized observations only; no complete SAP proprietary source archive and no credentials/host details.",
+  "local_runtime_limitations": [
+    "No PostgreSQL server or psql executable available",
+    "No Rust toolchain available",
+    "Dependency download attempt failed due to DNS/network restrictions"
+  ],
+  "cmx_source_access": "Architecture documents only; actual CMX repository and crate APIs were not inspected"
+}

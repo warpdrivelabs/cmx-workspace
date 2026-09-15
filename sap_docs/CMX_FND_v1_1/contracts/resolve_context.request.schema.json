@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CMX FND Resolve Context proposed request",
+  "description": "Tenant/client/subject supplied by trusted authentication, not request body.",
+  "type": "object",
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "action": {
+      "const": "POST_GOODS_RECEIPT"
+    },
+    "expectedRelease": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "postingDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "valuationDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "plant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4
+    },
+    "storageLocation": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4
+    },
+    "purchasingOrganization": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4
+    },
+    "companyCode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4
+    },
+    "businessArea": {
+      "type": "string",
+      "maxLength": 4
+    },
+    "supplier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10
+    },
+    "material": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "valuationType": {
+      "type": "string",
+      "maxLength": 10
+    },
+    "quantity": {
+      "type": "string",
+      "pattern": "^[+]?[0-9]+(?:\\.[0-9]{1,9})?$"
+    },
+    "unit": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3
+    }
+  },
+  "required": [
+    "requestId",
+    "action",
+    "expectedRelease",
+    "postingDate",
+    "valuationDate",
+    "plant",
+    "storageLocation",
+    "purchasingOrganization",
+    "supplier",
+    "material",
+    "quantity",
+    "unit"
+  ],
+  "additionalProperties": false
+}

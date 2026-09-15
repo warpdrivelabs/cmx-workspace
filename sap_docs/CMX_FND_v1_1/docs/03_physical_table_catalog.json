@@ -1,0 +1,618 @@
+[
+  {
+    "table": "cmx_fnd.foundation_release",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id"
+    ],
+    "role": "不可变配置发布包；哈希由服务验证，不是签名",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.config_head",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "active_release_id"
+    ],
+    "role": "客户端当前发布指针",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.company_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "bukrs"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.valuation_area_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "bwkey"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.plant_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "werks"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.purchasing_org_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "ekorg"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.sales_org_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "vkorg"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.controlling_area_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "kokrs"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.ledger_key",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "rldnr"
+    ],
+    "role": "稳定组织身份；编码不能重新分配",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.currency_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "currency"
+    ],
+    "role": "CMX受控参考数据；不宣称SAP TCURX有MANDT",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.uom_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "unit"
+    ],
+    "role": "物理量维度与小数策略",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.fiscal_variant_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "periv"
+    ],
+    "role": "T009映射及其原始声明；复杂日历启用仍需算法能力门",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.fiscal_year_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "periv",
+      "gjahr"
+    ],
+    "role": "年度实例；日期上界不含",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.fiscal_period_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "periv",
+      "gjahr",
+      "poper"
+    ],
+    "role": "仅正常期间；连续覆盖与1..N由发布校验检查",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.posting_variant_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "opvar"
+    ],
+    "role": "T010O语义，与公司代码不同",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.company_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "bukrs"
+    ],
+    "role": "T001选定字段语义",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.valuation_area_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "bwkey"
+    ],
+    "role": "T001K：估值范围归属公司",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.plant_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "werks"
+    ],
+    "role": "T001W；没有独立可编辑BUKRS字段",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.storage_location_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "werks",
+      "lgort"
+    ],
+    "role": "T001L复合键",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.purchasing_org_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "ekorg"
+    ],
+    "role": "T024E；NULL表示无单公司限制而不是自动全工厂授权",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.purchasing_plant_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "werks",
+      "ekorg"
+    ],
+    "role": "T024W允许清单",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.controlling_assignment_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "bukrs",
+      "gsber"
+    ],
+    "role": "TKA02；保留GSBER，不在迁移时丢弃",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.sales_org_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "vkorg"
+    ],
+    "role": "TVKO经SI_TVKO关联公司",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.sales_area_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "vkorg",
+      "vtweg",
+      "spart"
+    ],
+    "role": "TVTA业务销售范围；TVKOV/TVKOS原始限定由适配器核验",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.sales_plant_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "vkorg",
+      "vtweg",
+      "werks"
+    ],
+    "role": "TVKWZ的粒度不包含SPART",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.ledger_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "rldnr"
+    ],
+    "role": "FINSC_LEDGER经明确代码映射，不照搬所有SAP内部账本处理",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.book_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "bukrs",
+      "rldnr"
+    ],
+    "role": "FINSC_LD_CMP实际角色；日期范围由上下文检查",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.book_currency_config",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "bukrs",
+      "rldnr",
+      "external_currency_type"
+    ],
+    "role": "FINSC/FML映射归一为行；金额不按币种代码去重",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.posting_account_rule",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "rule_id"
+    ],
+    "role": "T001B规则；区间重叠在发布时拒绝，不能隐含依赖行顺序",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.posting_window",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "release_id",
+      "rule_id",
+      "interval_number"
+    ],
+    "role": "间隔1/2及COFI间隔3；允许性解释由内核负责",
+    "release_bound": true
+  },
+  {
+    "table": "cmx_fnd.master_identity",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "object_id"
+    ],
+    "role": "不可变身份；business_key使用规范键数组序列化，不拼接有歧义的文本",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.external_key_map",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "source_system",
+      "source_client",
+      "object_type",
+      "external_key"
+    ],
+    "role": "源键映射不能任意重新指向",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, object_id, object_type) REFERENCES cmx_fnd.master_identity (tenant_id, mandt, object_id, object_type)"
+  },
+  {
+    "table": "cmx_fnd.bp_identity",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "partner_guid"
+    ],
+    "role": "CVI映射的BP身份",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, object_id, object_type) REFERENCES cmx_fnd.master_identity (tenant_id, mandt, object_id, object_type)"
+  },
+  {
+    "table": "cmx_fnd.customer_link",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "kunnr"
+    ],
+    "role": "客商编号不要求等于BP编号",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, partner_guid) REFERENCES cmx_fnd.bp_identity (tenant_id, mandt, partner_guid)"
+  },
+  {
+    "table": "cmx_fnd.supplier_link",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "lifnr"
+    ],
+    "role": "客商编号不要求等于BP编号",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, partner_guid) REFERENCES cmx_fnd.bp_identity (tenant_id, mandt, partner_guid)"
+  },
+  {
+    "table": "cmx_fnd.bp_role_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "BUT100角色有效期是时间戳，不是普通DATE",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.customer_company_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "公司视图；统驭科目必须按当前公司科目表与D/K类型进行领域校验",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.supplier_company_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "公司视图；统驭科目必须按当前公司科目表与D/K类型进行领域校验",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.customer_sales_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "KNVV粒度；当前发布的合法销售范围由领域校验",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.supplier_purchasing_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "LFM1采购视图",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.material_identity",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "matnr"
+    ],
+    "role": "MATNR40/业务编号字符串；MATN1适配需单独验证",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, object_id, object_type) REFERENCES cmx_fnd.master_identity (tenant_id, mandt, object_id, object_type)"
+  },
+  {
+    "table": "cmx_fnd.material_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "MARA核心；主数据没有库存金额",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.material_plant_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "MARC核心；替代对象聚合字段不作为主数据自由维护",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.material_uom_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "MARM换算。SAP原始UMREZ/UMREN需正数和精度控制",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.gl_account_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "SKA1科目表视图",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.gl_company_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "SKB1；科目表由公司配置派生，修改未清项等需迁移流程",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.profit_center_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "利润中心时态主数据",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.profit_company_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "CEPC_BUKRS关系；有效期覆盖由发布校验",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.cost_center_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "CSKS原键DATBI留源值；CMX稳定身份与版本分开",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.valuation_unit",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "kalnr"
+    ],
+    "role": "独立价值对象；特殊库存处理需能力支持，不仅有字段就允许业务",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, matnr) REFERENCES cmx_fnd.material_identity (tenant_id, mandt, matnr), FOREIGN KEY (tenant_id, mandt, bwkey) REFERENCES cmx_fnd.valuation_area_key (tenant_id, mandt, bwkey)"
+  },
+  {
+    "table": "cmx_fnd.material_price_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "受FMLT_PRICE启发的本地独立价格模型；有效期不自动等同SAP各价格类型语义",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.fx_rate_version",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "revision_id"
+    ],
+    "role": "只接受已核验并归一化汇率；不直接用TCURR原值算账",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.period_gate",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "bukrs",
+      "rldnr",
+      "gjahr",
+      "poper",
+      "application"
+    ],
+    "role": "当前运行门，与历史配置快照分离",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, bukrs) REFERENCES cmx_fnd.company_key (tenant_id, mandt, bukrs), FOREIGN KEY (tenant_id, mandt, rldnr) REFERENCES cmx_fnd.ledger_key (tenant_id, mandt, rldnr)"
+  },
+  {
+    "table": "cmx_fnd.action_block",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "object_id",
+      "organization_key",
+      "action"
+    ],
+    "role": "执行时重验，不从旧主数据快照放行",
+    "release_bound": "FOREIGN KEY (tenant_id, mandt, object_id) REFERENCES cmx_fnd.master_identity (tenant_id, mandt, object_id)"
+  },
+  {
+    "table": "cmx_fnd.command_receipt",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "source_system",
+      "action",
+      "idempotency_key"
+    ],
+    "role": "业务幂等；数据库提交回执与正式激活同一事务",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.outbox",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "event_id"
+    ],
+    "role": "业务库原子事件；外围至少一次投递",
+    "release_bound": false
+  },
+  {
+    "table": "cmx_fnd.context_snapshot",
+    "key": [
+      "tenant_id",
+      "mandt",
+      "context_id"
+    ],
+    "role": "服务端受控快照；不等于过账授权",
+    "release_bound": false
+  }
+]
