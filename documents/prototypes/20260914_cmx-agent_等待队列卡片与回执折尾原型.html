@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>等待队列卡片 + 子任务回执折尾 · 交互原型</title>
+<!--
+  自包含单 HTML 原型 v1：cmx-agent「等待队列卡片化」+「后台子任务回执折尾」演示。
+  对应方案：documents/plans/20260914_cmx-agent_等待队列卡片与回执折尾与权限三模式方案.md
+  关联方案：documents/plans/20260915_cmx-agent_子智能体执行过程可视化方案.md（回执与其后台卡"合一收口"沿用其 F2 设计）
+  组件与色板逐条取自真源 ui/css/{tokens,chat}.css（同 v3 可视化原型），零硬编码色值，右上 🌓 验证双主题。
+  场景：1 等待队列卡片（可交互）· 2 回执折尾=图二 · 3 空闲独立回执=图三 · 4 中断保留队列。
+-->
+<style>
+/* ═══ 令牌：与 ui/css/tokens.css 完全一致 ═══ */
+:root{
+  color-scheme:dark;
+  --bg:#0d0d0d; --panel:#141414; --panel2:#1a1a19; --surface:#1e1e1d; --hover:#242423;
+  --ink:#f2f1ec; --ink2:#b8b7ae; --muted:#7d7c76; --border:#2a2a28; --border2:#333330;
+  --blue:#3987e5; --aqua:#1fb182; --violet:#9085e9; --magenta:#d55181; --orange:#eb6834;
+  --green:#22c55e; --green2:#4ade80; --red:#e5605f; --accent:#1fb182; --gold:#e5b95f;
+  --accent-soft:#17362b; --bg2:#0d1420; --code-ink:#c8d3e0;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f4f4f2; --panel:#ffffff; --panel2:#f7f7f5; --surface:#ffffff; --hover:#ececea;
+  --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --border:#e4e3dc; --border2:#d6d5ce;
+  --blue:#2a78d6; --aqua:#1baf7a; --violet:#4a3aa7; --magenta:#e87ba4; --orange:#eb6834;
+  --green:#0ca30c; --green2:#0ca30c; --red:#e34948; --accent:#1baf7a; --accent-soft:#e3f5ee; --gold:#a2761c;
+  --bg2:#efefea; --code-ink:#33332e;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,'PingFang SC','Hiragino Sans GB',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;padding:0 0 80px}
+button{cursor:pointer;font-family:inherit}
+
+/* ═══ 原型页骨架 ═══ */
+.proto-bar{position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:14px;
+  padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--border)}
+.pb-title{font-size:15px;font-weight:700}
+.pb-sub{font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-btn{background:var(--surface);border:1px solid var(--border2);color:var(--ink2);border-radius:8px;
+  padding:6px 13px;font-size:12.5px}
+.pb-btn:hover{background:var(--hover);color:var(--ink)}
+.proto-wrap{max-width:860px;margin:0 auto;padding:26px 18px;display:flex;flex-direction:column;gap:30px}
+.scene{display:flex;flex-direction:column;gap:10px}
+.scene-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.scene-no{font-size:11px;font-weight:700;color:var(--gold);border:1px solid var(--gold);
+  border-radius:5px;padding:1px 7px;letter-spacing:.5px}
+.scene-title{font-size:14.5px;font-weight:700}
+.scene-tag{font-size:11px;color:var(--aqua)}
+.scene-note{font-size:12.5px;line-height:1.8;color:var(--ink2);background:var(--panel2);
+  border:1px solid var(--border);border-left:3px solid var(--aqua);border-radius:0 8px 8px 0;padding:9px 13px}
+.scene-note b{color:var(--ink)}
+.scene-note .where{color:var(--gold)}
+.scene-note code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;background:var(--panel);
+  border:1px solid var(--border);border-radius:5px;padding:0 5px}
+.chat{border:1px solid var(--border);border-radius:14px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.chat-cap{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:11.5px;color:var(--muted);
+  background:var(--panel);border-bottom:1px solid var(--border)}
+.chat-cap .cc-dot{width:7px;height:7px;border-radius:50%;background:var(--aqua)}
+.chat-cap .cc-replay{margin-left:auto;background:none;border:1px solid var(--border2);color:var(--ink2);
+  border-radius:6px;padding:2px 10px;font-size:11.5px}
+.chat-cap .cc-replay:hover{background:var(--hover);color:var(--ink)}
+.log{padding:18px 20px 10px;display:flex;flex-direction:column;gap:3px;min-height:90px}
+
+/* ═══ 会话元素：与 ui/css/chat.css 同构（原样拷贝） ═══ */
+.turn{position:relative;margin:10px 0 4px;padding:0;overflow-wrap:anywhere}
+.user-chip{width:fit-content;margin:6px 0 4px auto;max-width:78%;background:var(--blue);color:#fff;
+  border-radius:14px 14px 4px 14px;padding:8px 13px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.bubble{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;
+  font-size:14px;line-height:1.55}
+.work-dur{display:flex;align-items:center;gap:6px;margin:2px 0 4px;padding:2px 7px;font-size:12px;
+  color:var(--muted);border-radius:6px;background:none;border:0;width:fit-content}
+.work-dur:hover{background:var(--hover);color:var(--ink2)}
+.work-dur .chev{font-size:10px;opacity:.6}
+.meta.note{font-size:12px;color:var(--muted);padding:1px 0}
+.meta.note.solo{width:fit-content;margin:2px 0}
+
+/* ═══ 工具卡（chat.css 原样） ═══ */
+.tool{align-self:flex-start;width:100%;margin:0;padding:0;border:0;background:none;min-width:0}
+.tool.tcard .tc-trig{display:flex;align-items:baseline;gap:7px;width:100%;padding:2px 7px;margin:0 -7px;
+  background:none;border:0;text-align:left;font:inherit}
+.tool.tcard .tc-trig:hover{background:var(--hover);border-radius:6px}
+.tool.tcard.run .tc-trig{cursor:default}
+.tool.tcard.run .tc-trig:hover{background:transparent}
+.tool.tcard:not(.open) .tc-trig .tc-chev{transform:rotate(-90deg)}
+.tool .tc-st{width:13px;height:13px;flex:0 0 13px;align-self:center;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+.tool .tc-st.ok{color:var(--green)} .tool .tc-st.bad{color:var(--red)}
+.tool .tc-spin{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--border2);border-top-color:var(--aqua);
+  animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tool .tc-g{flex:0 0 auto;font-size:11px;align-self:center;opacity:.9}
+.tool .tc-name{flex:0 0 auto;font-weight:600;font-size:12px;color:var(--ink2)}
+.tool .tc-sub{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:12px;color:var(--muted)}
+.tc-chev{color:var(--muted);opacity:.6;transition:transform .16s;flex:0 0 auto;font-size:10px;align-self:center}
+.tc-badge{flex:0 0 auto;font-size:10.5px;border:1px solid var(--violet);color:var(--violet);
+  border-radius:5px;padding:0 6px;line-height:16px;align-self:center}
+.tc-badge.bg{border-color:var(--blue);color:var(--blue)}
+.tc-state{flex:0 0 auto;font-size:11px;color:var(--muted)}
+.tool.tcard.run .tc-state{color:var(--aqua)}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--aqua);
+  margin-right:5px;vertical-align:1px;animation:thPulse 1.2s ease-in-out infinite}
+.tool.tcard.done .tc-name{color:var(--ink)}
+.tool.tcard.fail .tc-name{color:var(--red)}
+.tool.tcard .tc-body{padding:2px 0 4px 20px;border-left:2px solid var(--border);margin:1px 0 4px 6px}
+.tool.tcard .tc-body[hidden]{display:none}
+
+/* ═══ 思考卡（chat.css 原样） ═══ */
+.reasoning{margin:0;padding:0;border:0;background:none;border-radius:0;overflow:visible}
+.reasoning-head{display:flex;align-items:center;gap:7px;width:fit-content;max-width:100%;min-height:20px;padding:2px 7px;margin:0 -7px;
+  border:0;background:transparent;color:var(--muted);font-size:12px;font-family:inherit;text-align:left;
+  border-radius:7px;transition:background .12s}
+.reasoning-head:hover{background:var(--hover);color:var(--ink2)}
+.reasoning-head .chev{color:var(--muted);opacity:.6;transition:transform .16s;font-size:10px}
+.reasoning-body{padding:2px 0 4px 20px;color:var(--muted);font-size:11.5px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;
+  border-left:2px solid var(--border);margin:1px 0 4px 6px}
+.reasoning.closed .chev{transform:rotate(-90deg)}
+.reasoning.closed .reasoning-body{display:none}
+.shimmer{background:linear-gradient(90deg,var(--muted) 0%,var(--ink2) 50%,var(--muted) 100%);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shimmerSlide 1.8s linear infinite}
+@keyframes shimmerSlide{to{background-position:-200% 0}}
+
+/* ═══ 子任务卡（可视化方案 v3 同款：金色嵌套脊线是唯一新视觉） ═══ */
+.tool.tcard.subcard .tc-body{border-left-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.tool.tcard.subcard>.tc-body{padding:2px 0 4px 18px;margin:1px 0 4px 6px}
+.sublog{display:flex;flex-direction:column;gap:3px}
+.subprompt{margin:0;padding:0;border:0;background:none}
+.subprompt .sp-head{display:flex;align-items:center;gap:7px;width:fit-content;max-width:100%;min-height:20px;padding:2px 7px;margin:0 -7px;
+  border:0;background:transparent;color:var(--muted);font-size:12px;font-family:inherit;text-align:left;
+  border-radius:7px;transition:background .12s}
+.subprompt .sp-head:hover{background:var(--hover);color:var(--ink2)}
+.subprompt .sp-head .chev{color:var(--muted);opacity:.6;transition:transform .16s;font-size:10px}
+.subprompt .sp-body{padding:2px 0 4px 20px;color:var(--muted);font-size:11.5px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;
+  border-left:2px solid var(--border);margin:1px 0 4px 6px}
+.subprompt.closed .chev{transform:rotate(-90deg)}
+.subprompt.closed .sp-body{display:none}
+.subfinal{margin:4px 0 2px 6px;padding:2px 0 4px 20px;color:var(--ink);font-size:12.5px;line-height:1.6;
+  white-space:pre-wrap;word-break:break-word;
+  border-left:2px solid var(--border);animation:lineIn .25s ease-out}
+@keyframes lineIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+/* 折叠回合（chat.css 同款）：只留「已工作」行 + 用户气泡 + 最终回复（.tail）；
+   本方案新增豁免：后台执行中（.run）的子任务卡不被折叠藏掉 */
+.turn.folded .bubble:not(.tail){display:none}
+.turn.folded .subcard:not(.run){display:none}
+
+/* ═══ 独立回执回合（图三形态；现状 turn.notify 虚线分界保留） ═══ */
+.turn.notify{border-top:1px dashed var(--border2);margin-top:14px;padding-top:10px}
+
+/* ═══════════ 等待队列卡片（本方案新组件；全部 var(--*)） ═══════════ */
+.queued{border-top:1px solid var(--border);background:var(--panel2);padding:8px 14px 10px;
+  display:flex;flex-direction:column;gap:6px}
+.queued[hidden]{display:none}
+.qhead{display:flex;align-items:baseline;gap:10px;font-size:11px;color:var(--muted)}
+.qhead .qh-tip{margin-left:auto;opacity:.8}
+.qcard{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:7px 11px;font-size:13px;cursor:grab;user-select:none;transition:border-color .12s,opacity .12s}
+.qcard.dragging{opacity:.4}
+.qcard.drag-over{border-color:var(--gold)}
+.qgrip{color:var(--muted);font-size:12px;letter-spacing:-2px;flex:0 0 auto}
+.qtext{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.qa{flex:0 0 auto;background:none;border:1px solid transparent;border-radius:7px;color:var(--muted);
+  font-size:11.5px;padding:3px 8px;line-height:1.4}
+.qa:hover{background:var(--hover);color:var(--ink)}
+.qa-now{border-color:var(--border2)}
+.qa-now:hover{border-color:var(--gold);color:var(--gold);background:none}
+.qa-del:hover{border-color:var(--red);color:var(--red);background:none}
+
+/* ═══ 演示输入条（仅原型用，结构与真源 composer 的 crow 对齐） ═══ */
+.demo-composer{display:flex;align-items:center;gap:9px;border-top:1px solid var(--border);
+  padding:10px 14px;background:var(--bg)}
+.demo-composer input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--ink);font-size:13px;padding:8px 12px;font-family:inherit;outline:none}
+.demo-composer input:focus{border-color:var(--border2)}
+.demo-composer input::placeholder{color:var(--muted)}
+.demo-send{flex:0 0 auto;width:34px;height:34px;border-radius:10px;border:0;background:var(--surface);
+  color:var(--ink2);font-size:15px}
+.demo-send:hover{background:var(--hover);color:var(--ink)}
+.demo-send.stop{background:var(--red);border-color:var(--red);color:#fff}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);opacity:0;
+  background:var(--surface);border:1px solid var(--border2);color:var(--ink);border-radius:10px;
+  padding:8px 16px;font-size:12.5px;pointer-events:none;transition:all .2s;z-index:99}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  .tc-spin,.live-dot{animation:none}
+  .shimmer,.subfinal{animation:none}
+  .shimmer{color:var(--muted);background:none;-webkit-background-clip:initial;background-clip:initial}
+}
+</style>
+</head>
+<body>
+
+<header class="proto-bar">
+  <div class="pb-title">等待队列卡片 + 子任务回执折尾 · 交互原型</div>
+  <div class="pb-sub">方案：documents/plans/20260914_cmx-agent_等待队列卡片与回执折尾与权限三模式方案.md · 组件与色板同 v3 可视化原型</div>
+  <button class="pb-btn" id="themeToggle">🌓 切主题</button>
+</header>
+
+<main class="proto-wrap">
+
+<!-- ═══════════ 场景一：等待队列卡片（可交互） ═══════════ -->
+<section class="scene" id="scene1">
+  <div class="scene-head">
+    <span class="scene-no">场景 1</span>
+    <span class="scene-title">等待队列 · 卡片化：拖拽排序 + 立即 / 编辑 / 删除</span>
+    <span class="scene-tag">改造一</span>
+  </div>
+  <div class="scene-note">
+    回合忙碌时再发消息，不再是一行小字，而是输入框上方一叠<b>排队卡片</b>：
+    <span class="where">按住卡片左侧 ⋮⋮ 上下拖动换序</span>；「↑ 立即」把这条提到队首（当前回合一结束马上发）；
+    「✎」把内容取回输入框改完再发；「✕」删掉这条。当前回合结束后按顺序逐条自动发出，发一条消一张卡。
+    <span class="where">点「▶ 重播」看自动演示；下面的输入框是真的，你也可以直接打字排队玩。</span>
+  </div>
+  <div class="chat">
+    <div class="chat-cap"><span class="cc-dot"></span>会话 · 忙碌中排队<span class="cc-replay" data-replay="s1">▶ 重播</span></div>
+    <div class="log" id="log1"></div>
+    <div class="queued" id="qbox1" hidden></div>
+    <div class="demo-composer">
+      <input id="qinp1" placeholder="继续输入以排队后续修改…（回合忙碌时进入等待队列）">
+      <button class="demo-send" id="qsend1" title="发送 ⏎">↑</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 场景二：回执折尾（图二形态） ═══════════ -->
+<section class="scene" id="scene2">
+  <div class="scene-head">
+    <span class="scene-no">场景 2</span>
+    <span class="scene-title">后台子任务回执 · 折进当前回合末尾</span>
+    <span class="scene-tag">改造二</span>
+  </div>
+  <div class="scene-note">
+    后台子任务在你<b>正聊着的回合执行期间</b>完成了：回执不再等回合结束另起一块，而是由模型
+    <b>在同一回合回复的末尾顺带转述</b>（「另外，之前派的那个后台子任务也完成了…」——ZCode 图二形态）。
+    原回合里的后台卡<b>原地收口 ✓</b>、结果并入卡内，<b>不再另弹「后台子任务完成」通知卡</b>（回执合一）。
+    <span class="where">点「▶ 重播」看全程。</span>
+  </div>
+  <div class="chat">
+    <div class="chat-cap"><span class="cc-dot"></span>会话 · 折尾演示<span class="cc-replay" data-replay="s2">▶ 重播</span></div>
+    <div class="log" id="log2"></div>
+  </div>
+</section>
+
+<!-- ═══════════ 场景三：空闲独立回执（图三形态，回归保护） ═══════════ -->
+<section class="scene" id="scene3">
+  <div class="scene-head">
+    <span class="scene-no">场景 3</span>
+    <span class="scene-title">后台子任务回执 · 空闲时独立回执回合</span>
+    <span class="scene-tag">改造二 · 现状保留</span>
+  </div>
+  <div class="scene-note">
+    上一条消息的回合早就结束了，<b>过了一会儿</b>后台任务才完成：自动开一个<b>独立回执回合</b>（虚线分界）
+    转述结果——这就是现有行为（ZCode 图三形态），本方案不动它，只把原始回执卡与后台卡<b>合一</b>不再重复。
+    <span class="where">点「▶ 重播」；对比场景 2 体会两种时机的差别。</span>
+  </div>
+  <div class="chat">
+    <div class="chat-cap"><span class="cc-dot"></span>会话 · 空闲回执<span class="cc-replay" data-replay="s3">▶ 重播</span></div>
+    <div class="log" id="log3"></div>
+  </div>
+</section>
+
+<!-- ═══════════ 场景四：中断保留队列 ═══════════ -->
+<section class="scene" id="scene4">
+  <div class="scene-head">
+    <span class="scene-no">场景 4</span>
+    <span class="scene-title">中断 · 队列保留，不再整队清空</span>
+    <span class="scene-tag">改造一 · 行为变更</span>
+  </div>
+  <div class="scene-note">
+    现状：点中断，等待队列<b>整队清空</b>，排了半天的消息全没。改后：队列卡片<b>原地保留</b>，
+    中断后也不自动往下发（刚叫停就自动发下一条很吓人）——想继续就点卡片上的「↑ 立即」，或直接再发消息。
+    <span class="where">点「⏹ 中断」试一次。</span>
+  </div>
+  <div class="chat">
+    <div class="chat-cap"><span class="cc-dot"></span>会话 · 中断演示</div>
+    <div class="log" id="log4"></div>
+    <div class="queued" id="qbox4" hidden></div>
+    <div class="demo-composer">
+      <button class="demo-send stop" id="stop4" title="中断当前回合">⏹</button>
+      <span class="meta note" style="flex:1">（演示：当前回合跑着，队列里排着两条）</span>
+    </div>
+  </div>
+</section>
+
+<div class="scene-note" style="border-left-color:var(--gold)">
+  <b>方案映射</b>：场景 1 / 4 = 改造一（等待队列卡片化，纯前端 <code>session.js</code> 队列对象化 + <code>chat.css</code> 卡片样式）；
+  场景 2 = 改造二（内核 <code>run_turn</code> 收口点吸收回执 + 注入器按「父忙/父闲」分流 + 回尾兜底防丢）；
+  场景 3 = 现状保留（空闲走独立回执回合）。回执卡与后台卡「合一收口」沿用
+  <b>子智能体执行过程可视化方案</b>的 F2 设计：卡在场 → 原地收口不另弹卡；卡不在场（刷新/回放）→ 回落现状通知卡。
+</div>
+
+</main>
+
+<script>
+"use strict";
+/* ───────────────────────── 小工具 ───────────────────────── */
+const $=(s,r=document)=>r.querySelector(s);
+function el(cls,html){const d=document.createElement("div");if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(t){const n=$("#toast");n.textContent=t;n.classList.add("on");clearTimeout(n._t);n._t=setTimeout(()=>n.classList.remove("on"),1800)}
+class Timeline{constructor(){this.timers=[]}
+  at(ms,fn){this.timers.push(setTimeout(fn,ms))}   /* 相对调用时刻延迟 ms */
+  stop(){this.timers.forEach(clearTimeout);this.timers=[]}}
+const TIMERS={};
+function replay(id,build){const log=$("#log"+id.slice(1));if(TIMERS[id])TIMERS[id].stop();
+  log.innerHTML="";const tl=new Timeline();TIMERS[id]=tl;build(log,tl)}
+/* 时长格式化：与真源 render.js 一致 */
+function fmtDur(ms){if(ms<3000)return"几秒";const s=Math.round(ms/1000);if(s<60)return s+" 秒";
+  const m=Math.floor(s/60),r=s%60;return r?(m+" 分 "+r+" 秒"):(m+" 分钟")}
+
+/* ────────── 回合 / 气泡 / 计时行：原型驱动用的最小件 ────────── */
+function mkTurn(log){const t=el("turn");log.append(t);return t}
+function userChip(turn,text){turn.append(el("user-chip",esc(text)))}
+function mkDur(turn){const r=el("work-dur");
+  r.innerHTML='<span class="wd-t">已工作 0 秒</span><span class="chev">▾</span>';
+  const uc=turn.querySelector(".user-chip");
+  if(uc)uc.after(r);else turn.prepend(r);   /* 与真源 insertWorkDur 同规：计时行在用户气泡下方 */
+  const t0=performance.now();
+  r._tick=setInterval(()=>{r.querySelector(".wd-t").textContent="已工作 "+fmtDur(performance.now()-t0)},1000);
+  r._t0=t0;return r}
+function stopDur(r,label){clearInterval(r._tick);
+  r.querySelector(".wd-t").textContent=label||("已工作 "+fmtDur(performance.now()-r._t0))}
+function bubble(turn,text,asHtml){const b=el("bubble tail");if(asHtml)b.innerHTML=text;else b.textContent=text;turn.append(b);return b}
+/* 文字打字机：把一段 html 按“块”逐个亮出，模拟流式；返回气泡节点 */
+function streamText(turn,parts,done){let i=0;const b=el("bubble tail");turn.append(b);
+  const step=()=>{if(i>=parts.length){done&&done();return}
+    b.innerHTML=parts.slice(0,++i).join("");
+    setTimeout(step,parts[i-1].length*18+140)};
+  step();return b}
+
+/* ────────── 思考卡（主会话同款）：流式 shimmer → 收口折叠 ────────── */
+function addThink(turn,text){const c=el("reasoning");
+  c.innerHTML='<button class="reasoning-head" type="button"><span>🧠</span>'
+    +'<span class="rh-txt shimmer">思考</span><span class="rh-dur"></span><span class="chev">▾</span></button>'
+    +'<div class="reasoning-body"></div>';
+  c.querySelector(".reasoning-body").textContent=text;
+  c._t0=performance.now();turn.append(c);return c}
+function closeThink(c){if(!c)return;c.classList.add("closed");
+  const h=c.querySelector(".rh-txt");h.classList.remove("shimmer");h.textContent="思考";
+  c.querySelector(".rh-dur").textContent=" · 持续了"+fmtDur(performance.now()-c._t0)}
+
+/* ────────── 子任务卡（可视化方案 v3 同款结构，精简驱动） ────────── */
+function subCard(type,desc,background,prompt){
+  const c=el("tool tcard subcard run open");
+  c.innerHTML='<button class="tc-trig" type="button">'
+    +'<span class="tc-st run" title="运行中"><span class="tc-spin"></span></span>'
+    +'<span class="tc-g">🤖</span><span class="tc-name">子智能体</span>'
+    +'<span class="tc-badge">'+esc(type)+'</span>'
+    +(background?'<span class="tc-badge bg">后台</span>':"")
+    +'<span class="tc-sub">'+esc(desc)+'</span><span class="tc-state"></span><span class="tc-chev">▾</span></button>'
+    +'<div class="tc-body"></div>';
+  const body=c.querySelector(".tc-body");
+  if(prompt){const p=el("subprompt");
+    p.innerHTML='<button class="sp-head" type="button"><span>📋</span><span>下发提示词</span><span class="chev">▾</span></button><div class="sp-body"></div>';
+    p.querySelector(".sp-body").textContent=prompt;
+    p.querySelector(".sp-head").addEventListener("click",()=>p.classList.toggle("closed"));
+    body.append(p)}
+  c._log=el("sublog");body.append(c._log);
+  c._durEl=c.querySelector(".tc-state");
+  return c}
+function tickCard(card,label){const t0=performance.now();
+  const paint=()=>{card._durEl.innerHTML='<span class="live-dot"></span>'+label+" "+fmtDur(performance.now()-t0)};
+  paint();card._tick=setInterval(paint,1000);card._t0=t0}
+function settleCard(card,ok,label,finalText){
+  clearInterval(card._tick);card.classList.remove("run");card.classList.add(ok?"done":"fail");
+  const st=card.querySelector(".tc-st");st.className="tc-st "+(ok?"ok":"bad");st.innerHTML=ok?"✓":"✕";
+  card._durEl.textContent=label;
+  if(finalText){const f=el("subfinal");f.textContent=finalText;card._log.append(f)}}
+
+/* ═══════════════ 等待队列（场景 1 全交互） ═══════════════ */
+const Queue={
+  items:[],seq:0,drag:null,box:null,inp:null,busy:false,epoch:0,
+  init(boxId,inpId,sendId,log){this.box=$(boxId);this.inp=$(inpId);this.log=log;
+    this.items=[];this.seq=0;this.drag=null;this.epoch++;this.render();
+    if(this._bound)return;this._bound=true;   /* 重播只重置状态，监听只绑一次 */
+    $(sendId).addEventListener("click",()=>this.submit());
+    this.inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();this.submit()}})},
+  submit(){const t=this.inp.value.trim();if(!t)return;this.inp.value="";
+    if(this.busy){this.add(t);toast("已加入等待队列（第 "+this.items.length+" 条）")}
+    else this.runOne(t)},
+  add(text){this.items.push({qid:++this.seq,text});this.render()},
+  remove(qid){const i=this.items.findIndex(x=>x.qid===qid);if(i>=0)this.items.splice(i,1);this.render()},
+  toTop(qid){const i=this.items.findIndex(x=>x.qid===qid);if(i<0)return;
+    const[m]=this.items.splice(i,1);this.items.unshift(m);this.render();
+    toast(this.busy?"已提到队首，当前回合结束后立即发送":"已提到队首")},
+  edit(qid){const i=this.items.findIndex(x=>x.qid===qid);if(i<0)return;
+    const[m]=this.items.splice(i,1);this.render();this.inp.value=m.text;this.inp.focus();
+    toast("已取出到输入框，改完再发")},
+  render(){const b=this.box;b.innerHTML="";b.hidden=!this.items.length;
+    if(!this.items.length)return;
+    const h=el("qhead");h.innerHTML="<span>⏳ 等待队列 · "+this.items.length+" 条</span>"
+      +'<span class="qh-tip">⋮⋮ 拖动排序 · ↑ 立即 · ✎ 编辑 · ✕ 删除</span>';b.append(h);
+    this.items.forEach(it=>{
+      const c=el("qcard");c.draggable=true;c.dataset.qid=it.qid;
+      c.innerHTML='<span class="qgrip">⋮⋮⋮</span><span class="qtext">'+esc(it.text)+'</span>'
+        +'<button class="qa qa-now" title="提到队首，当前回合结束后立即发送">↑ 立即</button>'
+        +'<button class="qa qa-edit" title="取出编辑">✎</button>'
+        +'<button class="qa qa-del" title="删除">✕</button>';
+      c.addEventListener("dragstart",e=>{this.drag=it.qid;c.classList.add("dragging");
+        e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(it.qid))});
+      c.addEventListener("dragend",()=>{this.drag=null;c.classList.remove("dragging");
+        b.querySelectorAll(".qcard").forEach(x=>x.classList.remove("drag-over"))});
+      c.addEventListener("dragover",e=>{e.preventDefault();
+        if(this.drag&&this.drag!==it.qid)c.classList.add("drag-over")});
+      c.addEventListener("dragleave",()=>c.classList.remove("drag-over"));
+      c.addEventListener("drop",e=>{e.preventDefault();c.classList.remove("drag-over");
+        const q=this.items;
+        const from=q.findIndex(x=>x.qid===this.drag);if(from<0)return;
+        const targetIdx=q.findIndex(x=>x.qid===it.qid);if(targetIdx<0)return;
+        const[m]=q.splice(from,1);
+        let to=q.findIndex(x=>x.qid===it.qid);
+        if(from<targetIdx)to+=1;               /* 目标原在拖动项下方 → 落到其下（原下标判断） */
+        q.splice(to,0,m);this.drag=null;this.render()});
+      c.querySelector(".qa-now").addEventListener("click",()=>this.toTop(it.qid));
+      c.querySelector(".qa-edit").addEventListener("click",()=>this.edit(it.qid));
+      c.querySelector(".qa-del").addEventListener("click",()=>this.remove(it.qid));
+      b.append(c)})},
+  /* 回合结束 → 按序 drain：发一条消一张卡 */
+  drain(){if(!this.items.length){return}
+    const next=this.items[0];const ep=this.epoch;
+    setTimeout(()=>{if(ep!==this.epoch)return;
+      if(!this.items.length||this.items[0].qid!==next.qid)return;
+      this.items.shift();this.render();this.runOne(next.text,()=>this.drain())},900)},
+  /* 发出一条：用户气泡 + 思考 + 演示回复 */
+  runOne(text,done){const log=this.log;const turn=mkTurn(log);
+    userChip(turn,text);const dur=mkDur(turn);
+    const th=addThink(turn,"（演示）处理中："+text);
+    const ep=this.epoch;
+    setTimeout(()=>{if(ep!==this.epoch)return;
+      closeThink(th);stopDur(dur);
+      bubble(turn,REPLIES[text]||("（演示回复）已处理：「"+text.slice(0,18)+(text.length>18?"…":"")+"」。"));
+      this.busy=false;this.setStop(false);
+      turn.classList.add("folded");
+      done?done():this.drain()},1400);
+    this.busy=true;this.setStop(true)},
+  setStop(on){const b=$("#qsend1");if(b)b.classList.toggle("stop",on)}
+};
+const REPLIES={
+  "北京今天天气怎么样？":"北京今天（9月14日）晴，18~28℃，风力小于 3 级，空气质量优，早晚外出建议添件衣服。（演示回复）",
+  "把上面的摘要压缩到 100 字":"已把上面那段摘要压到 100 字以内，要点全保留。（演示回复）",
+  "顺便查下下周三北京的天气":"下周三北京多云转晴，22~30℃，适宜户外活动。（演示回复）"};
+
+function buildScene1(log,tl){
+  Queue.init("#qbox1","#qinp1","#qsend1",log);
+  /* 一个正在跑的回合占住忙碌态 */
+  const turn=mkTurn(log);
+  userChip(turn,"调研一下 cmx-ontology 的关系模型，写一段摘要");
+  const dur=mkDur(turn);
+  const th=addThink(turn,"先找关系模型的定义文件，再梳理 targetProperty / backing 的语义…");
+  log._busyTurn=turn;log._busyDur=dur;log._busyThink=th;
+  Queue.busy=true;Queue.setStop(true);
+  const endBusy=()=>{closeThink(th);stopDur(dur);
+    bubble(turn,"关系模型集中定义在 ontology 的关系注册表里：每条关系声明 target 类型与 backing 属性，查询时按 backing 物化列加速……（摘要正文）");
+    turn.classList.add("folded");
+    Queue.busy=false;Queue.setStop(false);
+    Queue.drain()};
+  /* 自动演示：排队 3 条 → 拖拽换序 → 回合结束逐条发出 */
+  tl.at(600,()=>Queue.add("北京今天天气怎么样？"));
+  tl.at(1500,()=>Queue.add("把上面的摘要压缩到 100 字"));
+  tl.at(2400,()=>Queue.add("顺便查下下周三北京的天气"));
+  tl.at(3800,()=>{ /* 演示一次拖拽换序：把第 1 条拖到第 2 条后面 */
+    const box=$("#qbox1");const cards=box.querySelectorAll(".qcard");if(cards.length<2)return;
+    const first=cards[0],second=cards[1];
+    first.classList.add("dragging");second.classList.add("drag-over");
+    setTimeout(()=>{const qid=Queue.drag=Number(first.dataset.qid);
+      const from=Queue.items.findIndex(x=>x.qid===qid);const[m]=Queue.items.splice(from,1);
+      let to=Queue.items.findIndex(x=>x.qid===Number(second.dataset.qid));to+=1;
+      Queue.items.splice(to,0,m);Queue.drag=null;Queue.render()},320)});
+  tl.at(5600,endBusy);
+}
+
+/* ═══════════════ 场景 2：回执折尾（图二） ═══════════════ */
+function buildScene2(log,tl){
+  /* 回合 1：派后台子任务 */
+  const t1=mkTurn(log);
+  userChip(t1,"用 task 工具后台派一个子任务（background=true），为「服务器运维」写一句不超过 20 字的中文职责描述。");
+  const d1=mkDur(t1);
+  const th1=addThink(t1,"后台派发，立即返回，不等结果。");
+  closeThink(th1);
+  const card=subCard("general-purpose","写服务器运维职责描述",true,"为「服务器运维」这个岗位写一句不超过 20 字的中文职责描述。把这句话作为结果返回。");
+  t1.append(card);tickCard(card,"后台执行中");
+  stopDur(d1);t1.classList.add("folded");
+  tl.at(400,()=>log.append(el("meta note solo","—— 回合已结束，后台子任务还在跑。这期间你继续聊：")));
+  /* 回合 2：天气问题（正跑着的时候子任务完成） */
+  tl.at(900,()=>{
+    const t2=mkTurn(log);
+    userChip(t2,"北京今天天气怎么样？");
+    const d2=mkDur(t2);
+    const th2=addThink(t2,"查一下实时天气，给用户一句可执行的结论。");
+    log._t2=t2;log._d2=d2;log._th2=th2;log._card=card;
+  });
+  /* 天气回复流式输出 */
+  tl.at(2200,()=>{closeThink(log._th2);
+    log._b2=streamText(log._t2,[
+      "北京今天（9月14日）天气：晴，无降水，气温约 18~28℃，风力小于 3 级，空气质量优。",
+      "昼夜温差 10℃ 左右，早晚外出建议添件衣服。"],()=>{});
+  });
+  /* 折尾时刻：子任务在回合内完成 → 后台卡原地收口 + 回复末尾续写转述 */
+  tl.at(4200,()=>{
+    settleCard(log._card,true,"后台完成 · 43 秒","负责服务器监控与故障处理，保障稳定运行。（17 字）");
+    log._b2.innerHTML+="\n\n另外，之前派的那个后台子任务也完成了，这次返回的「服务器运维」职责描述是：<b>负责服务器监控与故障处理，保障稳定运行</b>（17 字），符合 20 字限制。";
+  });
+  tl.at(5000,()=>{stopDur(log._d2);log._t2.classList.add("folded");
+    log._t2.append(el("meta note solo","📨 <task_result> 在本回合收口点被吸收 → 折进回复末尾；后台卡原地 ✓ 收口，不另弹通知卡"))});
+}
+
+/* ═══════════════ 场景 3：空闲独立回执（图三，现状保留） ═══════════════ */
+function buildScene3(log,tl){
+  const t1=mkTurn(log);
+  userChip(t1,"用 task 工具后台派一个子任务（background=true），为「服务器运维」写一句不超过 20 字的中文职责描述。");
+  const d1=mkDur(t1);
+  const th1=addThink(t1,"后台派发，立即返回。");closeThink(th1);
+  const card=subCard("general-purpose","写服务器运维职责描述",true,"为「服务器运维」这个岗位写一句不超过 20 字的中文职责描述。把这句话作为结果返回。");
+  t1.append(card);tickCard(card,"后台执行中");
+  stopDur(d1);t1.classList.add("folded");
+  /* 父会话已空闲，一段时间后子任务才完成 */
+  tl.at(2600,()=>{
+    settleCard(card,true,"后台完成 · 51 秒","保障服务器稳定运行，负责监控部署与故障处理。（正好 20 字）");
+    /* 独立回执回合：虚线分界 + 转述（现状 .notify 形态；原始回执卡已与后台卡合一，不重复） */
+    const nt=mkTurn(log);nt.classList.add("notify");
+    nt.append(el("meta note","📨 后台子任务回执 · 写服务器运维职责描述"));
+    const th=addThink(nt,"收到回执，向用户转述结果。");closeThink(th);
+    bubble(nt,"后台子任务完成了，这次返回的「服务器运维」职责描述是：<b>保障服务器稳定运行，负责监控部署与故障处理</b>——正好 20 个汉字。",true);
+    log.append(el("meta note solo","—— 父会话空闲：自动开独立回执回合（图三形态）；若刷新后后台卡不在场，则回落为现状的原文折叠通知卡"));
+  });
+}
+
+/* ═══════════════ 场景 4：中断保留队列 ═══════════════ */
+function buildScene4(){
+  const log=$("#log4"),box=$("#qbox4");
+  const t1=mkTurn(log);
+  userChip(t1,"把「服务器运维」的职责描述再润色一版");
+  const dur=mkDur(t1);
+  const th=addThink(t1,"润色中：保持 20 字以内，突出「监控 + 故障处理」……");
+  $("#stop4").addEventListener("click",()=>{
+    if($("#stop4")._done)return;$("#stop4")._done=true;
+    closeThink(th);stopDur(dur,"已中断");t1.classList.add("folded");
+    t1.append(el("meta note","🛑 已中断 · 等待队列已保留（不再整队清空；不自动发下一条）"));
+    toast("已中断，队列保留");
+  },{once:false});
+  /* 预置两条排队卡（静态展示，按钮走同一交互逻辑的精简版） */
+  const items=[{qid:1,text:"顺便查下明天上海的天气"},{qid:2,text:"把结果整理成表格"}];
+  box.hidden=false;box.innerHTML="";
+  const h=el("qhead");h.innerHTML="<span>⏳ 等待队列 · 2 条</span>"
+    +'<span class="qh-tip">中断后保留 · 点「↑ 立即」逐条放行</span>';box.append(h);
+  items.forEach(it=>{const c=el("qcard");
+    c.innerHTML='<span class="qgrip">⋮⋮⋮</span><span class="qtext">'+esc(it.text)+'</span>'
+      +'<button class="qa qa-now">↑ 立即</button><button class="qa qa-edit">✎</button><button class="qa qa-del">✕</button>';
+    c.querySelector(".qa-now").addEventListener("click",()=>toast("（演示）中断后点「立即」= 立即开新回合发出这条"));
+    c.querySelector(".qa-edit").addEventListener("click",()=>toast("（演示）取出编辑"));
+    c.querySelector(".qa-del").addEventListener("click",()=>{c.remove();
+      const left=box.querySelectorAll(".qcard").length;
+      if(!left){box.hidden=true}else{box.querySelector(".qhead span").textContent="⏳ 等待队列 · "+left+" 条"}});
+    box.append(c)});
+}
+
+/* ═══════════════ 装配 ═══════════════ */
+replay("s1",buildScene1);
+replay("s2",buildScene2);
+replay("s3",buildScene3);
+buildScene4();
+document.querySelectorAll("[data-replay]").forEach(b=>b.addEventListener("click",()=>{
+  const id=b.dataset.replay;
+  if(id==="s1")replay(id,buildScene1);
+  if(id==="s2")replay(id,buildScene2);
+  if(id==="s3")replay(id,buildScene3);
+}));
+$("#themeToggle").addEventListener("click",()=>{
+  const h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==="light"?"":"light"});
+</script>
+<div id="toast"></div>
+</body>
+</html>
