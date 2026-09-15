@@ -42,18 +42,24 @@
     //   语义的标签类关系才可直接 manyToMany——缺省 Edge backing 的 ol_edge 就是平台内置
     //   连接表，业务库没有中间表支撑的多对多不要硬造。
     // ── backing（关系落存储方式，缺省=Edge 物化 ol_edge）──
-    // 页面口径（唯一对外形状，与 designer 速建气泡「属性映射」同构，两端各选一个字段）：
-    //   {"fk": {"sourceProperty": "settleCurrencyId", "targetProperty": "id", "side": "b"}}
+    // 页面口径（唯一对外形状，与 designer 速建气泡「关系锚点」同构）：
+    //   {"fk": {"sourceProperty": "settleCurrencyId", "side": "b", "targetProperty"?: "code"}}
     //   sourceProperty = 持键端对象的外键属性（存来源表的真实外键值，不翻译不改写）；
-    //   targetProperty = 对端匹配属性，缺省 = 对端 primaryKey（Palantir Key 语义）；
-    //   键在对端（B 端）时写 "side": "b"。遍历时读侧实时编译属性对属性 JOIN，不落 ol_edge，
-    //   links 段无需为该关系造边。
-    // ★ 真源口径约定：凡来源表有代理主键 id 的，目标类型漏斗必带 id 列（属性 id=cm_*.id），
-    //   外键属性存真实外键值、JOIN 走 targetProperty:"id"——语义与底层库完全一致；
-    //   来源表只有自然键的（如 cm_payment_term 以 code 为锚）直接 targetProperty:"code"。
-    //   外键属性必须同时在对象类型 properties 里声明（否则 UI 不可见）；外键值为空的行
-    //   关系自然不出现（不报错）。
-    // 历史/工具直写的内部口径 {"kind":"foreignKey","property","side"} 仍可解析（兼容）。
+    //   targetProperty = 对端匹配属性，选填：缺省 = 对端主键（oo_<type>.pk，Palantir Key 严格
+    //   语义）；显式指定 = 对端属性对属性匹配（受控扩展，喂"外键存 code 等自然键"场景）；
+    //   side 缺省按 cardinality 推导（oneToMany→b、manyToOne→a、oneToOne→a），显式写须与基数
+    //   一致。遍历时读侧实时编译 JOIN/半连接，不落 ol_edge，links 段无需为该关系造边。
+    // ★ 真源口径约定（优先级从高到低）：① 外键存对端对象 pk（业务键）——targetProperty 省略，
+    //   走 pk 半连接，最健壮；② 对端 pk 锚在代理 id 而外键存业务键 code（或反之）——显式
+    //   targetProperty 指向对端真实存放的属性；③ 不得已才改数据对齐。注意对象 pk 列与 props
+    //   里的 id 属性不保证同值（如币种 pk=CNY 而 id=1），两者在 UI「对端匹配属性」里是两个选项。
+    //   外键属性必须同时在对象类型 properties 里声明（否则 UI 不可见且保存关系被拒）；
+    //   外键值为空的行关系自然不出现（不报错）。
+    // 多对多两种 backing（cardinality=manyToMany 专用，FK 不支持多对多）：
+    //   {"joinTable": {"table", "leftColumn", "rightColumn"}}——连接表由 SQL 预建（两列类型
+    //   必须 text，与 oo_*.pk 同型；leftColumn↔A 端主键、rightColumn↔B 端主键）；
+    //   {"intermediary": {"objectType", "leftProperty", "rightProperty"}}——中间对象类型
+    //   两属性各存两端主键。历史/工具直写的 {"kind":...} 口径已废除（解析按 Edge 兜底）。
   ],
 
   "functions": [                      // POST /functions

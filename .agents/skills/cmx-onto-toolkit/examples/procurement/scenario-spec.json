@@ -530,7 +530,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "supplierId",
-          "targetProperty": "id",
           "side": "b"
         }
       }
@@ -546,7 +545,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "buyerId",
-          "targetProperty": "id",
           "side": "b"
         }
       }
@@ -562,7 +560,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "baseUomId",
-          "targetProperty": "id",
           "side": "b"
         }
       }
@@ -578,7 +575,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "currencyId",
-          "targetProperty": "id",
           "side": "b"
         }
       }
@@ -594,7 +590,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "settleCurrencyId",
-          "targetProperty": "id",
           "side": "b"
         }
       }
@@ -610,7 +605,6 @@
       "backing": {
         "fk": {
           "sourceProperty": "managerId",
-          "targetProperty": "id",
           "side": "b"
         }
       }

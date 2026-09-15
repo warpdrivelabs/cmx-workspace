@@ -284,3 +284,113 @@
 
 - 清库：TRUNCATE om_*/oe_*/ol_edge + DELETE oo_quarantine + DROP `oo_%`（保留 oo_quarantine 壳）→ 按规格重灌：7 类 sync 全绿（Supplier 13/1 隔离），视图 2、快照 v1、单据 1。
 - 六条关系对象集代数全实测：buyerOf 反向（SUP0001→8 员工）、managerOf 正向（EMP0001→3 仓库）、signContract 正向（3 合同）、contractCurrency 反向（CT-2026-001→CNY）、settleCurrency 正向（CNY→8 供应商，环闭合含 SUP0001 自身）、useUom 反向（8 物料→单位）✓。
+
+---
+
+## 十一、Search-Around 遍历机制分析与 backing 完善方案（v2 · 2026-09-13 第七轮）
+
+> 触发：用户疑问「现在用的 ForeignKey 实际上跟 join 差不多」——本节基于 v6 终态最新代码重新分析
+> 遍历机制、论证该直觉，并给出完善优化方案。**不动 v3 铁律**（id=cm_*.id 真主键、外键存真实外键值、
+> targetProperty:"id" 属性对属性 JOIN 是既定裁决，本节在此口径内优化）。
+
+### 11.1 遍历链路（search-around 如何消费关系定义）
+
+```
+explorer/workshop
+ └ POST /object-sets/load {objectSet:{op:"searchAround", source, link, direction}}
+    direction 由前端按「当前对象类型在 linkType 的 A/B 端」自动判定（§6.5 新坑：改端序须强刷页面）
+  ① PEP 读侧：link_resolver.ends() 读 om_link_type → (A端,B端)；终端类型=Forward?B:A → 策略/脱敏
+  ② store.load：resolve_links → link→ends + link→backing（def.rs::backing_parsed 解析原始 JSON）
+     → Compiler::with_backing
+  ③ compile.rs emit(SearchAround)：src_end=Forward?A:B；按 backing_of(link) 分派：
+     ForeignKey → fk_search_around 四分支（11.2）
+     其余（Edge/JoinTable/Intermediary）→ 一律回退 ol_edge 子查询   ← ⚠ 见问题 #2
+  ④ 外层：SELECT pk,title,props FROM oo_<终端类型> WHERE pk IN (③) + 分页
+```
+
+### 11.2 FK 模式编译四分支（compile.rs::fk_search_around 实装）
+
+`prop`=sourceProperty（side 端持键属性）、`tp`=targetProperty（对端匹配属性；None=对端 pk 列）：
+
+| # | side vs 源端 | tp | SQL 形态 | 当前演示数据 |
+|---|---|---|---|---|
+| 1 | =源端 | None | `SELECT DISTINCT s.props->>'prop' FROM <源表> s WHERE s.pk IN(…)` 半连接取值 | 无 |
+| 2 | =源端 | Some | `…FROM <终端表> t JOIN <源表> s ON t.props->>'tp' = s.props->>'prop' WHERE s.pk IN(…)` 两表 JOIN | 无 |
+| 3 | ≠源端 | Some | #2 对称形（`t.props->>'prop' = s.props->>'tp'`） | **全部 6 条**（side=b + targetProperty:"id"） |
+| 4 | ≠源端 | None | `SELECT DISTINCT t.pk FROM <终端表> t WHERE t.props->>'prop' IN(…)` | 无 |
+
+实例（settleCurrency，A=Currency 一端/B=Supplier 多端，正向）：
+`SELECT DISTINCT t.pk FROM oo_supplier t JOIN oo_currency s ON t.props->>'settleCurrencyId' = s.props->>'id' WHERE s.pk IN ('CNY')`。
+
+### 11.3 「ForeignKey 就是 join」——论证与定位
+
+- **查询时刻四种 backing 全部归结为 join/半连接**，FK 没有指针跳转；Palantir 官方同样把 link type
+  类比为"两张数据集的 JOIN"。**该直觉成立，且是正确设计而非缺陷**。
+- 模式的真正区分维度是**映射数据的物理布局**：FK=摊在多端行自己的外键列（漏斗随主数据维护）、
+  JoinTable=独立键对表、Edge=平台统一边表（v6 已清空）、Intermediary=中间对象的行（可带关系属性）。
+  选型三角 = 写时维护成本 vs 读代价 vs 关系属性表达力。
+- 因此 FK 的短板不在「像 join」，而在 **join 的物理支撑缺失**（#1 索引）与**其余模式的空洞**（#2）。
+
+### 11.4 问题清单（逐项读码+实测核实）
+
+| # | 级别 | 问题 | 证据 |
+|---|---|---|---|
+| 1 | 🔴 | **FK join 零索引**：oo_* 仅 pkey+title 两个索引；`props->>'x'` 文本抽取全表 hash join；`is_indexed` 只管搜索索引不覆盖 FK 键 | pg_indexes 实查；万级对象单次遍历 O(N) |
+| 2 | 🟡 | **JoinTable/Intermediary 双空洞**：backing_parsed 只认 `fk`/`kind`（页面口径 `{"joinTable":…}` 静默变 Edge）；编译占位回退 ol_edge（v6 已 0 行）→ **声明即静默 0 结果** | def.rs 355-378、compile.rs 134-148 |
+| 3 | 🟡 | **validate 无跨端校验**：sourceProperty 是否真在 side 端类型、targetProperty 是否在对端类型、FK+oneToMany 是否 side=多端，写错无警告 | def.rs validate 仅查标识符合法性 |
+| 4 | 🟡 | legacy `GET /objects/{t}/{pk}/links/{l}` 硬编码 Forward，源在 B 端即错 | object_handlers.rs:239 |
+| 5 | 🟢 | 文本等值比较类型约定（'01'≠'1'）——MDM 数值 id 无前导零，实际无害，需文档约定 | 分支 2/3 SQL |
+| 6 | 🟢 | Palantir 元数据 parity 尾巴：visibility/plural display name/type classes/编辑治理约束 | v1 对标表 P1/P2 项 |
+
+### 11.5 完善优化方案
+
+**P0-A：FK join 键索引自动维护（核心，直接回应「就是 join」）**
+- link type save / 服务启动时枚举全部 FK backing 关系，对**两端键属性**幂等建表达式索引：
+  `CREATE INDEX IF NOT EXISTS idx_oo_<type>_<prop> ON oo_<type> ((props->>'<prop>'))`（btree）。
+- 落点：`cmx-onto-store-pg`（新 ensure_link_key_indexes，挂 DDL 例程 + save_link_type 钩子）；
+  删关系可选清索引。效果：反向遍历与 JOIN 内表侧从全表扫变索引探测；`EXPLAIN ANALYZE` 前后对比验收。
+
+**P0-B：JoinTable / Intermediary 补全（决策点：补实现 or 明确拒绝）**
+- 补法则：backing_parsed 增 `{"joinTable":…}`/`{"intermediary":…}` 页面口径解析；compile.rs 真编译
+  （JoinTable：`SELECT DISTINCT j.<对端列> FROM <table> j WHERE j.<源端列> IN(…)`；
+  Intermediary：经 `oo_<中间类型>` 两属性两跳）；validate 三字段必填合法标识符。
+- 简则（若暂不做）：save 时对这两种 backing 明确报「暂不支持」，运行时不再静默回退空 ol_edge。
+- **默认建议**：简则先行（v6 极简口径下暂无 M2M 演示诉求），补全排在 P1。
+
+**P0-C：建模跨端校验**
+- save_link_type 预加载两端对象类型（handler 层 IO，model 保持零依赖）：sourceProperty ∈ side 端
+  属性列表、targetProperty ∈ 对端属性列表（留空=对端 pk 合法）；
+- 方向规则：FK backing ⇒ `(oneToMany ∧ side=B) ∨ (manyToOne ∧ side=A) ∨ oneToOne`。
+
+**P0-D：legacy GET 路由方向自判**——源类型 ≠ A 端自动 Reverse（或干脆标记 deprecated 指 object-sets）。
+
+**P1：体验与治理**（沿 v1 方案 P1/P2）：visibility、active 态编辑约束、explorer 关系块 **backing 徽标**
+（FK/边表/连接表/中间对象——把「关系怎么落地」变成演示可见点）、cmx-onto-toolkit 补「backing 选型」章节。
+
+**P2**：type classes、连接表唯一注册（一表只背一关系）。
+
+### 11.6 验证清单与影响面
+
+- [ ] P0-A：构造万级行 EXPLAIN ANALYZE 前后对比；6 关系×正反向遍历回归
+- [ ] P0-B：按所选路线验证（补全→临时关系实测两模式；简则→save 报错文案）
+- [ ] P0-C：sourceProperty 写不存在属性 → save 被拒且报缺失端
+- [ ] P0-D：B 端对象走 legacy GET 命中
+- 影响面：cmx-onto-model/def.rs、cmx-onto-store-pg/{compile,ddl}.rs、cmx-onto-app/handlers.rs、
+  技能文档；无 API 破坏（backing 原样透传），无下游 path 引用。
+
+### 11.7 补记：ol_edge vs FK join 读性能实测（十万行级，2026-09-13）
+
+回答「走 ol_edge 性能最高啊」——**第一梯队是事实，但不是回退理由**：
+
+| 场景（十万行） | 计划形态 | 实测 |
+|---|---|---|
+| ol_edge 正向遍历（统计信息新鲜） | idx_ol_edge_fwd (link,a_pk) 复合索引探测 | **0.083 ms** |
+| ol_edge 同查询（统计信息陈旧，选错 rev 索引） | 按 link 探测后过滤 99,996 行 | 32.9 ms（差 400 倍——ol_edge 也不是自动就快） |
+| FK 属性对属性 JOIN（无表达式索引，分支 3） | oo_supplier 全表 Seq Scan + Hash Join | 65.6 ms |
+| 同上 + P0-A 表达式索引 | Bitmap Index Scan + Nested Loop | **19.2 ms**（键选择性越高越接近索引探测；典型低扇出外键为亚毫秒级） |
+
+结论：① ol_edge 窄表+双复合索引，读确实是第一梯队；② FK 模式补 P0-A 索引后进同一量级，
+差的是常数（jsonb 表达式求值/索引体积），选择性高的外键同样亚毫秒；③ **不回退的理由不在读性能，
+在维护语义**——Edge 是派生的第二真源，边须单独维护且主数据变更不跟随（v3→v6 六轮重构正是为了
+消灭手填边漂移）；Palantir 同样无物化边表，走"数据派生+重索引"路线。**定论：FK（真源）+ 索引
+（P0-A）为主，ol_edge 留给原生边型关系（标签/手绘/运行时动作建边）**。
