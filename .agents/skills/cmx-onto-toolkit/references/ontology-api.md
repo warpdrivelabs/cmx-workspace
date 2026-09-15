@@ -7,7 +7,7 @@
 | 接口 | body 要点 |
 |---|---|
 | `POST /object-types` | ObjectTypeDef 全量 upsert（camelCase；乐观锁 version 留 0 盲写） |
-| `POST /link-types` | objectTypeA/B 必填；cardinality 缺省 oneToMany |
+| `POST /link-types` | objectTypeA/B 必填；cardinality 缺省 oneToMany。`backing` 页面形状：`{"fk":{"sourceProperty","side"?,"targetProperty"?}}`——side 缺省按基数推导（oneToMany→b / manyToOne→a / oneToOne→a），targetProperty 缺省=**对端主键 pk 列**（严格 Palantir 语义），显式指定=对端属性对属性 JOIN（外键存非 pk 列场景）；锚点跨端校验，对端无此属性 400 拒。多对多专用：`{"joinTable":{"table","leftColumn","rightColumn"}}` 或 `{"intermediary":{"objectType","leftProperty","rightProperty"}}`。缺 backing = Edge 物化 ol_edge（配合 `POST /links` 建边） |
 | `POST /interfaces` / `/shared-properties` | implements 校验：实现者须有同名同 baseType 属性 |
 | `POST /functions` / `/action-types` | status="active" 才可求值/执行 |
 | `GET /manifest` | 六类薄清单（页面左树真源） |

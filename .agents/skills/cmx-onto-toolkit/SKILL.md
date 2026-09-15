@@ -24,6 +24,7 @@ description: 指导 AI 为任意企业业务场景设计并生成本体平台（
 - [ ] 动作覆盖增（createObject）/删（deleteObject）/改（modifyObject）/建边（addLink）/断边（removeLink）五种编辑原子
 - [ ] 至少 1 个 FEEL 函数、1 个 Rhai 函数、1 个 aggregation 函数
 - [ ] 至少 1 条 ≥2 跳下钻链（如 供应商→物料→合同）
+- [ ] 每条关系 backing 优先 FK：外键属性存**对端主键**（backing 省略 targetProperty 即严格 Palantir 语义；外键值与对端 pk 不同型才显式 `targetProperty`）；多对多须有真实连接表（joinTable）或中间对象（intermediary）支撑、不硬造——零 backing 的关系落 ol_edge 边表，破坏「凡关系必有字段关联」叙事（口径细节见 references/scenario-spec.md backing 段）
 - [ ] 动作 parameters 表完整（name/type/required + 示例值），供演示时照填；**object 参数必须带 `objectType`**——保存时自动派生进 `om_action_type.target_object_types`（物化列，勿手写），workshop 动作中心据此做“适用于当前类型”分区与选中对象自动绑定；纯 string pk 参数的动作 targets 为空，不会进该分区
 - [ ] 至少 1 个动作的 validations 引用 `objects.<object参数>.<属性>`（对象状态校验），演示“仅 open 状态可提交”类拦截
 - [ ] 每条实例数据都有讲解意义（正式中文企业数据，不用 foo/bar）
@@ -90,6 +91,8 @@ psql "$ONTO_DB_URL" -c "DO \$\$ DECLARE t text; BEGIN FOR t IN SELECT tablename 
 | launcher 重启 | `POST {sid}/restart` 用的是**保存的 toml 设置**；显式传 toml 前先 `PUT /settings`，看响应 `injected` 字段确认 |
 | 外部进程占 8097 | launcher 重启杀不掉用户手动起的进程——先 `ss -tlnp \| grep 8097` 找 pid kill 再走 launcher |
 | studio ⚠1 告警 | 状态栏 ⚠ 计数来自类型定义校验（如 PurchaseOrder 嵌套层块），演示前看一眼 Inspector 消除 |
+| FK 关系遍历查不出数据 | 外键值与对端 pk 不同型（外键存代理 id、对端 pk 是业务键）——显式 `backing.fk.targetProperty` 指向对端真实存放的属性，或改数对齐；一跳便捷端点 `GET /objects/{type}/{pk}/links/{link}` 快速鉴别 |
+| 对象保存后画布不刷新（studio） | 20260915 已修（保存后 overlay 清单 + 重渲画布）；若遇旧页面先强刷 |
 | 动作 logic 落库成 `[null]` | om_action_type.logic 必须是干净对象数组：空编辑集写 `[]`，禁止 null/`[null]`（脏项让 studio Inspector 渲染崩、执行解析挂）；onto_seed.py POST 前自动剔除，DB 手修参照 `UPDATE om_action_type SET logic='[]' WHERE api_name='…'` |
 
 ## 交付约定

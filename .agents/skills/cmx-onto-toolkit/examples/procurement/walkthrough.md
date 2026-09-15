@@ -3,7 +3,7 @@
 > 环境速记：门户 dev :5173（登录 admin/Admin@12345）｜onto :8097（cmx_onto@192.168.137.111）｜flow :8091｜mdm :8095｜model :8093｜业务库 fico（db_id=fico-db）
 > 免登录 API 头：`X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6`
 >
-> **数据基线 v6（极简口径，2026-09-13 清库重灌）**：**7 个对象类型 / 6 条关系，全部 oneToMany FK backing，零多对多、零中间表**——①每个对象带 `id` 属性=来源表 `cm_*.id` 真实主键（对象列表直接可见 id 列）；②6 条关系（signContract/buyerOf/useUom/contractCurrency/settleCurrency/managerOf）全部有 MDM 真实外键列支撑，外键属性存真实外键值，读侧实时编译属性对属性 JOIN、不落边表；③**`ol_edge` 边表 0 行——凡关系必有字段关联**；④v5 裁掉 PaymentTerm（付款条件）与供应商标签，v6 进一步裁掉供应记录（SupplyRecord 类型 + supplierSupply/materialSupply 两条关系 + cm_supply_record 中间表）——图上只剩业务真实存在的一对多。⚠️ 若前端曾打开过旧版数据，先强刷 explorer 页面（关系元数据有页面缓存）。
+> **数据基线 v6（极简口径，2026-09-13 清库重灌；2026-09-15 backing 口径升级）**：**7 个对象类型 / 6 条关系，全部 oneToMany FK backing，零多对多、零中间表**——①每个对象带 `id` 属性=来源表 `cm_*.id` 真实主键（对象列表直接可见 id 列）；②6 条关系（signContract/buyerOf/useUom/contractCurrency/settleCurrency/managerOf）全部有 MDM 真实外键列支撑，**外键属性存对端业务主键**（如 supplierId=SUP0001、currencyId=CNY），backing 省略 `targetProperty` = 对端 pk 列严格 Palantir 语义，读侧实时编译 pk 半连接、不落边表；③**`ol_edge` 边表 0 行——凡关系必有字段关联**；④v5 裁掉 PaymentTerm（付款条件）与供应商标签，v6 进一步裁掉供应记录（SupplyRecord 类型 + supplierSupply/materialSupply 两条关系 + cm_supply_record 中间表）——图上只剩业务真实存在的一对多。⚠️ 若前端曾打开过旧版数据，先强刷 explorer 页面（关系元数据有页面缓存）。
 
 ## 演示顺序（重要约束）
 
@@ -38,10 +38,10 @@
 
 - explorer `/view/onto-explorer`：
   - 过滤构造器：riskLevel = 低 → 供应商列表（风险等级是 MDM 枚举标签口径）
-  - **下钻主菜（三跳链）**：选 SUP0001（中信重工）→「采购对接 · 反向 → Employee」EMP0001 王建国（cm_supplier.buyer_id=1）→「主管仓库」WH-01（cm_warehouse.manager_id）——供应商→员工→仓库三跳全链 FK JOIN 实时编译，面包屑逐级回退
-  - **关系环（经共享币种）**：SUP0001 →「签订合同」CT-2026-001（supplierId=1）→「计价币种 · 反向」CNY 人民币（currencyId=1）→「结算币种」以人民币结算的供应商列表（SUP0002/0004/0007/0008/0009/0010…含 SUP0001 自身）——环不是拉边，是底层外键列的真实回路
-  - **数据驱动关系 = FK backing，字段级真关联**（6 条 oneToMany 全部有 MDM 真实外键列——外键属性存底层库真实外键值，读侧实时编译 `合同.supplier_id = 供应商.id` 这样的属性对属性 JOIN、**不落 ol_edge 边表**；`ol_edge` 全场 0 行，凡关系必有字段关联）：
-    - 合同详情：**供应商ID 字段回来了**——CT-2026-001 supplierId=1（cm_contract.supplier_id 真外键，指向中信重工的 id=1，不再是只有供应商名称没得关联）；「计价币种 · 反向」CT-2026-002→美元（currency_id=2）
+  - **下钻主菜（三跳链）**：选 SUP0001（中信重工）→「采购对接 · 反向 → Employee」EMP0001 王建国（buyerId=EMP0001 业务键）→「主管仓库」WH-01（managerId 同款）——供应商→员工→仓库三跳全链 FK 半连接实时编译，面包屑逐级回退
+  - **关系环（经共享币种）**：SUP0001 →「签订合同」CT-2026-001（supplierId=SUP0001）→「计价币种 · 反向」CNY 人民币（currencyId=CNY）→「结算币种」以人民币结算的供应商列表（SUP0002/0004/0007/0008/0009/0010…含 SUP0001 自身）——环不是拉边，是底层外键列的真实回路
+  - **数据驱动关系 = FK backing，字段级真关联**（6 条 oneToMany 全部有 MDM 真实外键列——外键属性存**对端业务主键**（SUP0001/CNY/EMP0001/pcs…），backing 省略 targetProperty = 对端 pk 列严格 Palantir 语义，读侧实时编译 pk 半连接、**不落 ol_edge 边表**；`ol_edge` 全场 0 行，凡关系必有字段关联）：
+    - 合同详情：**供应商ID 字段回来了**——CT-2026-001 supplierId=SUP0001（对端业务主键，直指中信重工，不再是只有供应商名称没得关联）；「计价币种 · 反向」CT-2026-002→USD（currencyId=USD）
     - 供应商 →「结算币种 · 反向 → Currency」（SUP0001→CNY 人民币，SUP0003→USD，SUP0005→EUR——**结算币种就是 cm_supplier.settle_currency_id 列的实况**）；「采购对接 · 反向 → Employee」（SUP0001→EMP0001 王建国=cm_supplier.buyer_id）
     - 物料 →「使用计量单位 · 反向 → Uom」（六角螺栓→个 pcs=cm_material.base_uom_id）；员工 →「主管仓库」（EMP0001→WH-01=cm_warehouse.manager_id）
     - **空外键对照**：SUP202609120003 引用列为空 → 结算币种/采购对接关系自然不出现——关系跟着主数据引用列走，页面补全引用列 + 一次 sync 即自动出现，无需手工补边
