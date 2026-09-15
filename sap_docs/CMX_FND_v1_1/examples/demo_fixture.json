@@ -1,0 +1,1645 @@
+{
+  "tenant_id": "11111111-1111-1111-1111-111111111111",
+  "client": "100",
+  "release_id": "22222222-2222-2222-2222-222222222222",
+  "release_status": "PUBLISHED",
+  "companies": {
+    "1000": {
+      "ktopl": "YCOA"
+    },
+    "2000": {
+      "ktopl": "YCOA"
+    }
+  },
+  "plants": {
+    "1100": {
+      "bwkey": "V100"
+    },
+    "2100": {
+      "bwkey": "V200"
+    }
+  },
+  "valuation_areas": {
+    "V100": {
+      "bukrs": "1000"
+    },
+    "V200": {
+      "bukrs": "2000"
+    }
+  },
+  "storage_locations": [
+    [
+      "1100",
+      "0001"
+    ],
+    [
+      "2100",
+      "0001"
+    ]
+  ],
+  "purchasing_organizations": {
+    "P100": {
+      "bukrs": "1000"
+    },
+    "PG01": {
+      "bukrs": null
+    }
+  },
+  "purchasing_assignments": [
+    [
+      "1100",
+      "P100"
+    ],
+    [
+      "1100",
+      "PG01"
+    ],
+    [
+      "2100",
+      "PG01"
+    ]
+  ],
+  "controlling_assignments": [
+    {
+      "bukrs": "1000",
+      "gsber": "",
+      "kokrs": "A000"
+    },
+    {
+      "bukrs": "2000",
+      "gsber": "",
+      "kokrs": "A000"
+    }
+  ],
+  "sales_areas": [
+    [
+      "S100",
+      "10",
+      "00"
+    ],
+    [
+      "S100",
+      "10",
+      "01"
+    ]
+  ],
+  "sales_plant_assignments": [
+    [
+      "S100",
+      "10",
+      "1100"
+    ]
+  ],
+  "periods": [
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 1,
+      "date_from": "2025-01-01",
+      "date_to": "2025-02-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 2,
+      "date_from": "2025-02-01",
+      "date_to": "2025-03-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 3,
+      "date_from": "2025-03-01",
+      "date_to": "2025-04-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 4,
+      "date_from": "2025-04-01",
+      "date_to": "2025-05-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 5,
+      "date_from": "2025-05-01",
+      "date_to": "2025-06-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 6,
+      "date_from": "2025-06-01",
+      "date_to": "2025-07-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 7,
+      "date_from": "2025-07-01",
+      "date_to": "2025-08-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 8,
+      "date_from": "2025-08-01",
+      "date_to": "2025-09-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 9,
+      "date_from": "2025-09-01",
+      "date_to": "2025-10-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 10,
+      "date_from": "2025-10-01",
+      "date_to": "2025-11-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 11,
+      "date_from": "2025-11-01",
+      "date_to": "2025-12-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2025,
+      "period": 12,
+      "date_from": "2025-12-01",
+      "date_to": "2026-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 1,
+      "date_from": "2025-04-01",
+      "date_to": "2025-05-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 2,
+      "date_from": "2025-05-01",
+      "date_to": "2025-06-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 3,
+      "date_from": "2025-06-01",
+      "date_to": "2025-07-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 4,
+      "date_from": "2025-07-01",
+      "date_to": "2025-08-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 5,
+      "date_from": "2025-08-01",
+      "date_to": "2025-09-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 6,
+      "date_from": "2025-09-01",
+      "date_to": "2025-10-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 7,
+      "date_from": "2025-10-01",
+      "date_to": "2025-11-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 8,
+      "date_from": "2025-11-01",
+      "date_to": "2025-12-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 9,
+      "date_from": "2025-12-01",
+      "date_to": "2026-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 10,
+      "date_from": "2026-01-01",
+      "date_to": "2026-02-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 11,
+      "date_from": "2026-02-01",
+      "date_to": "2026-03-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2025,
+      "period": 12,
+      "date_from": "2026-03-01",
+      "date_to": "2026-04-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 1,
+      "date_from": "2026-01-01",
+      "date_to": "2026-02-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 2,
+      "date_from": "2026-02-01",
+      "date_to": "2026-03-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 3,
+      "date_from": "2026-03-01",
+      "date_to": "2026-04-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 4,
+      "date_from": "2026-04-01",
+      "date_to": "2026-05-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 5,
+      "date_from": "2026-05-01",
+      "date_to": "2026-06-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 6,
+      "date_from": "2026-06-01",
+      "date_to": "2026-07-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 7,
+      "date_from": "2026-07-01",
+      "date_to": "2026-08-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 8,
+      "date_from": "2026-08-01",
+      "date_to": "2026-09-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 9,
+      "date_from": "2026-09-01",
+      "date_to": "2026-10-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 10,
+      "date_from": "2026-10-01",
+      "date_to": "2026-11-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 11,
+      "date_from": "2026-11-01",
+      "date_to": "2026-12-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2026,
+      "period": 12,
+      "date_from": "2026-12-01",
+      "date_to": "2027-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 1,
+      "date_from": "2026-04-01",
+      "date_to": "2026-05-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 2,
+      "date_from": "2026-05-01",
+      "date_to": "2026-06-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 3,
+      "date_from": "2026-06-01",
+      "date_to": "2026-07-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 4,
+      "date_from": "2026-07-01",
+      "date_to": "2026-08-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 5,
+      "date_from": "2026-08-01",
+      "date_to": "2026-09-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 6,
+      "date_from": "2026-09-01",
+      "date_to": "2026-10-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 7,
+      "date_from": "2026-10-01",
+      "date_to": "2026-11-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 8,
+      "date_from": "2026-11-01",
+      "date_to": "2026-12-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 9,
+      "date_from": "2026-12-01",
+      "date_to": "2027-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 10,
+      "date_from": "2027-01-01",
+      "date_to": "2027-02-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 11,
+      "date_from": "2027-02-01",
+      "date_to": "2027-03-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2026,
+      "period": 12,
+      "date_from": "2027-03-01",
+      "date_to": "2027-04-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 1,
+      "date_from": "2027-01-01",
+      "date_to": "2027-02-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 2,
+      "date_from": "2027-02-01",
+      "date_to": "2027-03-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 3,
+      "date_from": "2027-03-01",
+      "date_to": "2027-04-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 4,
+      "date_from": "2027-04-01",
+      "date_to": "2027-05-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 5,
+      "date_from": "2027-05-01",
+      "date_to": "2027-06-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 6,
+      "date_from": "2027-06-01",
+      "date_to": "2027-07-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 7,
+      "date_from": "2027-07-01",
+      "date_to": "2027-08-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 8,
+      "date_from": "2027-08-01",
+      "date_to": "2027-09-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 9,
+      "date_from": "2027-09-01",
+      "date_to": "2027-10-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 10,
+      "date_from": "2027-10-01",
+      "date_to": "2027-11-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 11,
+      "date_from": "2027-11-01",
+      "date_to": "2027-12-01"
+    },
+    {
+      "periv": "K4",
+      "year": 2027,
+      "period": 12,
+      "date_from": "2027-12-01",
+      "date_to": "2028-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 1,
+      "date_from": "2027-04-01",
+      "date_to": "2027-05-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 2,
+      "date_from": "2027-05-01",
+      "date_to": "2027-06-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 3,
+      "date_from": "2027-06-01",
+      "date_to": "2027-07-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 4,
+      "date_from": "2027-07-01",
+      "date_to": "2027-08-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 5,
+      "date_from": "2027-08-01",
+      "date_to": "2027-09-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 6,
+      "date_from": "2027-09-01",
+      "date_to": "2027-10-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 7,
+      "date_from": "2027-10-01",
+      "date_to": "2027-11-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 8,
+      "date_from": "2027-11-01",
+      "date_to": "2027-12-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 9,
+      "date_from": "2027-12-01",
+      "date_to": "2028-01-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 10,
+      "date_from": "2028-01-01",
+      "date_to": "2028-02-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 11,
+      "date_from": "2028-02-01",
+      "date_to": "2028-03-01"
+    },
+    {
+      "periv": "A4",
+      "year": 2027,
+      "period": 12,
+      "date_from": "2028-03-01",
+      "date_to": "2028-04-01"
+    }
+  ],
+  "fiscal_years": {
+    "K4/2025": {
+      "normal_periods": 12,
+      "special_periods": 4
+    },
+    "A4/2025": {
+      "normal_periods": 12,
+      "special_periods": 4
+    },
+    "K4/2026": {
+      "normal_periods": 12,
+      "special_periods": 4
+    },
+    "A4/2026": {
+      "normal_periods": 12,
+      "special_periods": 4
+    },
+    "K4/2027": {
+      "normal_periods": 12,
+      "special_periods": 4
+    },
+    "A4/2027": {
+      "normal_periods": 12,
+      "special_periods": 4
+    }
+  },
+  "period_rules": [
+    {
+      "opvar": "P001",
+      "account_type": "+",
+      "authorization_group": "",
+      "windows": [
+        {
+          "number": 2,
+          "from": [
+            2025,
+            1
+          ],
+          "to": [
+            2027,
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "opvar": "P002",
+      "account_type": "+",
+      "authorization_group": "",
+      "windows": [
+        {
+          "number": 2,
+          "from": [
+            2025,
+            1
+          ],
+          "to": [
+            2027,
+            16
+          ]
+        }
+      ]
+    }
+  ],
+  "business_partners": {
+    "GUID-BP-A": {
+      "partner": "BP000001"
+    }
+  },
+  "supplier_links": {
+    "0000200001": "GUID-BP-A"
+  },
+  "bp_roles": [
+    {
+      "guid": "GUID-BP-A",
+      "role": "PURCHASING",
+      "valid_from": "2025-01-01T00:00:00Z",
+      "valid_to": null,
+      "revision_id": "BP-PURCHASING"
+    },
+    {
+      "guid": "GUID-BP-A",
+      "role": "FINANCE",
+      "valid_from": "2025-01-01T00:00:00Z",
+      "valid_to": null,
+      "revision_id": "BP-FINANCE"
+    }
+  ],
+  "supplier_purchasing": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "lifnr": "0000200001",
+      "ekorg": "P100",
+      "revision_id": "LFM1-1"
+    }
+  ],
+  "supplier_company": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "lifnr": "0000200001",
+      "bukrs": "1000",
+      "revision_id": "LFB1-1"
+    }
+  ],
+  "current_supplier_blocks": {},
+  "materials": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "matnr": "CMX-MATERIAL-0001",
+      "base_unit": "EA",
+      "quantity_decimals": 0,
+      "revision_id": "MARA-1"
+    }
+  ],
+  "material_plants": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "matnr": "CMX-MATERIAL-0001",
+      "werks": "1100",
+      "revision_id": "MARC-1",
+      "blocked_actions": []
+    }
+  ],
+  "units": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "matnr": "CMX-MATERIAL-0001",
+      "unit": "BOX",
+      "numerator": "12",
+      "denominator": "1",
+      "revision_id": "MARM-1"
+    }
+  ],
+  "valuation_units": [
+    {
+      "matnr": "CMX-MATERIAL-0001",
+      "bwkey": "V100",
+      "bwtar": "",
+      "kalnr": "V000001"
+    }
+  ],
+  "books": [
+    {
+      "company": "1000",
+      "ledger": "0L",
+      "calendar": "K4",
+      "opvar": "P001",
+      "principle": "IFRS",
+      "valuation_view": "LEGAL",
+      "required_for_receipt": true,
+      "inventory_capability": "ENABLED_AND_VALIDATED",
+      "price_method": "S",
+      "functional_currency_type": "10",
+      "currency_roles": [
+        {
+          "external_type": "10",
+          "internal_type": "10",
+          "currency": "CNY",
+          "decimals": 2
+        },
+        {
+          "external_type": "30",
+          "internal_type": "30",
+          "currency": "USD",
+          "decimals": 2
+        }
+      ]
+    },
+    {
+      "company": "1000",
+      "ledger": "2L",
+      "calendar": "A4",
+      "opvar": "P002",
+      "principle": "LOCAL",
+      "valuation_view": "LEGAL",
+      "required_for_receipt": true,
+      "inventory_capability": "ENABLED_AND_VALIDATED",
+      "price_method": "S",
+      "functional_currency_type": "10",
+      "currency_roles": [
+        {
+          "external_type": "10",
+          "internal_type": "A1",
+          "currency": "CNY",
+          "decimals": 2
+        },
+        {
+          "external_type": "30",
+          "internal_type": "A2",
+          "currency": "USD",
+          "decimals": 2
+        }
+      ]
+    }
+  ],
+  "prices": [
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "kalnr": "V000001",
+      "ledger": "0L",
+      "external_currency_type": "10",
+      "price_type": "STANDARD",
+      "price_subtype": "",
+      "numerator": "100.00",
+      "denominator": "1",
+      "currency": "CNY",
+      "unit": "EA",
+      "revision_id": "PR-0L-10"
+    },
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "kalnr": "V000001",
+      "ledger": "0L",
+      "external_currency_type": "30",
+      "price_type": "STANDARD",
+      "price_subtype": "",
+      "numerator": "14.00",
+      "denominator": "1",
+      "currency": "USD",
+      "unit": "EA",
+      "revision_id": "PR-0L-30"
+    },
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "kalnr": "V000001",
+      "ledger": "2L",
+      "external_currency_type": "10",
+      "price_type": "STANDARD",
+      "price_subtype": "",
+      "numerator": "105.00",
+      "denominator": "1",
+      "currency": "CNY",
+      "unit": "EA",
+      "revision_id": "PR-2L-10"
+    },
+    {
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "recorded_from": "2025-01-01T00:00:00Z",
+      "recorded_to": null,
+      "kalnr": "V000001",
+      "ledger": "2L",
+      "external_currency_type": "30",
+      "price_type": "STANDARD",
+      "price_subtype": "",
+      "numerator": "14.70",
+      "denominator": "1",
+      "currency": "USD",
+      "unit": "EA",
+      "revision_id": "PR-2L-30"
+    }
+  ],
+  "gates": {
+    "1000/0L/2025/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2025/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2026/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/0L/2027/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2025/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2026/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/1/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/1/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/2/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/2/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/3/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/3/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/4/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/4/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/5/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/5/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/6/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/6/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/7/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/7/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/8/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/8/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/9/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/9/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/10/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/10/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/11/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/11/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/12/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/12/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/13/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/13/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/14/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/14/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/15/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/15/MM": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/16/FI": {
+      "status": "OPEN",
+      "version": 1
+    },
+    "1000/2L/2027/16/MM": {
+      "status": "OPEN",
+      "version": 1
+    }
+  }
+}

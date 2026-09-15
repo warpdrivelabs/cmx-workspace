@@ -1,0 +1,110 @@
+{
+  "requestId": "DEMO-GR-001",
+  "status": "RESOLVED_NOT_POSTED",
+  "releaseId": "22222222-2222-2222-2222-222222222222",
+  "knownAt": "2026-09-14T12:00:00+00:00",
+  "organization": {
+    "company": "1000",
+    "plant": "1100",
+    "valuation_area": "V100",
+    "storage_location": "0001",
+    "controlling_area": "A000",
+    "purchasing_organization": "P100"
+  },
+  "material": "CMX-MATERIAL-0001",
+  "inputQuantity": "5",
+  "inputUnit": "BOX",
+  "baseQuantity": "60",
+  "baseUnit": "EA",
+  "valuationObject": "V000001",
+  "books": [
+    {
+      "ledger": "0L",
+      "accountingPrinciple": "IFRS",
+      "valuationView": "LEGAL",
+      "fiscalYearVariant": "K4",
+      "fiscalYear": 2026,
+      "period": 9,
+      "postingPeriodVariant": "P001",
+      "currencyValues": [
+        {
+          "currencyType": "10",
+          "internalCurrencyType": "10",
+          "currency": "CNY",
+          "amount": "6000.00",
+          "priceRevision": "PR-0L-10",
+          "priceNumerator": "100.00",
+          "priceDenominator": "1",
+          "priceUnit": "EA"
+        },
+        {
+          "currencyType": "30",
+          "internalCurrencyType": "30",
+          "currency": "USD",
+          "amount": "840.00",
+          "priceRevision": "PR-0L-30",
+          "priceNumerator": "14.00",
+          "priceDenominator": "1",
+          "priceUnit": "EA"
+        }
+      ]
+    },
+    {
+      "ledger": "2L",
+      "accountingPrinciple": "LOCAL",
+      "valuationView": "LEGAL",
+      "fiscalYearVariant": "A4",
+      "fiscalYear": 2026,
+      "period": 6,
+      "postingPeriodVariant": "P002",
+      "currencyValues": [
+        {
+          "currencyType": "10",
+          "internalCurrencyType": "A1",
+          "currency": "CNY",
+          "amount": "6300.00",
+          "priceRevision": "PR-2L-10",
+          "priceNumerator": "105.00",
+          "priceDenominator": "1",
+          "priceUnit": "EA"
+        },
+        {
+          "currencyType": "30",
+          "internalCurrencyType": "A2",
+          "currency": "USD",
+          "amount": "882.00",
+          "priceRevision": "PR-2L-30",
+          "priceNumerator": "14.70",
+          "priceDenominator": "1",
+          "priceUnit": "EA"
+        }
+      ]
+    }
+  ],
+  "gateVersions": [
+    {
+      "key": "1000/0L/2026/9/FI",
+      "version": 1
+    },
+    {
+      "key": "1000/0L/2026/9/MM",
+      "version": 1
+    },
+    {
+      "key": "1000/2L/2026/6/FI",
+      "version": 1
+    },
+    {
+      "key": "1000/2L/2026/6/MM",
+      "version": 1
+    }
+  ],
+  "masterRevisions": [
+    "BP-PURCHASING",
+    "LFM1-1",
+    "MARA-1",
+    "MARC-1",
+    "MARM-1"
+  ],
+  "contextHash": "1def7130ea5d90cccae9805e1c4650fbc87c1fbf3df32c1cf6c298d189b2dc15"
+}

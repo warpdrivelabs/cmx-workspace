@@ -1,0 +1,569 @@
+[
+  {
+    "object_type": "TABL",
+    "object_name": "T001",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T001/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T001W",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T001W/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T001K",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T001K/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TKA02",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TKA02/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T001L",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T001L/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T024E",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T024E/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T024W",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T024W/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TVKO",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TVKO/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TVTA",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TVTA/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TVKWZ",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TVKWZ/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "SI_T001K",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/SI_T001K/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "SI_T001",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/SI_T001/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "FUNC",
+    "object_name": "DATE_TO_PERIOD_CONVERT",
+    "parent_function_group": "ADAT",
+    "locator": "FUNC DATE_TO_PERIOD_CONVERT, function group ADAT",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "FUNC",
+    "object_name": "FI_PERIOD_CHECK",
+    "parent_function_group": "FACS",
+    "locator": "FUNC FI_PERIOD_CHECK, function group FACS",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T009",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T009/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T009B",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T009B/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "T001B",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/T001B/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FINSC_LEDGER",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FINSC_LEDGER/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FINSC_LD_CMP",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FINSC_LD_CMP/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TCURR",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TCURR/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TCURF",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TCURF/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "TCURX",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/TCURX/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "MBEW",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/MBEW/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "MARM",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/MARM/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "CVI_CUST_LINK",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/CVI_CUST_LINK/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "CVI_VEND_LINK",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/CVI_VEND_LINK/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "BUT100",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/BUT100/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "KNB1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/KNB1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "LFM1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/LFM1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "CSKS",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/CSKS/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "CEPC_BUKRS",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/CEPC_BUKRS/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "EMARM",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/EMARM/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FMLT_PRICE",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FMLT_PRICE/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FMLT_PRICE_HIST",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FMLT_PRICE_HIST/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_FUNCTIONAL_KEY",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_FUNCTIONAL_KEY/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_ATTRIBUTES",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_ATTRIBUTES/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_HISTORY_IDENTIFIER",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_HISTORY_IDENTIFIER/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_CURTP_ML",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_CURTP_ML/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "SI_TVKO",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/SI_TVKO/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "BUS100_DAT",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/BUS100_DAT/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_KEY",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_KEY/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_VALIDITY",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_VALIDITY/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_MAIN",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_MAIN/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_XBEW_KEY",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_XBEW_KEY/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_HIST_KEY",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_HIST_KEY/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "FMLS_PRICE_HIST_IDENTIFIER",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/FMLS_PRICE_HIST_IDENTIFIER/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "BUS100_NCHR",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/BUS100_NCHR/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "DDLS",
+    "object_name": "FMLV_CURTP_ML",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/ddl/sources/FMLV_CURTP_ML/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FMLT_CURTP_ML",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FMLT_CURTP_ML/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "SKA1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/SKA1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "SKB1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/SKB1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "KNVV",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/KNVV/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "LFB1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/LFB1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FINSC_CURTYPE",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FINSC_CURTYPE/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "FMLC_TOGGLE",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/FMLC_TOGGLE/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "SI_KNB1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/SI_KNB1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL/DS",
+    "object_name": "SI_LFB1",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/structures/SI_LFB1/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "DOMA",
+    "object_name": "MATNR",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/domains/MATNR",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "DOMA",
+    "object_name": "GDATU_INV",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/domains/GDATU_INV",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "DTEL",
+    "object_name": "BU_ROLE_VALID_FROM",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/dataelements/BU_ROLE_VALID_FROM",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "DTEL",
+    "object_name": "BU_ROLE_VALID_TO",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/dataelements/BU_ROLE_VALID_TO",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "MARA",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/MARA/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  },
+  {
+    "object_type": "TABL",
+    "object_name": "MARC",
+    "parent_function_group": null,
+    "locator": "/sap/bc/adt/ddic/tables/MARC/source/main",
+    "observation": "active_source_read",
+    "runtime_execution": false,
+    "recursive_include_completeness": "not_claimed"
+  }
+]
