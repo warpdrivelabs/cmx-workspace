@@ -1,6 +1,7 @@
 # cmx-agent 沙箱 OS 级隔离完善方案
 
-> 日期：2026-09-14 · 状态：**v1.1 —— 四项决策已拍板（§十）+ 红蓝一轮审查通过并回填（§十一）；未实施，等"改"指令**
+> 日期：2026-09-14 · 状态：**已实施（2026-09-15 凌晨 S0-S3 全阶段落地 + 实施阶段红蓝审查清偿，见 §十二实施记录）**
+> 实施验证：全仓 420+ 测通过/1 已知红/0 新增失败 · 全仓 clippy 零告警（Win+WSL 双侧）· e2e 7/7 · 两仓已推送
 > 关联：`docs/20260904_cmx-agent进化方案_编码办公插件三面一体.md`（§八 隔离层）、`documents/plans/20260908_cmx-agent_主流Agent的Windows支持调研与适配方案.md`（§5.4 P2 沙箱拍板）、2026-09-13 红蓝审查（SandboxGuard 中央闸等已修项）。
 > v1.1 修订依据：三路红队对抗审查（Windows 技术 / Linux 技术 / 架构一致性，见 §十一审查记录）。
 
@@ -155,7 +156,7 @@ write-restricted 语义下，用户 SID 对缓存目录的 allow 在写检查中
 
 - **SANDBOX_SID 安装期生成一次并持久化**（per-session 新 SID = 每次全树重传播 + DACL 无限累积 ACE，不可取）；
 - 大仓库首次传播为**分钟级一次性成本**（杀软敏感，记档）；稳态单次包装预算 < 50ms 不受影响（§8.3 措辞已改）；
-- 传播陷阱规避：无 DACL 子对象传播后会变**空 DACL = 全拒**（MSDN 明文），须先补 DACL 再传播；`SE_DACL_PROTECTED`（禁继承）的文件不传播——列为已知残余，跑探测用例兜底；
+- 传播陷阱（实现口径，S1a 审查后修正）：无 DACL 子对象传播后会变**空 DACL = 全拒**（MSDN 明文）——全树预扫描补 DACL 在大仓库上成本过高，**登记为已知残余**（罕见形态、方向 deny 非逃逸）；`SE_DACL_PROTECTED`（禁继承）文件不传播——同登记，探测用例兜底；
 - 撤销 / 重置脚本语义：allow ACE 挂 SANDBOX_SID，对正常用户令牌无实效，残留无害；提供一键重置（重新继承父目录 DACL）。
 
 ### 4.5 `.git` deny ACE（已拍板：仅挂 shell 令牌 profile）
@@ -188,7 +189,7 @@ std / tokio `Command` **均无带令牌创建进程的 API**（CommandExt 官方
 
 ### 5.1 Landlock 逐挂载规则矩阵（按红队 B-1/B-2/B-3 重写）
 
-Landlock 规则绑定**文件层级（≈挂载点）**——`/` 上的一条规则罩不住独立挂载的 /proc /sys /dev /run /tmp，按字面写「工作区 RW、其余 RO」连 `echo x > /dev/null` 都拒（Codex 首件事就是硬编码 `/dev/null` RW）。规则矩阵（以 `/proc/self/mountinfo` 探测实际挂载，不写死清单）：
+Landlock 规则绑定**文件层级（≈挂载点）**；但注意内核语义（S1a 实施审查修正）：`security/landlock/fs.c` 走 `follow_up()` **跨挂载向上遍历**至真实根——`/` 上的一条规则实际罩住全命名空间的只读/可执行，显式逐路径规则承担的是**写权利的精确授权**（原「mountinfo 探测挂载」表述按内核真实语义修正）。仍按矩阵显式授权（`/dev/null` 不显式给写连重定向都拒——Codex 同款首查项）：
 
 | 路径 | 权利 |
 | --- | --- |
@@ -401,6 +402,22 @@ tools/proc.rs  —— 单 crate 双入口（不再是「唯一函数」）
 **回填落点**：§1.3（chrome/IM/exfiltration 边界）、§2.2（AppContainer 否决理由、域名白名单不承接）、§3.3（探测姿势修正）、§3.4（不管什么列 + poison 失效名单 + io_uring）、§3.5（漏报清单）、§四（4.1–4.8 全章重写）、§五（5.1–5.4 全章重写）、§六（6.1–6.5 重写）、§七（S1 拆期 + Linux 跑道 + windows-sys）、§八（12 类新用例）、§九（风险表扩充）、§十（D5）。
 
 **结论**：v1.0 的三处地基缺陷（Windows 放行集自相矛盾、Linux 规则矩阵与 ABI 缺失、「core 不动」与事件通道矛盾）全部修正；红队总体判断「不能按 v1.0 实施、可按修订版实施」与本记录一致。**一轮通过，无需第二轮**；实施期 S1a 首验收项（AsUserW 冒烟）与 TMP/缓存盘点为最高风险锚点。
+
+---
+
+## 十二、实施记录（2026-09-15，S0-S3 全阶段完成）
+
+**验证数字**：全仓 cargo test **420+ 通过 / 1 已知红**（`\?\` workspace 断言，基线即红）/ 0 新增失败（沙箱新增 19 测全绿：Windows 受限 spawn 端到端、逃逸写拒、.git 双 profile、HKCU、越界读、超时整树收尸、BPF 形状等）；全仓 **clippy --all-targets 零告警**（Windows host + WSL Ubuntu 双侧）；e2e-serve.sh **7/7**；Linux 侧 WSL cargo check/clippy 通过（Landlock/seccomp 运行时验证 = WSL/Deepin 真机跑道，缺口记档）。
+
+**实施落点**：新 crate `cmx-agent-sandbox`（14 号 crate，windows-sys 0.59 + libc）；tools（proc.rs run_profiled + shell/git/run_tests 改道）、plugin（command/wasm 改道 + manifest working_dir/timeout_ms + **D5 落地**：high_risk 映射退役改「沙箱内放行 + Always 审批」）、app（SandboxSettings 落 data_dir/settings.json + Get/SetSandboxSettings 前门命令 + CmdRiskGuard 注册）、web/ui（工具卡沙箱徽标含孤儿卡路径，--muted/--gold 令牌零硬编码）+ AGENTS.md 同步。
+
+**实施中实测踩坑（真实锚点）**：CREATE_UNICODE_ENVIRONMENT 缺失 → GLE 87；环境块必须按名字母序排序 → GLE 87；TOKEN_ASSIGN_PRIMARY 必须 OpenProcessToken 时带上 → GLE 5；lpApplicationName 传裸名不做 PATH 搜索 → GLE 2；**PROC_THREAD_ATTRIBUTE_JOB = 0x2_000D（JOB_LIST=13，非 19）** → GLE 24；hStdInput 传 INVALID_HANDLE_VALUE → 不可用。
+
+**实施阶段红蓝审查（一轮三路）清偿记录**：红队 Windows/集成/Linux 三路报 **3 P0 + 8 P1 + 约 15 P2**，全部亲核后：P0 全修（spawn 属性表 value 悬垂 UB→函数级作用域+JOB_LIST 勘正；seccomp JEQ 操作码 0x10→0x15+断言锚；env 87 系问题已在实施期修）；P1 修 6（quote_arg 2n 反斜杠、属性表/Job 不可用 fail-closed 拒绝（连带揭穿旧兜底路径全表句柄继承泄漏——旧测试实际走的是兜底路径）、cwd 校验前置防句柄泄漏、Degraded 路径 net_applied:false 如实标注、FAT 卷×require_os=false 逃生门打通（[vol]/[acl]/[token] 错误分类降级）、Linux 缓存 env 重定向平台中立）；P2 修 8（extra_write_roots 防线校验、seccomp 过滤器父进程预建零分配、run_tests 纳入风险屏、wasm denied 透传、孤儿卡徽标、setpgid 父侧、path_to_cstring OsStrExt、settings persisted 标记、卷探测全集、vars_os、NUL 拒绝）。**登记残余（如实声明，不假装生效）**：DELETE 不在 write-restricted 第二道检查覆盖内（删除围栏靠 S3 风险屏+审计；测试钉住边界）；no-DACL 子对象传播陷印与 SE_DACL_PROTECTED 不传播；LUA_TOKEN 未加（elevated 运行时读/exec 保留管理员组）；ACL 缓存无外部失效复核（重置后须重启进程）；Linux `.git` deny 未实现（Landlock 无减法语义）；Landlock 元数据（chmod/chown）不受限；hardened_read 字段预留未实现。
+
+**D5 处置**：按推荐选项 A 实施并验证（插件 WorkspaceWrite 下走 Always 审批卡后进受限令牌执行；connectors 同款场景核实为 in-process HTTP 工具不涉进程沙箱，维持现状）。
+
+**未竟事项**：Landlock/seccomp 真机行为验证（WSL check/clippy 已过，curl/io_uring/32 位 ELF 三例 + npm/cargo 重定向回归待真机跑）；elevated 运行场景回归；no-DACL 传播负例自动用例。
 
 ---
 
