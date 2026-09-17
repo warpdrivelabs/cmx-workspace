@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>True Mate 功能文档：AI 助手的九大扩展概念（深度调研版）</title>
+<style>
+  :root {
+    --paper: #F3F5FA; --card: #FFFFFF; --ink: #1B2437; --muted: #5D6B85;
+    --line: #E3E8F2; --brand: #2563EB; --brand-deep: #1D4ED8;
+    --role: #6D28D9; --role-bg: #EDE9FE; --role-line: #C4B5FD;
+    --ab: #0369A1;  --ab-bg: #E0F2FE;  --ab-line: #7DD3FC;
+    --know: #A16207; --know-bg: #FEF9C3; --know-line: #FDE047;
+    --trig: #BE123C; --trig-bg: #FFE4E6; --trig-line: #FDA4AF;
+    --tool: #15803D; --tool-bg: #F0FDF4; --tool-line: #86EFAC;
+    --pack: #7E22CE; --pack-bg: #FAF5FF; --pack-line: #D8B4FE;
+    --warn-bg: #FFFBEB; --warn-line: #FDE68A; --warn-bar: #F59E0B;
+    --no-bg: #FEF2F2; --no-line: #FECACA; --no-bar: #EF4444;
+    --shadow: 0 1px 2px rgba(27,36,55,.05), 0 10px 30px -18px rgba(27,36,55,.28);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font-family: "PingFang SC", "Microsoft YaHei", "Source Han Sans SC", "Segoe UI", system-ui, sans-serif;
+         line-height: 1.85; }
+  ::selection { background: #DBEAFE; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 30px 20px 60px; }
+
+  /* ---------- hero ---------- */
+  header.hero { position: relative; overflow: hidden; background: var(--card);
+                border: 1px solid var(--line); border-radius: 20px;
+                padding: 36px 38px 28px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  header.hero::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+                background: linear-gradient(90deg, #8B5CF6 0%, #2563EB 30%, #0EA5E9 52%, #15803D 76%, #F43F5E 100%); }
+  h1 { font-size: 30px; line-height: 1.3; margin: 0 0 10px; letter-spacing: .01em; }
+  .sub { color: var(--muted); font-size: 15px; max-width: 62em; }
+  .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 13px; padding: 2px 13px; border-radius: 999px; border: 1px solid; line-height: 1.7; }
+  .chip i { font-style: normal; font-size: 11px; opacity: .75; margin-left: 3px; }
+  .chip.role { color: var(--role); background: var(--role-bg); border-color: var(--role-line); }
+  .chip.ab   { color: var(--ab);   background: var(--ab-bg);   border-color: var(--ab-line); }
+  .chip.know { color: var(--know); background: var(--know-bg); border-color: var(--know-line); }
+  .chip.trig { color: var(--trig); background: var(--trig-bg); border-color: var(--trig-line); }
+  .chip.tool { color: var(--tool); background: var(--tool-bg); border-color: var(--tool-line); }
+  .chip.pack { color: var(--pack); background: var(--pack-bg); border-color: var(--pack-line); }
+  .meta { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line);
+          font-size: 13px; color: var(--muted); }
+
+  /* ---------- toc（吸顶药丸） ---------- */
+  nav.toc { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 6px;
+            padding: 10px 12px; margin: 0 -4px 24px;
+            background: rgba(243,245,250,.88); backdrop-filter: blur(8px);
+            border-radius: 14px; }
+  nav.toc a { font-size: 13px; color: var(--ink); text-decoration: none; line-height: 1.6;
+              background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+              padding: 3px 13px; transition: border-color .15s, color .15s, transform .15s; }
+  nav.toc a:hover { border-color: var(--brand); color: var(--brand-deep); transform: translateY(-1px); }
+  nav.toc a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  nav.toc i { font-style: normal; font-weight: 700; margin-right: 5px; font-size: 12px; }
+  .t-ink  { color: #475569; }
+  .t-role { color: var(--role); }
+  .t-know { color: var(--know); }
+  .t-pack { color: var(--pack); }
+  .t-ab   { color: var(--ab); }
+  .t-trig { color: var(--trig); }
+
+  /* ---------- 章节 ---------- */
+  section.chapter { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+                    padding: 30px 36px 26px; margin-bottom: 22px; box-shadow: var(--shadow); }
+  h2 { display: flex; align-items: center; gap: 12px; font-size: 21px; margin: 0 0 16px;
+       padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  h2 .idx { flex: none; min-width: 36px; text-align: center; color: #fff; font-size: 15px; font-weight: 700;
+            padding: 2px 12px; border-radius: 10px; background: linear-gradient(135deg, #334155, #1B2437); }
+  #c1 h2 .idx, #c2 h2 .idx, #c3 h2 .idx { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+  #c4 h2 .idx { background: linear-gradient(135deg, #D97706, #B45309); }
+  #c5 h2 .idx { background: linear-gradient(135deg, #A855F7, #7E22CE); }
+  #c6 h2 .idx, #c7 h2 .idx { background: linear-gradient(135deg, #0EA5E9, #0369A1); }
+  #c8 h2 .idx, #c9 h2 .idx { background: linear-gradient(135deg, #F43F5E, #BE123C); }
+  #c10 h2 .idx { background: linear-gradient(135deg, #64748B, #475569); }
+  h2 .en { color: var(--muted); font-size: 12.5px; font-weight: 500; letter-spacing: .05em; margin-left: auto; }
+  h3 { display: flex; align-items: center; gap: 9px; font-size: 16px; margin: 24px 0 10px; color: var(--ink); }
+  h3::before { content: ""; flex: none; width: 4px; height: 15px; border-radius: 2px;
+               background: linear-gradient(180deg, var(--brand), #6D28D9); }
+  p { margin: 8px 0; font-size: 15px; }
+  ul, ol { margin: 8px 0; padding-left: 24px; font-size: 15px; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--brand); }
+  code { background: #EEF2F9; border-radius: 5px; padding: 0 5px; font-size: 13.5px; }
+
+  .oneliner { background: linear-gradient(90deg, #EFF5FF, rgba(239,245,255,0));
+              border: 1px solid #D6E4FF; border-left: 4px solid var(--brand);
+              border-radius: 12px; padding: 13px 18px; margin: 0 0 16px; font-size: 15px; }
+
+  /* ---------- 架构图 ---------- */
+  .figure { background: #FBFCFE; border: 1px solid var(--line); border-radius: 16px;
+            padding: 18px 14px 10px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .figure svg { min-width: 780px; max-width: 100%; height: auto; }
+  .figure svg text { font-family: inherit; }
+  .cap { color: var(--muted); font-size: 13px; margin: 10px 4px 8px; }
+
+  .tag { display: inline-block; border-radius: 6px; font-size: 12.5px; padding: 0 8px; margin-right: 4px; }
+  .role { background: var(--role-bg); color: var(--role); }
+  .skill { background: var(--ab-bg); color: var(--ab); }
+  .know { background: var(--know-bg); color: var(--know); }
+  .trig { background: var(--trig-bg); color: var(--trig); }
+
+  table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 14px 0; font-size: 14px;
+          border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+           padding: 9px 12px; text-align: left; vertical-align: top; }
+  th:last-child, td:last-child { border-right: none; }
+  tr:last-child td { border-bottom: none; }
+  th { background: #F6F8FC; font-size: 13px; font-weight: 600; color: #475569; }
+  tr:nth-child(even) td { background: #FAFBFE; }
+  tr:hover td { background: #F3F7FF; }
+
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-left: 4px solid var(--warn-bar);
+          border-radius: 12px; padding: 13px 17px; margin: 16px 0; font-size: 14.5px; }
+  .absent { background: var(--no-bg); border: 1px solid var(--no-line); border-left: 4px solid var(--no-bar);
+            border-radius: 12px; padding: 13px 17px; margin: 16px 0; font-size: 14.5px; }
+  .mini { color: var(--muted); font-size: 13.5px; line-height: 1.8;
+          border-left: 3px solid var(--line); padding: 2px 0 2px 12px; margin: 12px 0; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 28px; }
+  section.chapter a { color: var(--brand-deep); text-decoration: none; border-bottom: 1px dashed var(--ab-line); }
+  section.chapter a:hover { color: var(--brand); border-bottom-style: solid; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 16px 12px 40px; }
+    header.hero { padding: 26px 20px 22px; border-radius: 16px; }
+    h1 { font-size: 24px; }
+    section.chapter { padding: 22px 18px; border-radius: 16px; }
+    h2 { flex-wrap: wrap; }
+    h2 .en { margin-left: 0; width: 100%; }
+  }
+  @media print {
+    body { background: #fff; }
+    nav.toc { position: static; background: none; backdrop-filter: none; padding: 0; }
+    header.hero, section.chapter { box-shadow: none; }
+    h3 { break-after: avoid; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>True Mate 功能文档</h1>
+  <div class="sub">AI 助手扩展体系全景：<b>工具地基 + 九大扩展概念</b>。一个概念一章，说清"是什么、像什么、能做什么、和别的概念什么关系"。</div>
+  <div class="chips">
+    <span class="chip tool">工具地基</span>
+    <span class="chip role">专家</span>
+    <span class="chip role">专家团</span>
+    <span class="chip role">子智能体</span>
+    <span class="chip know">记忆</span>
+    <span class="chip pack">插件</span>
+    <span class="chip ab">连接器（MCP）</span>
+    <span class="chip ab">技能</span>
+    <span class="chip trig">命令 · 钩子<i>首期后置</i></span>
+  </div>
+  <div class="meta">产品设计稿 · 2026-09 · 深度调研版　主要参照：WorkBuddy / Claude Code / ZCode / Qoder / opencode / Octop（腾讯云开源）；另参考 Dify、Coze、Trae、OctoTools、LobsterAI、Anthropic 工程报告、BigModel（智谱）Coding Agent 学习资源等公开资料（完整清单见文末参考资料）</div>
+</header>
+
+<nav class="toc">
+  <a href="#c0"><i class="t-ink">0</i>全景与地基</a>
+  <a href="#c1"><i class="t-role">1</i>专家</a>
+  <a href="#c2"><i class="t-role">2</i>专家团</a>
+  <a href="#c3"><i class="t-role">3</i>子智能体</a>
+  <a href="#c4"><i class="t-know">4</i>记忆</a>
+  <a href="#c5"><i class="t-pack">5</i>插件</a>
+  <a href="#c6"><i class="t-ab">6</i>连接器（MCP）</a>
+  <a href="#c7"><i class="t-ab">7</i>技能</a>
+  <a href="#c8"><i class="t-trig">8</i>命令</a>
+  <a href="#c9"><i class="t-trig">9</i>钩子</a>
+  <a href="#c10"><i class="t-ink">10</i>对照表</a>
+  <a href="#c11"><i class="t-ink">11</i>参考资料</a>
+</nav>
+
+<!-- ==================== 0 全景与地基 ==================== -->
+<section class="chapter" id="c0">
+  <h2><span class="idx">0</span>先看懂全景：基座、手，和四层挂件</h2>
+  <p>所有 AI 助手（True Mate、Claude Code、ZCode 都一样）都可以拆开看：<b>一个基座 + 一双手 + 四层挂件 + 若干礼盒</b>。</p>
+  <div class="figure">
+    <svg viewBox="0 0 920 640" role="img" aria-label="True Mate 整体架构图" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94A3B8"/></marker>
+        <marker id="arV" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#A78BFA"/></marker>
+      </defs>
+
+      <!-- 你（用户） -->
+      <rect x="385" y="16" width="150" height="38" rx="19" fill="#1B2437"/>
+      <text x="460" y="40" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">你（用户）</text>
+      <line x1="460" y1="54" x2="460" y2="80" stroke="#94A3B8" stroke-width="1.6" marker-end="url(#ar)"/>
+      <text x="472" y="72" font-size="12" fill="#64748B">对话、派活</text>
+
+      <!-- 角色层 · 主对话 -->
+      <rect x="50" y="84" width="620" height="132" rx="16" fill="#EDE9FE" stroke="#C4B5FD" stroke-width="1.2"/>
+      <text x="70" y="112" font-size="13" font-weight="bold" fill="#6D28D9">角色层（谁来干）· 主对话</text>
+      <rect x="70" y="124" width="140" height="52" rx="12" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="140" y="147" text-anchor="middle" font-size="14" font-weight="bold" fill="#4C1D95">助理</text>
+      <text x="140" y="166" text-anchor="middle" font-size="11" fill="#8B7BB8">通用工作助理·日常对话</text>
+      <rect x="222" y="124" width="140" height="52" rx="12" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="292" y="147" text-anchor="middle" font-size="14" font-weight="bold" fill="#4C1D95">专家</text>
+      <text x="292" y="166" text-anchor="middle" font-size="11" fill="#8B7BB8">市场召唤的专门人设</text>
+      <rect x="374" y="124" width="140" height="52" rx="12" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="444" y="147" text-anchor="middle" font-size="14" font-weight="bold" fill="#4C1D95">专家团</text>
+      <text x="444" y="166" text-anchor="middle" font-size="11" fill="#8B7BB8">团长编排成员流水线</text>
+      <line x1="520" y1="150" x2="556" y2="150" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arV)"/>
+      <text x="520" y="140" font-size="11" fill="#7C6FAE">派出</text>
+      <rect x="562" y="124" width="88" height="52" rx="12" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1.3" stroke-dasharray="5 4"/>
+      <text x="606" y="155" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#6D28D9">子智能体</text>
+      <text x="70" y="200" font-size="12" fill="#8B7BB8">子智能体＝幕后工人：独立上下文干活、只交回结果，不占会话列表；谁在主对话，谁就能派</text>
+
+      <!-- 挂载装备 -->
+      <line x1="460" y1="218" x2="460" y2="244" stroke="#94A3B8" stroke-width="1.6" marker-end="url(#ar)"/>
+      <text x="472" y="236" font-size="12" fill="#64748B">挂载装备</text>
+
+      <!-- 装备挂件 -->
+      <rect x="50" y="246" width="620" height="110" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+      <text x="70" y="272" font-size="13" font-weight="bold" fill="#475569">装备挂件（挂在主对话上）</text>
+      <rect x="70" y="282" width="272" height="64" rx="12" fill="#E0F2FE" stroke="#7DD3FC"/>
+      <text x="206" y="306" text-anchor="middle" font-size="13" font-weight="bold" fill="#0369A1">能力层 · 会什么</text>
+      <text x="206" y="328" text-anchor="middle" font-size="12" fill="#075985">技能 · 连接器（MCP）</text>
+      <rect x="356" y="282" width="148" height="64" rx="12" fill="#FEF9C3" stroke="#FDE047"/>
+      <text x="430" y="306" text-anchor="middle" font-size="13" font-weight="bold" fill="#A16207">知识层 · 记得啥</text>
+      <text x="430" y="328" text-anchor="middle" font-size="12" fill="#854D0E">记忆（可视可管）</text>
+      <rect x="518" y="282" width="132" height="64" rx="12" fill="#FFE4E6" stroke="#FDA4AF"/>
+      <text x="584" y="306" text-anchor="middle" font-size="13" font-weight="bold" fill="#BE123C">触发层 · 何时动</text>
+      <text x="584" y="328" text-anchor="middle" font-size="11" fill="#9F1239">命令·钩子（后置）</text>
+
+      <!-- 落到手上 -->
+      <line x1="460" y1="356" x2="460" y2="382" stroke="#94A3B8" stroke-width="1.6" marker-end="url(#ar)"/>
+      <text x="472" y="374" font-size="12" fill="#64748B">能力最后落在手上</text>
+
+      <!-- 工具地基 -->
+      <rect x="50" y="386" width="620" height="112" rx="16" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.2"/>
+      <text x="70" y="412" font-size="13" font-weight="bold" fill="#15803D">工具地基（拿什么干）</text>
+      <rect x="70" y="422" width="186" height="56" rx="12" fill="#FFFFFF" stroke="#BBF7D0"/>
+      <text x="163" y="444" text-anchor="middle" font-size="13" font-weight="bold" fill="#166534">内置工具</text>
+      <text x="163" y="464" text-anchor="middle" font-size="11" fill="#15803D" opacity="0.8">读写文件·执行命令·搜索</text>
+      <rect x="270" y="422" width="186" height="56" rx="12" fill="#FFFFFF" stroke="#BBF7D0"/>
+      <text x="363" y="444" text-anchor="middle" font-size="13" font-weight="bold" fill="#166534">自定义工具</text>
+      <text x="363" y="464" text-anchor="middle" font-size="11" fill="#15803D" opacity="0.8">本地代码注册成手</text>
+      <rect x="470" y="422" width="180" height="56" rx="12" fill="#E0F2FE" stroke="#7DD3FC"/>
+      <text x="560" y="444" text-anchor="middle" font-size="13" font-weight="bold" fill="#0369A1">远程工具</text>
+      <text x="560" y="464" text-anchor="middle" font-size="11" fill="#0369A1" opacity="0.8">由连接器接进来的手</text>
+
+      <!-- function calling -->
+      <line x1="460" y1="498" x2="460" y2="524" stroke="#94A3B8" stroke-width="1.6" marker-end="url(#ar)"/>
+      <text x="472" y="516" font-size="11.5" fill="#64748B">function calling</text>
+
+      <!-- 基座 -->
+      <rect x="50" y="528" width="620" height="88" rx="16" fill="#1B2437"/>
+      <text x="70" y="562" font-size="15" font-weight="bold" fill="#FFFFFF">基座：大模型</text>
+      <text x="70" y="588" font-size="12.5" fill="#C7D2E8">Agent 循环：获取上下文 → 执行操作 → 验证结果，交替进行直到干完</text>
+
+      <!-- 插件礼盒（横跨挂件与工具两层） -->
+      <line x1="736" y1="300" x2="676" y2="300" stroke="#D8B4FE" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arV)"/>
+      <text x="682" y="290" font-size="11" fill="#7C6FAE">整包装入</text>
+      <rect x="736" y="246" width="164" height="252" rx="14" fill="#FAF5FF" stroke="#D8B4FE" stroke-width="1.4" stroke-dasharray="5 4"/>
+      <text x="750" y="274" font-size="13" font-weight="bold" fill="#7E22CE">插件礼盒（第5章）</text>
+      <text x="750" y="298" font-size="11.5" fill="#7C6FAE">把六类积木打包成套：</text>
+      <text x="750" y="318" font-size="11.5" fill="#7C6FAE">技能·命令·钩子</text>
+      <text x="750" y="336" font-size="11.5" fill="#7C6FAE">工具·连接器·子智能体</text>
+      <text x="750" y="360" font-size="11.5" fill="#7C6FAE">整包启停 · 包名隔离</text>
+      <text x="750" y="384" font-size="11.5" fill="#7C6FAE">召唤/安装专家时</text>
+      <text x="750" y="402" font-size="11.5" fill="#7C6FAE">随行清单带动装备</text>
+      <text x="750" y="420" font-size="11.5" fill="#7C6FAE">（第 1 章延伸三）</text>
+    </svg>
+    <div class="cap">图 0-1　整体架构：主对话派活，挂件供装备，工具动手，基座思考；工具地基里那枚蓝色的"远程工具"，就是能力层连接器（MCP）接进来的手；右侧插件礼盒横跨挂件与工具两层——它是打包格式，不是第九种能力（第 5 章）</div>
+  </div>
+
+  <h3>地基：工具（Tool）——模型的手</h3>
+  <p>大模型本体只会"想"和"说"，动不了手。让它干真活，靠的是<b>工具调用</b>机制：模型说"我要用某某工具、参数是这些"，助手应用替它执行，把结果喂回来，模型接着想。这一圈叫 <b>function calling</b>，是全行业通用的底层机制——后面九大概念里所有"会什么"，最后都落到这双手上。</p>
+  <ul>
+    <li><b>内置工具</b>：应用出厂自带——读写文件、执行命令、搜索网页、派出任务等。</li>
+    <li><b>自定义工具</b>：把一段本地代码（函数 + 参数说明 + 执行逻辑）注册成工具，模型即可像内置工具一样调用——不需要起服务，是最轻的扩能力方式。opencode 的插件正是这么注册工具的；学术界的 OctoTools 更是把"把工具封装成标准卡片、即插即用"做成了整个框架的核心理念。</li>
+    <li><b>远程工具</b>：外部系统提供的工具，经 MCP 协议接入（第 6 章连接器）——查数据库、发消息、下单都属此类。</li>
+  </ul>
+  <p class="mini">经验数据：Anthropic 多智能体工程报告的分析发现，任务效果差异有八成能被"token 花了多少"解释，工具调用次数则是另外两个关键因素之一——模型聪明之外，<b>手多不多、用得勤不勤，直接决定活干成什么样</b>。</p>
+
+  <h3>引擎：Agent 循环——基座和手怎么配合</h3>
+  <p>基座和工具是怎么协作干活的？靠的是 <b>Agent 循环</b>：<b>获取上下文 → 执行操作 → 验证结果</b>，三步在整个任务里不断交替——比如修 Bug 就是"读代码 → 改代码 → 跑测试 → 验证"反复转，直到通过。循环里两个角色各司其职，业界的概括很精炼：<b>模型负责思考，工具负责执行，而扩展组件层决定能力边界</b>。你也是循环的一部分——随时可以打断、补充上下文、换方向。上下文快满时，系统自动做<b>压缩</b>（删旧的工具输出、总结旧对话）；这也解释了为什么记忆和技能必须做成独立文件与条目、而不是只留在聊天里——被压缩掉的对话内容不会留下来，写得出来的才留得下（见第 4、7 章）。</p>
+
+  <h3>四层挂件与一个礼盒</h3>
+  <p>打个比方：大模型是<b>刚入职的实习生</b>——脑子聪明，但不了解你、没工牌、没工具、不认识公司里的系统。九大概念就是给他配的装备：</p>
+  <ul>
+    <li><span class="tag role">角色</span><b>助理</b> = 日常的通才助手　<b>专家</b> = 工牌+人设剧本　<b>专家团</b> = 拉起一个项目组　<b>子智能体</b> = 幕后的外包小工</li>
+    <li><span class="tag skill">能力</span><b>技能</b> = 塞进工具箱的操作手册　<b>连接器</b> = 连外部系统的电话线　<b>插件</b> = 把若干装备打包成一箱的礼盒</li>
+    <li><span class="tag know">知识</span><b>记忆</b> = 自动记录的笔记本</li>
+    <li><span class="tag trig">触发</span><b>命令</b> = 人按的快捷按钮　<b>钩子</b> = 事件一响就动作的自动开关</li>
+  </ul>
+  <p>总口诀：<b>角色层决定"谁来干"，能力层决定"会什么"，知识层决定"记得啥"，触发层决定"何时动"，地基的工具决定"拿什么干"。</b>下面每一章按"是什么 → 像什么 → 功能 → 与其它概念的关系"展开。</p>
+  <div class="note">阅读提示：True Mate 首期提供前七个概念（1–7 章）；<b>命令、钩子两个模块不在首期范围</b>，第 8、9 章讲清概念本身与生态做法，并给出近期可用的替代方案。</div>
+</section>
+
+<!-- ==================== 1 专家 ==================== -->
+<section class="chapter" id="c1">
+  <h2><span class="idx">1</span>专家<span class="en">Expert / Persona Agent</span></h2>
+  <div class="oneliner"><b>一句话：</b>专家 = 同一个模型大脑 + 一套固定人设（提示词）+ 指定的模型 + 挂载的技能/连接器。"召唤"专家就是开一个绑定了这套人设的新会话。</div>
+  <h3>像什么</h3>
+  <p>像给实习生发工牌和岗位剧本：人还是那个人（模型没变），但戴上"资深前端专家"的工牌、拿到这一岗的工具包（挂载的技能和连接器）、按这一岗的语气说话（人设提示词），干起活来就完全是那个"专家"了。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>专家市场内置一批常用专家（资深前端专家、资深后端专家、数据分析师等），带简介与领域标签（编程 / 研发 / 数据…），可分类浏览挑选。</li>
+    <li><b>召唤</b>专家＝开一个绑定该人设的新会话，从第一句话起就带着专家的身份、语气与装备。</li>
+    <li>支持<b>自定义专家</b>：不走表单，而是靠内置的"专家管理"技能对话式生成——你跟它聊"我想要一个懂白酒行业的分析师"，它把人设提示词写好、配好挂载，生成新专家。</li>
+  </ul>
+  <p class="mini">同类实证：Octop（腾讯云开源的自托管助手平台）把同一机制做得更模板化——内置专家库启动时扫描加载、按场景切换，另配 16 型 MBTI 性格模板叠加定制提示词。"人设模板化"是专家体系的通行做法。</p>
+  <h3>和其它概念的关系</h3>
+  <p>专家是"面向你的入口"：你直接和它对话。它身上可以挂<b>技能、连接器</b>等装备；多个专家/角色组队协作就成了<b>专家团</b>（下一章）。</p>
+
+  <h3>延伸一：挂的技能/连接器没装怎么办</h3>
+  <p>规则是：<b>人设照常生效，专家不会因此不能召唤；缺的装备只是"少了那只手"——影响的是这个专家的上限，不是它的存在。</b>拆开看三层：</p>
+  <ul>
+    <li><b>人设（提示词）不依赖任何安装。</b>"资深前端专家"的本体是写给模型的剧本——你是谁、擅长什么、怎么说话。这是"脑子里的事"，只要模型在，剧本就生效。哪怕一个技能、一个连接器都没装，召唤出来它依然是前端专家的口吻和专业底子。</li>
+    <li><b>技能没装 = 手册没塞进工具箱。</b>专家干这类活只能靠通用本事"裸做"：也能写也能答，但没有 SOP 兜着，做法可能不标准、步骤可能漏。对答问类任务影响小，对多步骤、有固定产出物的流程类任务影响明显——属于"做得好不好"的问题。</li>
+    <li><b>连接器没装 = 电话线没拉。</b>需要外部数据的活直接干不了——不是做得差，是没法做。设计决策：缺失的挂载<b>明确提示</b>而不是静默降级（fail-closed），用户始终知道"这个专家现在缺什么"。</li>
+  </ul>
+
+  <h3>延伸二：绑定之后能不能换专家</h3>
+  <p>交互规则分两段：<b>会话还没绑专家时，可以随时挑选专家</b>；<b>一旦会话绑定了专家/专家团，就不能原地换人</b>——再选其他专家，系统会提示「切换将开启新对话」，确认后等于开一个新会话，当前对话原样保留。设计决策：<b>人设是会话的"创建参数"，不是中途属性</b>——技术上每回合重建提示词可以做到原地换人，但产品上不开这个口子，避免"半截对话里换了个人格"的混乱。</p>
+
+  <h3>延伸三：召唤时的"随行清单"——专家能不能带动装备安装</h3>
+  <p>专家挂着的技能、插件、连接器，安装/召唤专家时要不要一并装上？生态里的做法分三档：</p>
+  <ul>
+    <li><b>一键带装</b>（Claude Code / ZCode 插件）：信任市场后安装一个包，包内技能、命令、钩子、MCP 全部就位。体验最好，但安全圈的批评很直接——这是"一次不透明的点击，同时激活了一堆会跑代码的东西"。</li>
+    <li><b>只给清单不代装</b>（Dify）：导入应用只提示缺哪些工具插件，要自己逐个去装；官方后来专门做了"Bundle 打包"来补这个麻烦，可见纯手动补装摩擦太大。</li>
+    <li><b>完全不管</b>（WorkBuddy / Trae）：装备缺失就裸跑，人设还在、能力打折，用户未必知道差在哪。</li>
+  </ul>
+  <p><b>True Mate 采用"随行清单"设计</b>，取三档之长：</p>
+  <ul>
+    <li><b>展示清单、一键带入</b>：安装或召唤专家/专家团时，列出它携带的装备（技能×2、插件×1、连接器×1……），默认全选，确认即随行安装。</li>
+    <li><b>分级对待</b>：技能/插件/自定义工具是纯文件，随行即生效；<b>连接器装了不等于连得上</b>——密钥、OAuth 授权永远单独走一步，不随包分发（这是 Dify、Coze 用踩坑换来的共识）。</li>
+    <li><b>装不进的进"待装配"清单</b>：专家照常可用，用到缺失能力时明示（呼应延伸一的降级规则），而不是装包失败。</li>
+    <li><b>卸载反向询问</b>：卸专家时问一句要不要连带卸载随行装备——打包安装而不打包卸载，是同类生态被抱怨多年的坑。</li>
+  </ul>
+</section>
+
+<!-- ==================== 2 专家团 ==================== -->
+<section class="chapter" id="c2">
+  <h2><span class="idx">2</span>专家团<span class="en">Expert Team</span></h2>
+  <div class="oneliner"><b>一句话：</b>专家团 = 一次召唤拉起一个分工明确的项目组：团长（主理人）拆解任务、成员并行作业、结果整合交付——把"多角色协作流程"做成一个可直接召唤的整体。</div>
+  <h3>像什么</h3>
+  <p>像叫了一次"装修全包服务"：你只对接项目经理（团长），他把活拆成设计、水电、瓦工、油漆，各工种并行开工，最后验收交付的是一个整体成果——你不需要挨个工种去聊。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>专家团与专家同处一个市场，以内置的「交易分析团队」为例：13 个角色、5 个阶段——<b>四维采集 → 多空辩论 → 交易决策 → 三方风险评估 → 报告</b>，每个阶段由不同角色接棒。</li>
+    <li>召唤专家团＝按流水线拉起多个角色协作，最终交付整合后的成果，而不是一堆各自为政的回答。</li>
+    <li>支持<b>自定义团队</b>：定义团长提示词（拆解与编排逻辑）+ 成员名册（谁参与、各带什么装备）。</li>
+  </ul>
+  <h3>证据：多智能体协作值不值——Anthropic 工程报告</h3>
+  <p>True Mate 团队形态的可行性，有业内最扎实的一份实证（Anthropic《我们如何构建多智能体研究系统》）：</p>
+  <ul>
+    <li><b>模式</b>：主控（lead agent）分析任务、把计划存入外部记忆，并行派出 3–5 个子代理分头探索，子代理在<b>独立上下文</b>里翻材料、只把压缩后的要点回传，主控汇总后再决定是否加派人手——这套"主控-工人"（orchestrator-worker）模式让复杂研究的时间最多缩短 90%。</li>
+    <li><b>收益</b>：研究评测中，多智能体系统比单个顶级模型高出 90.2%。适合<b>面广、可并行、信息量超出单窗口</b>的任务（比如"列出某板块所有公司董事会成员"这类广度优先的活）。</li>
+    <li><b>代价</b>：多智能体的 token 消耗约为普通对话的 15 倍；<b>不适合</b>需要全员共享上下文、强依赖中间结果的活——报告明确指出编程类任务可真正并行的部分有限，收益打折。</li>
+    <li><b>工程教训</b>：给成员派单必须四要素齐全——目标、产出格式、可用工具指引、边界（与通用最佳实践的"目标 / 上下文 / 约束 / 完成标准"四要素任务输入不谋而合）；成员产出<b>落文件、传引用</b>，不做长对话转口播，避免层层转述的"传话游戏"失真。</li>
+    <li><b>同类规划</b>：Octop 的路线图把 AgentTeams（协调者自主编排多个 expert）列为核心方向——团队形态是自托管平台的共同进化方向。</li>
+  </ul>
+  <p class="mini">对 True Mate 的含义：团队形态优先用于"调研、分析、评审"这类可拆可并行的任务（交易分析团队正是典型）；团长提示词必须写清派单四要素。</p>
+  <h3>和其它概念的关系</h3>
+  <p>专家团的成员就是<b>专家/子智能体</b>，装备来自<b>技能与连接器</b>，随行清单机制（第 1 章延伸三）对团队同样生效。团队消耗约为单专家的数倍，产品设计上明示消耗。</p>
+</section>
+
+<!-- ==================== 3 子智能体 ==================== -->
+<section class="chapter" id="c3">
+  <h2><span class="idx">3</span>子智能体<span class="en">Sub-agent</span></h2>
+  <div class="oneliner"><b>一句话：</b>子智能体 = 主对话派出的幕后工人——在独立上下文里替主对话干活，干完只交回结果，不占主对话的"脑子"。</div>
+  <h3>像什么</h3>
+  <p>像你派出去的实习生：你在会议室里跟客户开会（主对话），他在隔壁查资料、跑腿、整理表格（子任务），干完敲门送进来一页摘要——会议室里始终干净。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>子智能体不是挂在谁名下的"配置项"，而是<b>按需派出</b>的：主对话——日常的助理、召唤的专家、专家团的团长都一样——干活需要人手时，就从角色库挑一个拉起，在独立上下文里分头干，用完即收。</li>
+    <li>内置角色库：研究员（搜网页、读文献、做总结）、资料员（收集整理、写报告）、程序员（写码调试）等。</li>
+    <li>自定义子智能体按"名称、描述、图标 → 职责提示词、模型 → 工具/技能挂载 → 输出格式"定义。</li>
+  </ul>
+  <h3>规格参照：子智能体定义到什么粒度</h3>
+  <ul>
+    <li><b>Claude Code</b>：一个 Markdown 文件 = 一个子智能体——头部声明名称、何时该用（描述）、可用工具范围、用哪个模型；正文就是它的系统提示词。主对话靠"描述"字段判断什么时候自动派活。</li>
+    <li><b>opencode</b>：代理分主/从——主代理负责对话与编排，从代理独立执行幕后任务。</li>
+    <li><b>Anthropic 经验</b>：子代理是"智能过滤器"——在独立上下文里翻遍材料，只回传压缩后的要点，主对话不被原始信息灌满（产出落文件、传引用的交接细节见第 2 章证据）。</li>
+    <li><b>Octop</b>：走"双向编排"路线——出站把任务委派给 OpenCode、Claude Code、Codex 等外部编码代理（带权限门控），入站把自己暴露成 IDE 可调用的代理。子智能体的边界因此可以从内置角色外延到<b>外部代理</b>。</li>
+  </ul>
+  <p class="mini"><b>独立上下文 + 压缩回传</b>是子智能体与普通会话的本质区别：它不是"另一个聊天窗口"，而是主对话的外挂双手。</p>
+  <p>和<b>技能</b>的分工（业界辨析）：技能是可复用的知识与流程，核心价值是<b>复用</b>；子智能体是独立执行单元，核心价值是<b>上下文隔离</b>。两者可以组合——派子代理干活时，让它预载相应的技能手册。</p>
+  <h3>专家 vs 子智能体（最容易混的一对）</h3>
+  <table>
+    <tr><th></th><th>专家</th><th>子智能体</th></tr>
+    <tr><td>面向谁</td><td>面向你——你直接和它对话</td><td>面向主对话——幕后接派活</td></tr>
+    <tr><td>存在形态</td><td>市场分发的人格化角色</td><td>按需派出的幕后工人，不占会话列表</td></tr>
+    <tr><td>典型任务</td><td>咨询、写作、分析等当面协作</td><td>搜集、检索、批量处理等幕后作业</td></tr>
+  </table>
+  <div class="note"><b>先澄清一个名词：</b>True Mate 里的「助理」是通用工作助理——类似 LobsterAI 那样的办公通才，日常什么活都接，是产品的主对话；「专家」是市场里按需召唤的专门人设。子智能体跟两者都不是"隶属"关系：谁在主对话里干活，谁就能派子智能体当幕后帮手。</div>
+</section>
+
+<!-- ==================== 4 记忆 ==================== -->
+<section class="chapter" id="c4">
+  <h2><span class="idx">4</span>记忆<span class="en">Memory</span></h2>
+  <div class="oneliner"><b>一句话：</b>记忆 = 助手跨会话记住你的机制——一条条可看、可改、可删的记录（内容 + 来源 + 时间），让助手换个对话依然认识你。</div>
+  <h3>像什么</h3>
+  <p>像给实习生配一本"关于你的笔记本"：每次共事他悄悄记两条（"客户喜欢简洁的汇报""每周五交周报"），下次接活先翻一遍本子，不用你从头交代。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>提供全局记忆管理：<b>总开关</b>（一键关闭则不做任何记忆）+ <b>记忆条目列表</b>（每条含内容、来源、时间）+ 手动添加/编辑/删除/清空。</li>
+    <li>来源分两类：<b>来自对话</b>（助手从聊天里自动总结）与<b>手动添加</b>（你直接写入）。</li>
+    <li>记忆默认<b>全局生效</b>：不管日常跟助理聊，还是召唤专家干活，都带着这些条目，不用从头交代。</li>
+  </ul>
+  <h3>延伸：记忆的四种类型（认知科学口径）</h3>
+  <table>
+    <tr><th>类型</th><th>是什么</th><th>例子</th></tr>
+    <tr><td>工作记忆</td><td>当前对话的上下文窗口</td><td>本次会话里说过的话</td></tr>
+    <tr><td>情景记忆</td><td>经历过的事件与交互记录</td><td>"上周让我改过一版方案"</td></tr>
+    <tr><td>语义记忆</td><td>提炼出的长期事实与偏好</td><td>"用户喜欢简洁直接的回答"</td></tr>
+    <tr><td>程序记忆</td><td>做事的流程与方法</td><td>就是技能与人设（第 1、7 章），不归记忆模块管</td></tr>
+  </table>
+  <p>另一种分法按<b>记忆从哪来</b>：<b>指令型</b>——人写下来的规则（规范、约定、安全红线），写进项目规则文件；<b>学习型</b>——助手从用户纠正、偏好、失败经验里自己积累的。两类必须严格分开，免得琐碎经验污染了正经规则。True Mate 的记忆条目标注"来自对话 / 手动添加"，正是这个区分的产品化。</p>
+  <h3>同类产品怎么做</h3>
+  <ul>
+    <li><b>ChatGPT</b>：显式"保存的记忆" + 后台自动从历史聊天捡细节——覆盖广，但用户觉得有时不可预测。</li>
+    <li><b>Claude</b>：对历史生成记忆摘要、用时显式调取——克制、可控。</li>
+    <li><b>MemGPT / Letta</b>（开源路线）：把上下文当"虚拟内存"，agent 自己分层挪数据、编辑自己的记忆——面向开发者。</li>
+    <li><b>WorkBuddy / ZCode</b>：条目式 + 来源标注。</li>
+    <li><b>Octop</b>：层级记忆召回 + 全文检索，记忆随工作区整体迁移。</li>
+  </ul>
+  <p class="mini">True Mate 定位：管好<b>情景 + 语义</b>两类（条目可视可改可删 + 总开关），程序记忆交给技能体系，不重复造；作用域上先做全局一层（助理与专家共用），团队共享规则将来走项目级配置，不在个人记忆里混。</p>
+  <h3>和其它概念的关系</h3>
+  <p>Claude Code / ZCode 里没有这种"条目式记忆"，对应物是项目级的 <code>AGENTS.md</code> / <code>CLAUDE.md</code> 规则文件 + 自动记忆库（文件形态）。True Mate 采用更产品化的做法：条目可视、可改、可删，普通用户不用碰文件。</p>
+</section>
+
+<!-- ==================== 5 插件 ==================== -->
+<section class="chapter" id="c5">
+  <h2><span class="idx">5</span>插件<span class="en">Plugin</span></h2>
+  <div class="oneliner"><b>一句话：</b>插件 = 扩展包。它不是第九种能力，而是一种<b>打包格式</b>：一个插件包可以把技能、命令、钩子、自定义工具、连接器（MCP）、子智能体打成一个整体——装一个包，整套装备一次到位。</div>
+  <h3>像什么</h3>
+  <p>像<b>成套工具箱</b>。技能、连接器、命令这些是单件工具，可以一件一件单独买；插件是按工作主题配好的整套箱子——"企业尽调"一箱，打开来操作手册（技能）、电话线（连接器）、快捷按钮（命令）、帮手（子智能体）全齐了，互相配好、开箱即用。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>插件是 True Mate 的<b>标准分发格式</b>：一个包 = 一份清单（manifest：包名、版本、包含物）+ 若干内容，内容是六类的任意组合：<b>技能、命令、钩子、自定义工具、连接器（MCP 服务器）、子智能体</b>。</li>
+    <li>提供<b>插件市场</b>：官方插件 / 第三方插件 / 本地安装，支持搜索、安装、升级；同类还有命令行安装（Octop 的 <code>octop plugin</code>）与"内置预置、按需启用"两种分发形态。</li>
+    <li><b>一次安装全部就位</b>：包里的技能、命令、子智能体、连接器同时可用，无需逐个配置；<b>一次卸载全部移除</b>；每个插件有总开关，禁用即包内所有内容一起停。</li>
+    <li>包内命名空间隔离：插件自带的命令、技能统一挂包名前缀——多个插件之间不撞名、不互相覆盖。</li>
+    <li>装好之后，包里的每样东西与"散装"的没有区别——技能照样可全局使用、可挂载到专家，工具进工具箱，连接器照样出现在连接器列表。<b>插件只解决"怎么分发"，不改变能力本身的用法。</b></li>
+  </ul>
+  <h3>内容物详解：自定义工具（Tools）</h3>
+  <p>六类内容物里最容易被忽略的是"工具"——它填补了<b>技能（教脑、不执行代码）</b>和<b>连接器（重接入、要授权）</b>之间的空档：</p>
+  <ul>
+    <li>自定义工具 = 一段本地代码（描述 + 参数说明 + 执行逻辑），注册后模型就能直接调用，<b>不需要起 MCP 服务</b>，是轻量扩能力的首选。</li>
+    <li>生态实证：opencode 的插件在代码里直接注册工具（官方插件接口就有工具注册口，含执行前后拦截钩子）；OctoTools 把"工具卡片标准化封装、即插即用"作为框架核心；Coze 对插件的官方定义就是"包含多个工具的工具集"；Dify 的四大插件类型之一就是工具提供方。</li>
+    <li>对照：Claude Code 的插件没有裸工具口子，工具必须经包内 MCP 服务器间接提供。True Mate 取中间路线：<b>自定义工具作为一等内容物</b>，轻需求用它，重需求上 MCP。</li>
+  </ul>
+  <h3>容器与内容（插件与其它概念的根本关系）</h3>
+  <table>
+    <tr><th></th><th>插件（容器）</th><th>技能 / 命令 / 钩子 / 工具 / 连接器 / 子智能体（内容）</th></tr>
+    <tr><td>是什么</td><td>打包分发格式</td><td>能力本身</td></tr>
+    <tr><td>类比</td><td>整套工具箱</td><td>箱里的单件工具</td></tr>
+    <tr><td>获取</td><td>市场一键装整包</td><td>可单装，也常随包而来</td></tr>
+    <tr><td>开关粒度</td><td>整包启停、整包升级</td><td>逐个挂载 / 启停</td></tr>
+  </table>
+  <h3>为什么要打包？（散件也能单装，还要插件干什么）</h3>
+  <ul>
+    <li><b>成套设计</b>：一个主题下的装备互相配合，作者已经调好（尽调的技能引用尽调的连接器），照单全收就不会装一半。</li>
+    <li><b>一键到位</b>：不用照着推荐清单一件件找、一件件配。</li>
+    <li><b>统一治理</b>：版本、更新、启停都按包管理——升级一个插件，箱内所有装备同步升级。</li>
+  </ul>
+  <div class="note">⚠️ <b>信任与治理</b>：一键带装意味着一次点击同时激活技能、工具、钩子、连接器——安全圈对这种"一次不透明的同意"批评很尖锐。True Mate 对策：① 安装时列出包内全部内容物，装什么一目了然；② 钩子类内容默认禁用、手动开启；③ 企业/团队分发支持包白名单 + 随行连接器默认禁用。另注：也有产品把"插件"理解为应用本体的功能扩展（给内置浏览器装翻译之类）——那是同名不同义，见第 10 章对照表。</div>
+</section>
+
+<!-- ==================== 6 连接器 ==================== -->
+<section class="chapter" id="c6">
+  <h2><span class="idx">6</span>连接器（MCP）<span class="en">Connector / Model Context Protocol</span></h2>
+  <div class="oneliner"><b>一句话：</b>连接器 = MCP 生态里的"外部系统接入点"。装一个连接器，助手就能读写一个外部系统——飞书消息、GitHub issue、数据库、网页搜索……能力由对方服务器提供。</div>
+  <h3>像什么</h3>
+  <p>像给助手拉电话线：助手脑子再好，也够不着你公司的数据库。连接器就是那根线——接通之后，助手能"打电话"过去查询、写入、下单。MCP 则是统一的话务标准：所有系统只要按这个标准装个"总机"（MCP Server），任何支持 MCP 的助手都能接入。</p>
+  <h3>功能</h3>
+  <ul>
+    <li>提供<b>连接器市场</b>，分三块：<b>官方、第三方、连接器工坊</b>（自建），装一个连接器 = 接通一个外部系统，可用的动作（工具）由对方提供。</li>
+    <li>连接器授权独立于安装：<b>装了 ≠ 连得上</b>，密钥 / OAuth 授权永远单独一步（呼应第 1 章随行清单的分级带装）。</li>
+  </ul>
+  <h3>协议底盘：MCP 的三个原语</h3>
+  <p>一个 MCP 服务器能对外提供三类东西：</p>
+  <ul>
+    <li><b>工具（Tools）</b>：能执行的动作——查询、写入、下单，连接器的主体。</li>
+    <li><b>资源（Resources）</b>：只读的数据上下文——文档、记录，供模型"翻阅"。</li>
+    <li><b>提示（Prompts）</b>：预置的提示词模板——正好是第 8 章"命令"的素材：MCP 服务器自带的提示模板，常被助手直接挂成斜杠命令。</li>
+  </ul>
+  <h3>行业地位</h3>
+  <p class="mini">MCP 由 Anthropic 于 2024 年 11 月发布；2025 年 3 月 OpenAI 正式采纳（Agents SDK、ChatGPT 桌面端），随后 Google DeepMind 跟进，一年内成为行业事实标准——主流 AI 助手的外部工具接入全部走 MCP。学会一个，处处能用。</p>
+  <div class="note">⚠️ <b>安全：装 ≠ 可信。</b>MCP 生态已出现"工具投毒"攻击——在工具描述里藏用户看不见、模型看得见的恶意指令；还有服务器先装好、后变脸（rug pull）。True Mate 对策：连接器分区与来源审核、工具描述对用户可见、敏感动作二次确认、授权独立于安装。</div>
+</section>
+
+<!-- ==================== 7 技能 ==================== -->
+<section class="chapter" id="c7">
+  <h2><span class="idx">7</span>技能<span class="en">Skill</span></h2>
+  <div class="oneliner"><b>一句话：</b>技能 = 一个打包的"操作手册"（SKILL.md 包）：里面写着某类任务该怎么做、分几步、注意什么。模型遇到对应场景时自己翻开手册照着做。</div>
+  <h3>像什么</h3>
+  <p>像给新员工发的 SOP 手册夹：《周报怎么写》《PO 审批流程》《客户投诉处理话术》。员工（模型）本身会写字会说话，但有了手册，做这类事就有章法、不掉链子。<b>技能教的是"怎么做"（脑的方法），不是"够得着什么"（那是连接器的事）。</b></p>
+  <h3>功能</h3>
+  <ul>
+    <li>提供<b>技能市场</b>，分三块：<b>推荐</b> / <b>SkillHub</b>（社区技能库）/ <b>套件</b>（成组打包的技能集）。</li>
+    <li>装好后全局可用，也可细粒度<b>挂载到专家</b>。</li>
+    <li>技能还是 True Mate 的<b>"生成器"机制</b>：前文说的自定义专家，就是靠内置的"专家管理"技能对话式生成的——技能不光教模型做事，还能教它"造东西"。</li>
+    <li>沉淀的判断标准很简单：<b>某段提示词或流程被反复使用，它就该被沉淀成一个技能</b>——技能是个人与团队经验的资产化形态。</li>
+  </ul>
+  <p class="mini">技能还有进阶来源：<b>从对话里自动蒸馏</b>——Octop 把 Self-evolution（对话自动蒸馏成技能）、技能录制回放列入路线图，方向是"你带着干过一遍，助手自己就会了"。</p>
+  <h3>解剖一个技能：SKILL.md 包与渐进披露</h3>
+  <ul>
+    <li><b>结构</b>：一个技能 = 一个文件夹——一份 <code>SKILL.md</code>（头部两行元数据：名字 + 一句话说明；正文 = 怎么做）+ 可选的脚本、模板、参考文件。</li>
+    <li><b>渐进披露</b>：平时只有"名字 + 一句话"常驻上下文；模型判断当前任务相关时才翻开正文；正文里链接的脚本/附件要用时才加载——<b>三层按需加载</b>，不撑爆上下文。这是技能设计被业界广泛认可的关键（对比：把所有说明一股脑塞进系统提示词）。</li>
+    <li><b>技能可带脚本</b>：手册里可以直接附带可执行的小工具（模型决定调用、环境负责执行），让"教方法"和"给家伙"合在一个包里。</li>
+  </ul>
+  <p class="mini">各扩展的<b>上下文成本光谱</b>（渐进披露为什么重要）：规则文件与 MCP 服务器几乎每次请求都占上下文，成本最高；技能靠渐进披露只在相关时加载，成本低；子智能体隔离在独立上下文，主对话零负担；钩子是纯程序，不占模型上下文。什么挂"常驻"、什么挂"按需"，是扩展设计的第一课。</p>
+  <h3>技能 vs 自定义工具 vs 连接器（一张表分清）</h3>
+  <table>
+    <tr><th></th><th>技能</th><th>自定义工具</th><th>连接器（MCP）</th></tr>
+    <tr><td>本质</td><td>写给模型看的<b>方法</b></td><td>本地代码的<b>手</b></td><td>外部系统的<b>手</b></td></tr>
+    <tr><td>执行者</td><td>模型照着手册做</td><td>本地执行</td><td>外部系统执行</td></tr>
+    <tr><td>重量</td><td>最轻（纯文本）</td><td>轻（一段代码）</td><td>重（服务 + 授权）</td></tr>
+    <tr><td>典型例子</td><td>"写周报的 SOP"</td><td>"把表格转 PDF 的小函数"</td><td>连上飞书 / 数据库</td></tr>
+  </table>
+  <div class="note">社区有一派观点认为"渐进披露的技能（手册+脚本）可能取代一部分 MCP"——轻需求用手册就够，重需求才上协议。True Mate 两者都保留，让作者按重量选。</div>
+</section>
+
+<!-- ==================== 8 命令 ==================== -->
+<section class="chapter" id="c8">
+  <h2><span class="idx">8</span>命令<span class="en">Command / Slash Command</span></h2>
+  <div class="oneliner"><b>一句话：</b>命令 = 用户手动触发的"快捷按钮"——敲一个 <code>/名字</code>（可带参数），立刻执行一套预定义的动作或提示词，省得每次打一大段话。</div>
+  <h3>像什么</h3>
+  <p>像给常用操作钉在墙上的开关：一按就执行整段预编排好的流程。本质是<b>参数化的提示词模板</b>——模板里挖好坑，用时填坑。</p>
+  <h3>功能（概念本身）</h3>
+  <ul>
+    <li><b>斜杠触发</b>：<code>/名字</code> 直接执行，参数跟在后面（如 <code>/周报 123 high</code>）。</li>
+    <li><b>参数化</b>：模板里用占位符承接输入——全量参数 + 位置参数（第 1 个、第 2 个……），一条模板服务一类任务。</li>
+    <li><b>可厚可薄</b>：一条命令可以只是一句快捷短语，也可以等于一条预制的标准作业流程（绑定可用工具、指定执行步骤）。</li>
+  </ul>
+  <h3>生态参照</h3>
+  <ul>
+    <li><b>Claude Code</b>：自定义命令 = 一个 Markdown 文件（<code>.claude/commands/</code>），社区已沉淀上百个生产级命令集；MCP 服务器的 prompts 原语也会被宿主直接挂成斜杠命令——<b>命令与连接器在这里打通</b>（第 6 章）。</li>
+    <li><b>ZCode</b>：<code>/技能名</code> 触发，命令与技能共用一套触发面。</li>
+  </ul>
+  <div class="absent"><b>True Mate 首期不设独立命令模块</b>，近期用三个近亲方案顶住：<b>① 快捷短语</b>——把常用长提示词存成短语，用时一键插入；<b>② 建议标签</b>——一组常用任务的快捷提示（"帮我写代码 / 帮我写周报 / 翻译"等），本质是"内置命令"；<b>③ 「模式」切换</b>——一键切换会话行为模式，属"按钮换行为"一族；它的成熟形态是同类产品的"计划模式"：切过去后助手只做只读分析、先出方案再动手，一个模式位顶半套命令体系。</div>
+</section>
+
+<!-- ==================== 9 钩子 ==================== -->
+<section class="chapter" id="c9">
+  <h2><span class="idx">9</span>钩子<span class="en">Hook</span></h2>
+  <div class="oneliner"><b>一句话：</b>钩子 = 事件一响就自动执行的开关——在助手生命周期的固定点位（工具调用前、调用后、会话开始、提交提示词时……）自动运行预定动作，不用人守着。</div>
+  <h3>像什么</h3>
+  <p>像流水线上的传感器 + 机械臂：货（事件）一到某个工位，传感器一触发，机械臂自动动作——分拣、贴标、拦下次品。人不用盯在旁边。</p>
+  <h3>功能（概念本身）</h3>
+  <ul>
+    <li><b>事件位</b>：常用点位包括"工具执行前 / 执行后""用户提交提示词时""会话开始 / 结束""子代理结束"等，覆盖助手一举一动的生命周期。</li>
+    <li><b>确定性控制</b>：钩子是普通程序代码，说一不二——可以在工具执行前直接拦截（例如禁止写生产库）、执行后自动格式化、会话结束时自动归档。这与提示词里写"请不要 XXX"（软约束，模型可能不听）有<b>本质区别</b>。</li>
+  </ul>
+  <h3>生态参照</h3>
+  <p class="mini">Claude Code 的钩子体系覆盖十余个生命周期事件位，工具事件在主对话和子代理里同等触发；企业用法集中在三类：合规拦截、自动格式化、事件通知。Octop 同样把工具审批与 shell 命令护栏做成规则文件（tool_guard），与钩子同一思想。</p>
+  <div class="absent"><b>True Mate 首期不设钩子模块</b>。近亲方案是<b>「定时任务」</b>——按时间表自动执行任务，属于钩子家族里"时间触发"这一支；"事件触发"这一支首期不做。通用最佳实践也把"稳定流程进一步自动化（定时跑、事件触发跑）"列为助手成熟度进阶的一步——定时任务正是它的首期形态。设计上留口子：内核的权限守卫（危险动作默认拒绝、fail-closed）本身按钩子思想实现，后续开放"工具调用前 / 后"两个事件位即可平滑演进，无需重构。</div>
+</section>
+
+<!-- ==================== 10 对照表 ==================== -->
+<section class="chapter" id="c10">
+  <h2><span class="idx">10</span>True Mate 与参照产品对照表</h2>
+  <table>
+    <tr><th>概念</th><th>True Mate（本设计）</th><th>WorkBuddy</th><th>Claude Code</th><th>ZCode</th></tr>
+    <tr>
+      <td><b>专家</b></td>
+      <td>✅ 专家市场 + 召唤开会话；对话式创建</td>
+      <td>✅ 同构</td>
+      <td>— 无内置专家卡（人设靠自定义提示词 / agents 拼装）</td>
+      <td>— 无内置（同左）</td>
+    </tr>
+    <tr>
+      <td><b>专家团</b></td>
+      <td>✅ 首期直奔专家团——团长提示词编排流水线</td>
+      <td>✅ 团队形态（13 角色 5 阶段流水线）；积分×数倍</td>
+      <td>— 无内置（多 agent 编排自建）</td>
+      <td>— 无内置</td>
+    </tr>
+    <tr>
+      <td><b>子智能体</b></td>
+      <td>✅ 主对话派出制；内置研究员/资料员/程序员</td>
+      <td>✅ 同构</td>
+      <td>✅ .claude/agents/*.md（元数据 + 独立上下文）</td>
+      <td>✅ Task 工具派发子代理</td>
+    </tr>
+    <tr>
+      <td><b>记忆</b></td>
+      <td>✅ 条目式：总开关 + 来源/时间管理</td>
+      <td>✅ 同构</td>
+      <td>自动记忆 + 规则文件</td>
+      <td>AGENTS.md + 持久 memory 目录</td>
+    </tr>
+    <tr>
+      <td><b>插件</b></td>
+      <td>✅ 扩展包：技能/命令/钩子/工具/连接器/子智能体六类打包分发</td>
+      <td>— 同名不同义：应用扩展 npm 包（浏览器/模型增强）</td>
+      <td>✅ plugins（清单 + 六类内容物）</td>
+      <td>✅ 插件市场（一包全带）</td>
+    </tr>
+    <tr>
+      <td><b>连接器</b></td>
+      <td>✅ MCP 市场：官方 / 第三方 / 工坊自建</td>
+      <td>✅ MCP 市场（官方 20+ / 第三方 60+）</td>
+      <td>✅ MCP Server 接入</td>
+      <td>✅ MCP 接入</td>
+    </tr>
+    <tr>
+      <td><b>技能</b></td>
+      <td>✅ SKILL.md 包；市场三分区（推荐/SkillHub/套件）</td>
+      <td>✅ 同构</td>
+      <td>✅ Skills（SKILL.md，行业鼻祖）</td>
+      <td>✅ skills 体系</td>
+    </tr>
+    <tr>
+      <td><b>工具</b></td>
+      <td>✅ 内置工具集 + 自定义工具（轻量注册，插件可携带）</td>
+      <td>内置工具（浏览、搜索等）</td>
+      <td>✅ 十余内置工具 + MCP 扩展</td>
+      <td>✅ 内置工具 + MCP 扩展</td>
+    </tr>
+    <tr>
+      <td><b>命令</b></td>
+      <td>— 首期不设（近亲：快捷短语 / 建议标签 / 模式）</td>
+      <td>— 无</td>
+      <td>✅ /命令 Markdown 文件 + 参数化</td>
+      <td>✅ /技能名 触发</td>
+    </tr>
+    <tr>
+      <td><b>钩子</b></td>
+      <td>— 首期不设（近亲：定时任务 = 时间触发支）</td>
+      <td>— 无</td>
+      <td>✅ hooks（十余生命周期事件位）</td>
+      <td>✅ hooks 体系</td>
+    </tr>
+    <tr>
+      <td><b>安装带动依赖</b></td>
+      <td>✅ 随行清单 + 分级带装（设计）</td>
+      <td>❌ 不带动（缺失裸跑、静默降级）</td>
+      <td>✅ 信任市场 + 一键带装（MCP 随装启用）</td>
+      <td>✅ 同 Claude Code</td>
+    </tr>
+  </table>
+  <div class="note">一行速记：True Mate 取 WorkBuddy 的<b>"角色"产品化</b>（专家/专家团/记忆做成看得见、可管理的产品功能），取 Claude Code / ZCode / opencode 的<b>"扩展"机械化</b>（工具、技能、命令、钩子文件化、可编程），再用<b>"插件礼盒 + 随行清单"</b>补上两者都缺的一环——装备怎么成套分发、怎么带着装。开源阵营里 Octop（腾讯云，自托管多用户多代理）与九概念几乎全量同构——专家库、AgentTeams、层级记忆、MCP 连接器、插件、定时任务俱全，是最接近的整体参照。</div>
+</section>
+
+<!-- ==================== 11 参考资料 ==================== -->
+<section class="chapter" id="c11">
+  <h2><span class="idx">11</span>参考资料<span class="en">References</span></h2>
+  <p>本文所有对照与证据的来源清单，按"主要参照 / 另参考"分组；"落点"标到章，便于回查。</p>
+  <h3>主要参照（产品对标）</h3>
+  <ul>
+    <li><b>WorkBuddy</b>——同类 AI 助手产品：助理/专家/专家团/记忆与本文同构；其"插件"为同名不同义（应用扩展 npm 包）；随行清单对照中"完全不管"档。（落点：第 1、3、4、10 章）</li>
+    <li><b>Claude Code</b>——扩展机械化标杆：子智能体（<code>.claude/agents/*.md</code>）、命令（<code>.claude/commands/*.md</code>）、钩子（十余生命周期事件位）、技能（SKILL.md 行业鼻祖）、插件（清单 + 六类内容物）、"信任市场一键带装"。（落点：第 1、3、5、7、8、9、10 章）</li>
+    <li><b>ZCode</b>——插件市场一包全带、skills / hooks 体系、<code>/技能名</code> 命令触发、<code>AGENTS.md</code> + 持久 memory 目录。（落点：第 8、9、10 章）</li>
+    <li><b>Qoder</b>——整体形态参照。（落点：头部参照行）</li>
+    <li><b>opencode</b>——开源编码代理：插件以编程方式注册自定义工具（<code>Hooks.tool</code> 注册口 + <code>tool()</code> 助手，含执行前后拦截）、主/从代理分工。（落点：第 0、3、5 章；<a href="https://opencode.ai" target="_blank" rel="noopener">opencode.ai</a>）</li>
+    <li><b>Octop（腾讯云开源）</b>——自托管多用户多代理平台：专家库启动扫描 + 16 型 MBTI 人设、AgentTeams 路线、层级记忆随工作区迁移、<code>octop plugin</code> 命令行安装、ACP 双向编排、tool_guard 命令护栏、Self-evolution（对话蒸馏成技能）路线图；九概念几乎全量同构、最接近的整体参照。（落点：第 1、2、3、4、5、7、9、10 章；<a href="https://github.com/TencentCloud/Octop" target="_blank" rel="noopener">github.com/TencentCloud/Octop</a>）</li>
+  </ul>
+  <h3>另参考（概念、协议与证据）</h3>
+  <ul>
+    <li><b>Anthropic 工程报告《How we built our multi-agent research system》</b>——多智能体协作的核心实证：orchestrator-worker 模式、研究时间最多缩短 90%、比单模型高 90.2%、token≈15×、编程类不宜硬并行、派单四要素、产出落文件传引用。（落点：第 0、2、3 章；<a href="https://www.anthropic.com/engineering/built-multi-agent-research-system" target="_blank" rel="noopener">anthropic.com/engineering</a>）</li>
+    <li><b>BigModel（智谱）Coding Agent 学习资源</b>——五篇：Agent 工作原理 / 扩展机制 / 记忆机制 / 常见工作流 / 最佳实践；提供 Agent 循环三步、"模型负责思考，工具负责执行，扩展组件层决定能力边界"、指令型/学习型记忆二分、上下文成本与自动化进阶。（落点：第 0、4、7、8、9 章；<a href="https://docs.bigmodel.cn/cn/coding-plan/learning-resources/how-coding-agent-works" target="_blank" rel="noopener">docs.bigmodel.cn</a>）</li>
+    <li><b>MCP（Model Context Protocol）</b>——Anthropic 发起的开放协议：tools / resources / prompts 三原语，2024 年 11 月发布后一年内成为行业事实标准；安全议题含工具投毒与 rug pull。（落点：第 6、8 章；<a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">modelcontextprotocol.io</a>）</li>
+    <li><b>Dify</b>——工作流平台：随行清单对照中"只给清单不代装"与后来的 Bundle 打包；四大插件类型之一为工具提供方。（落点：第 1、5 章）</li>
+    <li><b>Coze</b>——对插件的官方定义即"包含多个工具的工具集"。（落点：第 5 章）</li>
+    <li><b>Trae（字节）</b>——随行清单对照中"完全不管"档。（落点：第 1 章）</li>
+    <li><b>OctoTools</b>——学术框架：把工具封装成标准卡片、即插即用。（落点：第 0、5 章）</li>
+    <li><b>LobsterAI</b>——通用工作助理（办公通才）形态参照。（落点：第 3 章）</li>
+    <li><b>MemGPT / Letta</b>——开源记忆路线：把上下文当"虚拟内存"，agent 自己分层挪数据、编辑自己的记忆。（落点：第 4 章；<a href="https://github.com/letta-ai/letta" target="_blank" rel="noopener">github.com/letta-ai/letta</a>）</li>
+    <li><b>ChatGPT / Claude</b>——记忆机制的同类产品对照：覆盖广的自动记忆 vs 克制的摘要式记忆。（落点：第 4 章）</li>
+  </ul>
+</section>
+
+<footer>
+  True Mate 产品设计稿 · 2026-09 · 深度调研版 · 主要参照：WorkBuddy / Claude Code / ZCode / Qoder / opencode / Octop · 仅供内部参考
+</footer>
+
+</div>
+</body>
+</html>
