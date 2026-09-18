@@ -1,5 +1,5 @@
 {
-  "_comment": "收入确认（提货贸易模式核算）演示场景规格 v1。数据全部梳理自 frontend/cmx-ontology-graph/demo/收入确认本体Web原型_v1.3.3原始.html（ONTOLOGY_OBJECTS 20 对象 / ONTOLOGY_RELATIONS 29 条 / OBJECT_LOGIC 属性分组 / JUDGMENT_ROWS·BUSINESS_CHAIN_CONTEXT·EVIDENCE_LEDGER·ADJUSTMENT_ROWS·SETTLEMENT_GROUPS·CASES·ORG_HIERARCHY·RULE_DIMENSIONS 实例数据）。20 对象类型 / 29 条关系：25 条 oneToMany FK backing（外键存对端 pk，遍历读侧 JOIN 不落边表）；4 条 manyToMany 走平台内置 ol_edge——employeeAppliesToLegal/employeeAppliesToBase（人员适用范围是数组型维护数据、无业务中间表）、purchaseSettleAggregatesBatch/deliveryRollsUpToSaleSettle（原型标注源系统派生关系，无外键）。原型 baseAgreement 约束 base 的 N-N 落地为协议持 baseId 的 FK（每份协议约束一个基地、一个基地可有多份协议），保持「凡关系必有字段关联」。adjustmentLine 即 Palantir 中间对象：由 adjustFormsLine/lineAdjustsReceivable/lineCoversBatch 三条一对多 FK 构成调账 M-N 闭环。无 funnelMappings：本场景主数据（供应商/客户/基地/法人/员工）在原型中源自数据中台主数据，此处以 objects 段原生维护以保证实例与原型叙事一致（后续接 fico cm_supplier 漏斗会整体覆盖演示实例，慎用）；docImports 保留提货单单据映射查口径（采销关联锚点单据，实例留业务系统）。函数 5 个（FEEL×2 / Rhai×1 / aggregation×2），动作 9 个覆盖五原子编辑 + 对象状态校验 + 流程闭环。本规格仅归档未执行。",
+  "_comment": "收入确认（提货贸易模式核算）演示场景规格 v1。数据全部梳理自 frontend/cmx-ontology-graph/demo/收入确认本体Web原型_v1.3.3原始.html（ONTOLOGY_OBJECTS 20 对象 / ONTOLOGY_RELATIONS 29 条 / OBJECT_LOGIC 属性分组 / JUDGMENT_ROWS·BUSINESS_CHAIN_CONTEXT·EVIDENCE_LEDGER·ADJUSTMENT_ROWS·SETTLEMENT_GROUPS·CASES·ORG_HIERARCHY·RULE_DIMENSIONS 实例数据）。20 对象类型 / 29 条关系：25 条 oneToMany FK backing（外键存对端 pk，遍历读侧 JOIN 不落边表）；4 条 manyToMany 走平台内置 ol_edge——employeeAppliesToLegal/employeeAppliesToBase（人员适用范围是数组型维护数据、无业务中间表）、purchaseSettleAggregatesBatch/deliveryRollsUpToSaleSettle（原型标注源系统派生关系，无外键）。原型 baseAgreement 约束 base 的 N-N 落地为协议持 baseId 的 FK（每份协议约束一个基地、一个基地可有多份协议），保持「凡关系必有字段关联」。adjustmentLine 即 Palantir 中间对象：由 adjustFormsLine/lineAdjustsReceivable/lineCoversBatch 三条一对多 FK 构成调账 M-N 闭环。无 funnelMappings：本场景主数据（供应商/客户/基地/法人/员工）在原型中源自数据中台主数据，此处以 objects 段原生维护以保证实例与原型叙事一致（后续接 fico cm_supplier 漏斗会整体覆盖演示实例，慎用）；docImports 保留提货单单据映射查口径（采销关联锚点单据，实例留业务系统）。函数 5 个（FEEL×2 / Rhai×1 / aggregation×2），动作 9 个覆盖五原子编辑 + 对象状态校验 + 流程闭环。20260919 已执行入库（finance_rev）：对象参数 pk 引用一律 paramProperty 映射（值级 $name 替换会整对象代入，引擎 modifyObject/addLink 的 pk 位须标量）；FK 背书关系（judgmentReferencesEvidence）动作内改由 modifyObject 维护外键字段，addLink 直写边表对 FK 背书无效。",
   "dam": {
     "domain": "finance",
     "application": "revenue-recognition",
@@ -675,7 +675,7 @@
         {"expression": "objects.judgment.evidenceState != '证据不足'", "message": "证据不足的判断事项不允许人工确认，请先补齐销售合同等关键证据"}
       ],
       "logic": [
-        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment",
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": {"src": "paramProperty", "param": "judgment", "property": "judgmentId"},
          "set": {"finalMethod": "$finalMethod", "reviewNote": "$reviewNote", "reviewStatus": "已确认",
                  "reviewerId": {"src": "currentUser"}, "reviewTime": {"src": "currentTime"}}}
       ]
@@ -733,7 +733,7 @@
         {"expression": "objects.adjustment.approvalStatus == '草稿'", "message": "仅草稿状态的调账单允许删除，已提交单据请走驳回/作废流程"}
       ],
       "logic": [
-        {"op": "deleteObject", "objectType": "RevenueAdjustmentEvent", "pk": "$adjustment"}
+        {"op": "deleteObject", "objectType": "RevenueAdjustmentEvent", "pk": {"src": "paramProperty", "param": "adjustment", "property": "adjustNo"}}
       ]
     },
     {
@@ -749,7 +749,7 @@
         {"expression": "objects.judgment.adjustStatus != '流程已闭环'", "message": "该判断事项调账已闭环，请勿重复回写"}
       ],
       "logic": [
-        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment",
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": {"src": "paramProperty", "param": "judgment", "property": "judgmentId"},
          "set": {"adjustStatus": "流程已闭环", "adjustCompleteTime": {"src": "currentTime"}, "receivableClosed": "$closedCount"}}
       ]
     },
@@ -763,7 +763,7 @@
         {"name": "evidence", "type": "object", "objectType": "AssessmentEvidence", "required": true}
       ],
       "logic": [
-        {"op": "addLink", "link": "judgmentReferencesEvidence", "aPk": "$judgment", "bPk": "$evidence"}
+        {"op": "modifyObject", "objectType": "AssessmentEvidence", "pk": {"src": "paramProperty", "param": "evidence", "property": "evidenceId"}, "set": {"judgmentId": {"src": "paramProperty", "param": "judgment", "property": "judgmentId"}}}
       ]
     },
     {
@@ -776,7 +776,7 @@
         {"name": "base", "type": "object", "objectType": "OperatingBase", "required": true}
       ],
       "logic": [
-        {"op": "addLink", "link": "employeeAppliesToBase", "aPk": "$employee", "bPk": "$base"}
+        {"op": "addLink", "link": "employeeAppliesToBase", "aPk": {"src": "paramProperty", "param": "employee", "property": "empNo"}, "bPk": {"src": "paramProperty", "param": "base", "property": "baseCode"}}
       ]
     },
     {
@@ -789,7 +789,7 @@
         {"name": "base", "type": "object", "objectType": "OperatingBase", "required": true}
       ],
       "logic": [
-        {"op": "removeLink", "link": "employeeAppliesToBase", "aPk": "$employee", "bPk": "$base"}
+        {"op": "removeLink", "link": "employeeAppliesToBase", "aPk": {"src": "paramProperty", "param": "employee", "property": "empNo"}, "bPk": {"src": "paramProperty", "param": "base", "property": "baseCode"}}
       ]
     },
     {
@@ -801,7 +801,7 @@
         {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true}
       ],
       "logic": [
-        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment", "set": {"reviewStatus": "复核中"}}
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": {"src": "paramProperty", "param": "judgment", "property": "judgmentId"}, "set": {"reviewStatus": "复核中"}}
       ],
       "sideEffects": [
         {"kind": "startBusinessProcess", "flowDefKey": "judgment_review", "businessKey": "$judgment",
