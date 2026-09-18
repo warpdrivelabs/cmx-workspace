@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>True Mate 工程功能差距清单：对比 Claude Code / ZCode / opencode</title>
+<style>
+  :root {
+    --paper: #F3F5FA; --card: #FFFFFF; --ink: #1B2437; --muted: #5D6B85;
+    --line: #E3E8F2; --brand: #2563EB; --brand-deep: #1D4ED8;
+    --ok: #15803D; --ok-bg: #F0FDF4; --ok-line: #86EFAC;
+    --part: #A16207; --part-bg: #FEF9C3; --part-line: #FDE047;
+    --no: #BE123C; --no-bg: #FFE4E6; --no-line: #FDA4AF;
+    --warn-bg: #FFFBEB; --warn-line: #FDE68A; --warn-bar: #F59E0B;
+    --shadow: 0 1px 2px rgba(27,36,55,.05), 0 10px 30px -18px rgba(27,36,55,.28);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font-family: "PingFang SC", "Microsoft YaHei", "Source Han Sans SC", "Segoe UI", system-ui, sans-serif;
+         line-height: 1.85; }
+  ::selection { background: #DBEAFE; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 30px 20px 60px; }
+
+  header.hero { position: relative; overflow: hidden; background: var(--card);
+                border: 1px solid var(--line); border-radius: 20px;
+                padding: 32px 36px 26px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  header.hero::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+                background: linear-gradient(90deg, #BE123C 0%, #A16207 33%, #15803D 66%, #2563EB 100%); }
+  h1 { font-size: 27px; line-height: 1.3; margin: 0 0 10px; }
+  .sub { color: var(--muted); font-size: 15px; max-width: 64em; }
+  .meta { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line);
+          font-size: 13px; color: var(--muted); }
+
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+            padding: 26px 32px 22px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  h2 { display: flex; align-items: center; gap: 12px; font-size: 20px; margin: 0 0 14px;
+       padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  h2 .idx { flex: none; min-width: 34px; text-align: center; color: #fff; font-size: 14px; font-weight: 700;
+            padding: 2px 12px; border-radius: 10px; background: linear-gradient(135deg, #334155, #1B2437); }
+  h3 { display: flex; align-items: center; gap: 9px; font-size: 15.5px; margin: 22px 0 8px; }
+  h3::before { content: ""; flex: none; width: 4px; height: 14px; border-radius: 2px;
+               background: linear-gradient(180deg, var(--brand), #6D28D9); }
+  p { margin: 8px 0; font-size: 14.5px; }
+  ul { margin: 8px 0; padding-left: 24px; font-size: 14.5px; }
+  li { margin: 5px 0; }
+  code { background: #EEF2F9; border-radius: 5px; padding: 0 5px; font-size: 12.5px; }
+
+  .st { display: inline-block; border-radius: 6px; font-size: 12px; padding: 0 8px; margin-right: 6px;
+        white-space: nowrap; font-weight: 600; }
+  .ok   { background: var(--ok-bg);   color: var(--ok);   border: 1px solid var(--ok-line); }
+  .part { background: var(--part-bg); color: var(--part); border: 1px solid var(--part-line); }
+  .no   { background: var(--no-bg);   color: var(--no);   border: 1px solid var(--no-line); }
+
+  table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 12px 0; font-size: 13.5px;
+          border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+           padding: 8px 11px; text-align: left; vertical-align: top; }
+  th:last-child, td:last-child { border-right: none; }
+  tr:last-child td { border-bottom: none; }
+  th { background: #F6F8FC; font-size: 12.5px; font-weight: 600; color: #475569; white-space: nowrap; }
+  tr:nth-child(even) td { background: #FAFBFE; }
+  td b { font-size: 13.5px; }
+  .dom td:first-child { background: #EEF2F9; font-weight: 700; white-space: nowrap; }
+
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-left: 4px solid var(--warn-bar);
+          border-radius: 12px; padding: 12px 16px; margin: 14px 0; font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .chip { font-size: 13px; padding: 2px 13px; border-radius: 999px; border: 1px solid var(--ok-line);
+          background: var(--ok-bg); color: var(--ok); }
+
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 26px; }
+  @media (max-width: 640px) { .wrap { padding: 16px 10px 40px; } section { padding: 20px 16px; } }
+  @media print { body { background: #fff; } section, header.hero { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>True Mate 工程功能差距清单</h1>
+  <div class="sub">对比 Claude Code / ZCode / opencode 等成熟编码智能体，盘点 TrueMate（cmx-agent）工程<b>还缺什么</b>。功能概念的定义见《AI 助手九大扩展概念功能文档》，本文回答的是：那份设计落到工程上，现在走到了哪、差在哪。</div>
+  <div class="meta">基准：2026-09-17 工作区代码现状（backend/cmx-agent）　参照：Claude Code / ZCode / opencode（个别处 Codex）　口径：只比功能有无与形态，不比质量与性能　现状均带源码证据路径（相对 backend/cmx-agent/）</div>
+</header>
+
+<!-- ==================== 1 总览 ==================== -->
+<section>
+  <h2><span class="idx">1</span>总览：一张红绿灯表</h2>
+  <p><span class="st ok">✅ 已具备</span>对标项已落地　<span class="st part">🟡 部分</span>有雏形但形态不对、不完整　<span class="st no">❌ 缺失</span>参照产品有、我们完全没有</p>
+  <table>
+    <tr><th style="width:210px">功能</th><th>成熟参照的做法</th><th style="width:330px">True Mate 现状（证据）</th></tr>
+    <tr class="dom"><td>A 对话与上下文</td><td colspan="2"></td></tr>
+    <tr><td><b>会话压缩 / 摘要</b></td><td>上下文快满自动压缩（删旧工具输出、总结旧对话），并可手动 <code>/compact</code></td><td><span class="st no">❌ 缺失</span>全库无 compact/summarize；长会话只增不减，必然撞上下文墙（仅 <code>demo_model.rs:123</code> 一处演示文案）</td></tr>
+    <tr><td><b>上下文用量与截断</b></td><td>实时显示 token 用量/剩余比例，接近上限自动处理</td><td><span class="st part">🟡 部分</span>系统提示词组装（<code>workspace.context_for</code>）与日志投影（<code>Session::model_context</code>）健全；但模型缝不解析 usage，用户和程序都"看不见还剩多少"（<code>openai.rs</code>）</td></tr>
+    <tr><td><b>会话搜索 / 改名 / 置顶</b></td><td>历史会话可搜、可改名、可置顶</td><td><span class="st no">❌ 缺失</span>仅自动标题，<code>SessionMeta</code> 无对应命令与字段（<code>store.rs:17-35</code>；侧栏仅按空间过滤 <code>session.js:35</code>）</td></tr>
+    <tr><td><b>检查点 / 回滚</b></td><td>编辑可回退（Claude Code <code>/rewind</code>、opencode <code>/undo</code>）</td><td><span class="st no">❌ 缺失</span>无任何 checkpoint/undo 逻辑，<code>apply_patch</code> 改错只能让模型再改回来</td></tr>
+    <tr class="dom"><td>B 输入与多模态</td><td colspan="2"></td></tr>
+    <tr><td><b>附件</b></td><td>拖拽/粘贴任意文件入对话，内容直接进上下文</td><td><span class="st part">🟡 部分</span>@浮窗按文件名检索后插入 <code>@path</code> 纯文本，由模型 <code>fs_read</code> 直读（任意可读文件都能到）；但无拖拽/粘贴上传，无内容注入（<code>session.js:464</code>、<code>workspace.js:274</code>）</td></tr>
+    <tr><td><b>图片（多模态输入）</b></td><td>粘贴/选图发给视觉模型，截图直接当输入</td><td><span class="st no">❌ 缺失</span>消息结构纯文本 <code>ModelMessage::User{ text }</code>（<code>model.rs:27</code>）；渲染端也不能显示用户图片</td></tr>
+    <tr class="dom"><td>C 项目与知识</td><td colspan="2"></td></tr>
+    <tr><td><b>AGENTS.md 项目规则</b></td><td>CLAUDE.md / AGENTS.md 全局→项目→子目录分层自动加载进系统提示词</td><td><span class="st no">❌ 缺失</span>不读任何规则文件；<code>session.rs:25</code> 注释自认"AGENTS.md 式项目指令 M0 简化为一段文本"</td></tr>
+    <tr><td><b>跨会话记忆</b></td><td>自动记忆条目/记忆目录，跨会话记住偏好与事实</td><td><span class="st no">❌ 缺失</span>仅在 <code>event.rs:1</code> 注释留位（路线 M5）</td></tr>
+    <tr class="dom"><td>D 扩展体系</td><td colspan="2"></td></tr>
+    <tr><td><b>MCP 连接器</b></td><td>stdio / HTTP / SSE 多传输，<code>/mcp</code> 管理，生态市场</td><td><span class="st part">🟡 部分</span>stdio JSON-RPC 客户端已成熟、插件 <code>kind:"mcp"</code> 载体安装即热连（<code>cmx-agent-mcp/client.rs</code>、<code>cmx-agent-plugin/mcp.rs</code>）；仅 stdio 一种传输，无市场</td></tr>
+    <tr><td><b>技能体系（SKILL.md）</b></td><td>SKILL.md 文件夹：扫描发现、元数据渐进披露、可带脚本</td><td><span class="st part">🟡 部分</span>"技能"＝已注册工具的别名，<code>/名字</code> 只是提示词约定（<code>app.rs list_skills</code>）；无 SKILL.md 发现、无渐进披露、无参数化命令</td></tr>
+    <tr><td><b>钩子（事件触发）</b></td><td>十余个生命周期事件位，用户可定义自动动作</td><td><span class="st no">❌ 缺失</span>内核权限守卫同思想但未开放事件位；无用户自定义钩子（<code>app.rs:105</code> 仅内部 logout_hooks）</td></tr>
+    <tr><td><b>定时任务</b></td><td>按时间表自动执行任务（cron 式）</td><td><span class="st no">❌ 缺失</span>无 scheduler（<code>clock.rs</code> 只是时间查询工具）</td></tr>
+    <tr><td><b>插件 / 连接器市场</b></td><td>市场分发、一键装整包</td><td><span class="st no">❌ 缺失</span>仅本地 <code>InstallPlugin</code>，无市场与分发链</td></tr>
+    <tr class="dom"><td>E 体验与运维</td><td colspan="2"></td></tr>
+    <tr><td><b>用量 / 费用统计</b></td><td>每会话 token 消耗、费用可见（<code>/cost</code> 等）</td><td><span class="st no">❌ 缺失</span>同第 2 行根因：模型缝不捕获 usage</td></tr>
+    <tr><td><b>渲染增强</b></td><td>代码语法高亮、mermaid 图、公式</td><td><span class="st part">🟡 部分</span>自研轻量 markdown（安全转义做得好），无高亮/mermaid/公式（<code>ui/js/markdown.js</code>）</td></tr>
+    <tr><td><b>会话导出 / 分享</b></td><td>整会话导出 MD/HTML、分享链接</td><td><span class="st part">🟡 部分</span>单条消息/工具卡可复制、系统分享（<code>main.js toolShare:95</code>）；无整会话导出</td></tr>
+    <tr><td><b>沙箱 OS 级隔离</b></td><td>系统级执行隔离</td><td><span class="st part">🟡 部分</span>应用层围栏 + 守卫 fail-closed 已齐；macOS Seatbelt 已推送，Windows 受限令牌未落地</td></tr>
+  </table>
+</section>
+
+<!-- ==================== 2 已具备 ==================== -->
+<section>
+  <h2><span class="idx">2</span>已具备、不必追的（对标项已落地）</h2>
+  <div class="chips">
+    <span class="chip">子智能体（后台派活+实时回执）</span>
+    <span class="chip">计划模式（exit_plan 托管批准）</span>
+    <span class="chip">任务清单（update_plan，对齐 Codex）</span>
+    <span class="chip">内置工具 30+（含联网搜索/抓取/浏览器五件套/LSP/xlsx/pptx）</span>
+    <span class="chip">权限三模式 + 审批卡</span>
+    <span class="chip">多 Provider 模型配置</span>
+    <span class="chip">工作空间 + 会话回放</span>
+    <span class="chip">等待队列</span>
+    <span class="chip">IM 遥控（飞书/QQ/微信）</span>
+    <span class="chip">自动更新</span>
+    <span class="chip">MCP stdio 客户端</span>
+  </div>
+  <p class="note" style="margin-top:6px">换句话说：交互骨架（派活、审批、计划、队列）与工具面（联网、办公文档、LSP）不输参照产品；<b>差的是"上下文治理"与"输入多模态"两大块，以及扩展体系的标准化形态</b>。</p>
+</section>
+
+<!-- ==================== 3 关键差距详述 ==================== -->
+<section>
+  <h2><span class="idx">3</span>关键差距详述（按痛感排序）</h2>
+
+  <h3>① 会话压缩——长会话的生存线（P0）</h3>
+  <p>参照产品靠"接近上限自动压缩"保证长任务不中断。我们没有压缩，长会话必然撞上下文墙，且撞前用户毫无感知。<b>建议落点</b>：<code>Session::model_context</code> 投影层插入摘要步骤（把旧工具输出与早期对话折叠成摘要），配一条手动 <code>/compact</code>；改动集中在 core 的投影层，不 touching 工具层。</p>
+
+  <h3>② 上下文用量可见（P0）</h3>
+  <p>用量统计与压缩是同一根因：<code>openai.rs</code> 不解析返回里的 usage 字段。<b>建议落点</b>：模型缝收口处捕获 <code>usage</code>，写入会话元数据；UI 显示"已用 / 剩余"，为压缩阈值提供依据。一次改动同时清掉"用量/费用统计"这一条。</p>
+
+  <h3>③ 图片输入（P0）</h3>
+  <p>截图给模型看是多模态助手的入门项。<b>建议落点</b>：<code>model.rs</code> 的 User 消息从纯文本改为 content parts（text / image_url），<code>openai.rs</code> 按 Provider 能力序列化；UI 侧粘贴/选择图片存数据根 <code>attachments/</code>。渲染端补 <code>&lt;img&gt;</code> 白名单（现全转义是防注入的正确保守，需开受控口子）。</p>
+
+  <h3>④ AGENTS.md 项目规则（P0）</h3>
+  <p>项目级"长期指令"的标准载体，参照产品全部支持分层加载。我们连注释里都写明了这是 M0 简化项——等于欠账自认。<b>建议落点</b>：<code>workspace.rs context_for</code> 里按 全局→项目根→子目录 顺序读取并拼接，成本极低、收益立竿见影。</p>
+
+  <h3>⑤ 附件上传（P1）</h3>
+  <p>现方案（@引用 + 模型自读）对工作空间内文本文件够用；缺的是工作空间<b>外</b>的文件与二进制（表格、PDF、图片）的拖拽/粘贴入口。<b>建议落点</b>：composer 增加上传通道，落数据根 <code>attachments/</code>，消息带引用。</p>
+
+  <h3>⑥ 会话管理三件套 + 检查点（P1）</h3>
+  <p>搜索/改名/置顶是纯 UI 层补齐（<code>SessionMeta</code> 加字段、<code>protocol.rs</code> 加命令）；检查点则建议从 <code>apply_patch</code>/<code>fs_write</code> 前置快照做起（快照存数据根，配 <code>/undo</code>），先保文件编辑可回退。</p>
+
+  <h3>⑦ 技能升级为 SKILL.md 体系（P1）</h3>
+  <p>现在"技能"只是工具别名，与九概念文档第 7 章的目标形态（文件夹 + 元数据渐进披露 + 可带脚本）差距大。<b>建议落点</b>：新增 skills 目录扫描器（名字+一句话常驻上下文，正文按需注入），<code>/名字</code> 触发改走技能解析而非提示词约定；这一步同时把"参数化命令"（占位符模板）带上。</p>
+
+  <h3>⑧ 扩展体系补全（P2）</h3>
+  <p>MCP 增加 HTTP/SSE 传输（<code>client.rs</code> 传输层抽象）；插件/连接器市场后置（先把本地装包体验做稳）；钩子按九概念文档第 9 章的留口方案——权限守卫已按钩子思想实现，开放"工具调用前/后"两个事件位即可平滑演进；定时任务做时间触发一支。</p>
+
+  <h3>⑨ 体验补零（P2）</h3>
+  <p>渲染端加语法高亮（引入 hljs 或自研子集，注意 CSP）；整会话导出 Markdown；跨会话记忆按九概念文档第 4 章条目式设计实施（event 日志地基已留）。</p>
+</section>
+
+<!-- ==================== 4 优先级建议 ==================== -->
+<section>
+  <h2><span class="idx">4</span>优先级建议</h2>
+  <ul>
+    <li><b>P0＝长会话生存线 + 输入短板</b>：会话压缩 → 上下文用量 → 图片输入 → AGENTS.md。这四项决定"能不能长时间真用"，且改动都集中在模型缝与上下文组装层，互相呼应（用量是压缩的依据）。</li>
+    <li><b>P1＝日常手感</b>：附件上传、会话搜索/改名/置顶、检查点回滚、技能 SKILL.md 升级。</li>
+    <li><b>P2＝生态与治理</b>：MCP 多传输、市场、钩子、定时任务、记忆、渲染增强、导出分享、Windows 沙箱 OS 级。</li>
+  </ul>
+  <div class="note">本文只回答"缺什么、差在哪、建议从哪补"；每项动工前仍按惯例：方案先行、等明确指令再动代码。</div>
+</section>
+
+<footer>
+  True Mate 工程差距清单 · 2026-09-17 · 基准=当日工作区代码现状 · 仅供内部参考
+</footer>
+
+</div>
+</body>
+</html>
