@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上下文压缩与展示 · 交互原型</title>
+<!--
+  自包含单 HTML 交互原型：cmx-agent 上下文压缩与用量展示（对应方案
+  documents/plans/20260918_cmx-agent_上下文压缩与展示方案.md）。
+  五个场景：
+  ① ZCode 式用量圆环+明细卡（三态变色 / 分类占比 / 缓存命中率；「剩余额度」区块不做）
+  ② 自动压缩全流程（触发 → 摘要生成 → 边界卡；旧消息留在时间线不动）
+  ③ 手动 /compact 命令（可带关注点；不做按钮）
+  ④ 溢出救援（现状=撞墙失败 / 改后=压缩+原话重试一次）
+  ⑤ prune 旧工具输出清理（近期 40k 保护，更旧替换占位）
+  色板取自真源 ui/css/tokens.css，零硬编码（右上 🌓 验证双主题）。
+  已拍板：context_window 未配置默认 1M；不分期一次做完。
+-->
+<style>
+/* ═══ 令牌：与 ui/css/tokens.css 一致 ═══ */
+:root{
+  color-scheme:dark;
+  --bg:#0d0d0d; --panel:#141414; --panel2:#1a1a19; --surface:#1e1e1d; --hover:#242423;
+  --ink:#f2f1ec; --ink2:#b8b7ae; --muted:#7d7c76; --border:#2a2a28; --border2:#333330;
+  --blue:#3987e5; --aqua:#1fb182; --violet:#9085e9; --magenta:#d55181; --orange:#eb6834;
+  --green:#22c55e; --green2:#4ade80; --red:#e5605f; --accent:#1fb182; --gold:#e5b95f;
+  --accent-soft:#17362b; --bg2:#0d1420; --code-ink:#c8d3e0;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f4f4f2; --panel:#ffffff; --panel2:#f7f7f5; --surface:#ffffff; --hover:#ececea;
+  --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --border:#e4e3dc; --border2:#d6d5ce;
+  --blue:#2a78d6; --aqua:#1baf7a; --violet:#4a3aa7; --magenta:#e87ba4; --orange:#eb6834;
+  --green:#0ca30c; --green2:#0ca30c; --red:#e34948; --accent:#1baf7a; --accent-soft:#e3f5ee; --gold:#a2761c;
+  --bg2:#efefea; --code-ink:#33332e;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,'PingFang SC','Hiragino Sans GB',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;padding:0 0 90px}
+button{cursor:pointer;font-family:inherit}
+
+/* ═══ 原型页骨架 ═══ */
+.proto-bar{position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:14px;
+  padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--border)}
+.pb-title{font-size:15px;font-weight:700}
+.pb-sub{font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-btn{background:var(--surface);border:1px solid var(--border2);color:var(--ink2);border-radius:8px;
+  padding:6px 13px;font-size:12.5px}
+.pb-btn:hover{background:var(--hover);color:var(--ink)}
+.proto-wrap{max-width:860px;margin:0 auto;padding:26px 18px;display:flex;flex-direction:column;gap:34px}
+.scene{display:flex;flex-direction:column;gap:10px}
+.scene-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.scene-no{font-size:11px;font-weight:700;color:var(--gold);border:1px solid var(--gold);
+  border-radius:5px;padding:1px 7px;letter-spacing:.5px}
+.scene-title{font-size:14.5px;font-weight:700}
+.scene-tag{font-size:11px;color:var(--aqua)}
+.scene-note{font-size:12.5px;line-height:1.8;color:var(--ink2);background:var(--panel2);
+  border:1px solid var(--border);border-left:3px solid var(--aqua);border-radius:0 8px 8px 0;padding:9px 13px}
+.scene-note b{color:var(--ink)}
+.scene-note .where{color:var(--gold)}
+.scene-note code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;background:var(--panel);
+  border:1px solid var(--border);border-radius:5px;padding:0 5px}
+
+/* ═══ 聊天窗 ═══ */
+.chat{border:1px solid var(--border);border-radius:14px;background:var(--bg);overflow:hidden}
+.chat-cap{display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:11.5px;color:var(--muted);
+  background:var(--panel);border-bottom:1px solid var(--border)}
+.chat-cap .cc-dot{width:7px;height:7px;border-radius:50%;background:var(--aqua)}
+.pills{margin-left:auto;display:flex;gap:0;border:1px solid var(--border2);border-radius:7px;overflow:hidden}
+.pill{border:0;background:none;color:var(--muted);font-size:11.5px;padding:3px 12px}
+.pill.on{background:var(--aqua);color:#000;font-weight:700}
+.pill:not(.on):hover{color:var(--ink)}
+.log{padding:16px 20px 12px;display:flex;flex-direction:column;gap:3px;min-height:120px}
+.demo-bar{padding:0 20px 12px}
+
+/* ═══ 回合元素：与 ui/css/chat.css 同构 ═══ */
+.turn{position:relative;overflow-wrap:anywhere}
+.user-chip{width:fit-content;margin:6px 0 8px auto;max-width:78%;background:var(--blue);color:#fff;
+  border-radius:14px 14px 4px 14px;padding:8px 13px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.work-dur{display:flex;align-items:center;gap:6px;margin:2px 0 4px;padding:2px 7px;font-size:12px;
+  color:var(--muted);border-radius:6px;background:none;border:0;width:fit-content}
+.meta.note{font-size:12px;color:var(--muted);padding:1px 0}
+.meta.note.bad{color:var(--red)}
+.meta.note.busy{color:var(--gold)}
+.meta.note.busy::after{content:'';animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
+.bubble{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;
+  font-size:14px;line-height:1.55}
+.bubble.tail{margin-top:4px}
+/* 旧内容弱化（演示：被摘要覆盖的段落视觉上变淡，但仍在时间线上） */
+.turn.dimmed{opacity:.62}
+.dim-hint{font-size:11px;color:var(--muted);border-top:1px dashed var(--border2);
+  margin:8px 0 2px;padding-top:6px}
+
+/* ═══ 工具卡（同构 + prune 标记） ═══ */
+.tool{width:100%;margin:0}
+.tool .tc-trig{display:flex;align-items:baseline;gap:7px;width:100%;padding:3px 7px;margin:0 -7px;
+  background:none;border:0;text-align:left;font:inherit;color:var(--ink2);border-radius:6px}
+.tool .tc-trig:hover{background:var(--hover)}
+.tool .tc-chev{font-size:10px;opacity:.6;transition:transform .15s}
+.tool.open .tc-chev{transform:rotate(90deg)}
+.tool:not(.open) .tc-chev{transform:rotate(-90deg)}
+.tool .tc-name{font-weight:600}
+.tool .tc-arg{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.tool .tc-st{flex:0 0 auto;font-size:12px}
+.tool.ok .tc-st{color:var(--aqua)}
+.tool .tc-body{display:none;padding:4px 10px 8px 24px;font-size:12px;color:var(--ink2);line-height:1.7}
+.tool.open .tc-body{display:block}
+/* prune 清理标记 */
+.tc-pruned{flex:0 0 auto;font-size:11px;color:var(--muted);border:1px dashed var(--border2);
+  border-radius:5px;padding:0 6px}
+.tool.pruned .tc-arg{opacity:.5}
+
+/* ═══ ═══ 核心新增 ①：压缩边界卡 ═══ ═══ */
+.cmp{border-left:3px solid var(--violet);background:var(--panel2);border-radius:3px 10px 10px 3px;
+  margin:6px 0;overflow:hidden}
+.cmp-row{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;text-align:left;
+  padding:7px 12px;font:inherit;color:var(--ink2);font-size:12.5px}
+.cmp-row:hover{background:var(--hover)}
+.cmp-row .chev{font-size:10px;opacity:.6;transition:transform .15s}
+.cmp.open .cmp-row .chev{transform:rotate(90deg)}
+.cmp-row .cmp-why{color:var(--violet);font-weight:600}
+.cmp-row .cmp-size{color:var(--muted)}
+.cmp-row .cmp-hint{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.cmp-body{display:none;padding:2px 14px 12px}
+.cmp.open .cmp-body{display:block}
+/* 摘要正文（Markdown 简渲染） */
+.sum{font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.sum h4{margin:9px 0 3px;font-size:12.5px;color:var(--ink);border-bottom:1px solid var(--border);
+  padding-bottom:2px}
+.sum h4:first-child{margin-top:4px}
+.sum h5{margin:7px 0 2px;font-size:12px;color:var(--ink2)}
+.sum ul,.sum ol{margin:2px 0 6px;padding-left:18px}
+.sum li{margin:1px 0}
+.sum code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;background:var(--panel);
+  border:1px solid var(--border);border-radius:4px;padding:0 4px;color:var(--code-ink)}
+.sum .focus{color:var(--gold)}
+.sum-foot{font-size:10.5px;color:var(--muted);border-top:1px dashed var(--border2);
+  margin-top:8px;padding-top:5px}
+
+/* ═══ ═══ 核心新增 ②：ZCode 式圆环用量指示 + 明细卡 ═══ ═══ */
+.composer{position:relative;border-top:1px solid var(--border);background:var(--panel)}
+/* 输入行（演示态） */
+.input-row{display:flex;align-items:center;gap:8px;padding:8px 12px 4px}
+.input-box{flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:10px;
+  padding:8px 12px;font-size:13px;color:var(--ink2);min-height:34px}
+.input-box .cmd{color:var(--aqua);font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px}
+.input-box .focus-in{color:var(--ink)}
+.icon-btn{width:32px;height:32px;border-radius:9px;border:1px solid var(--border2);background:var(--surface);
+  color:var(--ink2);font-size:14px;display:flex;align-items:center;justify-content:center;position:relative}
+.icon-btn:hover{background:var(--hover);color:var(--ink)}
+.send-btn{background:var(--accent);color:#000;border:0;border-radius:9px;padding:7px 14px;font-size:12.5px;font-weight:700}
+.icon-btn .tip,.ring-btn .tip,.send-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--border2);color:var(--ink2);font-size:11px;
+  border-radius:6px;padding:3px 8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
+.icon-btn:hover .tip{opacity:1}
+/* 工具行：左 +，右 圆环+模型+发送（ZCode 布局；手动压缩仅 /compact 命令，无按钮） */
+.toolrow{display:flex;align-items:center;gap:8px;padding:4px 12px 10px}
+.toolrow .grow{flex:1}
+.ring-btn{display:flex;align-items:center;gap:7px;background:none;border:0;padding:4px 6px;
+  border-radius:8px;color:var(--ink2);font-size:12px;position:relative}
+.ring-btn:hover{background:var(--hover)}
+.ring-btn svg{display:block;transform:rotate(-90deg)}
+.ring-btn .rb-bg{stroke:var(--border2);fill:none}
+.ring-btn .rb-fg{fill:none;stroke:var(--blue);stroke-linecap:round;transition:stroke-dashoffset .25s}
+.ring-btn.warn .rb-fg{stroke:var(--gold)}
+.ring-btn.crit .rb-fg{stroke:var(--red)}
+.ring-btn .tip{left:0;transform:none;bottom:calc(100% + 4px)}
+.ring-btn:hover .tip{opacity:1}
+.model-btn{background:none;border:0;color:var(--ink2);font-size:12.5px;padding:4px 6px;border-radius:8px}
+.model-btn:hover{background:var(--hover);color:var(--ink)}
+/* 明细卡 */
+.pop{position:absolute;right:12px;bottom:calc(100% + 8px);z-index:5;width:300px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:13px;padding:13px 15px;
+  box-shadow:0 12px 34px rgba(0,0,0,.35);display:none}
+.pop.on{display:block}
+.pop .cap{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.pop .cap h5{margin:0;font-size:13px;color:var(--ink)}
+.pop .cap .num{font-size:12.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.pop .segbar{display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--border);gap:2px}
+.pop .segbar i{display:block;height:100%}
+.pop .cats{margin:9px 0 2px}
+.pop .cat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);padding:3px 0}
+.pop .cat .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.pop .cat b{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.pop .cache{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);
+  border-top:1px solid var(--border);margin-top:8px;padding-top:9px}
+.pop .cache b{color:var(--ink);font-weight:600}
+
+/* 错误行（与报错可见性方案同构） */
+.meta.note.err-row{display:flex;align-items:flex-start;gap:7px;width:100%;text-align:left;
+  background:none;border:0;border-left:3px solid var(--red);border-radius:3px;
+  padding:5px 9px;margin:4px 0;color:var(--red);font-size:12.5px;line-height:1.6;
+  cursor:pointer;font-family:inherit}
+.meta.note.err-row:hover{background:rgba(229,96,95,.07)}
+.meta.note.err-row .er-txt{flex:1;min-width:0;word-break:break-all}
+.meta.note.err-row.auto{border-left-color:var(--gold);color:var(--gold)}
+.meta.note.err-row.auto:hover{background:rgba(229,185,95,.07)}
+
+footer.foot{max-width:860px;margin:0 auto;padding:0 18px;font-size:12px;color:var(--muted);line-height:1.9}
+#toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:var(--surface);
+  border:1px solid var(--border2);color:var(--ink);border-radius:9px;padding:9px 16px;font-size:13px;
+  box-shadow:0 8px 28px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .18s;z-index:99}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <div class="pb-title">上下文压缩与展示 · 交互原型</div>
+  <div class="pb-sub">对应方案 documents/plans/20260918_cmx-agent_上下文压缩与展示方案.md · 压缩只影响发给模型的内容，界面历史一条不删</div>
+  <button class="pb-btn" onclick="toggleTheme()" id="themeBtn">🌓 亮色</button>
+</div>
+
+<div class="proto-wrap">
+
+  <div class="scene">
+    <div class="scene-note">
+      一句话：<b>压缩 = 把旧对话总结成一张可展开的结构化摘要卡 + 清理更旧的工具输出，近期原文保留</b>；
+      触发三路 = <b>自动</b>（估算用量 ≥ 窗口 85%）/ <b>手动</b>（<code>/compact</code> 命令）/
+      <b>救援</b>（真撞上窗口上限，压缩后原话重试一次）。
+      已拍板：<code>context_window</code> 未配置默认 <b>1M</b>；不分期一次做完。
+      <span class="where">看哪里</span>：每个窗右上角可切换对比；场景 ② 里点「▶ 演示自动压缩」看全过程。
+    </div>
+  </div>
+
+  <div id="scenes"></div>
+
+</div>
+
+<footer class="foot">
+  要点：① 圆环/明细卡取<b>最近一次请求的真实 usage</b>（网关不回传时容量数值退化为前端粗估，UI 不标注；命中率整行隐藏）；
+  ② 边界卡<b>豁免回合折叠</b>且独立于回合结构，回放与实时同一渲染路径；
+  ③ 旧消息在时间线上<b>一条不删</b>——被压缩只意味着「模型下次看不到原文，只看摘要」；
+  ④ IM 遥控支持 <code>/compact</code>，压缩事件本身不推飞书（防刷屏）；
+  ⑤ Web 壳 / 桌面壳同源 <code>ui/</code>，桌面壳需重建后生效。
+</footer>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+function toggleTheme(){
+  const h=document.documentElement, light=h.dataset.theme==='light';
+  h.dataset.theme=light?'':'light';
+  document.getElementById('themeBtn').textContent=light?'🌓 亮色':'🌓 暗色';
+}
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2200);
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function el(tag,cls,html){
+  const e=document.createElement(tag);
+  if(cls)e.className=cls;
+  if(html!==undefined)e.innerHTML=html;
+  return e;
+}
+
+/* ═══ 摘要正文样例（结构化模板：目标/重要细节/工作状态/下一步/相关文件） ═══ */
+const SUMMARY_MAIN=[
+  ['h4','目标'],
+  ['li','为 Q3 复盘会准备华东区销售数据：提取 Excel 明细 → 生成汇总表 → 写一页结论。'],
+  ['h4','重要细节'],
+  ['li','源文件：<code>D:\\sales\\2026Q3\\华东明细.xlsx</code>（12,304 行，含退款列）'],
+  ['li','输出必须落 <code>E:\\out\\q3-summary.xlsx</code>，<b>不要覆盖</b> 7 月版'],
+  ['li','口径：退款单不计入销售额，但保留在明细中标注'],
+  ['li','汇总维度：城市 × 产品线，含环比（基准 <code>D:\\sales\\2026Q2\\汇总.xlsx</code>）'],
+  ['h4','工作状态'],
+  ['h5','已完成'],
+  ['li','明细已清洗校验（退款标注完成，剔除空行 37 行）'],
+  ['li','城市维度汇总已生成：23 城 × 4 产品线'],
+  ['h5','进行中'],
+  ['li','正在计算环比（Q2 基准表已读取，公式列尚未写入）'],
+  ['h5','受阻'],
+  ['li','「苏州」在 Q2 表中写作「蘇州」，需向用户确认是否合并口径'],
+  ['h4','下一步'],
+  ['olli','写入环比列并生成 E:\\out\\q3-summary.xlsx'],
+  ['olli','用一页结论回复用户（含 TOP3 增长城市）'],
+  ['h4','相关文件'],
+  ['li','<code>D:\\sales\\2026Q3\\华东明细.xlsx</code> — 数据源（已清洗）'],
+  ['li','<code>D:\\sales\\2026Q2\\汇总.xlsx</code> — 环比基准'],
+  ['li','<code>E:\\out\\q3-summary.xlsx</code> — 目标输出'],
+];
+/* 手动压缩样例：摘要尾行体现「关注点」被特别保留 */
+const SUMMARY_MANUAL_FOCUS='<div class="sum-foot">按用户要求特别保留：Q3 预算表的结论（总盘 +6.2%、华东贡献过半）与全部相关文件路径。</div>';
+
+function renderSummary(container, items, extraFoot){
+  const box=el('div','sum');
+  let list=null; /* 当前在填的 ul/ol：同类型条目并入同一列表 */
+  items.forEach(([t,txt])=>{
+    if(t==='h4'){list=null;box.appendChild(el('h4',0,txt));}
+    else if(t==='h5'){list=null;box.appendChild(el('h5',0,txt));}
+    else{
+      const want=(t==='olli')?'ol':'ul';
+      if(!list||list.tagName.toLowerCase()!==want){list=el(want);box.appendChild(list);}
+      list.appendChild(el('li',0,txt));
+    }
+  });
+  if(extraFoot)box.insertAdjacentHTML('beforeend',extraFoot);
+  box.insertAdjacentHTML('beforeend',
+    '<div class="sum-foot">摘要由模型按结构化模板生成 · 保留精确路径 / 命令 / 错误串 · 摘要永不提「被压缩过」</div>');
+  container.appendChild(box);
+}
+
+/* ═══ 压缩边界卡 ═══ */
+/* why: auto|manual|overflow；sizeText: 摘要规模文案 */
+function buildCompaction(why,items,extraFoot,sizeText){
+  const whyText={auto:'自动',manual:'手动',overflow:'超出窗口后救援'}[why];
+  const d=el('div','cmp');
+  const row=el('button','cmp-row');
+  row.innerHTML='<span class="chev">▸</span><span>🗜</span>'
+    +'<span>上下文已压缩</span><span class="cmp-why">· '+whyText+'</span>'
+    +'<span class="cmp-size">· 摘要 '+sizeText+'</span>'
+    +'<span class="cmp-hint">点击查看摘要</span>';
+  row.onclick=()=>d.classList.toggle('open');
+  const body=el('div','cmp-body');
+  renderSummary(body,items,extraFoot);
+  d.appendChild(row);d.appendChild(body);
+  return d;
+}
+
+/* ═══ 工具卡（带可选 prune 标记） ═══ */
+function buildTool(name,arg,ok,body,pruned){
+  const d=el('div','tool'+(ok?' ok':'')+(pruned?' pruned':''));
+  const trig=el('button','tc-trig');
+  trig.innerHTML='<span class="tc-chev">▸</span><span class="tc-st">'+(ok?'✓':'✕')+'</span>'
+    +'<span class="tc-name">'+esc(name)+'</span>'
+    +'<span class="tc-arg">'+esc(arg||'')+'</span>'
+    +(ok?'<span class="tc-st" style="opacity:.6">1.1s</span>':'')
+    +(pruned?'<span class="tc-pruned">🧹 已清理 · 原约 12.6k 字符</span>':'');
+  const bd=el('div','tc-body');
+  bd.innerHTML=pruned
+    ?'<span style="color:var(--muted)">占位说明（发给模型的形态）：<code>{"pruned":true,"note":"较早的工具输出已清理（原约 12,600 字符）"}</code> —— 模型知道这里曾有结果及其规模，细节在压缩摘要或文件里。</span>'
+    :esc(body||'');
+  trig.onclick=()=>d.classList.toggle('open');
+  d.appendChild(trig);d.appendChild(bd);
+  return d;
+}
+
+/* ═══ ZCode 式圆环 + 明细卡 ═══ */
+/* st: {pct, used, win, cache, cats:[[名称,占比%,css色变量],…]}；cats 占比合计≈100 */
+const RING_C=2*Math.PI*7;
+function buildComposer(st){
+  const c=el('div','composer');
+  const pop=el('div','pop',
+    '<div class="cap"><h5>上下文容量</h5><span class="num">'+st.used+' / '+st.win+'（'+st.pct+'%）</span></div>'
+    +'<div class="segbar">'+st.cats.map(([n,p,col])=>'<i style="width:'+p+'%;background:var('+col+')"></i>').join('')+'</div>'
+    +'<div class="cats">'+st.cats.map(([n,p,col])=>'<div class="cat"><span class="dot" style="background:var('+col+')"></span><span>'+n+'</span><b>'+p+'%</b></div>').join('')+'</div>'
+    +(st.cache?'<div class="cache"><span>平均缓存命中率</span><b>'+st.cache+'</b></div>':''));
+  const off=(RING_C*(1-Math.min(st.pct,100)/100)).toFixed(1);
+  const ringBtn=el('button','ring-btn'+(st.pct>=95?' crit':st.pct>=80?' warn':''),
+    '<svg width="18" height="18" viewBox="0 0 18 18">'
+    +'<circle class="rb-bg" cx="9" cy="9" r="7" stroke-width="2.5"/>'
+    +'<circle class="rb-fg" cx="9" cy="9" r="7" stroke-width="2.5" stroke-dasharray="'+RING_C.toFixed(1)+'" stroke-dashoffset="'+off+'"/>'
+    +'</svg>');
+  ringBtn.appendChild(el('span','tip','上下文 '+st.pct+'%'));
+  ringBtn.onclick=()=>pop.classList.toggle('on');
+  const inrow=el('div','input-row');
+  inrow.appendChild(el('div','input-box','回复一句话总结……'));
+  const row=el('div','toolrow');
+  const plus=el('button','icon-btn','+');
+  plus.appendChild(el('span','tip','添加附件'));
+  const model=el('button','model-btn','GLM-5.2 ▾');
+  model.onclick=()=>toast('模型选择弹层（既有功能，示意）');
+  const send=el('button','send-btn','↑');
+  send.style.position='relative';
+  send.onclick=()=>toast('普通发送（本轮不触发压缩）');
+  row.appendChild(plus);
+  row.appendChild(el('span','grow'));
+  row.appendChild(ringBtn);row.appendChild(model);row.appendChild(send);
+  c.appendChild(pop);c.appendChild(inrow);c.appendChild(row);
+  return c;
+}
+
+/* ═══════════ 场景渲染 ═══════════ */
+function sceneFrame(no,title,tag,noteHTML,capHTML){
+  const sec=el('div','scene');
+  sec.appendChild(el('div','scene-head',
+    '<span class="scene-no">'+no+'</span><span class="scene-title">'+title+'</span>'
+    +'<span class="scene-tag">'+tag+'</span>'));
+  sec.appendChild(el('div','scene-note',noteHTML));
+  const chat=el('div','chat');
+  chat.innerHTML='<div class="chat-cap"><span class="cc-dot"></span>'+(capHTML||'会话（演示）')+'</div>';
+  const log=el('div','log');
+  chat.appendChild(log);
+  sec.appendChild(chat);
+  return {sec,chat,log};
+}
+
+/* ── 场景 1：ZCode 式用量圆环与明细卡 ── */
+function scene1(){
+  const STATES={
+    normal:{pct:23.8,used:'23.8万',win:'100万',cache:'95.8%',cats:[['消息',78.4,'--blue'],['工具结果',15.3,'--aqua'],['工具定义',4.2,'--violet'],['其他',1.6,'--muted'],['系统提示词',0.5,'--gold']]},
+    warn:{pct:82.3,used:'82.3万',win:'100万',cache:'92.1%',cats:[['消息',81.2,'--blue'],['工具结果',12.6,'--aqua'],['工具定义',3.9,'--violet'],['其他',1.8,'--muted'],['系统提示词',0.5,'--gold']]},
+    crit:{pct:96.2,used:'96.2万',win:'100万',cache:'89.4%',cats:[['消息',85.7,'--blue'],['工具结果',9.8,'--aqua'],['工具定义',3.1,'--violet'],['其他',0.9,'--muted'],['系统提示词',0.5,'--gold']]},
+  };
+  const {sec,chat}=sceneFrame('场景 1','用量圆环与明细卡（ZCode 同款）','§4.4.2',
+    '输入框工具行、模型按钮旁一个<b>小圆环</b>：描边进度=上下文占用，<b>&lt;80% 蓝、≥80% 金、≥95% 红</b>。'
+    +'点圆环开<b>明细卡</b>：上下文容量（万单位）+ 分类分段进度条与占比（消息/工具结果/工具定义/其他/系统提示词 = 估算器分桶）'
+    +'+ 平均缓存命中率（网关回传 cached_tokens 才显示，缺省整行隐藏）。'
+    +'ZCode 卡里的「剩余额度」区块<b>不做</b>——那是编码套餐订阅配额（5 小时/每周/工具调用），cmx-agent 对接自配供应商无此数据源。'
+    +'<span class="where">点哪里</span>：右上 pill 切三态，再<b>点圆环</b>开关明细卡。','会话（演示）· 输入框');
+  /* 窗加高：明细卡上弹需要头部空间（真实产品里 composer 在会话底部、上方是整条日志，无此问题；
+     真实实现沿用 cmx-dd 定稿的「挂 body + fixed」模式，杜绝 overflow 裁剪） */
+  chat.querySelector('.log').style.minHeight='400px';
+  let cur='normal';
+  const pills=el('div','pills');
+  [['normal','正常 24%'],['warn','临近 82%'],['crit','危急 96%']].forEach(([k,label])=>{
+    const p=el('button','pill',label);
+    p.onclick=()=>{cur=k;sync();};
+    p.dataset.k=k;pills.appendChild(p);
+  });
+  chat.querySelector('.chat-cap').appendChild(pills);
+  function sync(){
+    pills.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on',p.dataset.k===cur));
+    const old=chat.querySelector('.composer');if(old)old.remove();
+    chat.appendChild(buildComposer(STATES[cur]));
+  }
+  sync();
+  return sec;
+}
+
+/* ── 场景 2：自动压缩全流程 ── */
+function scene2(){
+  const {sec,chat,log}=sceneFrame('场景 2','自动压缩全流程','§4.2',
+    '回合边界判定：估算用量 ≥ 窗口 85% → 派发下一条消息前先压缩。流程 ='
+    +' <b>「正在压缩上下文…」→ 🗜 边界卡</b>（点开看结构化摘要）→ 会话继续。'
+    +'<b>注意上方两条旧消息只是变淡示意——时间线上一条不删</b>，压缩只改「模型下次看到什么」。'
+    +'<span class="where">点哪里</span>：点「▶ 演示自动压缩」看全过程，再点边界卡展开摘要。');
+  /* 旧回合（dimmed 示意） */
+  const t1=el('div','turn dimmed');
+  t1.appendChild(el('div','user-chip','把 D:\\sales\\2026Q3\\华东明细.xlsx 清洗一下，退款单标注但不算销售额'));
+  t1.appendChild(el('button','work-dur','<span>已工作 42 秒</span>'));
+  t1.appendChild(buildTool('读取文件','D:\\sales\\2026Q3\\华东明细.xlsx',true,'12,304 行读入；退款列识别出 886 单。'));
+  log.appendChild(t1);
+  const t2=el('div','turn dimmed');
+  t2.appendChild(el('div','user-chip','按城市×产品线汇总，和 Q2 对比'));
+  t2.appendChild(el('button','work-dur','<span>已工作 66 秒</span>'));
+  t2.appendChild(buildTool('读取文件','D:\\sales\\2026Q2\\汇总.xlsx',true,'23 城 × 4 产品线基准读入。'));
+  log.appendChild(t2);
+  log.appendChild(el('div','dim-hint','↑ 以上两回合已被摘要覆盖（界面仅示意变淡，实际不删不改）· 以下为新消息 ↓'));
+
+  /* 演示按钮 */
+  const bar=el('div','demo-bar');
+  const btn=el('button','pb-btn','▶ 演示自动压缩');
+  bar.appendChild(btn);log.appendChild(bar);
+
+  btn.onclick=()=>{
+    btn.disabled=true;btn.style.opacity=.5;
+    const busy=el('div','meta note busy','🗜 正在压缩上下文（读取前段对话 → 生成结构化摘要）');
+    log.appendChild(busy);
+    setTimeout(()=>{
+      busy.remove();
+      const card=buildCompaction('auto',SUMMARY_MAIN,null,'1,842 字');
+      log.insertBefore(card,bar);
+      const t3=el('div','turn');
+      t3.appendChild(el('div','user-chip','继续，把环比列加上'));
+      log.appendChild(t3);
+      log.appendChild(el('div','meta note','改后：下一回合模型看到 = 摘要 + 压缩点之后原文（近期原文天然保留，无需再切尾部）。'));
+      toast('已压缩 · 摘要 1,842 字 · 点卡片查看');
+    },1700);
+  };
+  return sec;
+}
+
+/* ── 场景 3：手动 /compact ── */
+function scene3(){
+  const {sec,chat}=sceneFrame('场景 3','手动压缩：/compact 命令（无按钮）','§4.3',
+    '输入 <code>/compact [关注点]</code> 触发。关注点会拼进摘要提示词'
+    +'（「用户要求压缩时特别注意保留：…」）。IM 遥控同命令可用。'
+    +'<span class="where">点哪里</span>：先看输入行里的命令示例；'
+    +'点「演示发送」看压缩结果卡。');
+  const c=el('div','composer');
+  const row=el('div','input-row');
+  row.appendChild(el('div','input-box',
+    '<span class="cmd">/compact</span> <span class="focus-in">保留 Q3 预算表的结论与相关文件路径</span>'));
+  const send=el('button','send-btn','演示发送');
+  send.style.position='relative';
+  row.appendChild(send);
+  c.appendChild(row);chat.appendChild(c);
+
+  const log2=el('div','log');log2.style.paddingTop='4px';chat.appendChild(log2);
+  send.onclick=()=>{
+    if(log2.childElementCount)return toast('已演示过，刷新主题或看右侧卡片即可');
+    const busy=el('div','meta note busy','🗜 正在压缩上下文（含关注点）');
+    log2.appendChild(busy);
+    setTimeout(()=>{
+      busy.remove();
+      const items=SUMMARY_MAIN.slice(0,5).concat([['li','总盘 +6.2%，华东贡献过半（结论已按要求保留）']]);
+      log2.appendChild(buildCompaction('manual',items,SUMMARY_MANUAL_FOCUS,'1,918 字'));
+      toast('手动压缩完成 · 关注点已注入摘要提示词');
+    },1300);
+  };
+  return sec;
+}
+
+/* ── 场景 4：溢出救援 ── */
+function scene4(){
+  const {sec,chat,log}=sceneFrame('场景 4','溢出救援：撞上窗口上限不废回合','§4.2.6',
+    '模型真报「上下文超限」时（配置窗口偏大 / 网关限长）：现状=回合失败收场；'
+    +'改后=<b>识别溢出 → 自动压缩（原因标「救援」）→ 原话自动重试一次</b>；再失败才按现状报错。'
+    +'<span class="where">看哪里</span>：右上切「现状 / 改后」。');
+  const pills=el('div','pills');
+  pills.innerHTML='<button class="pill" data-m="old">现状</button><button class="pill" data-m="new">改后</button>';
+  chat.querySelector('.chat-cap').appendChild(pills);
+  let mode='old';
+  function sync(){
+    pills.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on',p.dataset.m===mode));
+    log.innerHTML='';
+    const turn=el('div','turn');
+    turn.appendChild(el('div','user-chip','继续刚才的分析，把受阻项也处理掉'));
+    turn.appendChild(el('div','work-dur','<span>已工作 8 秒</span>'));
+    if(mode==='old'){
+      turn.appendChild(el('button','meta note err-row',
+        '<span class="er-txt"><b>回合失败 ·</b> 模型报 400：This model\'s maximum context length is 131072 tokens. However, your messages resulted in 142,006 tokens…</span>'));
+      turn.appendChild(el('div','meta note bad turn-note','— 回合异常结束 —（只能新开会话从头再来）'));
+    }else{
+      const warn=el('button','meta note err-row auto',
+        '<span class="er-txt"><b>上下文超出模型窗口 ·</b> 正在自动压缩并原话重试…</span>');
+      turn.appendChild(warn);
+      turn.appendChild(buildCompaction('overflow',SUMMARY_MAIN,null,'1,842 字'));
+      turn.appendChild(el('div','bubble tail','好的，继续。环比列我这就写入 E:\\out\\q3-summary.xlsx；另外「苏州 / 蘇州」按同一城市合并口径处理，如有异议随时叫停。'));
+      log.appendChild(el('div','meta note','改后：失败行（金）→ 压缩卡 → 新回合成功收尾；同一输入只救援重试一次。'));
+    }
+    log.appendChild(turn);
+  }
+  pills.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{mode=p.dataset.m;sync();});
+  sync();
+  return sec;
+}
+
+/* ── 场景 5：prune 清理 ── */
+function scene5(){
+  const {sec,chat,log}=sceneFrame('场景 5','prune：旧工具输出清理（比摘要更轻的一档）','§4.2.5',
+    '还不到压缩线、但工具输出堆积时：从尾往前<b>保护最近约 40k tokens</b>，更旧的工具输出投影时替换为占位'
+    +'（<code>{"pruned":true,…}</code>）；可清理量不足 20k 不动手；<code>skill</code> 类工具豁免。'
+    +'落库 = 追加清理登记事件，<b>不改写原始日志</b>。'
+    +'<span class="where">看哪里</span>：展开回合后，老工具行带 🧹 标记，点开看占位说明；最近两步完好。');
+  const turn=el('div','turn');
+  turn.appendChild(el('div','user-chip','把这批日志都过一遍，找出报错规律'));
+  turn.appendChild(el('button','work-dur','<span>已工作 3 分 12 秒 · 点此收起/展开</span>'));
+  turn.appendChild(buildTool('执行命令','type app-0901.log | findstr ERROR',true,'(占位) 早期输出 8,204 字符',true));
+  turn.appendChild(buildTool('执行命令','type app-0902.log | findstr ERROR',true,'(占位) 早期输出 11,380 字符',true));
+  turn.appendChild(buildTool('读取文件','logs\\汇总-中间稿.md',true,'## 已识别三类堆栈：NPE（支付回调）/ 超时（库存服务）/ 401（token 轮换）。'));
+  turn.appendChild(buildTool('执行命令','type app-0917.log | findstr ERROR',true,'今日新增 4 条，全部命中「超时（库存服务）」类。'));
+  log.appendChild(turn);
+  log.appendChild(el('div','meta note','模型视角：前两步只剩「曾有结果、原约 N 字符」——结论已在第三步的中间稿文件里，不丢事实。'));
+  return sec;
+}
+
+/* ═══ 装配 ═══ */
+const root=document.getElementById('scenes');
+[scene1(),scene2(),scene3(),scene4(),scene5()].forEach(s=>root.appendChild(s));
+</script>
+</body>
+</html>
