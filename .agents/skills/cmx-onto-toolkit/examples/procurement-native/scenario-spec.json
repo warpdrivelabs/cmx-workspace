@@ -1,0 +1,1880 @@
+{
+ "_comment": "采购供应链演示·本体库原生数据版（20260917，无 fico 业务库依赖）：沿用 v6 七类型/六关系全 FK 一对多建模；FK 属性 string 直存对端业务主键（supplierId=SUP0001、currencyId=CNY），零 ol_edge；实例数据经 objects 段原生灌入，替代漏斗（本版不配 sourceDbId）。",
+ "dam": {
+  "domain": "supplychain",
+  "application": "procurement",
+  "module": "demo"
+ },
+ "sharedProperties": [
+  {
+   "apiName": "lifecycleStatus",
+   "displayName": "生命周期状态",
+   "baseType": "string",
+   "description": "主数据生命周期（draft/published/deprecated）"
+  },
+  {
+   "apiName": "sourceSystem",
+   "displayName": "来源系统",
+   "baseType": "string",
+   "description": "该对象由哪个业务系统治理"
+  },
+  {
+   "apiName": "governedBy",
+   "displayName": "治理方",
+   "baseType": "string",
+   "description": "主数据治理责任部门"
+  }
+ ],
+ "interfaces": [
+  {
+   "apiName": "GovernedMaster",
+   "displayName": "可治理主数据",
+   "properties": [
+    "lifecycleStatus",
+    "sourceSystem",
+    "governedBy"
+   ],
+   "status": "active"
+  }
+ ],
+ "objectTypes": [
+  {
+   "apiName": "Supplier",
+   "displayName": "供应商",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "供应商管理"
+   },
+   "primaryKey": "supplierCode",
+   "titleProperty": "name",
+   "implements": [
+    "GovernedMaster"
+   ],
+   "properties": [
+    {
+     "apiName": "supplierCode",
+     "displayName": "供应商编码",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "供应商名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "shortName",
+     "displayName": "简称",
+     "baseType": "string"
+    },
+    {
+     "apiName": "industry",
+     "displayName": "所属行业",
+     "baseType": "string"
+    },
+    {
+     "apiName": "legalPerson",
+     "displayName": "法定代表人",
+     "baseType": "string"
+    },
+    {
+     "apiName": "address",
+     "displayName": "地址",
+     "baseType": "string"
+    },
+    {
+     "apiName": "phone",
+     "displayName": "联系电话",
+     "baseType": "string"
+    },
+    {
+     "apiName": "taxNo",
+     "displayName": "税号",
+     "baseType": "string"
+    },
+    {
+     "apiName": "invoiceType",
+     "displayName": "发票类型",
+     "baseType": "string"
+    },
+    {
+     "apiName": "paymentTerm",
+     "displayName": "付款条件",
+     "baseType": "string"
+    },
+    {
+     "apiName": "settleCurrencyId",
+     "displayName": "结算币种编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "buyerId",
+     "displayName": "采购对接人编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "supplierType",
+     "displayName": "供应商类型",
+     "baseType": "string"
+    },
+    {
+     "apiName": "category",
+     "displayName": "供应商类别",
+     "baseType": "string"
+    },
+    {
+     "apiName": "riskLevel",
+     "displayName": "风险等级",
+     "baseType": "string"
+    },
+    {
+     "apiName": "rating",
+     "displayName": "综合评分",
+     "baseType": "double"
+    },
+    {
+     "apiName": "onTimeRate",
+     "displayName": "准时交付率%",
+     "baseType": "double"
+    },
+    {
+     "apiName": "status",
+     "displayName": "启用状态",
+     "baseType": "string"
+    },
+    {
+     "apiName": "remark",
+     "displayName": "备注",
+     "baseType": "string"
+    },
+    {
+     "apiName": "lifecycleStatus",
+     "displayName": "生命周期状态",
+     "baseType": "string",
+     "sharedProperty": "lifecycleStatus"
+    },
+    {
+     "apiName": "sourceSystem",
+     "displayName": "来源系统",
+     "baseType": "string",
+     "sharedProperty": "sourceSystem"
+    },
+    {
+     "apiName": "governedBy",
+     "displayName": "治理方",
+     "baseType": "string",
+     "sharedProperty": "governedBy"
+    },
+    {
+     "apiName": "reviewStatus",
+     "displayName": "评审状态",
+     "baseType": "string"
+    },
+    {
+     "apiName": "lastReviewAt",
+     "displayName": "最近评审时间",
+     "baseType": "string"
+    }
+   ]
+  },
+  {
+   "apiName": "Material",
+   "displayName": "物料",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "供应商管理"
+   },
+   "primaryKey": "materialCode",
+   "titleProperty": "name",
+   "implements": [
+    "GovernedMaster"
+   ],
+   "properties": [
+    {
+     "apiName": "materialCode",
+     "displayName": "物料编码",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "物料名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "spec",
+     "displayName": "规格型号",
+     "baseType": "string"
+    },
+    {
+     "apiName": "category",
+     "displayName": "物料类别",
+     "baseType": "string"
+    },
+    {
+     "apiName": "unit",
+     "displayName": "计量单位",
+     "baseType": "string"
+    },
+    {
+     "apiName": "baseUomId",
+     "displayName": "基本计量单位编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "safetyStock",
+     "displayName": "安全库存",
+     "baseType": "double"
+    },
+    {
+     "apiName": "refPrice",
+     "displayName": "参考单价",
+     "baseType": "double"
+    },
+    {
+     "apiName": "lifecycleStatus",
+     "displayName": "生命周期状态",
+     "baseType": "string",
+     "sharedProperty": "lifecycleStatus"
+    },
+    {
+     "apiName": "sourceSystem",
+     "displayName": "来源系统",
+     "baseType": "string",
+     "sharedProperty": "sourceSystem"
+    },
+    {
+     "apiName": "governedBy",
+     "displayName": "治理方",
+     "baseType": "string",
+     "sharedProperty": "governedBy"
+    }
+   ]
+  },
+  {
+   "apiName": "Warehouse",
+   "displayName": "仓库",
+   "dam": {
+    "domain": "供应链",
+    "application": "仓储管理",
+    "module": "库存管理"
+   },
+   "primaryKey": "warehouseCode",
+   "titleProperty": "name",
+   "implements": [
+    "GovernedMaster"
+   ],
+   "properties": [
+    {
+     "apiName": "warehouseCode",
+     "displayName": "仓库编码",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "仓库名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "type",
+     "displayName": "仓库类型",
+     "baseType": "string"
+    },
+    {
+     "apiName": "address",
+     "displayName": "地址",
+     "baseType": "string"
+    },
+    {
+     "apiName": "area",
+     "displayName": "面积㎡",
+     "baseType": "double"
+    },
+    {
+     "apiName": "managerId",
+     "displayName": "仓库主管编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "lifecycleStatus",
+     "displayName": "生命周期状态",
+     "baseType": "string",
+     "sharedProperty": "lifecycleStatus"
+    },
+    {
+     "apiName": "sourceSystem",
+     "displayName": "来源系统",
+     "baseType": "string",
+     "sharedProperty": "sourceSystem"
+    },
+    {
+     "apiName": "governedBy",
+     "displayName": "治理方",
+     "baseType": "string",
+     "sharedProperty": "governedBy"
+    }
+   ]
+  },
+  {
+   "apiName": "Contract",
+   "displayName": "采购合同",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "采购执行"
+   },
+   "primaryKey": "contractNo",
+   "titleProperty": "name",
+   "properties": [
+    {
+     "apiName": "contractNo",
+     "displayName": "合同编号",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "合同名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "supplierId",
+     "displayName": "供应商编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "supplierName",
+     "displayName": "供应商名称",
+     "baseType": "string"
+    },
+    {
+     "apiName": "signDate",
+     "displayName": "签订日期",
+     "baseType": "string"
+    },
+    {
+     "apiName": "amount",
+     "displayName": "合同金额",
+     "baseType": "double"
+    },
+    {
+     "apiName": "currencyId",
+     "displayName": "币种编码",
+     "baseType": "string"
+    },
+    {
+     "apiName": "status",
+     "displayName": "状态",
+     "baseType": "string"
+    },
+    {
+     "apiName": "lifecycleStatus",
+     "displayName": "生命周期状态",
+     "baseType": "string",
+     "sharedProperty": "lifecycleStatus"
+    }
+   ]
+  },
+  {
+   "apiName": "Employee",
+   "displayName": "员工",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "采购执行"
+   },
+   "primaryKey": "empNo",
+   "titleProperty": "name",
+   "properties": [
+    {
+     "apiName": "empNo",
+     "displayName": "工号",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "姓名",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "phone",
+     "displayName": "联系电话",
+     "baseType": "string"
+    },
+    {
+     "apiName": "department",
+     "displayName": "部门",
+     "baseType": "string"
+    },
+    {
+     "apiName": "position",
+     "displayName": "岗位",
+     "baseType": "string"
+    }
+   ]
+  },
+  {
+   "apiName": "Currency",
+   "displayName": "币种",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "供应商管理"
+   },
+   "primaryKey": "code",
+   "titleProperty": "name",
+   "properties": [
+    {
+     "apiName": "code",
+     "displayName": "代码",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "symbol",
+     "displayName": "符号",
+     "baseType": "string"
+    }
+   ]
+  },
+  {
+   "apiName": "Uom",
+   "displayName": "计量单位",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "供应商管理"
+   },
+   "primaryKey": "code",
+   "titleProperty": "name",
+   "properties": [
+    {
+     "apiName": "code",
+     "displayName": "代码",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "name",
+     "displayName": "名称",
+     "baseType": "string",
+     "required": true
+    },
+    {
+     "apiName": "unitType",
+     "displayName": "单位类型",
+     "baseType": "string"
+    }
+   ]
+  }
+ ],
+ "linkTypes": [
+  {
+   "apiName": "signContract",
+   "displayName": "签订合同",
+   "objectTypeA": "Supplier",
+   "objectTypeB": "Contract",
+   "cardinality": "oneToMany",
+   "roleA": "签订",
+   "roleB": "归属供应商",
+   "backing": {
+    "fk": {
+     "sourceProperty": "supplierId",
+     "side": "b"
+    }
+   }
+  },
+  {
+   "apiName": "buyerOf",
+   "displayName": "采购对接",
+   "objectTypeA": "Employee",
+   "objectTypeB": "Supplier",
+   "cardinality": "oneToMany",
+   "roleA": "对接",
+   "roleB": "对接人",
+   "backing": {
+    "fk": {
+     "sourceProperty": "buyerId",
+     "side": "b"
+    }
+   }
+  },
+  {
+   "apiName": "useUom",
+   "displayName": "使用计量单位",
+   "objectTypeA": "Uom",
+   "objectTypeB": "Material",
+   "cardinality": "oneToMany",
+   "roleA": "作为计量单位",
+   "roleB": "使用该单位的物料",
+   "backing": {
+    "fk": {
+     "sourceProperty": "baseUomId",
+     "side": "b"
+    }
+   }
+  },
+  {
+   "apiName": "contractCurrency",
+   "displayName": "计价币种",
+   "objectTypeA": "Currency",
+   "objectTypeB": "Contract",
+   "cardinality": "oneToMany",
+   "roleA": "作为计价币种",
+   "roleB": "计价合同",
+   "backing": {
+    "fk": {
+     "sourceProperty": "currencyId",
+     "side": "b"
+    }
+   }
+  },
+  {
+   "apiName": "settleCurrency",
+   "displayName": "结算币种",
+   "objectTypeA": "Currency",
+   "objectTypeB": "Supplier",
+   "cardinality": "oneToMany",
+   "roleA": "作为结算币种",
+   "roleB": "结算供应商",
+   "backing": {
+    "fk": {
+     "sourceProperty": "settleCurrencyId",
+     "side": "b"
+    }
+   }
+  },
+  {
+   "apiName": "managerOf",
+   "displayName": "主管仓库",
+   "objectTypeA": "Employee",
+   "objectTypeB": "Warehouse",
+   "cardinality": "oneToMany",
+   "roleA": "主管",
+   "roleB": "仓库主管",
+   "backing": {
+    "fk": {
+     "sourceProperty": "managerId",
+     "side": "b"
+    }
+   }
+  }
+ ],
+ "functions": [
+  {
+   "apiName": "supplierGrade",
+   "displayName": "供应商评级",
+   "runtime": "feel",
+   "kind": "derivedProperty",
+   "inputs": [
+    {
+     "name": "supplier",
+     "type": "object"
+    }
+   ],
+   "body": "if supplier.rating >= 4.5 then \"A\" else if supplier.rating >= 3.5 then \"B\" else if supplier.rating >= 2.5 then \"C\" else \"D\"",
+   "status": "active"
+  },
+  {
+   "apiName": "supplierRiskScore",
+   "displayName": "供应商风险分",
+   "runtime": "rhai",
+   "kind": "derivedProperty",
+   "inputs": [
+    {
+     "name": "supplier",
+     "type": "object"
+    }
+   ],
+   "body": "let riskDed = if supplier.riskLevel == \"高\" { 40.0 } else if supplier.riskLevel == \"中\" { 20.0 } else { 0.0 };\nlet otDed = (100.0 - supplier.onTimeRate) * 2.0;\nlet lowDed = if supplier.rating < 3.0 { 15.0 } else { 0.0 };\nlet s = 100.0 - riskDed - otDed - lowDed;\nif s < 0.0 { 0.0 } else { s }",
+   "status": "active"
+  },
+  {
+   "apiName": "contractSpendBySupplier",
+   "displayName": "按供应商汇总合同额",
+   "runtime": "feel",
+   "kind": "aggregation",
+   "inputs": [
+    {
+     "name": "contracts",
+     "type": "objectSet"
+    }
+   ],
+   "body": "{\"kind\":\"groupSum\",\"groupBy\":\"supplierName\",\"sum\":\"amount\"}",
+   "status": "active"
+  },
+  {
+   "apiName": "materialFullLabel",
+   "displayName": "物料全称标签",
+   "runtime": "feel",
+   "kind": "derivedProperty",
+   "inputs": [
+    {
+     "name": "material",
+     "type": "object"
+    }
+   ],
+   "body": "material.category + \" / \" + material.name + \"（\" + material.unit + \"）\"",
+   "status": "active"
+  }
+ ],
+ "actions": [
+  {
+   "apiName": "submitSupplierReview",
+   "displayName": "提交供应商评审（发起流程）",
+   "description": "供应商置评审中并发起 supplier_review 审批流；审批通过后由 flow-callback 回写 reviewStatus=已通过",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "supplierId",
+     "type": "string",
+     "required": true
+    }
+   ],
+   "logic": [
+    {
+     "op": "modifyObject",
+     "objectType": "Supplier",
+     "pk": "$supplierId",
+     "set": {
+      "reviewStatus": "评审中"
+     }
+    }
+   ],
+   "sideEffects": [
+    {
+     "kind": "startBusinessProcess",
+     "flowDefKey": "supplier_review",
+     "businessKey": "$supplierId",
+     "orgId": "org-root",
+     "initiator": "7503326638169403392",
+     "supplierId": "$supplierId"
+    }
+   ]
+  },
+  {
+   "apiName": "pauseSupplier",
+   "displayName": "暂停合作",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "supplierId",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "reason",
+     "type": "string",
+     "required": true
+    }
+   ],
+   "logic": [
+    {
+     "op": "modifyObject",
+     "objectType": "Supplier",
+     "pk": "$supplierId",
+     "set": {
+      "status": "停用",
+      "remark": "$reason"
+     }
+    }
+   ],
+   "sideEffects": [
+    {
+     "kind": "notification",
+     "template": "供应商暂停合作通知",
+     "reason": "$reason"
+    }
+   ]
+  },
+  {
+   "apiName": "adjustSupplierRating",
+   "displayName": "调整供应商评分",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "supplierId",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "newRating",
+     "type": "double",
+     "required": true
+    }
+   ],
+   "validations": [
+    {
+     "expression": "newRating >= 0 and newRating <= 5",
+     "message": "评分必须在 0~5 之间"
+    }
+   ],
+   "logic": [
+    {
+     "op": "modifyObject",
+     "objectType": "Supplier",
+     "pk": "$supplierId",
+     "set": {
+      "rating": "$newRating"
+     }
+    }
+   ]
+  },
+  {
+   "apiName": "createMaterial",
+   "displayName": "新增物料",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "materialCode",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "name",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "category",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "unit",
+     "type": "string",
+     "required": true
+    }
+   ],
+   "logic": [
+    {
+     "op": "createObject",
+     "objectType": "Material",
+     "pk": "$materialCode",
+     "title": "$name",
+     "properties": {
+      "category": "$category",
+      "unit": "$unit",
+      "status": "启用"
+     }
+    }
+   ]
+  },
+  {
+   "apiName": "adjustSafetyStock",
+   "displayName": "调整安全库存",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "materialId",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "newStock",
+     "type": "long",
+     "required": true
+    }
+   ],
+   "validations": [
+    {
+     "expression": "newStock >= 0",
+     "message": "安全库存不能为负数"
+    }
+   ],
+   "logic": [
+    {
+     "op": "modifyObject",
+     "objectType": "Material",
+     "pk": "$materialId",
+     "set": {
+      "safetyStock": "$newStock"
+     }
+    }
+   ]
+  },
+  {
+   "apiName": "removeDraftMaterial",
+   "displayName": "删除物料",
+   "description": "仅限草稿态物料；执行前人工确认（validations 看不到对象状态）",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "materialId",
+     "type": "string",
+     "required": true
+    }
+   ],
+   "logic": [
+    {
+     "op": "deleteObject",
+     "objectType": "Material",
+     "pk": "$materialId"
+    }
+   ]
+  },
+  {
+   "apiName": "applyNewSupplier",
+   "displayName": "新增供应商申请（发起主数据治理）",
+   "description": "本体动作发起供应商主数据变更：webhook 调 MDM webhook-create 建 CR 并提交 → 门户待办审批 → 激活铸号写 cm_supplier → MDM 事件推送自动回流本体（双向打通）",
+   "status": "active",
+   "parameters": [
+    {
+     "name": "supplierName",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "taxNo",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "phone",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "logic": [],
+   "sideEffects": [
+    {
+     "kind": "webhook",
+     "url": "http://127.0.0.1:8095/api/mdm/change-requests/webhook-create",
+     "docType": "gys",
+     "targetDictCode": "supplier",
+     "crType": "create",
+     "createBy": "7503326638169403392",
+     "payload": {
+      "name": "$supplierName",
+      "tax_no": "$taxNo",
+      "phone": "$phone"
+     }
+    }
+   ]
+  }
+ ],
+ "views": [
+  {
+   "apiName": "view-supplier-master",
+   "displayName": "供应商主数据",
+   "description": "供应商、物料、合同与对接人",
+   "dam": {
+    "domain": "供应链",
+    "application": "采购管理",
+    "module": "供应商管理"
+   },
+   "source": "manual",
+   "members": {
+    "objects": [
+     "Supplier",
+     "Material",
+     "Contract",
+     "Employee"
+    ],
+    "interfaces": []
+   }
+  },
+  {
+   "apiName": "view-material-procurement",
+   "displayName": "物料与采购协议",
+   "description": "物料仓储布局与采购协议覆盖",
+   "dam": {
+    "domain": "供应链",
+    "application": "仓储管理",
+    "module": "库存管理"
+   },
+   "source": "manual",
+   "members": {
+    "objects": [
+     "Material",
+     "Warehouse",
+     "Supplier",
+     "Contract"
+    ],
+    "interfaces": []
+   }
+  }
+ ],
+ "snapshot": {
+  "summary": "采购供应链演示·本体库原生数据版基线（7 类型/6 关系全 FK 一对多，零多对多零中间表，零 ol_edge）"
+ },
+ "objects": {
+  "Currency": [
+   {
+    "pk": "CNY",
+    "title": "人民币",
+    "properties": {
+     "code": "CNY",
+     "name": "人民币",
+     "symbol": "¥",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "USD",
+    "title": "美元",
+    "properties": {
+     "code": "USD",
+     "name": "美元",
+     "symbol": "$",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EUR",
+    "title": "欧元",
+    "properties": {
+     "code": "EUR",
+     "name": "欧元",
+     "symbol": "€",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "JPY",
+    "title": "日元",
+    "properties": {
+     "code": "JPY",
+     "name": "日元",
+     "symbol": "¥",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "GBP",
+    "title": "英镑",
+    "properties": {
+     "code": "GBP",
+     "name": "英镑",
+     "symbol": "£",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "HKD",
+    "title": "港币",
+    "properties": {
+     "code": "HKD",
+     "name": "港币",
+     "symbol": "HK$",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Uom": [
+   {
+    "pk": "pcs",
+    "title": "个",
+    "properties": {
+     "code": "pcs",
+     "name": "个",
+     "unitType": "计数",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "kg",
+    "title": "千克",
+    "properties": {
+     "code": "kg",
+     "name": "千克",
+     "unitType": "重量",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "g",
+    "title": "克",
+    "properties": {
+     "code": "g",
+     "name": "克",
+     "unitType": "重量",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "t",
+    "title": "吨",
+    "properties": {
+     "code": "t",
+     "name": "吨",
+     "unitType": "重量",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "m",
+    "title": "米",
+    "properties": {
+     "code": "m",
+     "name": "米",
+     "unitType": "长度",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "cm",
+    "title": "厘米",
+    "properties": {
+     "code": "cm",
+     "name": "厘米",
+     "unitType": "长度",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "m2",
+    "title": "平方米",
+    "properties": {
+     "code": "m2",
+     "name": "平方米",
+     "unitType": "面积",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "L",
+    "title": "升",
+    "properties": {
+     "code": "L",
+     "name": "升",
+     "unitType": "体积",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "mL",
+    "title": "毫升",
+    "properties": {
+     "code": "mL",
+     "name": "毫升",
+     "unitType": "体积",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "barrel",
+    "title": "桶",
+    "properties": {
+     "code": "barrel",
+     "name": "桶",
+     "unitType": "体积",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "ctn",
+    "title": "箱",
+    "properties": {
+     "code": "ctn",
+     "name": "箱",
+     "unitType": "计数",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "roll",
+    "title": "卷",
+    "properties": {
+     "code": "roll",
+     "name": "卷",
+     "unitType": "计数",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "set",
+    "title": "台",
+    "properties": {
+     "code": "set",
+     "name": "台",
+     "unitType": "计数",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "pkg",
+    "title": "套",
+    "properties": {
+     "code": "pkg",
+     "name": "套",
+     "unitType": "计数",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Employee": [
+   {
+    "pk": "EMP0001",
+    "title": "王建国",
+    "properties": {
+     "empNo": "EMP0001",
+     "name": "王建国",
+     "phone": "13805120001",
+     "department": "采购部",
+     "position": "采购经理",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0002",
+    "title": "李晓峰",
+    "properties": {
+     "empNo": "EMP0002",
+     "name": "李晓峰",
+     "phone": "13805120002",
+     "department": "采购部",
+     "position": "采购专员",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0003",
+    "title": "张伟明",
+    "properties": {
+     "empNo": "EMP0003",
+     "name": "张伟明",
+     "phone": "13805120003",
+     "department": "仓储部",
+     "position": "仓储主管",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0004",
+    "title": "陈静",
+    "properties": {
+     "empNo": "EMP0004",
+     "name": "陈静",
+     "phone": "13805120004",
+     "department": "质量部",
+     "position": "质量工程师",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0005",
+    "title": "刘洋",
+    "properties": {
+     "empNo": "EMP0005",
+     "name": "刘洋",
+     "phone": "13805120005",
+     "department": "财务部",
+     "position": "资金主管",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0006",
+    "title": "赵敏",
+    "properties": {
+     "empNo": "EMP0006",
+     "name": "赵敏",
+     "phone": "13805120006",
+     "department": "采购部",
+     "position": "采购部长",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0007",
+    "title": "孙浩",
+    "properties": {
+     "empNo": "EMP0007",
+     "name": "孙浩",
+     "phone": "13805120007",
+     "department": "仓储部",
+     "position": "库管员",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "EMP0008",
+    "title": "周雨彤",
+    "properties": {
+     "empNo": "EMP0008",
+     "name": "周雨彤",
+     "phone": "13805120008",
+     "department": "采购部",
+     "position": "采购专员",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Supplier": [
+   {
+    "pk": "SUP0001",
+    "title": "中信重工机械股份有限公司",
+    "properties": {
+     "supplierCode": "SUP0001",
+     "name": "中信重工机械股份有限公司",
+     "shortName": "中信重工",
+     "industry": "重型装备制造",
+     "legalPerson": "俞章法",
+     "address": "洛阳市涧西区建设路 206 号",
+     "phone": "0379-64087111",
+     "taxNo": "91410300171182003H",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0001",
+     "supplierType": "生产厂商",
+     "category": "重型装备",
+     "riskLevel": "低",
+     "rating": 4.6,
+     "onTimeRate": 98.2,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0002",
+    "title": "华胜信息科技有限公司",
+    "properties": {
+     "supplierCode": "SUP0002",
+     "name": "华胜信息科技有限公司",
+     "shortName": "华胜信息",
+     "industry": "信息技术服务",
+     "legalPerson": "徐茂栋",
+     "address": "南京市雨花台区软件大道 101 号",
+     "phone": "025-52881000",
+     "taxNo": "91320100773975610A",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0002",
+     "supplierType": "服务商",
+     "category": "信息技术",
+     "riskLevel": "低",
+     "rating": 3.8,
+     "onTimeRate": 96.5,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0003",
+    "title": "晨光办公用品集团有限公司",
+    "properties": {
+     "supplierCode": "SUP0003",
+     "name": "晨光办公用品集团有限公司",
+     "shortName": "晨光办公",
+     "industry": "办公用品制造",
+     "legalPerson": "陈湖文",
+     "address": "上海市奉贤区金钱公路 3668 号",
+     "phone": "021-57470088",
+     "taxNo": "91310000753849751K",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "USD",
+     "buyerId": "EMP0002",
+     "supplierType": "生产厂商",
+     "category": "办公用品",
+     "riskLevel": "低",
+     "rating": 4.2,
+     "onTimeRate": 92.0,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0004",
+    "title": "上海沪东阀门制造有限公司",
+    "properties": {
+     "supplierCode": "SUP0004",
+     "name": "上海沪东阀门制造有限公司",
+     "shortName": "沪东阀门",
+     "industry": "通用设备制造",
+     "legalPerson": "王沪生",
+     "address": "上海市浦东新区沪南公路 4500 号",
+     "phone": "021-58221188",
+     "taxNo": "91310115133127258F",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0008",
+     "supplierType": "生产厂商",
+     "category": "阀门管件",
+     "riskLevel": "低",
+     "rating": 3.5,
+     "onTimeRate": 91.0,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0005",
+    "title": "北方煤机装备制造有限公司",
+    "properties": {
+     "supplierCode": "SUP0005",
+     "name": "北方煤机装备制造有限公司",
+     "shortName": "北方煤机",
+     "industry": "专用设备制造",
+     "legalPerson": "冯孝忠",
+     "address": "唐山市丰南区运河东路 18 号",
+     "phone": "0315-8156666",
+     "taxNo": "91130200745427767B",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "EUR",
+     "buyerId": "EMP0006",
+     "supplierType": "生产厂商",
+     "category": "矿山装备",
+     "riskLevel": "中",
+     "rating": 3.2,
+     "onTimeRate": 88.0,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0006",
+    "title": "苏州精密导轨科技有限公司",
+    "properties": {
+     "supplierCode": "SUP0006",
+     "name": "苏州精密导轨科技有限公司",
+     "shortName": "苏州导轨",
+     "industry": "精密机械制造",
+     "legalPerson": "顾建平",
+     "address": "苏州市工业园区金鸡湖大道 99 号",
+     "phone": "0512-62889966",
+     "taxNo": "91320594783309658X",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0001",
+     "supplierType": "生产厂商",
+     "category": "精密机械",
+     "riskLevel": "高",
+     "rating": 4.8,
+     "onTimeRate": 99.2,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0007",
+    "title": "青岛海威尔制冷设备有限公司",
+    "properties": {
+     "supplierCode": "SUP0007",
+     "name": "青岛海威尔制冷设备有限公司",
+     "shortName": "海威尔制冷",
+     "industry": "制冷设备制造",
+     "legalPerson": "姜卫东",
+     "address": "青岛市城阳区民城路 399 号",
+     "phone": "0532-87635566",
+     "taxNo": "913702146825194473",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0008",
+     "supplierType": "生产厂商",
+     "category": "制冷设备",
+     "riskLevel": "低",
+     "rating": 3.9,
+     "onTimeRate": 89.5,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0008",
+    "title": "广东顺威自动化设备有限公司",
+    "properties": {
+     "supplierCode": "SUP0008",
+     "name": "广东顺威自动化设备有限公司",
+     "shortName": "顺威自动化",
+     "industry": "自动化设备制造",
+     "legalPerson": "梁志坚",
+     "address": "佛山市顺德区伦教街道顺达路 12 号",
+     "phone": "0757-27332288",
+     "taxNo": "91440606752847155D",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0006",
+     "supplierType": "生产厂商",
+     "category": "自动化",
+     "riskLevel": "低",
+     "rating": 4.2,
+     "onTimeRate": 95.7,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": "已通过",
+     "lastReviewAt": "2026-09-08 10:30:00",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0009",
+    "title": "东华链条制造有限公司",
+    "properties": {
+     "supplierCode": "SUP0009",
+     "name": "东华链条制造有限公司",
+     "shortName": "东华链条",
+     "industry": "通用零部件制造",
+     "legalPerson": "宣成",
+     "address": "杭州市萧山区靖江街道东华路 1 号",
+     "phone": "0571-82991188",
+     "taxNo": "91330109704185762M",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0002",
+     "supplierType": "生产厂商",
+     "category": "链条传动",
+     "riskLevel": "低",
+     "rating": 3.6,
+     "onTimeRate": 93.4,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0010",
+    "title": "温州江南阀门集团有限公司",
+    "properties": {
+     "supplierCode": "SUP0010",
+     "name": "温州江南阀门集团有限公司",
+     "shortName": "江南阀门",
+     "industry": "通用设备制造",
+     "legalPerson": "林阿龙",
+     "address": "温州市龙湾区永中街道罗东大街 888 号",
+     "phone": "0577-86935666",
+     "taxNo": "91330303145098567P",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": "CNY",
+     "buyerId": "EMP0008",
+     "supplierType": "贸易商",
+     "category": "阀门管件",
+     "riskLevel": "高",
+     "rating": 2.4,
+     "onTimeRate": 82.0,
+     "status": "启用",
+     "remark": null,
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "SUP0011",
+    "title": "洛阳国宏轴承有限公司",
+    "properties": {
+     "supplierCode": "SUP0011",
+     "name": "洛阳国宏轴承有限公司",
+     "shortName": "国宏轴承",
+     "industry": "通用零部件制造",
+     "legalPerson": "郭胜利",
+     "address": "洛阳市洛龙区开元大道 66 号",
+     "phone": "0379-65231188",
+     "taxNo": "91410307799162183A",
+     "invoiceType": "增值税专用发票",
+     "paymentTerm": "月结30天",
+     "settleCurrencyId": null,
+     "buyerId": null,
+     "supplierType": "生产厂商",
+     "category": "轴承",
+     "riskLevel": "低",
+     "rating": 3.7,
+     "onTimeRate": 90.8,
+     "status": "启用",
+     "remark": "MDM 治理新增，引用列（结算币种/采购对接人）未补全——空外键对照",
+     "reviewStatus": null,
+     "lastReviewAt": null,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Material": [
+   {
+    "pk": "MAT0001",
+    "title": "六角螺栓",
+    "properties": {
+     "materialCode": "MAT0001",
+     "name": "六角螺栓",
+     "spec": "M12×40 达克罗",
+     "category": "紧固件",
+     "unit": "个",
+     "baseUomId": "pcs",
+     "safetyStock": 5000.0,
+     "refPrice": 0.85,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0002",
+    "title": "Q235B 热轧钢板",
+    "properties": {
+     "materialCode": "MAT0002",
+     "name": "Q235B 热轧钢板",
+     "spec": "δ10×1500×6000",
+     "category": "钢材类",
+     "unit": "千克",
+     "baseUomId": "kg",
+     "safetyStock": 8000.0,
+     "refPrice": 4.32,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0003",
+    "title": "45# 圆钢",
+    "properties": {
+     "materialCode": "MAT0003",
+     "name": "45# 圆钢",
+     "spec": "Φ60 冷拔",
+     "category": "钢材类",
+     "unit": "千克",
+     "baseUomId": "kg",
+     "safetyStock": 3500.0,
+     "refPrice": 5.18,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0004",
+    "title": "不锈钢冷轧板",
+    "properties": {
+     "materialCode": "MAT0004",
+     "name": "不锈钢冷轧板",
+     "spec": "304 δ1.5×1219×2438",
+     "category": "钢材类",
+     "unit": "千克",
+     "baseUomId": "kg",
+     "safetyStock": 2000.0,
+     "refPrice": 18.6,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0005",
+    "title": "Q345B 低合金钢板",
+    "properties": {
+     "materialCode": "MAT0005",
+     "name": "Q345B 低合金钢板",
+     "spec": "δ20×2000×8000",
+     "category": "钢材类",
+     "unit": "吨",
+     "baseUomId": "t",
+     "safetyStock": 60.0,
+     "refPrice": 4680.0,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0006",
+    "title": "高强度螺母",
+    "properties": {
+     "materialCode": "MAT0006",
+     "name": "高强度螺母",
+     "spec": "M12 达克罗",
+     "category": "紧固件",
+     "unit": "个",
+     "baseUomId": "pcs",
+     "safetyStock": 20000.0,
+     "refPrice": 0.32,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0007",
+    "title": "深沟球轴承",
+    "properties": {
+     "materialCode": "MAT0007",
+     "name": "深沟球轴承",
+     "spec": "6208-2RS",
+     "category": "传动件",
+     "unit": "个",
+     "baseUomId": "pcs",
+     "safetyStock": 800.0,
+     "refPrice": 26.5,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0008",
+    "title": "抗磨液压油",
+    "properties": {
+     "materialCode": "MAT0008",
+     "name": "抗磨液压油",
+     "spec": "L-HM46 170kg 装",
+     "category": "油品化工",
+     "unit": "桶",
+     "baseUomId": "barrel",
+     "safetyStock": 120.0,
+     "refPrice": 1580.0,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0009",
+    "title": "低合金钢焊条",
+    "properties": {
+     "materialCode": "MAT0009",
+     "name": "低合金钢焊条",
+     "spec": "J507 Φ4.0",
+     "category": "焊接材料",
+     "unit": "千克",
+     "baseUomId": "kg",
+     "safetyStock": 500.0,
+     "refPrice": 12.8,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "MAT0010",
+    "title": "环氧地坪漆",
+    "properties": {
+     "materialCode": "MAT0010",
+     "name": "环氧地坪漆",
+     "spec": "H80 工业灰 20kg/桶",
+     "category": "工业涂料",
+     "unit": "桶",
+     "baseUomId": "barrel",
+     "safetyStock": 60.0,
+     "refPrice": 980.0,
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Warehouse": [
+   {
+    "pk": "WH-01",
+    "title": "中央原料库",
+    "properties": {
+     "warehouseCode": "WH-01",
+     "name": "中央原料库",
+     "type": "原料库",
+     "address": "苏州市工业园区港田路 99 号",
+     "area": 12000.0,
+     "managerId": "EMP0001",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "WH-02",
+    "title": "成品立体库",
+    "properties": {
+     "warehouseCode": "WH-02",
+     "name": "成品立体库",
+     "type": "立体库",
+     "address": "苏州市相城区太阳路 8 号",
+     "area": 8000.0,
+     "managerId": "EMP0007",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "WH-03",
+    "title": "中转临时库",
+    "properties": {
+     "warehouseCode": "WH-03",
+     "name": "中转临时库",
+     "type": "中转库",
+     "address": "昆山市传是路 56 号",
+     "area": 3000.0,
+     "managerId": "EMP0003",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ],
+  "Contract": [
+   {
+    "pk": "CT-2026-001",
+    "title": "重型装备采购合同",
+    "properties": {
+     "contractNo": "CT-2026-001",
+     "name": "重型装备采购合同",
+     "supplierId": "SUP0001",
+     "supplierName": "中信重工机械股份有限公司",
+     "signDate": "2026-03-18",
+     "amount": 1200000.0,
+     "currencyId": "CNY",
+     "status": "履行中",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "CT-2026-002",
+    "title": "MES 系统实施合同",
+    "properties": {
+     "contractNo": "CT-2026-002",
+     "name": "MES 系统实施合同",
+     "supplierId": "SUP0002",
+     "supplierName": "华胜信息科技有限公司",
+     "signDate": "2026-04-26",
+     "amount": 760000.0,
+     "currencyId": "USD",
+     "status": "已完成",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   },
+   {
+    "pk": "CT-2026-003",
+    "title": "年度办公用品框架协议",
+    "properties": {
+     "contractNo": "CT-2026-003",
+     "name": "年度办公用品框架协议",
+     "supplierId": "SUP0003",
+     "supplierName": "晨光办公用品集团有限公司",
+     "signDate": "2026-06-15",
+     "amount": 580000.0,
+     "currencyId": "CNY",
+     "status": "履行中",
+     "lifecycleStatus": "published",
+     "sourceSystem": "MDM",
+     "governedBy": "主数据平台"
+    }
+   }
+  ]
+ }
+}
