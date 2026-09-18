@@ -423,7 +423,7 @@ function toast(msg){
 /* ═══ 内置模板表（P1 方案 §5.2；真实实现放后端 providers.rs，经 list_provider_presets 下发） ═══ */
 const PRESETS={
   mlamp:    {name:'MLamp 网关',   short:'ML', color:'#1fb182', base:'https://llmgw-bz.mlamp.cn/v1', keyUrl:'', desc:'公司内部模型网关，走统一接入', models:[['glm-5.2',1],['glm-5.3-flash',0],['kimi-k3',1],['deepseek-v4-pro',1]]},
-  bigmodel: {name:'智谱 BigModel',short:'智', color:'#3987e5', base:'https://open.bigmodel.cn/api/paas/v4', keyUrl:'https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys', desc:'GLM 系列官方开放平台', models:[['glm-5.3',1],['glm-5.3-flash',1],['glm-5.2',1]]},
+  bigmodel: {name:'智谱 BigModel',short:'智', color:'#3987e5', base:'https://open.bigmodel.cn/api/coding/paas/v4', keyUrl:'https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys', desc:'GLM 系列官方开放平台', models:[['glm-5.3',1],['glm-5.3-flash',1],['glm-5.2',1]]},
   deepseek: {name:'DeepSeek',    short:'DS', color:'#9085e9', base:'https://api.deepseek.com/v1', keyUrl:'https://platform.deepseek.com/api_keys', desc:'DeepSeek 官方开放平台', models:[['deepseek-v4-pro',1],['deepseek-v4-flash',0]]},
   dashscope:{name:'阿里云百炼',   short:'通', color:'#eb6834', base:'https://dashscope.aliyuncs.com/compatible-mode/v1', keyUrl:'https://bailian.console.aliyun.com/', desc:'通义千问 Qwen 系列', models:[['qwen3-max',1],['qwen3-plus',0]]},
   moonshot: {name:'月之暗面 Kimi',short:'K',  color:'#7d7c76', base:'https://api.moonshot.cn/v1', keyUrl:'https://platform.kimi.com/console/api-keys', desc:'Kimi 系列模型', models:[['kimi-k3',1],['kimi-k2',0]]},

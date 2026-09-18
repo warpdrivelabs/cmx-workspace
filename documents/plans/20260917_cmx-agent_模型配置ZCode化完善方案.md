@@ -76,7 +76,7 @@ ZCode 的模型配置本质是**三层结构**：
   "templateNameMap": { "zh-CN": "BigModel API", "en-US": "..." },
   "config": {
     "access": { "type": "api-key", "apiKeyManagementUrl": "https://bigmodel.cn/usercenter/proj-mgmt/apikeys" },
-    "api":    { "type": "openai-chat-completions", "baseUrl": "https://open.bigmodel.cn/api/paas/v4" },
+    "api":    { "type": "openai-chat-completions", "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4" },
     "builtinModelIds": ["GLM-5.3", "GLM-5.3-Flash", "..."],
     "logo": { "type": "builtin", "key": "bigmodel" }
   }
@@ -184,7 +184,7 @@ ZCode 的模型配置本质是**三层结构**：
 | preset id | 名称 | base_url | api_key_url | 预置模型 |
 | --- | --- | --- | --- | --- |
 | mlamp | MLamp 网关 | `https://llmgw-bz.mlamp.cn/v1` | （内部网关，无公开页） | glm-5.2🧠 / glm-5.3-flash / kimi-k3 / deepseek-v4-pro（对齐网关实测可得清单） |
-| bigmodel | 智谱 BigModel | `https://open.bigmodel.cn/api/paas/v4` | bigmodel.cn 控制台 API Keys 页 | glm-5.3🧠 / glm-5.3-flash🧠 / glm-5.2🧠 … |
+| bigmodel | 智谱 BigModel | `https://open.bigmodel.cn/api/coding/paas/v4` | bigmodel.cn 控制台 API Keys 页 | glm-5.3🧠 / glm-5.3-flash🧠 / glm-5.2🧠 … |
 | deepseek | DeepSeek | `https://api.deepseek.com/v1` | platform.deepseek.com/api_keys | deepseek-v4-pro🧠 / deepseek-v4-flash |
 | dashscope | 阿里云百炼 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | bailian 控制台 | qwen 系列 |
 | moonshot | 月之暗面 Kimi | `https://api.moonshot.cn/v1` | platform.kimi.com 控制台 | kimi-k3 🧠 … |
