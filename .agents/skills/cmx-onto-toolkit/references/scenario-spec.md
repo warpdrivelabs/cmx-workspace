@@ -100,7 +100,7 @@
     {"apiName": "Currency", "displayName": "币种", "items": [{"code": "CNY", "name": "人民币"}]}
   ],
 
-  "funnelMappings": [                 // POST /funnel/mappings + /funnel/sync/{type}
+  "funnelMappings": [                 // POST /funnel/mappings + POST /funnel/sync（body {objectType}）
     {"objectType": "Supplier",
      "sourceDbId": "fico-db",           // 缺省=本体库 onto_pg；跨库需 toml [[databases]] + source_db_id 列迁移
      "sourceQuery": "SELECT code, name, (CASE WHEN … END)::double precision AS rating FROM cm_supplier",
@@ -111,7 +111,7 @@
      "required": ["name"]}              // 映射后为空 → 违规入 oo_quarantine（sync 前清旧隔离区）
   ],
 
-  "objects": {                        // POST /objects/{type}/batch（[{pk,title,properties}]；类型须已定义）
+  "objects": {                        // POST /objects/save-batch（body {objectType,items}；类型须已定义）
     "Material": [{"pk": "GYL-001", "title": "45号碳钢圆钢", "properties": {"materialCode": "GYL-001", …}}]
   },
 

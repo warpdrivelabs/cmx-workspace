@@ -1,5 +1,7 @@
 # 本体平台接口速查（演示造数常用）
 
+> **M1 起**：除 /ontologies*、/data-sources*、/me/roles、/funnel/push 外全部接口必带 `?ontology=<apiName>`；下表仅列方法与 body，query 里的 ontology 不再逐行标注。
+
 > 前缀 `/api/onto/v1`；免登录头 `X-API-Key`；信封 `{code:0, msg, data}`。POST+JSON body 为主，无 PUT。
 
 ## 定义层
@@ -16,7 +18,7 @@
 
 | 接口 | body 要点 |
 |---|---|
-| `POST /objects/{type}/batch` | `[{pk?, title?, properties:{…}}]` 同事务；**空数组=只建表**（激活类型可查询） |
+| `POST /objects/save-batch` | body `{objectType, items:[{pk?, title?, properties:{…}}]}` 同事务；**空数组=只建表**（激活类型可查询） |
 | `POST /links` | `{link, aPk, bPk}`；两端对象须已存在 |
 | `POST /objects/{type}/{pk}/modify` | `{set, expectedUpdatedAt?}`（None=盲写） |
 | `POST /object-sets/load` | 对象集代数：`base/filter/searchAround{source,link,direction}/union/intersect/subtract/static` 任意嵌套 → 编译为一条 SQL；谓词 eq/ne/gt/ge/lt/le/in/contains/isNull/and/or/not |
@@ -30,7 +32,7 @@
 | `POST /import/dct` | `{apiName, displayName, items:[{code,name}]}` 幂等；字典项当场物化 |
 | `POST /import/doc` | 单对象模型（行折叠嵌套属性）；不产 LinkType、不导实例；cmx_origin 溯源 |
 | `POST /funnel/mappings` | `{objectType, sourceDbId?, sourceQuery, keyColumns, titleColumn, propertyMap, required}` |
-| `POST /funnel/sync/{type}` | 全量同步；返回 `{read, written, quarantined}`；违规入 oo_quarantine；**sync 覆盖对象全部 props** |
+| `POST /funnel/sync` | body `{objectType}` 全量同步；返回 `{objectType, written}`；违规入 oo_quarantine；**sync 覆盖对象全部 props** |
 | `GET /funnel/quarantine?objectType=` / `GET /funnel/pipeline-status/{type}` | 隔离区 / 管道三段状态 |
 | `POST /action-types/{api}/dry-run` \| `/execute` | `{params:{…}, actor, subjects?}`；校验上下文含 `objects.<参数>`（object 参数自动装载对象状态，表达式可写 `objects.doc.status=='open'`）；dry-run/execute 响应含 `proposedChanges`（from→to diff）+ `executionLog` + `sideEffectPreview`，校验失败错误体带 `adminDetail`/`executionLog` |
 | `POST /action-types/execute-batch` | 同事务逐项批量执行（`{apiName, items:[{params}], dryRun?}`）；任一项失败整批回滚；上限 `ONTO_ACTION_BATCH_MAX`（默认 100） |

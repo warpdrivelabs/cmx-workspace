@@ -1,0 +1,1211 @@
+{
+  "_comment": "收入确认（提货贸易模式核算）演示场景规格 v1。数据全部梳理自 frontend/cmx-ontology-graph/demo/收入确认本体Web原型_v1.3.3原始.html（ONTOLOGY_OBJECTS 20 对象 / ONTOLOGY_RELATIONS 29 条 / OBJECT_LOGIC 属性分组 / JUDGMENT_ROWS·BUSINESS_CHAIN_CONTEXT·EVIDENCE_LEDGER·ADJUSTMENT_ROWS·SETTLEMENT_GROUPS·CASES·ORG_HIERARCHY·RULE_DIMENSIONS 实例数据）。20 对象类型 / 29 条关系：25 条 oneToMany FK backing（外键存对端 pk，遍历读侧 JOIN 不落边表）；4 条 manyToMany 走平台内置 ol_edge——employeeAppliesToLegal/employeeAppliesToBase（人员适用范围是数组型维护数据、无业务中间表）、purchaseSettleAggregatesBatch/deliveryRollsUpToSaleSettle（原型标注源系统派生关系，无外键）。原型 baseAgreement 约束 base 的 N-N 落地为协议持 baseId 的 FK（每份协议约束一个基地、一个基地可有多份协议），保持「凡关系必有字段关联」。adjustmentLine 即 Palantir 中间对象：由 adjustFormsLine/lineAdjustsReceivable/lineCoversBatch 三条一对多 FK 构成调账 M-N 闭环。无 funnelMappings：本场景主数据（供应商/客户/基地/法人/员工）在原型中源自数据中台主数据，此处以 objects 段原生维护以保证实例与原型叙事一致（后续接 fico cm_supplier 漏斗会整体覆盖演示实例，慎用）；docImports 保留提货单单据映射查口径（采销关联锚点单据，实例留业务系统）。函数 5 个（FEEL×2 / Rhai×1 / aggregation×2），动作 9 个覆盖五原子编辑 + 对象状态校验 + 流程闭环。本规格仅归档未执行。",
+  "dam": {
+    "domain": "finance",
+    "application": "revenue-recognition",
+    "module": "demo"
+  },
+  "sharedProperties": [
+    {
+      "apiName": "sourceSystemCode",
+      "displayName": "来源系统编码",
+      "baseType": "string",
+      "description": "对象来源业务系统标识（MDM/CBS/FSSC/RULE/AI 等）"
+    },
+    {
+      "apiName": "ledgerCode",
+      "displayName": "账套编码",
+      "baseType": "string",
+      "description": "对象归属核算账套"
+    },
+    {
+      "apiName": "updatedAt",
+      "displayName": "数据更新时间",
+      "baseType": "string",
+      "description": "实例最近一次数据更新时间"
+    }
+  ],
+  "interfaces": [
+    {
+      "apiName": "TraceableSource",
+      "displayName": "可溯源对象",
+      "properties": ["sourceSystemCode", "ledgerCode", "updatedAt"],
+      "status": "active"
+    }
+  ],
+  "objectTypes": [
+    {
+      "apiName": "LegalEntity",
+      "displayName": "法人主体",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "primaryKey": "legalCode",
+      "titleProperty": "legalName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "legalCode", "displayName": "法人主体编码", "baseType": "string", "required": true},
+        {"apiName": "legalName", "displayName": "法人主体名称", "baseType": "string", "required": true},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "OperatingBase",
+      "displayName": "基地",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "primaryKey": "baseCode",
+      "titleProperty": "baseName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "baseCode", "displayName": "基地编码", "baseType": "string", "required": true},
+        {"apiName": "baseName", "displayName": "基地名称", "baseType": "string", "required": true},
+        {"apiName": "baseType", "displayName": "基地类型", "baseType": "string"},
+        {"apiName": "isCenter", "displayName": "是否中心基地", "baseType": "boolean"},
+        {"apiName": "legalId", "displayName": "归属法人主体ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "Supplier",
+      "displayName": "供应商",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "primaryKey": "supplierCode",
+      "titleProperty": "supplierName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "supplierCode", "displayName": "供应商编码", "baseType": "string", "required": true},
+        {"apiName": "supplierName", "displayName": "供应商名称", "baseType": "string", "required": true},
+        {"apiName": "taxNo", "displayName": "统一社会信用代码", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "Customer",
+      "displayName": "客户",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "primaryKey": "customerCode",
+      "titleProperty": "customerName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "customerCode", "displayName": "客户编码", "baseType": "string", "required": true},
+        {"apiName": "customerName", "displayName": "客户名称", "baseType": "string", "required": true},
+        {"apiName": "taxNo", "displayName": "统一社会信用代码", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "Employee",
+      "displayName": "员工",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "primaryKey": "empNo",
+      "titleProperty": "empName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "empNo", "displayName": "人员编码", "baseType": "string", "required": true},
+        {"apiName": "empName", "displayName": "人员姓名", "baseType": "string", "required": true},
+        {"apiName": "identityType", "displayName": "人员身份类型", "baseType": "string"},
+        {"apiName": "applyLegalIds", "displayName": "适用法人主体ID列表", "baseType": "array"},
+        {"apiName": "applyBaseIds", "displayName": "适用基地ID列表", "baseType": "array"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "BaseCooperationAgreement",
+      "displayName": "基地合作协议",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "契约"},
+      "primaryKey": "agreementNo",
+      "titleProperty": "agreementNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "agreementNo", "displayName": "基地合作协议编号", "baseType": "string", "required": true},
+        {"apiName": "effectiveDate", "displayName": "协议生效日期", "baseType": "date"},
+        {"apiName": "expiryDate", "displayName": "协议到期日期", "baseType": "date"},
+        {"apiName": "controlsGoods", "displayName": "是否约定本方控制货权", "baseType": "boolean"},
+        {"apiName": "bearsInventoryRisk", "displayName": "是否约定本方承担存货风险", "baseType": "boolean"},
+        {"apiName": "fixedSpread", "displayName": "是否约定固定差价", "baseType": "boolean"},
+        {"apiName": "capitalFee", "displayName": "是否约定资金占用费", "baseType": "boolean"},
+        {"apiName": "legalId", "displayName": "签署法人主体ID", "baseType": "string"},
+        {"apiName": "baseId", "displayName": "约束基地ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "PurchaseContract",
+      "displayName": "采购合同",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "契约"},
+      "primaryKey": "contractNo",
+      "titleProperty": "contractNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "contractNo", "displayName": "采购合同编号", "baseType": "string", "required": true},
+        {"apiName": "effectiveDate", "displayName": "合同生效日期", "baseType": "date"},
+        {"apiName": "expiryDate", "displayName": "合同到期日期", "baseType": "date"},
+        {"apiName": "controlsGoods", "displayName": "是否约定本方控制货权", "baseType": "boolean"},
+        {"apiName": "bearsPrimaryFulfillment", "displayName": "是否约定本方承担首要履约责任", "baseType": "boolean"},
+        {"apiName": "fixedSpread", "displayName": "是否约定固定差价", "baseType": "boolean"},
+        {"apiName": "capitalFee", "displayName": "是否约定资金占用费", "baseType": "boolean"},
+        {"apiName": "supplierId", "displayName": "签约供应商ID", "baseType": "string"},
+        {"apiName": "legalId", "displayName": "签约法人主体ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "SaleContract",
+      "displayName": "销售合同",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "契约"},
+      "primaryKey": "contractNo",
+      "titleProperty": "contractNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "contractNo", "displayName": "销售合同编号", "baseType": "string", "required": true},
+        {"apiName": "effectiveDate", "displayName": "合同生效日期", "baseType": "date"},
+        {"apiName": "expiryDate", "displayName": "合同到期日期", "baseType": "date"},
+        {"apiName": "controlsGoods", "displayName": "是否约定本方控制货权", "baseType": "boolean"},
+        {"apiName": "bearsPrimaryFulfillment", "displayName": "是否约定本方承担首要履约责任", "baseType": "boolean"},
+        {"apiName": "independentPricing", "displayName": "是否约定本方具有自主定价权", "baseType": "boolean"},
+        {"apiName": "customerId", "displayName": "签约客户ID", "baseType": "string"},
+        {"apiName": "legalId", "displayName": "签约法人主体ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "PickupMaterialBatch",
+      "displayName": "提货物资批次",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "贸易执行"},
+      "primaryKey": "batchId",
+      "titleProperty": "pickupOrderNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "batchId", "displayName": "提货物资批次ID", "baseType": "string", "required": true},
+        {"apiName": "pickupOrderNo", "displayName": "提货单编号", "baseType": "string", "required": true},
+        {"apiName": "businessDate", "displayName": "提货业务日期", "baseType": "date"},
+        {"apiName": "status", "displayName": "提货物资批次状态", "baseType": "string"},
+        {"apiName": "baseId", "displayName": "登记基地ID", "baseType": "string"},
+        {"apiName": "purchaseContractId", "displayName": "采购合同编号", "baseType": "string"},
+        {"apiName": "saleContractId", "displayName": "销售合同编号", "baseType": "string"},
+        {"apiName": "supplierId", "displayName": "供应商编码", "baseType": "string"},
+        {"apiName": "customerId", "displayName": "客户编码", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "MaterialReceiptEvent",
+      "displayName": "物资接收事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "贸易执行"},
+      "primaryKey": "receiptNo",
+      "titleProperty": "receiptNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "receiptNo", "displayName": "收货单编号", "baseType": "string", "required": true},
+        {"apiName": "receiveDate", "displayName": "物资接收日期", "baseType": "date"},
+        {"apiName": "batchId", "displayName": "提货物资批次ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "MaterialDeliveryEvent",
+      "displayName": "物资交付事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "贸易执行"},
+      "primaryKey": "outboundNo",
+      "titleProperty": "outboundNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "outboundNo", "displayName": "出库单编号", "baseType": "string", "required": true},
+        {"apiName": "deliveryDate", "displayName": "物资交付日期", "baseType": "date"},
+        {"apiName": "batchId", "displayName": "提货物资批次ID", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "PurchaseSettlementEvent",
+      "displayName": "采购结算事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "primaryKey": "settleNo",
+      "titleProperty": "settleNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "settleNo", "displayName": "采购结算编号", "baseType": "string", "required": true},
+        {"apiName": "settleDate", "displayName": "采购结算日期", "baseType": "date"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "SaleSettlementEvent",
+      "displayName": "销售结算事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "primaryKey": "settleNo",
+      "titleProperty": "settleNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "settleNo", "displayName": "销售结算编号", "baseType": "string", "required": true},
+        {"apiName": "settleDate", "displayName": "销售结算日期", "baseType": "date"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "FinancialPayableEvent",
+      "displayName": "财务应付事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "primaryKey": "payableNo",
+      "titleProperty": "payableNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "payableNo", "displayName": "财务应付单编号", "baseType": "string", "required": true},
+        {"apiName": "settleId", "displayName": "采购结算编号", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "FinancialReceivableEvent",
+      "displayName": "财务应收事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "primaryKey": "receivableNo",
+      "titleProperty": "receivableNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "receivableNo", "displayName": "财务应收单编号", "baseType": "string", "required": true},
+        {"apiName": "accountingPeriod", "displayName": "应收会计期间", "baseType": "string"},
+        {"apiName": "accountingMethod", "displayName": "账务核算方式", "baseType": "string"},
+        {"apiName": "settleId", "displayName": "销售结算编号", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "AccountingJudgment",
+      "displayName": "核算判断记录",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "核算判断"},
+      "primaryKey": "judgmentId",
+      "titleProperty": "judgmentId",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "judgmentId", "displayName": "核算判断记录ID", "baseType": "string", "required": true},
+        {"apiName": "batchId", "displayName": "提货物资批次ID", "baseType": "string"},
+        {"apiName": "executeTime", "displayName": "判断执行时间", "baseType": "string"},
+        {"apiName": "sourceType", "displayName": "判断来源类型", "baseType": "string"},
+        {"apiName": "ruleSnapshotId", "displayName": "规则执行快照ID", "baseType": "string"},
+        {"apiName": "evidenceState", "displayName": "证据充分状态", "baseType": "string"},
+        {"apiName": "evidenceProgress", "displayName": "证据进度", "baseType": "string"},
+        {"apiName": "suggestedMethod", "displayName": "建议核算方式", "baseType": "string"},
+        {"apiName": "finalMethod", "displayName": "最终核算方式", "baseType": "string"},
+        {"apiName": "reviewStatus", "displayName": "复核状态", "baseType": "string"},
+        {"apiName": "reviewerId", "displayName": "复核人员ID", "baseType": "string"},
+        {"apiName": "reviewTime", "displayName": "复核时间", "baseType": "string"},
+        {"apiName": "reviewNote", "displayName": "复核说明", "baseType": "string"},
+        {"apiName": "needAdjustment", "displayName": "是否需要收入调账", "baseType": "string"},
+        {"apiName": "dimensionIds", "displayName": "规则维度ID列表", "baseType": "array"},
+        {"apiName": "dimensionResults", "displayName": "维度判断结果列表", "baseType": "array"},
+        {"apiName": "riskFlags", "displayName": "风险提示标记列表", "baseType": "array"},
+        {"apiName": "receivableTotal", "displayName": "应收事件总数", "baseType": "long"},
+        {"apiName": "receivableClosed", "displayName": "已闭环应收事件数量", "baseType": "long"},
+        {"apiName": "adjustStatus", "displayName": "调账闭环状态", "baseType": "string"},
+        {"apiName": "adjustCompleteTime", "displayName": "调账闭环完成时间", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "AssessmentEvidence",
+      "displayName": "核算判断证据",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "核算判断"},
+      "primaryKey": "evidenceId",
+      "titleProperty": "factName",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "evidenceId", "displayName": "识别证据ID", "baseType": "string", "required": true},
+        {"apiName": "judgmentId", "displayName": "核算判断记录ID", "baseType": "string"},
+        {"apiName": "sourceDocType", "displayName": "来源资料类型", "baseType": "string"},
+        {"apiName": "sourceDocId", "displayName": "来源资料ID", "baseType": "string"},
+        {"apiName": "sourceFileName", "displayName": "源文件名称", "baseType": "string"},
+        {"apiName": "docRole", "displayName": "资料角色", "baseType": "string"},
+        {"apiName": "location", "displayName": "证据定位信息", "baseType": "string"},
+        {"apiName": "factName", "displayName": "识别事实名称", "baseType": "string"},
+        {"apiName": "factValue", "displayName": "识别事实值", "baseType": "string"},
+        {"apiName": "factQuotation", "displayName": "识别依据原文", "baseType": "string"},
+        {"apiName": "recognizeStatus", "displayName": "识别状态", "baseType": "string"},
+        {"apiName": "hasSignature", "displayName": "是否识别签章", "baseType": "boolean"},
+        {"apiName": "signatureText", "displayName": "签章人识别文本", "baseType": "string"},
+        {"apiName": "matchedEmployeeId", "displayName": "匹配员工ID", "baseType": "string"},
+        {"apiName": "scopeValidation", "displayName": "人员适用范围验证结果", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "RevenueAdjustmentEvent",
+      "displayName": "收入调账事件",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "调账闭环"},
+      "primaryKey": "adjustNo",
+      "titleProperty": "adjustNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "adjustNo", "displayName": "收入调账编号", "baseType": "string", "required": true},
+        {"apiName": "totalAmount", "displayName": "调账总金额", "baseType": "double"},
+        {"apiName": "approvalStatus", "displayName": "调账审批状态", "baseType": "string"},
+        {"apiName": "createTime", "displayName": "调账创建时间", "baseType": "string"},
+        {"apiName": "submitTime", "displayName": "调账提交时间", "baseType": "string"},
+        {"apiName": "approvalTime", "displayName": "调账审批完成时间", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "RevenueAdjustmentLine",
+      "displayName": "收入调账明细",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "调账闭环"},
+      "primaryKey": "lineId",
+      "titleProperty": "lineId",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "lineId", "displayName": "收入调账明细ID", "baseType": "string", "required": true},
+        {"apiName": "adjustId", "displayName": "收入调账编号", "baseType": "string"},
+        {"apiName": "receivableId", "displayName": "财务应收事件ID", "baseType": "string"},
+        {"apiName": "pickupChainId", "displayName": "提货业务链ID", "baseType": "string"},
+        {"apiName": "amount", "displayName": "明细调整金额", "baseType": "double"},
+        {"apiName": "lineStatus", "displayName": "调账明细状态", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    },
+    {
+      "apiName": "AccountingVoucher",
+      "displayName": "会计凭证",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "primaryKey": "voucherNo",
+      "titleProperty": "voucherNo",
+      "implements": ["TraceableSource"],
+      "properties": [
+        {"apiName": "voucherNo", "displayName": "凭证编号", "baseType": "string", "required": true},
+        {"apiName": "period", "displayName": "凭证会计期间", "baseType": "string"},
+        {"apiName": "generateStatus", "displayName": "凭证生成状态", "baseType": "string"},
+        {"apiName": "postStatus", "displayName": "凭证记账状态", "baseType": "string"},
+        {"apiName": "voidStatus", "displayName": "凭证作废状态", "baseType": "string"},
+        {"apiName": "generateTime", "displayName": "凭证生成时间", "baseType": "string"},
+        {"apiName": "payableId", "displayName": "财务应付单编号", "baseType": "string"},
+        {"apiName": "receivableId", "displayName": "财务应收单编号", "baseType": "string"},
+        {"apiName": "adjustId", "displayName": "收入调账编号", "baseType": "string"},
+        {"apiName": "sourceRecordId", "displayName": "来源记录ID", "baseType": "string"},
+        {"apiName": "sourceSystemCode", "displayName": "来源系统编码", "baseType": "string", "sharedProperty": "sourceSystemCode"},
+        {"apiName": "ledgerCode", "displayName": "账套编码", "baseType": "string", "sharedProperty": "ledgerCode"},
+        {"apiName": "updatedAt", "displayName": "数据更新时间", "baseType": "string", "sharedProperty": "updatedAt"}
+      ]
+    }
+  ],
+  "linkTypes": [
+    {
+      "apiName": "baseBelongsToLegal", "displayName": "归属于法人主体",
+      "objectTypeA": "LegalEntity", "objectTypeB": "OperatingBase",
+      "cardinality": "oneToMany", "roleA": "归属法人", "roleB": "下属基地",
+      "backing": {"fk": {"sourceProperty": "legalId", "side": "b"}}
+    },
+    {
+      "apiName": "legalSignsBaseAgreement", "displayName": "签署基地合作协议",
+      "objectTypeA": "LegalEntity", "objectTypeB": "BaseCooperationAgreement",
+      "cardinality": "oneToMany", "roleA": "签约法人", "roleB": "签署协议",
+      "backing": {"fk": {"sourceProperty": "legalId", "side": "b"}}
+    },
+    {
+      "apiName": "agreementGovernsBase", "displayName": "约束基地",
+      "objectTypeA": "OperatingBase", "objectTypeB": "BaseCooperationAgreement",
+      "cardinality": "oneToMany", "roleA": "被约束基地", "roleB": "约束协议",
+      "backing": {"fk": {"sourceProperty": "baseId", "side": "b"}}
+    },
+    {
+      "apiName": "employeeAppliesToLegal", "displayName": "人员适用法人主体",
+      "objectTypeA": "Employee", "objectTypeB": "LegalEntity",
+      "cardinality": "manyToMany", "roleA": "适用人员", "roleB": "适用法人主体"
+    },
+    {
+      "apiName": "employeeAppliesToBase", "displayName": "人员适用基地",
+      "objectTypeA": "Employee", "objectTypeB": "OperatingBase",
+      "cardinality": "manyToMany", "roleA": "适用人员", "roleB": "适用基地"
+    },
+    {
+      "apiName": "supplierSignsPurchaseContract", "displayName": "供应商签署采购合同",
+      "objectTypeA": "Supplier", "objectTypeB": "PurchaseContract",
+      "cardinality": "oneToMany", "roleA": "签约供应商", "roleB": "签署合同",
+      "backing": {"fk": {"sourceProperty": "supplierId", "side": "b"}}
+    },
+    {
+      "apiName": "legalSignsPurchaseContract", "displayName": "法人签署采购合同",
+      "objectTypeA": "LegalEntity", "objectTypeB": "PurchaseContract",
+      "cardinality": "oneToMany", "roleA": "签约法人", "roleB": "签署合同",
+      "backing": {"fk": {"sourceProperty": "legalId", "side": "b"}}
+    },
+    {
+      "apiName": "customerSignsSaleContract", "displayName": "客户签署销售合同",
+      "objectTypeA": "Customer", "objectTypeB": "SaleContract",
+      "cardinality": "oneToMany", "roleA": "签约客户", "roleB": "签署合同",
+      "backing": {"fk": {"sourceProperty": "customerId", "side": "b"}}
+    },
+    {
+      "apiName": "legalSignsSaleContract", "displayName": "法人签署销售合同",
+      "objectTypeA": "LegalEntity", "objectTypeB": "SaleContract",
+      "cardinality": "oneToMany", "roleA": "签约法人", "roleB": "签署合同",
+      "backing": {"fk": {"sourceProperty": "legalId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupRegisteredAtBase", "displayName": "提货批次登记于基地",
+      "objectTypeA": "OperatingBase", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "oneToMany", "roleA": "登记基地", "roleB": "登记批次",
+      "backing": {"fk": {"sourceProperty": "baseId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupBasisPurchase", "displayName": "提货批次依据采购合同",
+      "objectTypeA": "PurchaseContract", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "oneToMany", "roleA": "采购依据", "roleB": "依据批次",
+      "backing": {"fk": {"sourceProperty": "purchaseContractId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupBasisSale", "displayName": "提货批次依据销售合同",
+      "objectTypeA": "SaleContract", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "oneToMany", "roleA": "销售依据", "roleB": "依据批次",
+      "backing": {"fk": {"sourceProperty": "saleContractId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupPurchasedFrom", "displayName": "提货批次采购自供应商",
+      "objectTypeA": "Supplier", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "oneToMany", "roleA": "上游供应商", "roleB": "采购批次",
+      "backing": {"fk": {"sourceProperty": "supplierId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupSoldTo", "displayName": "提货批次销售至客户",
+      "objectTypeA": "Customer", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "oneToMany", "roleA": "下游客户", "roleB": "销售批次",
+      "backing": {"fk": {"sourceProperty": "customerId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupExperiencesReceipt", "displayName": "提货批次经历物资接收",
+      "objectTypeA": "PickupMaterialBatch", "objectTypeB": "MaterialReceiptEvent",
+      "cardinality": "oneToMany", "roleA": "经历批次", "roleB": "接收事件",
+      "backing": {"fk": {"sourceProperty": "batchId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupExperiencesDelivery", "displayName": "提货批次经历物资交付",
+      "objectTypeA": "PickupMaterialBatch", "objectTypeB": "MaterialDeliveryEvent",
+      "cardinality": "oneToMany", "roleA": "经历批次", "roleB": "交付事件",
+      "backing": {"fk": {"sourceProperty": "batchId", "side": "b"}}
+    },
+    {
+      "apiName": "purchaseSettleAggregatesBatch", "displayName": "采购结算归集提货批次",
+      "objectTypeA": "PurchaseSettlementEvent", "objectTypeB": "PickupMaterialBatch",
+      "cardinality": "manyToMany", "roleA": "归集结算", "roleB": "被归集批次"
+    },
+    {
+      "apiName": "purchaseSettleGeneratesPayable", "displayName": "采购结算生成应付",
+      "objectTypeA": "PurchaseSettlementEvent", "objectTypeB": "FinancialPayableEvent",
+      "cardinality": "oneToMany", "roleA": "来源结算", "roleB": "生成应付",
+      "backing": {"fk": {"sourceProperty": "settleId", "side": "b"}}
+    },
+    {
+      "apiName": "payableGeneratesVoucher", "displayName": "应付生成采购凭证",
+      "objectTypeA": "FinancialPayableEvent", "objectTypeB": "AccountingVoucher",
+      "cardinality": "oneToMany", "roleA": "来源应付", "roleB": "采购凭证",
+      "backing": {"fk": {"sourceProperty": "payableId", "side": "b"}}
+    },
+    {
+      "apiName": "deliveryRollsUpToSaleSettle", "displayName": "物资交付归集至销售结算",
+      "objectTypeA": "MaterialDeliveryEvent", "objectTypeB": "SaleSettlementEvent",
+      "cardinality": "manyToMany", "roleA": "被归集交付", "roleB": "归集结算"
+    },
+    {
+      "apiName": "saleSettleGeneratesReceivable", "displayName": "销售结算生成应收",
+      "objectTypeA": "SaleSettlementEvent", "objectTypeB": "FinancialReceivableEvent",
+      "cardinality": "oneToMany", "roleA": "来源结算", "roleB": "生成应收",
+      "backing": {"fk": {"sourceProperty": "settleId", "side": "b"}}
+    },
+    {
+      "apiName": "receivableGeneratesVoucher", "displayName": "应收生成收入凭证",
+      "objectTypeA": "FinancialReceivableEvent", "objectTypeB": "AccountingVoucher",
+      "cardinality": "oneToMany", "roleA": "来源应收", "roleB": "收入凭证",
+      "backing": {"fk": {"sourceProperty": "receivableId", "side": "b"}}
+    },
+    {
+      "apiName": "pickupFormsJudgment", "displayName": "提货批次形成核算判断",
+      "objectTypeA": "PickupMaterialBatch", "objectTypeB": "AccountingJudgment",
+      "cardinality": "oneToMany", "roleA": "判断批次", "roleB": "判断记录",
+      "backing": {"fk": {"sourceProperty": "batchId", "side": "b"}}
+    },
+    {
+      "apiName": "judgmentReferencesEvidence", "displayName": "判断引用证据",
+      "objectTypeA": "AccountingJudgment", "objectTypeB": "AssessmentEvidence",
+      "cardinality": "oneToMany", "roleA": "引用判断", "roleB": "引用证据",
+      "backing": {"fk": {"sourceProperty": "judgmentId", "side": "b"}}
+    },
+    {
+      "apiName": "evidenceIdentifiesSigner", "displayName": "证据识别为签章人员",
+      "objectTypeA": "Employee", "objectTypeB": "AssessmentEvidence",
+      "cardinality": "oneToMany", "roleA": "签章人员", "roleB": "识别证据",
+      "backing": {"fk": {"sourceProperty": "matchedEmployeeId", "side": "b"}}
+    },
+    {
+      "apiName": "adjustFormsLine", "displayName": "调账事件形成调账明细",
+      "objectTypeA": "RevenueAdjustmentEvent", "objectTypeB": "RevenueAdjustmentLine",
+      "cardinality": "oneToMany", "roleA": "调账事件", "roleB": "调账明细",
+      "backing": {"fk": {"sourceProperty": "adjustId", "side": "b"}}
+    },
+    {
+      "apiName": "lineAdjustsReceivable", "displayName": "调账明细调整应收",
+      "objectTypeA": "FinancialReceivableEvent", "objectTypeB": "RevenueAdjustmentLine",
+      "cardinality": "oneToMany", "roleA": "被调应收", "roleB": "调整明细",
+      "backing": {"fk": {"sourceProperty": "receivableId", "side": "b"}}
+    },
+    {
+      "apiName": "lineCoversBatch", "displayName": "调账明细覆盖提货批次",
+      "objectTypeA": "PickupMaterialBatch", "objectTypeB": "RevenueAdjustmentLine",
+      "cardinality": "oneToMany", "roleA": "被覆盖批次", "roleB": "覆盖明细",
+      "backing": {"fk": {"sourceProperty": "pickupChainId", "side": "b"}}
+    },
+    {
+      "apiName": "adjustGeneratesVoucher", "displayName": "调账事件生成调账凭证",
+      "objectTypeA": "RevenueAdjustmentEvent", "objectTypeB": "AccountingVoucher",
+      "cardinality": "oneToMany", "roleA": "来源调账", "roleB": "调账凭证",
+      "backing": {"fk": {"sourceProperty": "adjustId", "side": "b"}}
+    }
+  ],
+  "functions": [
+    {
+      "apiName": "judgmentEffectiveMethod",
+      "displayName": "判断生效核算方式",
+      "runtime": "feel",
+      "kind": "derivedProperty",
+      "inputs": [{"name": "judgment", "type": "object"}],
+      "body": "if judgment.finalMethod != null and judgment.finalMethod != \"\" then judgment.finalMethod else judgment.suggestedMethod",
+      "status": "active"
+    },
+    {
+      "apiName": "judgmentRiskScore",
+      "displayName": "判断事项风险分",
+      "runtime": "rhai",
+      "kind": "derivedProperty",
+      "inputs": [{"name": "judgment", "type": "object"}],
+      "body": "let d1 = if judgment.adjustStatus == \"流程已闭环\" { 0.0 } else if judgment.adjustStatus == \"无需调账\" { 0.0 } else if judgment.adjustStatus == \"调账处理中\" { 20.0 } else { 35.0 };\nlet d2 = if judgment.evidenceState == \"证据完整\" { 0.0 } else if judgment.evidenceState == \"关键证据完整\" { 10.0 } else { 40.0 };\nlet s = 100.0 - d1 - d2;\nif s < 0.0 { 0.0 } else { s }",
+      "status": "active"
+    },
+    {
+      "apiName": "evidenceFullLabel",
+      "displayName": "证据全称标签",
+      "runtime": "feel",
+      "kind": "derivedProperty",
+      "inputs": [{"name": "evidence", "type": "object"}],
+      "body": "evidence.sourceDocType + \" / \" + evidence.factName + \"：\" + evidence.factValue",
+      "status": "active"
+    },
+    {
+      "apiName": "adjustmentAmountByReceivable",
+      "displayName": "按应收单汇总调账金额",
+      "runtime": "feel",
+      "kind": "aggregation",
+      "inputs": [{"name": "lines", "type": "objectSet"}],
+      "body": "{\"kind\":\"groupSum\",\"groupBy\":\"receivableId\",\"sum\":\"amount\"}",
+      "status": "active"
+    },
+    {
+      "apiName": "judgmentCountByMethod",
+      "displayName": "按最终核算方式统计判断数",
+      "runtime": "feel",
+      "kind": "aggregation",
+      "inputs": [{"name": "judgments", "type": "objectSet"}],
+      "body": "{\"kind\":\"groupCount\",\"groupBy\":\"finalMethod\"}",
+      "status": "active"
+    }
+  ],
+  "actions": [
+    {
+      "apiName": "confirmJudgment",
+      "displayName": "人工确认核算判断",
+      "description": "财务复核人员对正式判断记录确认最终核算方式；证据不足的判断不允许确认",
+      "status": "active",
+      "parameters": [
+        {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true},
+        {"name": "finalMethod", "type": "string", "required": true},
+        {"name": "reviewNote", "type": "string", "required": false}
+      ],
+      "validations": [
+        {"expression": "objects.judgment.evidenceState != '证据不足'", "message": "证据不足的判断事项不允许人工确认，请先补齐销售合同等关键证据"}
+      ],
+      "logic": [
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment",
+         "set": {"finalMethod": "$finalMethod", "reviewNote": "$reviewNote", "reviewStatus": "已确认",
+                 "reviewerId": {"src": "currentUser"}, "reviewTime": {"src": "currentTime"}}}
+      ]
+    },
+    {
+      "apiName": "submitRevenueAdjustment",
+      "displayName": "发起收入调账单",
+      "description": "对已确认净额法且处于待调账状态的判断事项创建收入调账单（草稿），后续由财务共享系统走审批",
+      "status": "active",
+      "parameters": [
+        {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true},
+        {"name": "adjustNo", "type": "string", "required": true},
+        {"name": "adjustAmount", "type": "double", "required": true}
+      ],
+      "validations": [
+        {"expression": "objects.judgment.finalMethod == '净额法'", "message": "仅最终结论为净额法的判断事项需要发起收入调账"},
+        {"expression": "objects.judgment.adjustStatus == '待调账'", "message": "当前判断事项不处于待调账状态，不允许重复发起调账"}
+      ],
+      "logic": [
+        {"op": "createObject", "objectType": "RevenueAdjustmentEvent", "pk": "$adjustNo", "title": "$adjustNo",
+         "properties": {"totalAmount": "$adjustAmount", "approvalStatus": "草稿",
+                        "createTime": {"src": "currentTime"}, "sourceSystemCode": "ONTO"}}
+      ]
+    },
+    {
+      "apiName": "createAdjustmentLine",
+      "displayName": "调账单勾选核算事项生成明细",
+      "description": "在草稿调账单下勾选一笔提货批次+应收事件，生成逐行调账明细（覆盖批次、调整应收）",
+      "status": "active",
+      "parameters": [
+        {"name": "adjustment", "type": "object", "objectType": "RevenueAdjustmentEvent", "required": true},
+        {"name": "lineId", "type": "string", "required": true},
+        {"name": "receivableId", "type": "string", "required": true},
+        {"name": "pickupBatchId", "type": "string", "required": true},
+        {"name": "amount", "type": "double", "required": true}
+      ],
+      "validations": [
+        {"expression": "objects.adjustment.approvalStatus == '草稿'", "message": "仅草稿状态的调账单允许追加调账明细"}
+      ],
+      "logic": [
+        {"op": "createObject", "objectType": "RevenueAdjustmentLine", "pk": "$lineId", "title": "$lineId",
+         "properties": {"adjustId": "$adjustment", "receivableId": "$receivableId", "pickupChainId": "$pickupBatchId",
+                        "amount": "$amount", "lineStatus": "草稿", "sourceSystemCode": "ONTO"}}
+      ]
+    },
+    {
+      "apiName": "deleteDraftAdjustment",
+      "displayName": "删除草稿调账单",
+      "description": "仅允许删除草稿状态的收入调账单，已提交/审批中/已完成的一律拦截",
+      "status": "active",
+      "parameters": [
+        {"name": "adjustment", "type": "object", "objectType": "RevenueAdjustmentEvent", "required": true}
+      ],
+      "validations": [
+        {"expression": "objects.adjustment.approvalStatus == '草稿'", "message": "仅草稿状态的调账单允许删除，已提交单据请走驳回/作废流程"}
+      ],
+      "logic": [
+        {"op": "deleteObject", "objectType": "RevenueAdjustmentEvent", "pk": "$adjustment"}
+      ]
+    },
+    {
+      "apiName": "completeAdjustmentLoop",
+      "displayName": "调账闭环回写",
+      "description": "调账凭证生效后回写判断事项调账闭环状态与完成时间（外部调账监控闭环动作）",
+      "status": "active",
+      "parameters": [
+        {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true},
+        {"name": "closedCount", "type": "long", "required": true}
+      ],
+      "validations": [
+        {"expression": "objects.judgment.adjustStatus != '流程已闭环'", "message": "该判断事项调账已闭环，请勿重复回写"}
+      ],
+      "logic": [
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment",
+         "set": {"adjustStatus": "流程已闭环", "adjustCompleteTime": {"src": "currentTime"}, "receivableClosed": "$closedCount"}}
+      ]
+    },
+    {
+      "apiName": "attachEvidenceToJudgment",
+      "description": "把一条原子识别证据挂接到核算判断记录，补强证据链",
+      "displayName": "挂接证据到判断事项",
+      "status": "active",
+      "parameters": [
+        {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true},
+        {"name": "evidence", "type": "object", "objectType": "AssessmentEvidence", "required": true}
+      ],
+      "logic": [
+        {"op": "addLink", "link": "judgmentReferencesEvidence", "aPk": "$judgment", "bPk": "$evidence"}
+      ]
+    },
+    {
+      "apiName": "assignEmployeeBaseScope",
+      "displayName": "新增人员基地适用范围",
+      "description": "为磅单/质检签字人员新增适用基地（人员适用范围为维护型数据，走平台内置边表）",
+      "status": "active",
+      "parameters": [
+        {"name": "employee", "type": "object", "objectType": "Employee", "required": true},
+        {"name": "base", "type": "object", "objectType": "OperatingBase", "required": true}
+      ],
+      "logic": [
+        {"op": "addLink", "link": "employeeAppliesToBase", "aPk": "$employee", "bPk": "$base"}
+      ]
+    },
+    {
+      "apiName": "removeEmployeeBaseScope",
+      "displayName": "撤销人员基地适用范围",
+      "description": "撤销签字人员的基地适用范围（断边）",
+      "status": "active",
+      "parameters": [
+        {"name": "employee", "type": "object", "objectType": "Employee", "required": true},
+        {"name": "base", "type": "object", "objectType": "OperatingBase", "required": true}
+      ],
+      "logic": [
+        {"op": "removeLink", "link": "employeeAppliesToBase", "aPk": "$employee", "bPk": "$base"}
+      ]
+    },
+    {
+      "apiName": "submitJudgmentReview",
+      "displayName": "发起净额法复核流程",
+      "description": "对争议判断事项发起 judgment_review 审批流（Loop⑥：审批完成后经 flow-callback 回写 reviewStatus，需 onto/flow 双端服务配置，可选闭环）",
+      "status": "active",
+      "parameters": [
+        {"name": "judgment", "type": "object", "objectType": "AccountingJudgment", "required": true}
+      ],
+      "logic": [
+        {"op": "modifyObject", "objectType": "AccountingJudgment", "pk": "$judgment", "set": {"reviewStatus": "复核中"}}
+      ],
+      "sideEffects": [
+        {"kind": "startBusinessProcess", "flowDefKey": "judgment_review", "businessKey": "$judgment",
+         "orgId": "org-root", "initiator": "7503326638169403392", "judgmentId": "$judgment"}
+      ]
+    }
+  ],
+  "dctImports": [
+    {
+      "apiName": "AccountingMethod",
+      "displayName": "账务核算方式",
+      "items": [
+        {"code": "gross", "name": "总额法"},
+        {"code": "net", "name": "净额法"}
+      ]
+    },
+    {
+      "apiName": "RecognitionStatus",
+      "displayName": "证据识别状态",
+      "items": [
+        {"code": "queued", "name": "接收/排队中"},
+        {"code": "recognizing", "name": "模型识别中"},
+        {"code": "done", "name": "处理完成"},
+        {"code": "review", "name": "待复核"},
+        {"code": "missing", "name": "资料缺失"},
+        {"code": "conflict", "name": "识别冲突"},
+        {"code": "failed", "name": "模型调用失败"}
+      ]
+    }
+  ],
+  "objects": {
+    "LegalEntity": [
+      {"pk": "COMP-LJ", "title": "链金再生资源有限公司", "properties": {"legalCode": "COMP-LJ", "legalName": "链金再生资源有限公司", "sourceRecordId": "MDM-legal-1001", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "OperatingBase": [
+      {"pk": "LG01", "title": "临港合作基地", "properties": {"baseCode": "LG01", "baseName": "临港合作基地", "baseType": "合作基地", "isCenter": true, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2001", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HD01", "title": "华东一号基地", "properties": {"baseCode": "HD01", "baseName": "华东一号基地", "baseType": "自营基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2002", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HD02", "title": "华东二号基地", "properties": {"baseCode": "HD02", "baseName": "华东二号基地", "baseType": "自营基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2003", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HB01", "title": "华北合作基地", "properties": {"baseCode": "HB01", "baseName": "华北合作基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2004", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HB02", "title": "华北二号基地", "properties": {"baseCode": "HB02", "baseName": "华北二号基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2005", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HZ01", "title": "华中合作基地", "properties": {"baseCode": "HZ01", "baseName": "华中合作基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2006", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "HZ03", "title": "华中三号基地", "properties": {"baseCode": "HZ03", "baseName": "华中三号基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2007", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XN01", "title": "西南一号基地", "properties": {"baseCode": "XN01", "baseName": "西南一号基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2008", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YJ01", "title": "沿江合作基地", "properties": {"baseCode": "YJ01", "baseName": "沿江合作基地", "baseType": "合作基地", "isCenter": false, "legalId": "COMP-LJ", "sourceRecordId": "MDM-base-2009", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "Supplier": [
+      {"pk": "GYS-0061", "title": "江苏鑫诚再生资源有限公司", "properties": {"supplierCode": "GYS-0061", "supplierName": "江苏鑫诚再生资源有限公司", "taxNo": "91320605MA1W6Q2X6B", "sourceRecordId": "MDM-supplier-3001", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "GYS-0075", "title": "安徽皖江废旧金属回收有限公司", "properties": {"supplierCode": "GYS-0075", "supplierName": "安徽皖江废旧金属回收有限公司", "taxNo": "91340200MA2T8P9X4C", "sourceRecordId": "MDM-supplier-3002", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "GYS-0082", "title": "山东鲁北再生资源开发有限公司", "properties": {"supplierCode": "GYS-0082", "supplierName": "山东鲁北再生资源开发有限公司", "taxNo": "91371600MA3N4R7X9D", "sourceRecordId": "MDM-supplier-3003", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "GYS-0090", "title": "浙江甬舟金属原料有限公司", "properties": {"supplierCode": "GYS-0090", "supplierName": "浙江甬舟金属原料有限公司", "taxNo": "91330206MA4H7K3X2E", "sourceRecordId": "MDM-supplier-3004", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "GYS-0103", "title": "湖南湘江再生资源有限公司", "properties": {"supplierCode": "GYS-0103", "supplierName": "湖南湘江再生资源有限公司", "taxNo": "91430100MA5J8L6X7F", "sourceRecordId": "MDM-supplier-3005", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "GYS-0117", "title": "江西赣北金属回收有限公司", "properties": {"supplierCode": "GYS-0117", "supplierName": "江西赣北金属回收有限公司", "taxNo": "91360400MA6K2M8X3G", "sourceRecordId": "MDM-supplier-3006", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "Customer": [
+      {"pk": "CUS-0201", "title": "华远特钢有限公司", "properties": {"customerCode": "CUS-0201", "customerName": "华远特钢有限公司", "taxNo": "91310113MA1FL8XX1A", "sourceRecordId": "MDM-customer-4001", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0214", "title": "北方特钢有限公司", "properties": {"customerCode": "CUS-0214", "customerName": "北方特钢有限公司", "taxNo": "91110108MA2GT9XX2B", "sourceRecordId": "MDM-customer-4002", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0228", "title": "江北钢铁有限公司", "properties": {"customerCode": "CUS-0228", "customerName": "江北钢铁有限公司", "taxNo": "91320594MA3HT0XX3C", "sourceRecordId": "MDM-customer-4003", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0235", "title": "海润特钢有限公司", "properties": {"customerCode": "CUS-0235", "customerName": "海润特钢有限公司", "taxNo": "91310115MA4JT1XX4D", "sourceRecordId": "MDM-customer-4004", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0242", "title": "申城钢铁有限公司", "properties": {"customerCode": "CUS-0242", "customerName": "申城钢铁有限公司", "taxNo": "91310117MA5KU2XX5E", "sourceRecordId": "MDM-customer-4005", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0250", "title": "东海钢铁有限公司", "properties": {"customerCode": "CUS-0250", "customerName": "东海钢铁有限公司", "taxNo": "91310112MA6LV3XX6F", "sourceRecordId": "MDM-customer-4006", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0263", "title": "北辰金属有限公司", "properties": {"customerCode": "CUS-0263", "customerName": "北辰金属有限公司", "taxNo": "91110113MA7MW4XX7G", "sourceRecordId": "MDM-customer-4007", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0271", "title": "江州钢铁集团有限公司", "properties": {"customerCode": "CUS-0271", "customerName": "江州钢铁集团有限公司", "taxNo": "91320611MA8NX5XX8H", "sourceRecordId": "MDM-customer-4008", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CUS-0284", "title": "南岳钢铁有限公司", "properties": {"customerCode": "CUS-0284", "customerName": "南岳钢铁有限公司", "taxNo": "91430104MA9PY6XX9J", "sourceRecordId": "MDM-customer-4009", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "Employee": [
+      {"pk": "YG-0102", "title": "王建国", "properties": {"empNo": "YG-0102", "empName": "王建国", "identityType": "质检员（本单位）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["LG01", "HZ03"], "sourceRecordId": "HR-emp-5001", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YG-0135", "title": "李慧梅", "properties": {"empNo": "YG-0135", "empName": "李慧梅", "identityType": "过磅员（驻场）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["LG01", "HD01"], "sourceRecordId": "HR-emp-5002", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YG-0208", "title": "张守成", "properties": {"empNo": "YG-0208", "empName": "张守成", "identityType": "质检复核（驻场）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["HB01"], "sourceRecordId": "HR-emp-5003", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YG-0221", "title": "陈晓露", "properties": {"empNo": "YG-0221", "empName": "陈晓露", "identityType": "过磅员（本单位）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["HD02"], "sourceRecordId": "HR-emp-5004", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YG-0266", "title": "刘振海", "properties": {"empNo": "YG-0266", "empName": "刘振海", "identityType": "收货经办（本单位）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["YJ01", "HD02"], "sourceRecordId": "HR-emp-5005", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "YG-0301", "title": "周文彬", "properties": {"empNo": "YG-0301", "empName": "周文彬", "identityType": "财务复核（财务共享中心）", "applyLegalIds": ["COMP-LJ"], "applyBaseIds": ["LG01", "HD01", "HD02", "HB01", "HB02", "HZ01", "HZ03", "XN01", "YJ01"], "sourceRecordId": "HR-emp-5006", "sourceSystemCode": "MDM", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "BaseCooperationAgreement": [
+      {"pk": "XY-LG01-2026-001", "title": "XY-LG01-2026-001", "properties": {"agreementNo": "XY-LG01-2026-001", "effectiveDate": "2026-01-01", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsInventoryRisk": false, "fixedSpread": true, "capitalFee": true, "legalId": "COMP-LJ", "baseId": "LG01", "sourceRecordId": "AGT-2026-LG01", "sourceSystemCode": "AGT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XY-HB01-2026-001", "title": "XY-HB01-2026-001", "properties": {"agreementNo": "XY-HB01-2026-001", "effectiveDate": "2026-01-01", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsInventoryRisk": false, "fixedSpread": true, "capitalFee": true, "legalId": "COMP-LJ", "baseId": "HB01", "sourceRecordId": "AGT-2026-HB01", "sourceSystemCode": "AGT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XY-YJ01-2026-001", "title": "XY-YJ01-2026-001", "properties": {"agreementNo": "XY-YJ01-2026-001", "effectiveDate": "2026-02-01", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsInventoryRisk": false, "fixedSpread": true, "capitalFee": true, "legalId": "COMP-LJ", "baseId": "YJ01", "sourceRecordId": "AGT-2026-YJ01", "sourceSystemCode": "AGT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XY-HD01-2026-001", "title": "XY-HD01-2026-001", "properties": {"agreementNo": "XY-HD01-2026-001", "effectiveDate": "2026-01-01", "expiryDate": "2026-12-31", "controlsGoods": true, "bearsInventoryRisk": true, "fixedSpread": false, "capitalFee": false, "legalId": "COMP-LJ", "baseId": "HD01", "sourceRecordId": "AGT-2026-HD01", "sourceSystemCode": "AGT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XY-HD02-2026-001", "title": "XY-HD02-2026-001", "properties": {"agreementNo": "XY-HD02-2026-001", "effectiveDate": "2026-01-01", "expiryDate": "2026-12-31", "controlsGoods": true, "bearsInventoryRisk": true, "fixedSpread": false, "capitalFee": false, "legalId": "COMP-LJ", "baseId": "HD02", "sourceRecordId": "AGT-2026-HD02", "sourceSystemCode": "AGT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "PurchaseContract": [
+      {"pk": "CGHT-2026-0415", "title": "CGHT-2026-0415", "properties": {"contractNo": "CGHT-2026-0415", "effectiveDate": "2026-04-15", "expiryDate": "2026-10-31", "controlsGoods": true, "bearsPrimaryFulfillment": true, "fixedSpread": false, "capitalFee": false, "supplierId": "GYS-0090", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0415", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0430", "title": "CGHT-2026-0430", "properties": {"contractNo": "CGHT-2026-0430", "effectiveDate": "2026-04-30", "expiryDate": "2026-11-30", "controlsGoods": true, "bearsPrimaryFulfillment": true, "fixedSpread": false, "capitalFee": false, "supplierId": "GYS-0117", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0430", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0509", "title": "CGHT-2026-0509", "properties": {"contractNo": "CGHT-2026-0509", "effectiveDate": "2026-05-09", "expiryDate": "2026-11-30", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0061", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0509", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0510", "title": "CGHT-2026-0510", "properties": {"contractNo": "CGHT-2026-0510", "effectiveDate": "2026-05-10", "expiryDate": "2026-11-30", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0061", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0510", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0512", "title": "CGHT-2026-0512", "properties": {"contractNo": "CGHT-2026-0512", "effectiveDate": "2026-05-12", "expiryDate": "2026-11-30", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0061", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0512", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0517", "title": "CGHT-2026-0517", "properties": {"contractNo": "CGHT-2026-0517", "effectiveDate": "2026-05-17", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0075", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0517", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0518", "title": "CGHT-2026-0518", "properties": {"contractNo": "CGHT-2026-0518", "effectiveDate": "2026-05-18", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0082", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0518", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0521", "title": "CGHT-2026-0521", "properties": {"contractNo": "CGHT-2026-0521", "effectiveDate": "2026-05-21", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0082", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0521", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0524", "title": "CGHT-2026-0524", "properties": {"contractNo": "CGHT-2026-0524", "effectiveDate": "2026-05-24", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0103", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0524", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0526", "title": "CGHT-2026-0526", "properties": {"contractNo": "CGHT-2026-0526", "effectiveDate": "2026-05-26", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0075", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0526", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0529", "title": "CGHT-2026-0529", "properties": {"contractNo": "CGHT-2026-0529", "effectiveDate": "2026-05-29", "expiryDate": "2026-12-31", "controlsGoods": true, "bearsPrimaryFulfillment": true, "fixedSpread": false, "capitalFee": false, "supplierId": "GYS-0090", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0529", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0533", "title": "CGHT-2026-0533", "properties": {"contractNo": "CGHT-2026-0533", "effectiveDate": "2026-08-01", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0061", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0533", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0536", "title": "CGHT-2026-0536", "properties": {"contractNo": "CGHT-2026-0536", "effectiveDate": "2026-08-01", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0082", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0536", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGHT-2026-0539", "title": "CGHT-2026-0539", "properties": {"contractNo": "CGHT-2026-0539", "effectiveDate": "2026-08-05", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "fixedSpread": true, "capitalFee": true, "supplierId": "GYS-0117", "legalId": "COMP-LJ", "sourceRecordId": "CTT-CGHT-0539", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "SaleContract": [
+      {"pk": "XSHT-2026-0418", "title": "XSHT-2026-0418", "properties": {"contractNo": "XSHT-2026-0418", "effectiveDate": "2026-04-18", "expiryDate": "2026-10-31", "controlsGoods": true, "bearsPrimaryFulfillment": true, "independentPricing": true, "customerId": "CUS-0250", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0418", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0528", "title": "XSHT-2026-0528", "properties": {"contractNo": "XSHT-2026-0528", "effectiveDate": "2026-05-28", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0201", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0528", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0610", "title": "XSHT-2026-0610", "properties": {"contractNo": "XSHT-2026-0610", "effectiveDate": "2026-06-10", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0214", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0610", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0624", "title": "XSHT-2026-0624", "properties": {"contractNo": "XSHT-2026-0624", "effectiveDate": "2026-06-24", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0228", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0624", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0627", "title": "XSHT-2026-0627", "properties": {"contractNo": "XSHT-2026-0627", "effectiveDate": "2026-06-27", "expiryDate": "2026-12-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0235", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0627", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0629", "title": "XSHT-2026-0629", "properties": {"contractNo": "XSHT-2026-0629", "effectiveDate": "2026-06-29", "expiryDate": "2026-12-31", "controlsGoods": true, "bearsPrimaryFulfillment": true, "independentPricing": true, "customerId": "CUS-0242", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0629", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0631", "title": "XSHT-2026-0631", "properties": {"contractNo": "XSHT-2026-0631", "effectiveDate": "2026-06-30", "expiryDate": "2026-12-31", "controlsGoods": true, "bearsPrimaryFulfillment": true, "independentPricing": true, "customerId": "CUS-0271", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0631", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0638", "title": "XSHT-2026-0638", "properties": {"contractNo": "XSHT-2026-0638", "effectiveDate": "2026-08-01", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0201", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0638", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSHT-2026-0641", "title": "XSHT-2026-0641", "properties": {"contractNo": "XSHT-2026-0641", "effectiveDate": "2026-08-01", "expiryDate": "2027-01-31", "controlsGoods": false, "bearsPrimaryFulfillment": false, "independentPricing": false, "customerId": "CUS-0214", "legalId": "COMP-LJ", "sourceRecordId": "CTT-XSHT-0641", "sourceSystemCode": "CTT", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "PickupMaterialBatch": [
+      {"pk": "THD-2026-0162", "title": "THD-2026-0162", "properties": {"batchId": "THD-2026-0162", "pickupOrderNo": "THD-2026-0162", "businessDate": "2026-05-21", "status": "已完成", "baseId": "HD01", "purchaseContractId": "CGHT-2026-0415", "saleContractId": "XSHT-2026-0418", "supplierId": "GYS-0090", "customerId": "CUS-0250", "sourceRecordId": "CBS-THD-0162", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0188", "title": "THD-2026-0188", "properties": {"batchId": "THD-2026-0188", "pickupOrderNo": "THD-2026-0188", "businessDate": "2026-06-11", "status": "已完成", "baseId": "LG01", "purchaseContractId": "CGHT-2026-0509", "saleContractId": "XSHT-2026-0528", "supplierId": "GYS-0061", "customerId": "CUS-0201", "sourceRecordId": "CBS-THD-0188", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0191", "title": "THD-2026-0191", "properties": {"batchId": "THD-2026-0191", "pickupOrderNo": "THD-2026-0191", "businessDate": "2026-06-14", "status": "已完成", "baseId": "LG01", "purchaseContractId": "CGHT-2026-0510", "saleContractId": "XSHT-2026-0528", "supplierId": "GYS-0061", "customerId": "CUS-0201", "sourceRecordId": "CBS-THD-0191", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0198", "title": "THD-2026-0198", "properties": {"batchId": "THD-2026-0198", "pickupOrderNo": "THD-2026-0198", "businessDate": "2026-07-05", "status": "已完成", "baseId": "LG01", "purchaseContractId": "CGHT-2026-0512", "saleContractId": "XSHT-2026-0528", "supplierId": "GYS-0061", "customerId": "CUS-0201", "sourceRecordId": "CBS-THD-0198", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0208", "title": "THD-2026-0208", "properties": {"batchId": "THD-2026-0208", "pickupOrderNo": "THD-2026-0208", "businessDate": "2026-07-15", "status": "已完成", "baseId": "HB01", "purchaseContractId": "CGHT-2026-0518", "saleContractId": "XSHT-2026-0610", "supplierId": "GYS-0082", "customerId": "CUS-0214", "sourceRecordId": "CBS-THD-0208", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0214", "title": "THD-2026-0214", "properties": {"batchId": "THD-2026-0214", "pickupOrderNo": "THD-2026-0214", "businessDate": "2026-07-19", "status": "已完成", "baseId": "HB01", "purchaseContractId": "CGHT-2026-0521", "saleContractId": "XSHT-2026-0610", "supplierId": "GYS-0082", "customerId": "CUS-0214", "sourceRecordId": "CBS-THD-0214", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0219", "title": "THD-2026-0219", "properties": {"batchId": "THD-2026-0219", "pickupOrderNo": "THD-2026-0219", "businessDate": "2026-07-24", "status": "已闭环", "baseId": "YJ01", "purchaseContractId": "CGHT-2026-0524", "saleContractId": "XSHT-2026-0624", "supplierId": "GYS-0103", "customerId": "CUS-0228", "sourceRecordId": "CBS-THD-0219", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0223", "title": "THD-2026-0223", "properties": {"batchId": "THD-2026-0223", "pickupOrderNo": "THD-2026-0223", "businessDate": "2026-07-26", "status": "已完成", "baseId": "LG01", "purchaseContractId": "CGHT-2026-0526", "saleContractId": "XSHT-2026-0627", "supplierId": "GYS-0075", "customerId": "CUS-0235", "sourceRecordId": "CBS-THD-0223", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0226", "title": "THD-2026-0226", "properties": {"batchId": "THD-2026-0226", "pickupOrderNo": "THD-2026-0226", "businessDate": "2026-07-03", "status": "已完成", "baseId": "HD01", "purchaseContractId": "CGHT-2026-0430", "saleContractId": "XSHT-2026-0631", "supplierId": "GYS-0117", "customerId": "CUS-0271", "sourceRecordId": "CBS-THD-0226", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0228", "title": "THD-2026-0228", "properties": {"batchId": "THD-2026-0228", "pickupOrderNo": "THD-2026-0228", "businessDate": "2026-07-27", "status": "已完成", "baseId": "HD02", "purchaseContractId": "CGHT-2026-0529", "saleContractId": "XSHT-2026-0629", "supplierId": "GYS-0090", "customerId": "CUS-0242", "sourceRecordId": "CBS-THD-0228", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "THD-2026-0235", "title": "THD-2026-0235", "properties": {"batchId": "THD-2026-0235", "pickupOrderNo": "THD-2026-0235", "businessDate": "2026-08-21", "status": "进行中", "baseId": "LG01", "purchaseContractId": "CGHT-2026-0533", "saleContractId": "XSHT-2026-0638", "supplierId": "GYS-0061", "customerId": "CUS-0201", "sourceRecordId": "CBS-THD-0235", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}},
+      {"pk": "THD-2026-0238", "title": "THD-2026-0238", "properties": {"batchId": "THD-2026-0238", "pickupOrderNo": "THD-2026-0238", "businessDate": "2026-08-22", "status": "进行中", "baseId": "HB01", "purchaseContractId": "CGHT-2026-0536", "saleContractId": "XSHT-2026-0641", "supplierId": "GYS-0082", "customerId": "CUS-0214", "sourceRecordId": "CBS-THD-0238", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}},
+      {"pk": "THD-2026-0241", "title": "THD-2026-0241", "properties": {"batchId": "THD-2026-0241", "pickupOrderNo": "THD-2026-0241", "businessDate": "2026-08-23", "status": "进行中", "baseId": "HZ01", "purchaseContractId": "CGHT-2026-0539", "saleContractId": null, "supplierId": "GYS-0117", "customerId": "CUS-0284", "sourceRecordId": "CBS-THD-0241", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}}
+    ],
+    "MaterialReceiptEvent": [
+      {"pk": "RKD-2026-0162", "title": "RKD-2026-0162", "properties": {"receiptNo": "RKD-2026-0162", "receiveDate": "2026-05-20", "batchId": "THD-2026-0162", "sourceRecordId": "CBS-RKD-0162", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0188", "title": "RKD-2026-0188", "properties": {"receiptNo": "RKD-2026-0188", "receiveDate": "2026-06-11", "batchId": "THD-2026-0188", "sourceRecordId": "CBS-RKD-0188", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0191", "title": "RKD-2026-0191", "properties": {"receiptNo": "RKD-2026-0191", "receiveDate": "2026-06-14", "batchId": "THD-2026-0191", "sourceRecordId": "CBS-RKD-0191", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0198", "title": "RKD-2026-0198", "properties": {"receiptNo": "RKD-2026-0198", "receiveDate": "2026-07-05", "batchId": "THD-2026-0198", "sourceRecordId": "CBS-RKD-0198", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0208", "title": "RKD-2026-0208", "properties": {"receiptNo": "RKD-2026-0208", "receiveDate": "2026-07-15", "batchId": "THD-2026-0208", "sourceRecordId": "CBS-RKD-0208", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0214", "title": "RKD-2026-0214", "properties": {"receiptNo": "RKD-2026-0214", "receiveDate": "2026-07-19", "batchId": "THD-2026-0214", "sourceRecordId": "CBS-RKD-0214", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0219", "title": "RKD-2026-0219", "properties": {"receiptNo": "RKD-2026-0219", "receiveDate": "2026-07-24", "batchId": "THD-2026-0219", "sourceRecordId": "CBS-RKD-0219", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0223", "title": "RKD-2026-0223", "properties": {"receiptNo": "RKD-2026-0223", "receiveDate": "2026-07-26", "batchId": "THD-2026-0223", "sourceRecordId": "CBS-RKD-0223", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0226", "title": "RKD-2026-0226", "properties": {"receiptNo": "RKD-2026-0226", "receiveDate": "2026-07-03", "batchId": "THD-2026-0226", "sourceRecordId": "CBS-RKD-0226", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0228", "title": "RKD-2026-0228", "properties": {"receiptNo": "RKD-2026-0228", "receiveDate": "2026-07-27", "batchId": "THD-2026-0228", "sourceRecordId": "CBS-RKD-0228", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "RKD-2026-0235", "title": "RKD-2026-0235", "properties": {"receiptNo": "RKD-2026-0235", "receiveDate": "2026-08-21", "batchId": "THD-2026-0235", "sourceRecordId": "CBS-RKD-0235", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}},
+      {"pk": "RKD-2026-0238", "title": "RKD-2026-0238", "properties": {"receiptNo": "RKD-2026-0238", "receiveDate": "2026-08-22", "batchId": "THD-2026-0238", "sourceRecordId": "CBS-RKD-0238", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}},
+      {"pk": "RKD-2026-0241", "title": "RKD-2026-0241", "properties": {"receiptNo": "RKD-2026-0241", "receiveDate": "2026-08-23", "batchId": "THD-2026-0241", "sourceRecordId": "CBS-RKD-0241", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 08:30:00"}}
+    ],
+    "MaterialDeliveryEvent": [
+      {"pk": "CKD-2026-0521", "title": "CKD-2026-0521", "properties": {"outboundNo": "CKD-2026-0521", "deliveryDate": "2026-05-21", "batchId": "THD-2026-0162", "sourceRecordId": "CBS-CKD-0521", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0612", "title": "CKD-2026-0612", "properties": {"outboundNo": "CKD-2026-0612", "deliveryDate": "2026-06-12", "batchId": "THD-2026-0188", "sourceRecordId": "CBS-CKD-0612", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0615", "title": "CKD-2026-0615", "properties": {"outboundNo": "CKD-2026-0615", "deliveryDate": "2026-06-15", "batchId": "THD-2026-0191", "sourceRecordId": "CBS-CKD-0615", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0703", "title": "CKD-2026-0703", "properties": {"outboundNo": "CKD-2026-0703", "deliveryDate": "2026-07-03", "batchId": "THD-2026-0226", "sourceRecordId": "CBS-CKD-0703", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0708", "title": "CKD-2026-0708", "properties": {"outboundNo": "CKD-2026-0708", "deliveryDate": "2026-07-08", "batchId": "THD-2026-0198", "sourceRecordId": "CBS-CKD-0708", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0716", "title": "CKD-2026-0716", "properties": {"outboundNo": "CKD-2026-0716", "deliveryDate": "2026-07-16", "batchId": "THD-2026-0208", "sourceRecordId": "CBS-CKD-0716", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0722", "title": "CKD-2026-0722", "properties": {"outboundNo": "CKD-2026-0722", "deliveryDate": "2026-07-22", "batchId": "THD-2026-0214", "sourceRecordId": "CBS-CKD-0722", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0729", "title": "CKD-2026-0729", "properties": {"outboundNo": "CKD-2026-0729", "deliveryDate": "2026-07-29", "batchId": "THD-2026-0219", "sourceRecordId": "CBS-CKD-0729", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0730", "title": "CKD-2026-0730", "properties": {"outboundNo": "CKD-2026-0730", "deliveryDate": "2026-07-30", "batchId": "THD-2026-0223", "sourceRecordId": "CBS-CKD-0730", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CKD-2026-0731", "title": "CKD-2026-0731", "properties": {"outboundNo": "CKD-2026-0731", "deliveryDate": "2026-07-31", "batchId": "THD-2026-0228", "sourceRecordId": "CBS-CKD-0731", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "PurchaseSettlementEvent": [
+      {"pk": "CGJS-2026-0524", "title": "CGJS-2026-0524", "properties": {"settleNo": "CGJS-2026-0524", "settleDate": "2026-05-24", "sourceRecordId": "CBS-CGJS-0524", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0613", "title": "CGJS-2026-0613", "properties": {"settleNo": "CGJS-2026-0613", "settleDate": "2026-06-13", "sourceRecordId": "CBS-CGJS-0613", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0616", "title": "CGJS-2026-0616", "properties": {"settleNo": "CGJS-2026-0616", "settleDate": "2026-06-16", "sourceRecordId": "CBS-CGJS-0616", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0618", "title": "CGJS-2026-0618", "properties": {"settleNo": "CGJS-2026-0618", "settleDate": "2026-07-18", "sourceRecordId": "CBS-CGJS-0618", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0704", "title": "CGJS-2026-0704", "properties": {"settleNo": "CGJS-2026-0704", "settleDate": "2026-07-04", "sourceRecordId": "CBS-CGJS-0704", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0706", "title": "CGJS-2026-0706", "properties": {"settleNo": "CGJS-2026-0706", "settleDate": "2026-07-06", "sourceRecordId": "CBS-CGJS-0706", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0720", "title": "CGJS-2026-0720", "properties": {"settleNo": "CGJS-2026-0720", "settleDate": "2026-07-20", "sourceRecordId": "CBS-CGJS-0720", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0725", "title": "CGJS-2026-0725", "properties": {"settleNo": "CGJS-2026-0725", "settleDate": "2026-07-25", "sourceRecordId": "CBS-CGJS-0725", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0727", "title": "CGJS-2026-0727", "properties": {"settleNo": "CGJS-2026-0727", "settleDate": "2026-07-27", "sourceRecordId": "CBS-CGJS-0727", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CGJS-2026-0729", "title": "CGJS-2026-0729", "properties": {"settleNo": "CGJS-2026-0729", "settleDate": "2026-07-29", "sourceRecordId": "CBS-CGJS-0729", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "SaleSettlementEvent": [
+      {"pk": "XSJS-2026-0521", "title": "XSJS-2026-0521", "properties": {"settleNo": "XSJS-2026-0521", "settleDate": "2026-05-24", "sourceRecordId": "CBS-XSJS-0521", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0618", "title": "XSJS-2026-0618", "properties": {"settleNo": "XSJS-2026-0618", "settleDate": "2026-07-08", "sourceRecordId": "CBS-XSJS-0618", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0703", "title": "XSJS-2026-0703", "properties": {"settleNo": "XSJS-2026-0703", "settleDate": "2026-07-04", "sourceRecordId": "CBS-XSJS-0703", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0716", "title": "XSJS-2026-0716", "properties": {"settleNo": "XSJS-2026-0716", "settleDate": "2026-07-17", "sourceRecordId": "CBS-XSJS-0716", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0722", "title": "XSJS-2026-0722", "properties": {"settleNo": "XSJS-2026-0722", "settleDate": "2026-07-23", "sourceRecordId": "CBS-XSJS-0722", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0729", "title": "XSJS-2026-0729", "properties": {"settleNo": "XSJS-2026-0729", "settleDate": "2026-07-30", "sourceRecordId": "CBS-XSJS-0729", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0730", "title": "XSJS-2026-0730", "properties": {"settleNo": "XSJS-2026-0730", "settleDate": "2026-07-31", "sourceRecordId": "CBS-XSJS-0730", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "XSJS-2026-0731", "title": "XSJS-2026-0731", "properties": {"settleNo": "XSJS-2026-0731", "settleDate": "2026-08-01", "sourceRecordId": "CBS-XSJS-0731", "sourceSystemCode": "CBS", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "FinancialPayableEvent": [
+      {"pk": "CWYF-2026-0516", "title": "CWYF-2026-0516", "properties": {"payableNo": "CWYF-2026-0516", "settleId": "CGJS-2026-0613", "sourceRecordId": "FSSC-YF-0516", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0517", "title": "CWYF-2026-0517", "properties": {"payableNo": "CWYF-2026-0517", "settleId": "CGJS-2026-0524", "sourceRecordId": "FSSC-YF-0517", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0518", "title": "CWYF-2026-0518", "properties": {"payableNo": "CWYF-2026-0518", "settleId": "CGJS-2026-0616", "sourceRecordId": "FSSC-YF-0518", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0519", "title": "CWYF-2026-0519", "properties": {"payableNo": "CWYF-2026-0519", "settleId": "CGJS-2026-0720", "sourceRecordId": "FSSC-YF-0519", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0520", "title": "CWYF-2026-0520", "properties": {"payableNo": "CWYF-2026-0520", "settleId": "CGJS-2026-0706", "sourceRecordId": "FSSC-YF-0520", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0521", "title": "CWYF-2026-0521", "properties": {"payableNo": "CWYF-2026-0521", "settleId": "CGJS-2026-0618", "sourceRecordId": "FSSC-YF-0521", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0522", "title": "CWYF-2026-0522", "properties": {"payableNo": "CWYF-2026-0522", "settleId": "CGJS-2026-0704", "sourceRecordId": "FSSC-YF-0522", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0523", "title": "CWYF-2026-0523", "properties": {"payableNo": "CWYF-2026-0523", "settleId": "CGJS-2026-0725", "sourceRecordId": "FSSC-YF-0523", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0524", "title": "CWYF-2026-0524", "properties": {"payableNo": "CWYF-2026-0524", "settleId": "CGJS-2026-0727", "sourceRecordId": "FSSC-YF-0524", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYF-2026-0526", "title": "CWYF-2026-0526", "properties": {"payableNo": "CWYF-2026-0526", "settleId": "CGJS-2026-0729", "sourceRecordId": "FSSC-YF-0526", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "FinancialReceivableEvent": [
+      {"pk": "CWYS-2026-0522", "title": "CWYS-2026-0522", "properties": {"receivableNo": "CWYS-2026-0522", "accountingPeriod": "2026-05", "accountingMethod": "总额法", "settleId": "XSJS-2026-0521", "sourceRecordId": "FSSC-YS-0522", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0619", "title": "CWYS-2026-0619", "properties": {"receivableNo": "CWYS-2026-0619", "accountingPeriod": "2026-06", "accountingMethod": "总额法", "settleId": "XSJS-2026-0618", "sourceRecordId": "FSSC-YS-0619", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0621", "title": "CWYS-2026-0621", "properties": {"receivableNo": "CWYS-2026-0621", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0716", "sourceRecordId": "FSSC-YS-0621", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0623", "title": "CWYS-2026-0623", "properties": {"receivableNo": "CWYS-2026-0623", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0729", "sourceRecordId": "FSSC-YS-0623", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0624", "title": "CWYS-2026-0624", "properties": {"receivableNo": "CWYS-2026-0624", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0730", "sourceRecordId": "FSSC-YS-0624", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0625", "title": "CWYS-2026-0625", "properties": {"receivableNo": "CWYS-2026-0625", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0731", "sourceRecordId": "FSSC-YS-0625", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0704", "title": "CWYS-2026-0704", "properties": {"receivableNo": "CWYS-2026-0704", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0703", "sourceRecordId": "FSSC-YS-0704", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "CWYS-2026-0723", "title": "CWYS-2026-0723", "properties": {"receivableNo": "CWYS-2026-0723", "accountingPeriod": "2026-07", "accountingMethod": "总额法", "settleId": "XSJS-2026-0722", "sourceRecordId": "FSSC-YS-0723", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}}
+    ],
+    "AccountingVoucher": [
+      {"pk": "PZ-2026-05-00132", "title": "PZ-2026-05-00132", "properties": {"voucherNo": "PZ-2026-05-00132", "period": "2026-05", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-05-25 09:12:00", "payableId": "CWYF-2026-0517", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00132", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-05-00140", "title": "PZ-2026-05-00140", "properties": {"voucherNo": "PZ-2026-05-00140", "period": "2026-05", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-05-26 10:00:00", "payableId": null, "receivableId": "CWYS-2026-0522", "adjustId": null, "sourceRecordId": "FSSC-PZ-00140", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-06-00152", "title": "PZ-2026-06-00152", "properties": {"voucherNo": "PZ-2026-06-00152", "period": "2026-06", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-06-14 09:30:00", "payableId": "CWYF-2026-0516", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00152", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-06-00155", "title": "PZ-2026-06-00155", "properties": {"voucherNo": "PZ-2026-06-00155", "period": "2026-06", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-06-17 10:05:00", "payableId": "CWYF-2026-0518", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00155", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00168", "title": "PZ-2026-07-00168", "properties": {"voucherNo": "PZ-2026-07-00168", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-07 09:41:00", "payableId": "CWYF-2026-0520", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00168", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00171", "title": "PZ-2026-07-00171", "properties": {"voucherNo": "PZ-2026-07-00171", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-21 10:12:00", "payableId": "CWYF-2026-0519", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00171", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00172", "title": "PZ-2026-07-00172", "properties": {"voucherNo": "PZ-2026-07-00172", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-19 15:22:00", "payableId": "CWYF-2026-0521", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00172", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00178", "title": "PZ-2026-07-00178", "properties": {"voucherNo": "PZ-2026-07-00178", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-05 14:02:00", "payableId": "CWYF-2026-0522", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00178", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00183", "title": "PZ-2026-07-00183", "properties": {"voucherNo": "PZ-2026-07-00183", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-26 09:55:00", "payableId": "CWYF-2026-0523", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00183", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00186", "title": "PZ-2026-07-00186", "properties": {"voucherNo": "PZ-2026-07-00186", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-28 11:31:00", "payableId": "CWYF-2026-0524", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00186", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00188", "title": "PZ-2026-07-00188", "properties": {"voucherNo": "PZ-2026-07-00188", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-09 09:18:00", "payableId": null, "receivableId": "CWYS-2026-0619", "adjustId": null, "sourceRecordId": "FSSC-PZ-00188", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00192", "title": "PZ-2026-07-00192", "properties": {"voucherNo": "PZ-2026-07-00192", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-18 09:33:00", "payableId": null, "receivableId": "CWYS-2026-0621", "adjustId": null, "sourceRecordId": "FSSC-PZ-00192", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00204", "title": "PZ-2026-07-00204", "properties": {"voucherNo": "PZ-2026-07-00204", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-24 10:26:00", "payableId": null, "receivableId": "CWYS-2026-0723", "adjustId": null, "sourceRecordId": "FSSC-PZ-00204", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00205", "title": "PZ-2026-07-00205", "properties": {"voucherNo": "PZ-2026-07-00205", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-05 10:40:00", "payableId": null, "receivableId": "CWYS-2026-0704", "adjustId": null, "sourceRecordId": "FSSC-PZ-00205", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00219", "title": "PZ-2026-07-00219", "properties": {"voucherNo": "PZ-2026-07-00219", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-30 11:05:00", "payableId": null, "receivableId": "CWYS-2026-0623", "adjustId": null, "sourceRecordId": "FSSC-PZ-00219", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00221", "title": "PZ-2026-07-00221", "properties": {"voucherNo": "PZ-2026-07-00221", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-31 14:15:00", "payableId": null, "receivableId": "CWYS-2026-0624", "adjustId": null, "sourceRecordId": "FSSC-PZ-00221", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00228", "title": "PZ-2026-07-00228", "properties": {"voucherNo": "PZ-2026-07-00228", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-07-30 16:40:00", "payableId": null, "receivableId": null, "adjustId": "TZD-2026-0729-A2", "sourceRecordId": "FSSC-PZ-00228", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PZ-2026-07-00231", "title": "PZ-2026-07-00231", "properties": {"voucherNo": "PZ-2026-07-00231", "period": "2026-07", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "已作废", "generateTime": "2026-07-31 10:02:00", "payableId": null, "receivableId": null, "adjustId": "TZD-2026-0730-V2", "sourceRecordId": "FSSC-PZ-00231", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-03 15:20:00"}},
+      {"pk": "PZ-2026-08-00201", "title": "PZ-2026-08-00201", "properties": {"voucherNo": "PZ-2026-08-00201", "period": "2026-08", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-08-01 09:20:00", "payableId": "CWYF-2026-0526", "receivableId": null, "adjustId": null, "sourceRecordId": "FSSC-PZ-00201", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-01 09:20:00"}},
+      {"pk": "PZ-2026-08-00209", "title": "PZ-2026-08-00209", "properties": {"voucherNo": "PZ-2026-08-00209", "period": "2026-08", "generateStatus": "已生成", "postStatus": "已记账", "voidStatus": "有效", "generateTime": "2026-08-02 09:47:00", "payableId": null, "receivableId": "CWYS-2026-0625", "adjustId": null, "sourceRecordId": "FSSC-PZ-00209", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-02 09:47:00"}}
+    ],
+    "AccountingJudgment": [
+      {"pk": "PD-2026-0162", "title": "PD-2026-0162", "properties": {"judgmentId": "PD-2026-0162", "batchId": "THD-2026-0162", "executeTime": "2026-05-22 10:20:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0162", "evidenceState": "证据完整", "evidenceProgress": "10/10", "suggestedMethod": "总额法", "finalMethod": "总额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-05-22 15:30:00", "reviewNote": "合同约定自担货权与首要责任，具备定价权", "needAdjustment": "否", "dimensionIds": ["D02", "D07", "D10", "D11", "D12", "D14"], "dimensionResults": ["非中心基地", "采购自担货权", "销售自担首要责任", "自主定价", "基地自营", "磅单签字齐备"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 1, "adjustStatus": "无需调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0162", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0188", "title": "PD-2026-0188", "properties": {"judgmentId": "PD-2026-0188", "batchId": "THD-2026-0188", "executeTime": "2026-06-13 09:25:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0188", "evidenceState": "关键证据完整", "evidenceProgress": "9/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-06-13 16:40:00", "reviewNote": "撮合服务性质明确，按净额确认", "needAdjustment": "是", "dimensionIds": ["D01", "D03", "D04", "D05", "D06", "D07", "D10", "D11"], "dimensionResults": ["有基地协议", "协议不管控货权", "协议不担存货风险", "存在固定差价", "存在资金占用费", "采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "待调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0188", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0191", "title": "PD-2026-0191", "properties": {"judgmentId": "PD-2026-0191", "batchId": "THD-2026-0191", "executeTime": "2026-06-16 08:40:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0191", "evidenceState": "关键证据完整", "evidenceProgress": "9/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-06-16 11:20:00", "reviewNote": "同销售合同 XSHT-2026-0528，净额确认", "needAdjustment": "是", "dimensionIds": ["D01", "D07", "D10", "D11"], "dimensionResults": ["有基地协议", "采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "待调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0191", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0198", "title": "PD-2026-0198", "properties": {"judgmentId": "PD-2026-0198", "batchId": "THD-2026-0198", "executeTime": "2026-07-09 09:10:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0198", "evidenceState": "关键证据完整", "evidenceProgress": "9/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-07-09 14:05:00", "reviewNote": "净额确认；提货单与入库单关联字段待补", "needAdjustment": "是", "dimensionIds": ["D07", "D10", "D11", "D14"], "dimensionResults": ["采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权", "磅单签字齐备"], "riskFlags": ["提货单与入库单关联字段缺失"], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "待调账·存在草稿", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0198", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0208", "title": "PD-2026-0208", "properties": {"judgmentId": "PD-2026-0208", "batchId": "THD-2026-0208", "executeTime": "2026-07-17 09:30:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0208", "evidenceState": "证据完整", "evidenceProgress": "10/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-07-17 13:50:00", "reviewNote": "净额确认，调账单审批中", "needAdjustment": "是", "dimensionIds": ["D01", "D07", "D10", "D11", "D15"], "dimensionResults": ["有基地协议", "采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权", "质检签字齐备"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "调账处理中", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0208", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0214", "title": "PD-2026-0214", "properties": {"judgmentId": "PD-2026-0214", "batchId": "THD-2026-0214", "executeTime": "2026-07-23 10:15:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0214", "evidenceState": "证据不足", "evidenceProgress": "6/10", "suggestedMethod": "净额法（默认建议）", "finalMethod": null, "reviewStatus": "待确认", "reviewerId": null, "reviewTime": null, "reviewNote": "销售合同原件缺失，暂按默认建议，待证据补齐后重跑", "needAdjustment": "是", "dimensionIds": ["D07"], "dimensionResults": ["采购不管控且不担首要责任；销售侧条款缺失"], "riskFlags": ["销售合同关键条款缺失"], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "暂不进入调账监控", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0214", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0219", "title": "PD-2026-0219", "properties": {"judgmentId": "PD-2026-0219", "batchId": "THD-2026-0219", "executeTime": "2026-07-30 08:20:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0219", "evidenceState": "证据完整", "evidenceProgress": "10/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-07-30 10:40:00", "reviewNote": "净额确认，调账凭证 PZ-2026-07-00228 已生效", "needAdjustment": "是", "dimensionIds": ["D01", "D07", "D10", "D11"], "dimensionResults": ["有基地协议", "采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 1, "adjustStatus": "流程已闭环", "adjustCompleteTime": "2026-07-30 16:40:00", "sourceRecordId": "RULE-PD-0219", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0223", "title": "PD-2026-0223", "properties": {"judgmentId": "PD-2026-0223", "batchId": "THD-2026-0223", "executeTime": "2026-07-31 09:05:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0223", "evidenceState": "关键证据完整", "evidenceProgress": "8/10", "suggestedMethod": "净额法", "finalMethod": "净额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-07-31 15:12:00", "reviewNote": "采购与销售合同货权描述冲突待澄清，已驳回调账单待重新发起", "needAdjustment": "是", "dimensionIds": ["D07", "D10", "D11"], "dimensionResults": ["货权条款冲突", "销售不管控且不担首要责任", "无自主定价权"], "riskFlags": ["采购与销售合同货权描述不一致"], "receivableTotal": 1, "receivableClosed": 0, "adjustStatus": "异常·待重新调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0223", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0226", "title": "PD-2026-0226", "properties": {"judgmentId": "PD-2026-0226", "batchId": "THD-2026-0226", "executeTime": "2026-07-04 09:40:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0226", "evidenceState": "证据完整", "evidenceProgress": "10/10", "suggestedMethod": "总额法", "finalMethod": "总额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-07-04 14:25:00", "reviewNote": "总额法依据充分；人员跨基地签字另案提示", "needAdjustment": "否", "dimensionIds": ["D07", "D10", "D11", "D14", "D18"], "dimensionResults": ["采购自担货权", "销售自担首要责任", "自主定价", "磅单签字齐备", "同人同日跨基地-疑似风险"], "riskFlags": ["同人同日跨两个基地签字"], "receivableTotal": 1, "receivableClosed": 1, "adjustStatus": "无需调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0226", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "PD-2026-0228", "title": "PD-2026-0228", "properties": {"judgmentId": "PD-2026-0228", "batchId": "THD-2026-0228", "executeTime": "2026-08-01 09:00:00", "sourceType": "正式判断", "ruleSnapshotId": "SNAP-GN-2026-0228", "evidenceState": "证据完整", "evidenceProgress": "10/10", "suggestedMethod": "总额法", "finalMethod": "总额法", "reviewStatus": "已确认", "reviewerId": "YG-0301", "reviewTime": "2026-08-01 11:30:00", "reviewNote": "自营基地总额法确认", "needAdjustment": "否", "dimensionIds": ["D02", "D07", "D10", "D11", "D12", "D14"], "dimensionResults": ["非中心基地", "采购自担货权", "销售自担首要责任", "自主定价", "基地自营", "磅单签字齐备"], "riskFlags": [], "receivableTotal": 1, "receivableClosed": 1, "adjustStatus": "无需调账", "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0228", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-01 12:00:00"}},
+      {"pk": "PD-2026-0235", "title": "PD-2026-0235", "properties": {"judgmentId": "PD-2026-0235", "batchId": "THD-2026-0235", "executeTime": "2026-08-24 09:18:00", "sourceType": "事中预判断", "ruleSnapshotId": "SNAP-GN-2026-0235", "evidenceState": "待补采购质检", "evidenceProgress": "7/10", "suggestedMethod": "净额法（预判断）", "finalMethod": null, "reviewStatus": "待确认", "reviewerId": null, "reviewTime": null, "reviewNote": "事中预判断：采购质检单待补", "needAdjustment": "是", "dimensionIds": ["D07", "D10", "D11"], "dimensionResults": ["采购不管控且不担首要责任", "销售不管控且不担首要责任", "无自主定价权"], "riskFlags": [], "receivableTotal": 0, "receivableClosed": 0, "adjustStatus": null, "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0235", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 11:30:00"}},
+      {"pk": "PD-2026-0238", "title": "PD-2026-0238", "properties": {"judgmentId": "PD-2026-0238", "batchId": "THD-2026-0238", "executeTime": "2026-08-24 10:32:00", "sourceType": "事中预判断", "ruleSnapshotId": "SNAP-GN-2026-0238", "evidenceState": "采购磅单待形成", "evidenceProgress": "6/10", "suggestedMethod": "净额法（预判断）", "finalMethod": null, "reviewStatus": "待确认", "reviewerId": null, "reviewTime": null, "reviewNote": "事中预判断：采购磅单未归档", "needAdjustment": "是", "dimensionIds": ["D07", "D10"], "dimensionResults": ["采购不管控且不担首要责任", "销售不管控且不担首要责任"], "riskFlags": [], "receivableTotal": 0, "receivableClosed": 0, "adjustStatus": null, "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0238", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 11:30:00"}},
+      {"pk": "PD-2026-0241", "title": "PD-2026-0241", "properties": {"judgmentId": "PD-2026-0241", "batchId": "THD-2026-0241", "executeTime": "2026-08-24 11:06:00", "sourceType": "事中预判断", "ruleSnapshotId": "SNAP-GN-2026-0241", "evidenceState": "证据不足", "evidenceProgress": "4/10", "suggestedMethod": null, "finalMethod": null, "reviewStatus": "待确认", "reviewerId": null, "reviewTime": null, "reviewNote": "贸易模式核算事项关联待完整，暂无法形成建议", "needAdjustment": "否", "dimensionIds": [], "dimensionResults": ["销售合同未取得，无法判断"], "riskFlags": ["销售合同缺失"], "receivableTotal": 0, "receivableClosed": 0, "adjustStatus": null, "adjustCompleteTime": null, "sourceRecordId": "RULE-PD-0241", "sourceSystemCode": "RULE", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 11:30:00"}}
+    ],
+    "AssessmentEvidence": [
+      {"pk": "EV-0162-01", "title": "首要履约责任", "properties": {"evidenceId": "EV-0162-01", "judgmentId": "PD-2026-0162", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0418", "sourceFileName": "销售合同_XSHT-2026-0418.pdf", "docRole": "原始合同", "location": "第4.2条", "factName": "首要履约责任", "factValue": "我方承担交付与质量首要责任", "factQuotation": "货物交付及质量验收由甲方（链金）向乙方承担首要责任", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0162-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0162-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0162-02", "judgmentId": "PD-2026-0162", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0418", "sourceFileName": "销售合同_XSHT-2026-0418.pdf", "docRole": "原始合同", "location": "附录一", "factName": "自主定价权", "factValue": "结算价格由双方协商确定", "factQuotation": "结算价格以双方确认的月度议价单为准", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0162-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0162-03", "title": "磅单签字", "properties": {"evidenceId": "EV-0162-03", "judgmentId": "PD-2026-0162", "sourceDocType": "采购磅单", "sourceDocId": "BD-2026-0520-06", "sourceFileName": "磅单影像_BD-2026-0520-06.jpg", "docRole": "履约凭证", "location": "签字栏", "factName": "磅单签字", "factValue": "签字齐备", "factQuotation": "监磅员：李慧梅", "recognizeStatus": "处理完成", "hasSignature": true, "signatureText": "李慧梅", "matchedEmployeeId": "YG-0135", "scopeValidation": "匹配", "sourceRecordId": "AIP-EV-0162-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0188-01", "title": "货权控制", "properties": {"evidenceId": "EV-0188-01", "judgmentId": "PD-2026-0188", "sourceDocType": "采购合同", "sourceDocId": "CGHT-2026-0509", "sourceFileName": "采购合同_CGHT-2026-0509.pdf", "docRole": "原始合同", "location": "第3.2条", "factName": "货权控制", "factValue": "货权不经我方转移", "factQuotation": "货权自供应商场地直接转移至最终需方，甲方仅办理结算", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0188-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0188-02", "title": "首要履约责任", "properties": {"evidenceId": "EV-0188-02", "judgmentId": "PD-2026-0188", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0528", "sourceFileName": "销售合同_XSHT-2026-0528.pdf", "docRole": "原始合同", "location": "第4.1条", "factName": "首要履约责任", "factValue": "责任由上游承担", "factQuotation": "交付与质量责任由供方（上游）承担，甲方协助协调", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0188-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0188-03", "title": "自主定价权", "properties": {"evidenceId": "EV-0188-03", "judgmentId": "PD-2026-0188", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0528", "sourceFileName": "销售合同_XSHT-2026-0528.pdf", "docRole": "原始合同", "location": "附录二", "factName": "自主定价权", "factValue": "收益为固定服务差额", "factQuotation": "结算价=基准价+固定服务费，服务费标准按政策口径执行", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0188-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0188-04", "title": "磅单签字", "properties": {"evidenceId": "EV-0188-04", "judgmentId": "PD-2026-0188", "sourceDocType": "采购磅单", "sourceDocId": "BD-2026-0611-08", "sourceFileName": "磅单影像_BD-2026-0611-08.jpg", "docRole": "履约凭证", "location": "签字栏", "factName": "磅单签字", "factValue": "签字齐备", "factQuotation": "监磅员：李慧梅", "recognizeStatus": "处理完成", "hasSignature": true, "signatureText": "李慧梅", "matchedEmployeeId": "YG-0135", "scopeValidation": "匹配", "sourceRecordId": "AIP-EV-0188-04", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0191-01", "title": "货权控制", "properties": {"evidenceId": "EV-0191-01", "judgmentId": "PD-2026-0191", "sourceDocType": "采购合同", "sourceDocId": "CGHT-2026-0510", "sourceFileName": "采购合同_CGHT-2026-0510.pdf", "docRole": "原始合同", "location": "第3.2条", "factName": "货权控制", "factValue": "货权不经我方转移", "factQuotation": "货权自供应商场地直接转移至最终需方，甲方仅办理结算", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0191-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0191-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0191-02", "judgmentId": "PD-2026-0191", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0528", "sourceFileName": "销售合同_XSHT-2026-0528.pdf", "docRole": "原始合同", "location": "附录二", "factName": "自主定价权", "factValue": "收益为固定服务差额", "factQuotation": "结算价=基准价+固定服务费，服务费标准按政策口径执行", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0191-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0198-01", "title": "货权控制", "properties": {"evidenceId": "EV-0198-01", "judgmentId": "PD-2026-0198", "sourceDocType": "采购合同", "sourceDocId": "CGHT-2026-0512", "sourceFileName": "采购合同_CGHT-2026-0512.pdf", "docRole": "原始合同", "location": "第3.2条", "factName": "货权控制", "factValue": "货权不经我方转移", "factQuotation": "货权自供应商场地直接转移至最终需方，甲方仅办理结算", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0198-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0198-02", "title": "首要履约责任", "properties": {"evidenceId": "EV-0198-02", "judgmentId": "PD-2026-0198", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0528", "sourceFileName": "销售合同_XSHT-2026-0528.pdf", "docRole": "原始合同", "location": "第4.1条", "factName": "首要履约责任", "factValue": "责任由上游承担", "factQuotation": "交付与质量责任由供方（上游）承担，甲方协助协调", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0198-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0198-03", "title": "提货单-入库单关联", "properties": {"evidenceId": "EV-0198-03", "judgmentId": "PD-2026-0198", "sourceDocType": "提货单", "sourceDocId": "DOC-260705", "sourceFileName": "提货单影像_THD-2026-0198.pdf", "docRole": "关联凭证", "location": "关联字段", "factName": "提货单-入库单关联", "factValue": "关联字段缺失", "factQuotation": "入库单号栏位为空", "recognizeStatus": "待复核", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0198-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0208-01", "title": "货权控制", "properties": {"evidenceId": "EV-0208-01", "judgmentId": "PD-2026-0208", "sourceDocType": "采购合同", "sourceDocId": "CGHT-2026-0518", "sourceFileName": "采购合同_CGHT-2026-0518.pdf", "docRole": "原始合同", "location": "第3.1条", "factName": "货权控制", "factValue": "货权不经我方转移", "factQuotation": "甲方不控制商品所有权，商品所有权在供应商与需方之间直接转移", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0208-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0208-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0208-02", "judgmentId": "PD-2026-0208", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0610", "sourceFileName": "销售合同_XSHT-2026-0610.pdf", "docRole": "原始合同", "location": "附录二", "factName": "自主定价权", "factValue": "收益为固定服务差额", "factQuotation": "结算价=基准价+固定服务费，服务费标准按政策口径执行", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0208-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0208-03", "title": "质检签字", "properties": {"evidenceId": "EV-0208-03", "judgmentId": "PD-2026-0208", "sourceDocType": "采购质检单", "sourceDocId": "ZJD-2026-0715-03", "sourceFileName": "质检单影像_ZJD-2026-0715-03.jpg", "docRole": "履约凭证", "location": "签字栏", "factName": "质检签字", "factValue": "签字齐备", "factQuotation": "质检员：张守成", "recognizeStatus": "处理完成", "hasSignature": true, "signatureText": "张守成", "matchedEmployeeId": "YG-0208", "scopeValidation": "匹配", "sourceRecordId": "AIP-EV-0208-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0214-01", "title": "销售合同原件缺失", "properties": {"evidenceId": "EV-0214-01", "judgmentId": "PD-2026-0214", "sourceDocType": "销售合同", "sourceDocId": "DOC-260704", "sourceFileName": null, "docRole": "原始合同", "location": null, "factName": "销售合同原件", "factValue": "未取得", "factQuotation": "—", "recognizeStatus": "资料缺失", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0214-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0214-02", "title": "货权控制", "properties": {"evidenceId": "EV-0214-02", "judgmentId": "PD-2026-0214", "sourceDocType": "采购合同", "sourceDocId": "CGHT-2026-0521", "sourceFileName": "采购合同_CGHT-2026-0521.pdf", "docRole": "原始合同", "location": "第3.2条", "factName": "货权控制", "factValue": "货权不经我方转移", "factQuotation": "货权自供应商场地直接转移至最终需方，甲方仅办理结算", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0214-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0219-01", "title": "首要履约责任", "properties": {"evidenceId": "EV-0219-01", "judgmentId": "PD-2026-0219", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0624", "sourceFileName": "销售合同_XSHT-2026-0624.pdf", "docRole": "原始合同", "location": "第4.1条", "factName": "首要履约责任", "factValue": "责任由上游承担", "factQuotation": "交付与质量责任由供方（上游）承担，甲方协助协调", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0219-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0219-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0219-02", "judgmentId": "PD-2026-0219", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0624", "sourceFileName": "销售合同_XSHT-2026-0624.pdf", "docRole": "原始合同", "location": "附录二", "factName": "自主定价权", "factValue": "收益为固定服务差额", "factQuotation": "结算价=基准价+固定服务费，服务费标准按政策口径执行", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0219-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0219-03", "title": "调账凭证有效", "properties": {"evidenceId": "EV-0219-03", "judgmentId": "PD-2026-0219", "sourceDocType": "会计凭证", "sourceDocId": "DOC-260711", "sourceFileName": "凭证_PZ-2026-07-00228.pdf", "docRole": "闭环凭证", "location": "凭证摘要", "factName": "调账凭证有效", "factValue": "有效凭证", "factQuotation": "调整2026-06收入确认差额", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0219-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0223-01", "title": "货权条款冲突", "properties": {"evidenceId": "EV-0223-01", "judgmentId": "PD-2026-0223", "sourceDocType": "采购合同", "sourceDocId": "DOC-260706", "sourceFileName": "采购合同_CGHT-2026-0517.pdf", "docRole": "原始合同", "location": "第3.1条", "factName": "货权控制", "factValue": "条款冲突", "factQuotation": "本合同与销售合同对货权转移时点的描述不一致", "recognizeStatus": "识别冲突", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0223-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0223-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0223-02", "judgmentId": "PD-2026-0223", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0627", "sourceFileName": "销售合同_XSHT-2026-0627.pdf", "docRole": "原始合同", "location": "附录二", "factName": "自主定价权", "factValue": "收益为固定服务差额", "factQuotation": "结算价=基准价+固定服务费，服务费标准按政策口径执行", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0223-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0226-01", "title": "首要履约责任", "properties": {"evidenceId": "EV-0226-01", "judgmentId": "PD-2026-0226", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0631", "sourceFileName": "销售合同_XSHT-2026-0631.pdf", "docRole": "原始合同", "location": "第4.2条", "factName": "首要履约责任", "factValue": "我方承担首要责任", "factQuotation": "货物交付及质量验收由甲方（链金）向乙方承担首要责任", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0226-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0226-02", "title": "自主定价权", "properties": {"evidenceId": "EV-0226-02", "judgmentId": "PD-2026-0226", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0631", "sourceFileName": "销售合同_XSHT-2026-0631.pdf", "docRole": "原始合同", "location": "附录一", "factName": "自主定价权", "factValue": "协商定价", "factQuotation": "结算价格以双方确认的月度议价单为准", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0226-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0226-03", "title": "同人同日跨基地签字", "properties": {"evidenceId": "EV-0226-03", "judgmentId": "PD-2026-0226", "sourceDocType": "采购磅单", "sourceDocId": "BD-2026-0703-02", "sourceFileName": "磅单影像包_2026-07-03.zip", "docRole": "履约凭证", "location": "签字栏", "factName": "人员异常", "factValue": "同人同日跨基地签字", "factQuotation": "王建国 2026-07-03 于华东一号基地、华中三号基地磅单均有签字", "recognizeStatus": "处理完成", "hasSignature": true, "signatureText": "王建国", "matchedEmployeeId": "YG-0102", "scopeValidation": "疑似超出适用范围", "sourceRecordId": "AIP-EV-0226-03", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0228-01", "title": "首要履约责任", "properties": {"evidenceId": "EV-0228-01", "judgmentId": "PD-2026-0228", "sourceDocType": "销售合同", "sourceDocId": "XSHT-2026-0629", "sourceFileName": "销售合同_XSHT-2026-0629.pdf", "docRole": "原始合同", "location": "第4.2条", "factName": "首要履约责任", "factValue": "我方承担首要责任", "factQuotation": "货物交付及质量验收由甲方（链金）向乙方承担首要责任", "recognizeStatus": "处理完成", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0228-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0228-02", "title": "磅单签字", "properties": {"evidenceId": "EV-0228-02", "judgmentId": "PD-2026-0228", "sourceDocType": "采购磅单", "sourceDocId": "BD-2026-0727-01", "sourceFileName": "磅单影像_BD-2026-0727-01.jpg", "docRole": "履约凭证", "location": "签字栏", "factName": "磅单签字", "factValue": "签字齐备", "factQuotation": "监磅员：陈晓露", "recognizeStatus": "处理完成", "hasSignature": true, "signatureText": "陈晓露", "matchedEmployeeId": "YG-0221", "scopeValidation": "匹配", "sourceRecordId": "AIP-EV-0228-02", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 18:00:00"}},
+      {"pk": "EV-0235-01", "title": "采购质检单待归档", "properties": {"evidenceId": "EV-0235-01", "judgmentId": "PD-2026-0235", "sourceDocType": "采购质检单", "sourceDocId": null, "sourceFileName": null, "docRole": "履约凭证", "location": null, "factName": "采购质检单", "factValue": "待归档", "factQuotation": "—", "recognizeStatus": "资料缺失", "hasSignature": false, "signatureText": null, "matchedEmployeeId": null, "scopeValidation": null, "sourceRecordId": "AIP-EV-0235-01", "sourceSystemCode": "AI", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-24 11:30:00"}}
+    ],
+    "RevenueAdjustmentEvent": [
+      {"pk": "TZD-2026-0708-D1", "title": "TZD-2026-0708-D1", "properties": {"adjustNo": "TZD-2026-0708-D1", "totalAmount": 128400.0, "approvalStatus": "草稿", "createTime": "2026-08-10 09:12:00", "submitTime": null, "approvalTime": null, "sourceRecordId": "FSSC-TZD-0708-D1", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-10 09:12:00"}},
+      {"pk": "TZD-2026-0716-R1", "title": "TZD-2026-0716-R1", "properties": {"adjustNo": "TZD-2026-0716-R1", "totalAmount": 96200.0, "approvalStatus": "已驳回", "createTime": "2026-07-20 10:05:00", "submitTime": "2026-07-20 10:30:00", "approvalTime": "2026-07-21 15:40:00", "sourceRecordId": "FSSC-TZD-0716-R1", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-21 15:40:00"}},
+      {"pk": "TZD-2026-0716-A2", "title": "TZD-2026-0716-A2", "properties": {"adjustNo": "TZD-2026-0716-A2", "totalAmount": 96200.0, "approvalStatus": "审批中", "createTime": "2026-07-22 09:20:00", "submitTime": "2026-07-22 09:45:00", "approvalTime": null, "sourceRecordId": "FSSC-TZD-0716-A2", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-22 09:45:00"}},
+      {"pk": "TZD-2026-0729-D1", "title": "TZD-2026-0729-D1", "properties": {"adjustNo": "TZD-2026-0729-D1", "totalAmount": 156800.0, "approvalStatus": "草稿", "createTime": "2026-07-28 16:20:00", "submitTime": null, "approvalTime": null, "sourceRecordId": "FSSC-TZD-0729-D1", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-28 16:20:00"}},
+      {"pk": "TZD-2026-0729-A2", "title": "TZD-2026-0729-A2", "properties": {"adjustNo": "TZD-2026-0729-A2", "totalAmount": 156800.0, "approvalStatus": "审批完成", "createTime": "2026-07-29 10:00:00", "submitTime": "2026-07-29 10:25:00", "approvalTime": "2026-07-30 16:40:00", "sourceRecordId": "FSSC-TZD-0729-A2", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-30 16:40:00"}},
+      {"pk": "TZD-2026-0730-R1", "title": "TZD-2026-0730-R1", "properties": {"adjustNo": "TZD-2026-0730-R1", "totalAmount": 98400.0, "approvalStatus": "已驳回", "createTime": "2026-07-30 17:05:00", "submitTime": "2026-07-30 17:20:00", "approvalTime": "2026-07-31 09:50:00", "sourceRecordId": "FSSC-TZD-0730-R1", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 09:50:00"}},
+      {"pk": "TZD-2026-0730-V2", "title": "TZD-2026-0730-V2", "properties": {"adjustNo": "TZD-2026-0730-V2", "totalAmount": 98400.0, "approvalStatus": "审批完成", "createTime": "2026-08-03 09:30:00", "submitTime": "2026-08-03 09:50:00", "approvalTime": "2026-08-03 15:10:00", "sourceRecordId": "FSSC-TZD-0730-V2", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-03 15:10:00"}}
+    ],
+    "RevenueAdjustmentLine": [
+      {"pk": "TZD-2026-0708-D1-01", "title": "TZD-2026-0708-D1-01", "properties": {"lineId": "TZD-2026-0708-D1-01", "adjustId": "TZD-2026-0708-D1", "receivableId": "CWYS-2026-0619", "pickupChainId": "THD-2026-0198", "amount": 128400.0, "lineStatus": "草稿", "sourceRecordId": "FSSC-TZDL-0708D1-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-10 09:12:00"}},
+      {"pk": "TZD-2026-0716-R1-01", "title": "TZD-2026-0716-R1-01", "properties": {"lineId": "TZD-2026-0716-R1-01", "adjustId": "TZD-2026-0716-R1", "receivableId": "CWYS-2026-0621", "pickupChainId": "THD-2026-0208", "amount": 96200.0, "lineStatus": "已驳回", "sourceRecordId": "FSSC-TZDL-0716R1-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-21 15:40:00"}},
+      {"pk": "TZD-2026-0716-A2-01", "title": "TZD-2026-0716-A2-01", "properties": {"lineId": "TZD-2026-0716-A2-01", "adjustId": "TZD-2026-0716-A2", "receivableId": "CWYS-2026-0621", "pickupChainId": "THD-2026-0208", "amount": 96200.0, "lineStatus": "审批中", "sourceRecordId": "FSSC-TZDL-0716A2-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-22 09:45:00"}},
+      {"pk": "TZD-2026-0729-D1-01", "title": "TZD-2026-0729-D1-01", "properties": {"lineId": "TZD-2026-0729-D1-01", "adjustId": "TZD-2026-0729-D1", "receivableId": "CWYS-2026-0623", "pickupChainId": "THD-2026-0219", "amount": 156800.0, "lineStatus": "草稿", "sourceRecordId": "FSSC-TZDL-0729D1-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-28 16:20:00"}},
+      {"pk": "TZD-2026-0729-A2-01", "title": "TZD-2026-0729-A2-01", "properties": {"lineId": "TZD-2026-0729-A2-01", "adjustId": "TZD-2026-0729-A2", "receivableId": "CWYS-2026-0623", "pickupChainId": "THD-2026-0219", "amount": 156800.0, "lineStatus": "审批完成", "sourceRecordId": "FSSC-TZDL-0729A2-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-30 16:40:00"}},
+      {"pk": "TZD-2026-0730-R1-01", "title": "TZD-2026-0730-R1-01", "properties": {"lineId": "TZD-2026-0730-R1-01", "adjustId": "TZD-2026-0730-R1", "receivableId": "CWYS-2026-0624", "pickupChainId": "THD-2026-0223", "amount": 98400.0, "lineStatus": "已驳回", "sourceRecordId": "FSSC-TZDL-0730R1-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-07-31 09:50:00"}},
+      {"pk": "TZD-2026-0730-V2-01", "title": "TZD-2026-0730-V2-01", "properties": {"lineId": "TZD-2026-0730-V2-01", "adjustId": "TZD-2026-0730-V2", "receivableId": "CWYS-2026-0624", "pickupChainId": "THD-2026-0223", "amount": 98400.0, "lineStatus": "审批完成", "sourceRecordId": "FSSC-TZDL-0730V2-01", "sourceSystemCode": "FSSC", "ledgerCode": "LEDGER-LJ", "updatedAt": "2026-08-03 15:10:00"}}
+    ]
+  },
+  "links": [
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0102", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0135", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0208", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0221", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0266", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToLegal", "aPk": "YG-0301", "bPk": "COMP-LJ"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0102", "bPk": "LG01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0102", "bPk": "HZ03"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0135", "bPk": "LG01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0135", "bPk": "HD01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0208", "bPk": "HB01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0221", "bPk": "HD02"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0266", "bPk": "YJ01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0266", "bPk": "HD02"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "LG01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HD01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HD02"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HB01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HB02"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HZ01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "HZ03"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "XN01"},
+    {"link": "employeeAppliesToBase", "aPk": "YG-0301", "bPk": "YJ01"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0524", "bPk": "THD-2026-0162"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0613", "bPk": "THD-2026-0188"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0616", "bPk": "THD-2026-0191"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0618", "bPk": "THD-2026-0208"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0704", "bPk": "THD-2026-0226"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0706", "bPk": "THD-2026-0198"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0720", "bPk": "THD-2026-0214"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0725", "bPk": "THD-2026-0219"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0727", "bPk": "THD-2026-0223"},
+    {"link": "purchaseSettleAggregatesBatch", "aPk": "CGJS-2026-0729", "bPk": "THD-2026-0228"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0521", "bPk": "XSJS-2026-0521"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0612", "bPk": "XSJS-2026-0618"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0615", "bPk": "XSJS-2026-0618"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0703", "bPk": "XSJS-2026-0703"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0708", "bPk": "XSJS-2026-0618"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0716", "bPk": "XSJS-2026-0716"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0722", "bPk": "XSJS-2026-0722"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0729", "bPk": "XSJS-2026-0729"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0730", "bPk": "XSJS-2026-0730"},
+    {"link": "deliveryRollsUpToSaleSettle", "aPk": "CKD-2026-0731", "bPk": "XSJS-2026-0731"}
+  ],
+  "views": [
+    {
+      "apiName": "view-revenue-closure",
+      "displayName": "收入确认闭环视图",
+      "description": "提货批次、核算判断、证据与调账凭证的闭环追溯成员",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "核算判断"},
+      "source": "manual",
+      "members": {
+        "objects": ["PickupMaterialBatch", "AccountingJudgment", "AssessmentEvidence", "RevenueAdjustmentEvent", "RevenueAdjustmentLine", "FinancialReceivableEvent", "AccountingVoucher"],
+        "interfaces": []
+      }
+    },
+    {
+      "apiName": "view-contract-party",
+      "displayName": "合同与参与方视图",
+      "description": "法人、基地、供应商、客户、人员与三类契约",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "参与方"},
+      "source": "manual",
+      "members": {
+        "objects": ["LegalEntity", "OperatingBase", "Supplier", "Customer", "Employee", "BaseCooperationAgreement", "PurchaseContract", "SaleContract"],
+        "interfaces": []
+      }
+    },
+    {
+      "apiName": "view-settlement-chain",
+      "displayName": "结算与凭证链视图",
+      "description": "接收、交付、采销结算、应收应付与凭证",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "结算凭证"},
+      "source": "manual",
+      "members": {
+        "objects": ["MaterialReceiptEvent", "MaterialDeliveryEvent", "PurchaseSettlementEvent", "SaleSettlementEvent", "FinancialPayableEvent", "FinancialReceivableEvent", "AccountingVoucher"],
+        "interfaces": []
+      }
+    }
+  ],
+  "snapshot": {
+    "summary": "收入确认演示基线 v1：20 类型 / 29 关系（25 FK + 4 Edge）/ 206 实例 / 43 边 / 3 视图，数据梳理自收入确认本体 Web 原型 v1.3.3"
+  },
+  "docImports": [
+    {
+      "apiName": "PickupOrder",
+      "displayName": "提货单",
+      "dam": {"domain": "财务", "application": "收入确认", "module": "业务单据"},
+      "entities": [
+        {
+          "apiName": "PickupHead",
+          "displayName": "提货单头",
+          "primaryKey": "docNo",
+          "titleProperty": "docNo",
+          "properties": [
+            {"apiName": "docNo", "baseType": "string"},
+            {"apiName": "businessDate", "baseType": "date"},
+            {"apiName": "baseName", "baseType": "string"},
+            {"apiName": "supplierName", "baseType": "string"},
+            {"apiName": "customerName", "baseType": "string"},
+            {"apiName": "purchaseContractNo", "baseType": "string"},
+            {"apiName": "saleContractNo", "baseType": "string"},
+            {"apiName": "totalAmount", "baseType": "double"},
+            {"apiName": "status", "baseType": "string"}
+          ]
+        },
+        {
+          "apiName": "PickupLine",
+          "displayName": "提货明细行",
+          "primaryKey": "lineId",
+          "titleProperty": "materialName",
+          "properties": [
+            {"apiName": "lineId", "baseType": "string"},
+            {"apiName": "lineNo", "baseType": "long"},
+            {"apiName": "materialName", "baseType": "string"},
+            {"apiName": "spec", "baseType": "string"},
+            {"apiName": "qty", "baseType": "double"},
+            {"apiName": "unit", "baseType": "string"},
+            {"apiName": "unitPrice", "baseType": "double"},
+            {"apiName": "amount", "baseType": "double"}
+          ]
+        }
+      ],
+      "relations": [
+        {"from": "PickupHead", "to": "PickupLine", "cardinality": "oneToMany", "role": "lines", "displayName": "提货明细"}
+      ]
+    }
+  ]
+}

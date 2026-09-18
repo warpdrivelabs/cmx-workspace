@@ -1,5 +1,7 @@
 # cmx-ontology 全量接口清单与请求参数说明（大白话版）
 
+> **20260918 多本体改造（M1+M2）后版本**：全接口 `?ontology=` 必填（例外见 §0）、§3.7 去路径化（detail/remove/save/execute/evaluate 等 apiName 一律入 query/body）、新增 §2.5 本体管理五端点、SSE 按本体过滤。前端四页 + cmx-agent 连接器 + onto-toolkit 已同步适配。
+
 > **范围**：本体平台 `backend/cmx-ontology` 注册的全部 HTTP 接口（**84 个业务端点** + 4 类服务级端点），逐个说明用途、请求参数、响应要点，并标注**哪些前端页面真的在用、哪些目前没有页面调用**。
 > **调用方代码依据**：`backend/cmx-container/assets/onto/web/ui-native/onto/` 下四个前端页（`designer.js` / `explorer.js` / `workshop.js` / `studio.js` + studio 八模块 + `page-kit.js`）+ `cmx-onto-app/src/dashboard.rs` 自带控制台 + 仓内 QA 脚本（`qa-backend.sh` / `qa-object.sh` / `test/e2e` 21 个 / `test/fe` 19 个）。
 > **写作日期**：2026-09-18，以当日 main 分支代码为准（cmx-ontology 最新提交 `5614a85`；对照重设计案 `documents/plans/20260917_cmx-ontology_状态生命周期与版本发布及场景机制重设计方案.md`）。
@@ -17,6 +19,7 @@
 | **乐观锁** | **七类资源 + 场景全部带 `version` 字段**（20260917 补齐五类表）：拿旧版本号保存已被人改过的定义 → 409 Conflict。`version=0` = 新建/盲写 |
 | **状态纪律** | 七类资源的 `status` / `deprecation` **save 端点一律剥离忽略**（请求体带了会回 `warnings` 提示）；状态变更**唯一入口**是 `POST /lifecycle/transition` |
 | **维护角色守卫** | 存档 / 回滚 / 发布标记 / 状态流转 / 场景编辑走 `require_maintainer`：`om_maintainer` 白名单表**空表 = 开放**；有行时按 用户id / 展示名 / 角色 三路匹配，不命中 → 403（前端统一降级隐藏写入口） |
+| **本体参数（20260918 M1 起必填）** | 除例外清单外，**全部接口必带 `?ontology=<本体apiName>`**（元数据/实例/事件/版本按本体隔离；apiName 唯一性放宽为本体内唯一）。例外（不收该参数）：`/ontologies*`、`/data-sources*`、`/me/roles`、`/funnel/push`。缺参 → **400 `ONTOLOGY_REQUIRED`**；不存在 → **404 `ONTOLOGY_NOT_FOUND`**；已停用 → **409 `ONTOLOGY_DISABLED`**。前端各页收到后两者时 toast + 回落 `default_ontology` 自动重载 |
 
 **调用方代号**（下文"谁在用"列使用）：
 
@@ -77,6 +80,20 @@
 
 ---
 
+## 2.5 本体管理 ontologies（5 个端点）——20260918 M1 新增，例外路由（不收 ontology 参数）
+
+| 方法+路径 | 大白话作用 | 参数 | 谁在用 |
+| --- | --- | --- | --- |
+| `GET /ontologies?includeDisabled=` | 本体清单（管理弹框；缺省仅启用，true 含停用） | query：`includeDisabled?` | 工作室Next（管理弹框） |
+| `GET /ontologies/enabled` | **启用本体清单**（各页选择器数据源；停用本体天然不出现） | 无 | 浏览器/搭建台/工作室/工作室Next（选择器） |
+| `POST /ontologies` | 新建本体 | body：`{ apiName*, displayName*, description? }` | 工作室Next |
+| `POST /ontologies/update` | 改名称/描述（apiName 不可改） | body：`{ apiName*, displayName?, description? }` | 工作室Next |
+| `POST /ontologies/set-status` | 启用/停用。**默认本体不可停用（409）**；停用后各页请求该本体 → 409 自动回落 | body：`{ apiName*, status*: active|disabled }` | 工作室Next |
+
+> 默认本体 `default_ontology` 由迁移 seed 创建（`is_default=true`，存量数据归属锚点）；apiName 全局唯一（本体表本身不隔离）。
+
+---
+
 ## 3. 对象类型 object-types（6 个端点）
 
 "对象类型"就是"一类东西的模板"——比如客户、订单。这里是这套模板的增删改查。
@@ -87,8 +104,8 @@
 | `POST /object-types` | 新建或更新一个对象类型（upsert：apiName 相同即覆盖）。结构校验 + **接口契约校验**（implements 声明的共享属性必须落实）+ **active 保护**（active 资源不可改主键）。body 里的 `status`/`deprecation` 被剥离并回 warnings | body：**ObjectTypeDef**（见 §3.1） | 设计台、工作室、控制台、QA |
 | `POST /object-types/validate` | 只校验不保存——检查这份定义合不合法，返回 `{valid, error?}` | body：ObjectTypeDef | —（QA） |
 | `POST /object-types/batch` | 按 apiName 列表**批量取完整定义**（设计器/工作室画布首屏装载，避免逐个 GET 的 N+1） | body：`{ "apiNames": ["Customer", …] }`；响应 `{items, errors}` | 设计台、工作室 |
-| `GET /object-types/{apiName}` | 看某个对象类型的**完整定义**（含全部属性） | 路径：`apiName` | 四页 + 控制台 |
-| `DELETE /object-types/{apiName}` | 删除对象类型。**三重安全网**：① active 资源不可删（409 先降级）；② 被关系/动作编辑引用 → 409 出引用清单；③ 删除前自动存档检查点（可撤销），场景引用级联清理（响应带 `sceneRefs` / `affectedScenes`） | 路径：`apiName` | 设计台、工作室、控制台 |
+| `GET /object-types/detail?apiName=` | 看某个对象类型的**完整定义**（含全部属性） | query：`apiName*`；`?ontology=` | 四页 + 控制台 |
+| `POST /object-types/remove` | 删除对象类型。**三重安全网**：① active 资源不可删（409 先降级）；② 被关系/动作编辑引用 → 409 出引用清单；③ 删除前自动存档检查点（可撤销），场景引用级联清理（响应带 `sceneRefs` / `affectedScenes`） | body：`{ apiName* }` | 设计台、工作室、控制台 |
 
 ### 3.1 ObjectTypeDef 请求体字段
 
@@ -128,8 +145,8 @@
 | --- | --- | --- | --- |
 | `GET /link-types` | 列出全部关系类型（摘要，含两端 DAM 富化） | 无 | 控制台、QA |
 | `POST /link-types` | 新建/更新关系类型（画布拉线速建 / Inspector 保存都走它）。**乐观锁已补齐**（version>0 条件更新）；两端对象状态兼容矩阵在保存期校验 | body：**LinkTypeDef**（见下） | 设计台、工作室、控制台 |
-| `GET /link-types/{apiName}` | 某个关系类型的完整定义 | 路径：`apiName` | 设计台、工作室 |
-| `DELETE /link-types/{apiName}` | 删除关系类型。active 保护 + 场景引用级联清理 + 删除前自动存档 | 路径：`apiName` | 设计台、工作室、控制台 |
+| `GET /link-types/detail?apiName=` | 某个关系类型的完整定义 | query：`apiName*` | 设计台、工作室 |
+| `POST /link-types/remove` | 删除关系类型。active 保护 + 场景引用级联清理 + 删除前自动存档 | body：`{ apiName* }` | 设计台、工作室、控制台 |
 
 ```jsonc
 {
@@ -166,8 +183,8 @@
 | --- | --- | --- | --- |
 | `GET /interfaces` | 列出全部接口。**双形态**：不传参 = 全量数组；传 `q`/`page`/`size` 任一 = 分页信封（工作室引用选择器用） | query 全可选 | 工作室（选择器/兜底）；QA |
 | `POST /interfaces` | 新建/更新接口 | body：`{ apiName*, displayName?, properties?: string[]（要求实现者具备的共享属性）, extends?: string[]（接口继承）, version? }` | 设计台、工作室 |
-| `GET /interfaces/{apiName}` | 某接口完整定义 | 路径：`apiName` | 设计台、工作室 |
-| `DELETE /interfaces/{apiName}` | 删除接口 | 路径：`apiName` | 设计台、工作室 |
+| `GET /interfaces/detail?apiName=` | 某接口完整定义 | query：`apiName*` | 设计台、工作室 |
+| `POST /interfaces/remove` | 删除接口 | body：`{ apiName* }` | 设计台、工作室 |
 
 ---
 
@@ -180,8 +197,8 @@
 | `GET /shared-properties` | 列出全部共享属性。**双形态**：不传参全量；`q`/`page`/`size` = 分页信封 | query 全可选 | 工作室（选择器） |
 | `POST /shared-properties` | 新建/更新共享属性 | body：`{ apiName*, displayName?, baseType?(默认 string), semanticType?, description?, version? }` | 设计台、工作室 |
 | `POST /shared-properties/batch` | 按 apiName 列表批量取详情 | body：`{ "apiNames": […] }`；响应 `{items, errors}` | 工作室（装载层） |
-| `GET /shared-properties/{apiName}` | 某共享属性完整定义 | 路径：`apiName` | 设计台、工作室 |
-| `DELETE /shared-properties/{apiName}` | 删除共享属性 | 路径：`apiName` | 设计台、工作室 |
+| `GET /shared-properties/detail?apiName=` | 某共享属性完整定义 | query：`apiName*` | 设计台、工作室 |
+| `POST /shared-properties/remove` | 删除共享属性 | body：`{ apiName* }` | 设计台、工作室 |
 
 ---
 
@@ -211,8 +228,8 @@
 | --- | --- | --- | --- |
 | `GET /action-types` | 列出全部动作类型（摘要，含 `parameters` 与**作用对象类型物化列** `targetObjectTypes`——保存期从 parameters+logic 派生，GIN 索引支持按类型查动作） | 无 | 工作室（兜底）；QA |
 | `POST /action-types` | 新建/更新动作类型（保存表单 / 从模板创建都走它）；保存期重算 `targetObjectTypes` | body：**ActionTypeDef**（见 §8.1） | 设计台、工作室 |
-| `GET /action-types/{apiName}` | 某动作完整定义（搭建台/工作室执行前拉它动态生成参数表单） | 路径：`apiName` | 设计台、搭建台、工作室 |
-| `DELETE /action-types/{apiName}` | 删除动作类型 | 路径：`apiName` | 设计台、工作室 |
+| `GET /action-types/detail?apiName=` | 某动作完整定义（搭建台/工作室执行前拉它动态生成参数表单） | query：`apiName*` | 设计台、搭建台、工作室 |
+| `POST /action-types/remove` | 删除动作类型 | body：`{ apiName* }` | 设计台、工作室 |
 
 ### 8.1 ActionTypeDef 请求体字段
 
@@ -240,8 +257,8 @@
 
 | 方法+路径 | 大白话作用 | 请求参数 | 谁在用 |
 | --- | --- | --- | --- |
-| `POST /action-types/{apiName}/execute` | **真正执行**一个动作：默认值填充 → 参数校验 → 装载参数对象 → 跑校验表达式 → 算编辑集（含组合序列校验）→ 写侧 PEP（deny_actions 硬门）→ **一个事务**写回 + 审计 + 副作用入 Outbox | body：**ExecuteReq**（见下） | 设计台、搭建台、工作室 |
-| `POST /action-types/{apiName}/dry-run` | **试算不落库**：完整校验链 + 预演（等价 execute 但强制 dryRun）——告诉你"如果执行会改什么" | body：同 ExecuteReq | 设计台、搭建台、工作室 |
+| `POST /action-types/execute` | **真正执行**一个动作：默认值填充 → 参数校验 → 装载参数对象 → 跑校验表达式 → 算编辑集（含组合序列校验）→ 写侧 PEP（deny_actions 硬门）→ **一个事务**写回 + 审计 + 副作用入 Outbox | body：**ExecuteReq**（见下） | 设计台、搭建台、工作室 |
+| `POST /action-types/dry-run` | **试算不落库**：完整校验链 + 预演（等价 execute 但强制 dryRun）——告诉你"如果执行会改什么" | body：同 ExecuteReq | 设计台、搭建台、工作室 |
 | `POST /action-types/execute-batch` | **同事务批量执行**（P1-3；固定路径无路径参数，apiName 入 body）：逐项走完整校验链，任一失败整批回滚；单批上限 100（`ONTO_ACTION_BATCH_MAX` 可调） | body：`{ apiName*, items:[{params},…], dryRun?, actor?, subjects? }` | —（QA；给外部系统的批量入口） |
 | `POST /action-types/check-permission` | **动作可见性 PEP 预检**（P2-1；固定路径）：前端据此**不渲染**被拒按钮。目标类型由定义静态解析（解析失败回退参数声明派生），与执行期 PEP 同源 | body：`{ actions: ["closeOrder",…], subjects: ["role:admin"] }`；响应 `{results:[{action, allowed, deniedBy?, scopes}]}` | 搭建台、QA |
 
@@ -272,11 +289,11 @@
 | --- | --- | --- | --- |
 | `GET /functions` | 列出全部函数（摘要，含 runtime/kind/status 富化） | 无 | 工作室（兜底）；QA |
 | `POST /functions` | 新建/更新函数 | body：`{ apiName*, displayName?, runtime?(feel[默认]/rhai/wasm/nativeRust), kind?(query[默认]/derivedProperty/validation/actionLogic/aggregation), inputs?, output?, body*, description?, version? }` | 设计台、工作室 |
-| `GET /functions/{apiName}` | 某函数完整定义 | 路径：`apiName` | 设计台、工作室 |
-| `DELETE /functions/{apiName}` | 删除函数 | 路径：`apiName` | 设计台、工作室 |
-| `POST /functions/{apiName}/evaluate` | **求值**：绑定输入 → 执行函数体 → 返回结果 | body：**EvalFnReq**（见 §10.1） | 设计台（试运行）、工作室 |
+| `GET /functions/detail?apiName=` | 某函数完整定义 | query：`apiName*` | 设计台、工作室 |
+| `POST /functions/remove` | 删除函数 | body：`{ apiName* }` | 设计台、工作室 |
+| `POST /functions/evaluate` | **求值**：绑定输入 → 执行函数体 → 返回结果 | body：**EvalFnReq**（见 §10.1） | 设计台（试运行）、工作室 |
 
-### 10.1 EvalFnReq 请求体
+### 10.1 EvalFnReq 请求体（`apiName` 已入 body——M1 §3.7）
 
 ```jsonc
 {
@@ -318,7 +335,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 | `GET /manifest` | **本体全量清单**：六类元素摘要一次全给（对象类型带完整属性体）。`?types=` 逗号分隔取子集；`?include=` 状态分层（**默认仅 active**；可 experimental/deprecated 逗号组合或 all）；`?view=` 场景六段口径（成员对象 / 场景内关系 / 派生动作 / 派生共享属性；functions 恒空） | query 全可选 | 四页全用；QA |
 | `POST /snapshots` | **存档检查点**（旧"发布"的新身份）：当前 live 全量快照 → om_version 不可变行。rev 与最新版本相同 → 去重不插行（`deduped:true`）。广播 SSE `checkpoint-created` | body：`{ "summary": "本次存档说明" }`（维护角色守卫） | 设计台、工作室、控制台 |
 | `GET /versions` | 检查点版本列表（新→旧），含 tag/release_note | 无 | 四页 + 控制台 |
-| `GET /versions/{version}` | 回看某版本的**完整快照** | 路径：`version` | 工作室 |
+| `GET /versions/detail?version=` | 回看某版本的**完整快照** | query：`version*` | 工作室 |
 | `GET /versions/diff` | **服务端元素级 diff**：a/b 两侧可以是版本号或 `"live"`；返回逐元素 `added/modified/removed` 清单 + 计数 | query：`a*`、`b*` | 工作室 |
 | `POST /versions/restore` | **回滚**：历史快照整体恢复回 live（无草稿中转）。结构/引用校验（Error 阻断）→ **大规模删除护栏**（派生删除集超 `max(50, total/5)` 必须显式确认）→ 单事务应用（六类 upsert + views + 派生删除 + 级联）→ 回滚留痕存档 → SSE 广播 | body：`{ version*, confirmMassDelete? }`（维护角色守卫） | 工作室 |
 | `POST /releases` | **命名发布标记**：跑发布门禁（live 含 experimental/deprecated 资源 → 警告清单，须 `acknowledgeWarnings:true` 显式放行）→ 打全量检查点并置 tag。tag 规则：非空 ≤64、`^[A-Za-z0-9][A-Za-z0-9._-]*$`、不得纯数字。广播 SSE `release-created` | body：`{ tag*, note?, acknowledgeWarnings? }`（维护角色守卫） | 工作室 |
@@ -327,7 +344,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 
 ---
 
-## 13. SSE 实时事件流 events（1 个端点）
+## 13. SSE 实时事件流 events（1 个端点；`?ontology=` 必填——服务端按本体过滤事件，切本体重连）
 
 | 方法+路径 | 大白话作用 | 参数 | 谁在用 |
 | --- | --- | --- | --- |
@@ -341,11 +358,11 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 
 | 方法+路径 | 大白话作用 | 请求参数 | 谁在用 |
 | --- | --- | --- | --- |
-| `POST /objects/{objectType}` | 写入/更新**一个**对象（类型必须已定义；pk/title 缺省按定义从 properties 抽；物理表不存在会自动建） | 路径：`objectType`；body：`{ properties: {…}, pk?, title? }` | —（QA） |
-| `POST /objects/{objectType}/batch` | 批量写入（同一事务，要么全成要么全败） | 路径：`objectType`；body：`[{properties, pk?, title?}, …]` 数组 | —（QA） |
-| `DELETE /objects/{objectType}/{pk}` | 删除一个对象（连带清掉它的关系边） | 路径：`objectType`、`pk` | —（QA） |
-| `POST /objects/{objectType}/{pk}/modify` | **乐观锁修改**：带 `expectedUpdatedAt`，别人改过则返回 conflict（前端刷新重试） | 路径：`objectType`、`pk`；body：`{ set: {要改的字段}, expectedUpdatedAt? }` | —（QA） |
-| `GET /objects/{objectType}/{pk}/links/{link}` | **Search-Around 顺藤摸瓜**：从某对象沿某条关系走到另一头。**方向自动解析**（按对象在关系的 A 端还是 B 端定 forward/reverse）；走读侧 PEP 硬门 + 列脱敏 | 路径：`objectType`、`pk`、`link`；query：`view?`（场景校验）、`include?`（状态分层） | **浏览器**（对象详情关系钻取） |
+| `POST /objects/save` | 写入/更新**一个**对象（类型必须已定义；pk/title 缺省按定义从 properties 抽；物理表不存在会自动建） | body：`{ objectType*, properties*, pk?, title? }` | —（QA、agent） |
+| `POST /objects/save-batch` | 批量写入（同一事务，要么全成要么全败） | body：`{ objectType*, items: [{properties, pk?, title?}, …] }` | —（QA、toolkit） |
+| `POST /objects/remove` | 删除一个对象（连带清掉它的关系边） | body：`{ objectType*, pk* }` | —（QA） |
+| `POST /objects/modify` | **乐观锁修改**：带 `expectedUpdatedAt`，别人改过则返回 conflict（前端刷新重试） | body：`{ objectType*, pk*, set: {要改的字段}, expectedUpdatedAt? }` | —（QA） |
+| `POST /objects/links` | **Search-Around 顺藤摸瓜**：从某对象沿某条关系走到另一头。**方向自动解析**（按对象在关系的 A 端还是 B 端定 forward/reverse）；走读侧 PEP 硬门 + 列脱敏 | 路径：`objectType`、`pk`、`link`；query：`view?`（场景校验）、`include?`（状态分层） | **浏览器**（对象详情关系钻取） |
 | `POST /links` | 建立**一条关系边**（仅 Edge backing 关系可用；FK/连接表/中间对象关系显式拒绝） | body：`{ link*, aPk*, bPk*, properties? }` | —（QA） |
 | `DELETE /links` | 删除一条关系边 | body：`{ link*, aPk*, bPk* }` | —（QA） |
 
@@ -422,7 +439,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 | --- | --- | --- | --- |
 | `GET /policies` | 列出全部策略 | 无 | — |
 | `POST /policies` | 新建/更新一条策略 | body：`{ apiName*，displayName?, objectType?(作用的对象类型), subjectKind?(role/user，默认role), subject*, rowFilter?: [谓词数组，命中则这些行可见], denyMarkings?: [禁止查看的列标记], denyActions?: [禁止执行的动作], status?(默认active) }` | —（QA） |
-| `DELETE /policies/{apiName}` | 删除策略 | 路径：`apiName` | —（QA） |
+| `POST /policies/remove` | 删除策略 | body：`{ apiName* }` | —（QA） |
 | `POST /secure/object-sets/load` | **显式带安全加载**：同 §15 的对象集查询，响应多 `appliedPolicies` 和 `subjects` | body：`{ objectSet*, limit?, offset?, subjects? }` | —（QA） |
 
 ---
@@ -435,7 +452,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 | --- | --- | --- | --- |
 | `GET /funnel/mappings` | 列出全部源→对象映射 | 无 | — |
 | `POST /funnel/mappings` | 新建/更新映射（哪个源查询、主键取哪些列、字段怎么对应） | body：`{ objectType*, sourceQuery*, keyColumns*, titleColumn?, propertyMap*, required? }` | —（QA） |
-| `DELETE /funnel/mappings/{objectType}` | 删除某对象类型的映射 | 路径：`objectType` | — |
+| `POST /funnel/mappings/remove` | 删除某对象类型的映射 | body：`{ objectType* }` | — |
 | `POST /funnel/sync/{objectType}` | **全量同步**：读源 → 按映射转换 → 合格的写入对象库，违规的进隔离区。响应带 `{read, written, quarantined}` | 路径：`objectType` | —（QA） |
 | `GET /funnel/quarantine` | 看隔离区：哪些源行没进来、为什么（violations） | query：`objectType`（可选）、`limit`（默认100） | —（QA） |
 | `GET /funnel/pipeline-status/{objectType}` | 管道状态图数据（抽取/映射/索引三段计数） | 路径：`objectType` | —（QA） |
@@ -467,7 +484,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 以下 **~25 个端点目前没有任何前端页面调用**（按价值分三类）：
 
 **① 面向外部系统 / 未来页面的能力（后端已就绪，等 UI 跟进）**
-- `POST /objects`、`POST /objects/batch`、`DELETE /objects/{type}/{pk}`、`POST /objects/{type}/{pk}/modify`、`POST /links`、`DELETE /links` —— 对象实例直写。当前数据从业务库集成（funnel）或经动作间接修改。
+- `POST /objects/save`、`/objects/save-batch`、`/objects/remove`、`/objects/modify`、`POST /links`、`DELETE /links` —— 对象实例直写（M1 去路径化后 apiName/pk 全入 body）。当前数据从业务库集成（funnel）或经动作间接修改。
 - 对象集代数中的 `union / intersect / subtract` —— 查询能力已实现，页面目前只用 base/filter/searchAround/static。
 - `POST /object-types/validate` —— 设计台用的是保存期后端隐式校验 + 画布本地校验。
 - `POST /action-types/execute-batch` —— 批量执行入口已通 QA（e2e o4m4），等业务页面接入。
@@ -485,15 +502,15 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 
 ---
 
-## 附 A：四个前端页面 + 控制台的接口调用底账（精确到行为）
+## 附 A：前端页面 + 控制台的接口调用底账（精确到行为；20260918 M2 起四页全部带 `?ontology=`（各自记忆、回落 default_ontology），下表不再逐条标注）
 
 | 页面 | 调用的接口（页面加载即调的在前） |
 | --- | --- |
-| **设计台** designer.js | `GET /manifest` → `POST /object-types/batch`（并行拉全量详情）→ `GET /versions`；六类元素 `GET /{apiName}` 详情 + `POST` 保存 + `DELETE` 删除；`POST /action-types/{id}/dry-run`、`/execute`（动作试运行/执行，`actor:"designer"`）；`POST /functions/{id}/evaluate`；`GET /action-templates`；`GET /flow/definitions`、`GET /report/definitions`（副作用下拉）；`POST /snapshots`（存档）；`POST /object-sets/aggregate`（对象计数徽标）；另调门户 `POST /api/domains/tree`（DAM 分域树，独立 ：8097 无此路由静默失败） |
-| **浏览器** explorer.js | `GET /manifest?include={四档状态}` → `GET /object-types/{apiName}` → `POST /object-sets/aggregate`（计数，支持 base/searchAround/filter 组合 + include）→ `POST /object-sets/load`（列表分页 50/页 + Search-Around 钻取：`{op:"searchAround", source:{op:"static",…}, link, direction}`） |
-| **搭建台** workshop.js | `GET /manifest` → `GET /object-types/{apiName}` → `POST /object-sets/aggregate`（含关键字 contains(title) 过滤口径）→ `POST /object-sets/load`（列表 + 各关系块并发懒加载 searchAround）→ `POST /action-types/check-permission`（动作中心 PEP 批量预检，`subjects:["role:admin"]`）→ `GET /action-types/{id}`（动态参数表单）→ `POST /action-types/{id}/dry-run`、`/execute`（`actor:"workshop"`） |
-| **工作室** studio.js + 八模块 | `GET /manifest?types=…&include=all`、`GET /views`、`GET /me/roles`（403 降级依据）、`GET /graph?view=…&include=all`（场景画布一条到位）、`GET /object-types?q=&dam=&page=&size=`（目录分页）；六类元素 `POST` 保存（带 version）+ `GET /{apiName}` 详情 + `DELETE`；`GET /events`（SSE 订阅：checkpoint-created / release-created / resource-changed / view-changed）；`POST /snapshots`、`GET /versions`、`GET /versions/{v}`、`GET /versions/diff?a=&b=`、`POST /versions/restore`（版本中心）；`POST /releases`、`POST /releases/remove`（发布标记）；`POST /lifecycle/transition`（状态流转）；`GET /revisions?kind=&apiName=`、`POST /revisions/revert`（修订时间线）；`POST /views`、`POST /views/layout`、`POST /views/remove`（场景管理）；`GET /flow/definitions`、`GET /report/definitions`、`GET /action-templates`；`POST /action-types/{api}/dry-run`、`/execute`、`POST /functions/{api}/evaluate`、`POST /object-sets/aggregate`；另调门户 `GET /api/registry/dam`（DAM 注册表，404 静默回退 manifest 聚合） |
-| **控制台** dashboard（`:8097/`） | `GET /stats`、`GET /object-types`、`POST /object-types`、`DELETE /object-types/{id}`、`GET /link-types`、`POST /link-types`、`DELETE /link-types/{id}`、`GET /versions`、`POST /snapshots` |
+| **设计台** designer.js（**已停维护**：R7.1 菜单节点移除，页面文件保留；下列为历史调用记录，M1 接口变更后未适配） | `GET /manifest` → `POST /object-types/batch` → `GET /versions`；六类元素详情/保存/删除；`POST /action-types/{id}/dry-run`、`/execute`；`POST /functions/{id}/evaluate`；`GET /action-templates`；`GET /flow/definitions`、`GET /report/definitions`（副作用下拉）；`POST /snapshots`（存档）；`POST /object-sets/aggregate`（对象计数徽标）；另调门户 `POST /api/domains/tree`（DAM 分域树，独立 ：8097 无此路由静默失败） |
+| **浏览器** explorer.js | `GET /manifest?include={四档状态}` → `GET /object-types/detail?apiName=` → `POST /object-sets/aggregate`（计数，支持 base/searchAround/filter 组合 + include）→ `POST /object-sets/load`（列表分页 50/页 + Search-Around 钻取：`{op:"searchAround", source:{op:"static",…}, link, direction}`） |
+| **搭建台** workshop.js | `GET /manifest` → `GET /object-types/detail?apiName=` → `POST /object-sets/aggregate`（含关键字 contains(title) 过滤口径）→ `POST /object-sets/load`（列表 + 各关系块并发懒加载 searchAround）→ `POST /action-types/check-permission`（动作中心 PEP 批量预检，`subjects:["role:admin"]`）→ `GET /action-types/detail?apiName=`（动态参数表单）→ `POST /action-types/dry-run`、`/execute`（apiName 入 body，`actor:"workshop"`） |
+| **工作室** studio.js + 八模块 | `GET /manifest?types=…&include=all`、`GET /views`、`GET /me/roles`（403 降级依据）、`GET /graph?view=…&include=all`（场景画布一条到位）、`GET /object-types?q=&dam=&page=&size=`（目录分页）；六类元素 `POST` 保存（带 version）+ `GET /xxx/detail?apiName=` 详情 + `POST /xxx/remove`；`GET /events?ontology=`（SSE 订阅：checkpoint-created / release-created / resource-changed / view-changed）；`POST /snapshots`、`GET /versions`、`GET /versions/detail?version=`、`GET /versions/diff?a=&b=`、`POST /versions/restore`（版本中心）；`POST /releases`、`POST /releases/remove`（发布标记）；`POST /lifecycle/transition`（状态流转）；`GET /revisions?kind=&apiName=`、`POST /revisions/revert`（修订时间线）；`POST /views`、`POST /views/layout`、`POST /views/remove`（场景管理）；`GET /flow/definitions`、`GET /report/definitions`、`GET /action-templates`；`POST /action-types/dry-run`、`/execute`、`POST /functions/evaluate`（apiName 入 body）、`POST /object-sets/aggregate`；另调门户 `GET /api/registry/dam`（DAM 注册表，404 静默回退 manifest 聚合） |
+| **控制台** dashboard（`:8097/`；20260918 已适配：api 层统一注入 `?ontology=default_ontology`） | `GET /stats`、`GET /object-types`、`POST /object-types`、`POST /object-types/remove`、`GET /link-types`、`POST /link-types`、`POST /link-types/remove`、`GET /versions`、`POST /snapshots` |
 
 ## 附 B：QA 脚本覆盖面
 

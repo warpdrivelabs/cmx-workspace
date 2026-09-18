@@ -46,7 +46,10 @@ description: 指导 AI 为任意企业业务场景设计并生成本体平台（
 ```bash
 python3 .agents/skills/cmx-onto-toolkit/scripts/onto_seed.py \
   --spec <scenario-spec.json> [--base http://127.0.0.1:8097] \
-  [--api-key cmx_sk_dev_...] [--skip funnelSync,links] [--only objectTypes,functions]
+  [--api-key cmx_sk_dev_...] [--ontology default_ontology] \
+  [--skip funnelSync,links] [--only objectTypes,functions]
+
+> M1 起全部 onto 接口必带 `?ontology=`（脚本 `--ontology` 缺省 default_ontology）；批量写对象与漏斗同步已去路径化（`POST /objects/save-batch`、`POST /funnel/sync`）。
 ```
 写规格前必读 `references/scenario-spec.md`（schema 契约）与 `references/ontology-api.md`（接口速查）。
 
