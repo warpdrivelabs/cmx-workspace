@@ -95,6 +95,7 @@
 7. **前端 / 数据资产真源发布**：`backend/cmx-container/assets/<svc>/` 是**唯一真源**；各主应用仓 `web/` / `data/` 下与真源同名的顶层子目录是发布产物，**禁止直接修改**。改真源后 `./scripts/publish-assets.sh <portal|model|mdm|flow|report|rules>` 同步（同步粒度 = 真源顶层子目录整目录替换，目标侧多余内容不删不改）。各仓 toml `[assets]` 已直指工作区真源，脚本拷贝仅打包归档用——可选跑。仅约束资源文件，不约束 Rust 源码 / `Cargo.toml` / `.env`。
 8. **`cmx-ontology-canvas.js`（及 `cmx-ontology-graph.js`）禁止直接修改**：`backend/cmx-container/assets/onto/web/ui-native/vendor/` 下这两个文件是 `frontend/cmx-ontology-graph` 仓的构建产物，一切改动只能改该仓 `src/` 源码，再在该仓执行 `./build.sh && ./sync-component.sh` 打包同步到 vendor 真源，否则本体平台用的还是旧组件。
 9. **方案文档统一归档根目录 `documents/`**（命名按 `plan-naming`：`yyyyMMdd_模块名_中文标题.md`）：方案 / 计划进 `documents/plans/`，其它按主题子目录。❌ 禁止塞子仓 `docs/` 或随代码提交；根 `docs/` 是历史资料区，新方案不写入。仅跨子项目、长期留档的才进 `documents/`。
+10. **后端配置取值统一走 `cmx_utils::ConfigManager`**：服务自定义属性放本服务 toml 的专属分组（如 cmx-ontology 的 `[onto]`），代码经 `ConfigManager::try_global()` 的 `get_string("<分组>.<键>")` 等方法读取——toml 打底、环境变量以 `分组__键` 双下划线映射覆盖（env 优先，如 `onto.authz_mode` ↔ `ONTO__AUTHZ_MODE`）。❌ 禁止新增 `std::env::var` 直读业务配置（进程启动期基础设施变量如 `CONFIG_FILE` / `SERVER__PORT`，及 dotenvy 初始化之前的代码除外）；新增 / 修改配置项后按技能 `config-sync` 同步模板与手册。
 
 ## 五、集群部署与无状态约束（前后端通用）
 
@@ -125,6 +126,7 @@
 ## 七、联调与后端运维默认信息
 
 - **一键控制台（推荐）**：`cd cmx-launcher && ./run.sh` → http://127.0.0.1:8100（自动发现服务，启停 / toml 切换 / 日志 / 磁盘治理；Windows 用 `run.bat` / `run.ps1`）。
+- **服务启停优先走 launcher 接口**：console 已在运行（探测 `http://127.0.0.1:8100/api/services` 有响应）时，重启 / 启停服务一律调其 HTTP 接口，**禁止**手工 `pkill` + `nohup` 自启（绕过进程登记与日志采集，还会造成端口占用冲突）。AI 直接 `curl -X POST http://127.0.0.1:8100/api/services/<sid>/restart`（sid = 服务目录名如 `cmx-ontology`；同仓 `/start` `/stop`，批量 `/api/batch/restart`；接口会按端口接管终止外部进程后按原 toml / args 拉起，启动自动注入 `CONFIG_FILE`）。服务实时日志 `GET /api/services/<sid>/logs?lines=N`；仅当 console 未运行且无需看日志时才后台直启。
 - **前端联调**：`frontend/cmx-enterprise-portal/` 下 `npm run dev:portal` → http://127.0.0.1:5173/，账号 `admin` / `Admin@12345`。开发时页面直开 dev 地址（如本体工作室 http://127.0.0.1:5173/view/onto-studio）。走门户后端访问是 http://127.0.0.1:8080/portal，**必须先 `npm run build:portal` 打包出 dist 才能访问**——未打包时 :8080 上没有前端，不能直接访问。
 - **后端配置**：主服务读 `backend/cmx-portalservice/.env`（蓝本 `backend/cmx-container/.env`，cmx-container 资源相对路径前缀 `../cmx-container/`）→ `CONFIG_FILE`（当前 `./portal-server-dev.toml`）确定生效 toml；各引擎同理 `<svc>-server-dev.toml`。资产路径在生效 toml `[assets]`（`root` + `ui_native_dir` / `ui_html_dir`；portal 另有三个前端 `dist/`），不在 `WEB_FOLDER`。`[[databases]]`：`default = true` 平台库，`source_type = "biz"` 业务库；连库 URL 从 `db_url` 解析，**不硬编码地址**。
 - **后端启动**：`cd backend/cmx-portalservice && ./portal.sh`（`--release` 发布）；七引擎各仓 `*.sh`（flow :8091 / report :8092 / model :8093 / rules :8094 / mdm :8095 / onto :8097 / dataauth :8098），门户经 `[center_client.services]` 反代——**联调最小集 = portal + model 同起**。`cmx-agent` 无 HTTP：`cargo run -p cmx-agent-cli`。
