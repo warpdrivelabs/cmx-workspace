@@ -206,17 +206,22 @@
 
 "场景"是**过滤器/透镜，不是容器**：全局底座（六类元素定义）只有一份，场景只存"成员引用清单 + 画布布局"。两种来源：
 - **auto**（域默认视图）：apiName 固定 `auto:<domain>`，成员**读时按 DAM 域现算**，不物化；域消失 → 虚拟条目自然消失；
-- **manual**（手动场景）：成员物化（快照语义），不随 DAM 漂移。成员含 `links` 白名单——边 =（关系 ∈ links）∧（两端对象都在场），可表达"两个对象都在场景里但这条关系不显示"。
+- **manual**（手动场景）：成员物化（快照语义），不随 DAM 漂移。
+
+**20260918 场景职责收口（用户裁决）**：关系定义由底座唯一管理，场景只管成员——
+- `links` 白名单**下线**：边 = 两端对象都在场即派生显示（manual 与 auto 统一口径）。存量 `members.links` 保留存储不消费；`POST /views` 仍接受该字段（兼容旧客户端）但不影响投影；
+- `GET /graph` 不再返回 `availableLinks` 与节点角标 `externalCount/externalPeers`（断头关系不展示也不提醒，补全由「引入对象（可连同直接关联）」承担）；
+- 场景画布内新建关系 / 删除关系 / 挂接摘除接口全部前端拦截引导回底座画布（后端接口本身不变，仍是底座全局语义）。
 
 | 方法+路径 | 大白话作用 | 请求参数 | 谁在用 |
 | --- | --- | --- | --- |
 | `GET /views` | 场景清单：已落行场景 + **域派生虚拟条目**合并返回（虚拟条目 `virtual:true`，不可直接删） | 无 | 工作室 |
-| `POST /views` | 保存场景（新建/覆盖/域播种/成员编辑/转手动）。维护角色守卫。`links` 白名单后端清洗（只保留真实存在且两端在成员集内的关系）；**请求不带 layout 时保留已有布局**（成员编辑不吞布局）；乐观锁 `version` | body：`{ apiName*, displayName, description, dam, members:{objects[], interfaces[], links[]}, source:"auto"\|"manual", layout?, version }` | 工作室 |
+| `POST /views` | 保存场景（新建/覆盖/域播种/成员编辑/转手动）。维护角色守卫。`links` 字段兼容接收（清洗保留，投影不消费）；**请求不带 layout 时保留已有布局**（成员编辑不吞布局）；乐观锁 `version` | body：`{ apiName*, displayName, description, dam, members:{objects[], interfaces[], links[]}, source:"auto"\|"manual", layout?, version }` | 工作室 |
 | `POST /views/remove` | 删场景（写墓碑修订 + 广播 view-changed）。auto 行豁免（返回 `removed:false, reason:"auto 豁免"`）；行不存在幂等成功 | body：`{ apiName* }` | 工作室 |
 | `POST /views/layout` | 画布拖拽布局**单列 LWW 直写**（不做版本检查、不进乐观锁——布局是物化产物不进版本语义，存档指纹也排除 layout）。auto 视图行不存在时按需落行（只落 meta+layout，永不落成员） | body：`{ apiName*, layout }` | 工作室 |
-| `GET /graph?view=X` | **服务端组装成员级画布 spec，一条请求到位**：解析视图成员 → 批量装成员对象全量定义 → 接口 = implements 并集 ∪ members.interfaces → 边 =（两端在场 ∧ ∈links 白名单）→ 单端在场的边生成 `externalCount/externalPeers` 跨场景角标 → 悬空引用进 `warnings` | query：`view*`（场景 apiName）、`include`（状态分层，缺省全量） | 工作室 |
+| `GET /graph?view=X` | **服务端组装成员级画布 spec，一条请求到位**：解析视图成员 → 批量装成员对象全量定义 → 接口 = implements 并集 ∪ members.interfaces → 边 = **两端在场即派生**（白名单已下线）→ 悬空引用进 `warnings` | query：`view*`（场景 apiName）、`include`（状态分层，缺省全量） | 工作室 |
 
-**graph 响应**：`{ view: {…meta}, spec: {name, nodes, edges}, layout, sharedProperties: […], availableLinks: […两端在场但未入白名单、可加入的关系], warnings: […] }`。
+**graph 响应**：`{ view: {…meta}, spec: {name, nodes, edges}, layout, sharedProperties: […], warnings: […] }`。
 
 ---
 
