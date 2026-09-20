@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>规则引擎对接本体 · 大白话图文讲解</title>
+<style>
+  :root{
+    --ink:#1f2430; --muted:#6b7280; --line:#e5e7eb; --bg:#f6f7f9; --card:#ffffff;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+    --green:#16a34a; --green-bg:#ecfdf5; --green-line:#a7f3d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --mono:ui-monospace,Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:15px;line-height:1.75;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px;}
+  header.hero{background:linear-gradient(135deg,#1e3a8a,#2563eb 55%,#7c3aed);
+    color:#fff;border-radius:16px;padding:34px 36px;margin-bottom:28px;}
+  header.hero h1{margin:0 0 10px;font-size:26px;letter-spacing:.5px;}
+  header.hero p{margin:4px 0;opacity:.92;font-size:14.5px;}
+  .meta{font-size:12.5px;opacity:.75;margin-top:14px;}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:26px 30px;margin-bottom:26px;}
+  h2{font-size:20px;margin:0 0 6px;display:flex;align-items:center;gap:10px;}
+  h2 .chip{flex:none;width:30px;height:30px;border-radius:8px;background:var(--blue);color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;}
+  h2.purple .chip{background:var(--purple);}
+  h2.green .chip{background:var(--green);}
+  h2.red .chip{background:var(--red);}
+  h2.amber .chip{background:var(--amber);}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+  h3{font-size:16px;margin:22px 0 8px;}
+  p{margin:8px 0;}
+  .analogy{background:var(--amber-bg);border-left:4px solid var(--amber);border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:14px 0;font-size:14.5px;}
+  .analogy b{color:var(--amber);}
+  .note{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:10px 14px;
+    color:#475569;font-size:13.5px;margin:12px 0;}
+  .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;}
+  .card h4{margin:0 0 6px;font-size:15px;}
+  .card p{font-size:13.5px;color:#374151;margin:6px 0 0;}
+  .card.blue{background:var(--blue-bg);border-color:var(--blue-line);}
+  .card.purple{background:var(--purple-bg);border-color:var(--purple-line);}
+  .card.green{background:var(--green-bg);border-color:var(--green-line);}
+  .card .tag{display:inline-block;font-size:11.5px;padding:1px 9px;border-radius:999px;margin-left:6px;vertical-align:2px;}
+  .tag.b{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-line);}
+  .tag.p{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-line);}
+  .tag.g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line);}
+  .tag.r{background:var(--red-bg);color:var(--red);border:1px solid var(--red-line);}
+  .tag.a{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line);}
+  figure{margin:18px 0;}
+  figure svg{width:100%;height:auto;display:block;}
+  figcaption{color:var(--muted);font-size:13px;text-align:center;margin-top:6px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top;}
+  th{background:#f3f4f6;font-weight:600;white-space:nowrap;}
+  code{font-family:var(--mono);font-size:12.5px;background:#f1f5f9;border-radius:5px;padding:1px 6px;color:#0f172a;word-break:break-all;}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;line-height:1.7;}
+  pre .c{color:#94a3b8;}
+  .strip{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0;}
+  .strip .st{flex:1;min-width:150px;border:1.5px solid var(--line);border-radius:10px;
+    padding:10px 12px;text-align:center;font-size:13px;background:#fff;position:relative;}
+  .strip .arr{flex:none;width:34px;display:flex;align-items:center;justify-content:center;
+    color:#94a3b8;font-size:20px;font-weight:700;}
+  .strip .st.hl{border-color:var(--blue);background:var(--blue-bg);}
+  .strip .st.pp{border-color:var(--purple);background:var(--purple-bg);}
+  .strip .st .cap{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;}
+  .tiers{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:18px 0;}
+  .tier{display:grid;grid-template-columns:120px 1fr;border-bottom:1px solid var(--line);}
+  .tier:last-child{border-bottom:none;}
+  .tier .no{background:#f8fafc;padding:18px 14px;text-align:center;border-right:1px solid var(--line);}
+  .tier .no .lv{font-size:22px;font-weight:800;}
+  .tier .no .nm{font-size:13px;color:var(--muted);margin-top:2px;}
+  .tier .bd{padding:16px 20px;}
+  .tier .bd h4{margin:0 0 4px;font-size:15.5px;}
+  .tier .bd p{font-size:13.8px;margin:6px 0;}
+  .redlines{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+  .redline{border:1px solid var(--red-line);background:var(--red-bg);border-radius:12px;padding:14px 18px;}
+  .redline h4{margin:0 0 6px;color:var(--red);font-size:14.5px;}
+  .redline p{font-size:13.3px;margin:4px 0;color:#7f1d1d;}
+  .timeline{display:flex;gap:0;margin:18px 0;flex-wrap:wrap;}
+  .tstep{flex:1;min-width:220px;position:relative;padding:0 8px;}
+  .tstep .dot{width:34px;height:34px;border-radius:50%;color:#fff;display:flex;align-items:center;
+    justify-content:center;font-weight:700;margin:0 auto 10px;font-size:15px;}
+  .tstep h4{text-align:center;margin:0 0 6px;font-size:14.5px;}
+  .tstep p{font-size:12.8px;color:#4b5563;text-align:center;margin:2px 0;}
+  .tstep:after{content:"";position:absolute;top:17px;right:-14px;width:28px;height:2px;background:#cbd5e1;}
+  .tstep:last-child:after{display:none;}
+  footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:8px;}
+  ul{margin:8px 0;padding-left:22px;}
+  li{margin:4px 0;font-size:14.2px;}
+  .kbd{font-family:var(--mono);font-size:12px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;
+    border-radius:5px;padding:0 6px;}
+  @media (max-width:760px){.cards3,.redlines{grid-template-columns:1fr;}.tier{grid-template-columns:80px 1fr;}}
+  @media print{body{background:#fff;}section{border:none;padding:10px 0;}header.hero{border-radius:0;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>规则引擎，怎么"对接到本体里"？</h1>
+  <p>一张图看懂：两个平台各自是什么、现在断在哪、接上之后业务怎么跑、分几步接。</p>
+  <p class="meta">2026-09-20 · 平台侧讲解文档 · 对应代码：backend/cmx-ontology × backend/cmx-rulesengine · 结论均来自当前源码</p>
+</header>
+
+<!-- ====================== 第 0 章 ====================== -->
+<section>
+  <h2><span class="chip">0</span>三十秒版本</h2>
+  <p class="sub">先建立三个角色，后面所有图都围绕它们转。</p>
+  <div class="cards3">
+    <div class="card blue">
+      <h4>本体平台 <span class="tag b">:8097</span></h4>
+      <p><b>好比企业办事大厅</b>。对象=档案柜里的户口页（客户、订单、授信申请）；关系=档案之间的回形针；<b>动作=办事窗口</b>——收材料、改档案（edits）、对外发函（副作用）；函数=窗口里的小算盘；权限 PEP=窗口后的保安。</p>
+    </div>
+    <div class="card purple">
+      <h4>规则引擎 <span class="tag p">:8094</span></h4>
+      <p><b>好比城里一家"决策图纸厂"</b>。业务专家在画布上把判断流程画成<b>决策图</b>（走 decision-graph 组件），画完盖章定版（publish v3）；以后谁来问，都按同一张已盖章的图纸算，全过程留痕（决策日志）。</p>
+    </div>
+    <div class="card green">
+      <h4>对接 = 装一条专线电话</h4>
+      <p>本体窗口办事遇到"该不该批、该改成多少"这类判断，<b>打电话去图纸厂按已盖章的图纸算</b>，算完寄回来，窗口照单改档案。领导说的"对接"，就是装这条电话线。</p>
+    </div>
+  </div>
+  <div class="analogy"><b>一句话：</b>大模型负责"听懂人话、选对窗口、填对表单"；本体负责"档案、窗口、保安"；规则引擎负责"照章办事的确定性判断"。三件套拼齐，就是"真本体"的完整故事。</div>
+</section>
+
+<!-- ====================== 第 1 章 ====================== -->
+<section>
+  <h2><span class="chip">1</span>现状：两个岛，血统相同，但没有电话线</h2>
+  <p class="sub">先看两边各有什么、现在是怎么"挨着却不通"的。</p>
+
+  <figure>
+    <svg viewBox="0 0 980 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="现状两岛图">
+      <defs>
+        <marker id="mRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+        <marker id="mGrn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker>
+      </defs>
+      <!-- 左岛：本体 -->
+      <rect x="30" y="64" width="380" height="300" rx="14" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="220" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#1e40af">本体平台 cmx-ontology（:8097）</text>
+      <rect x="55" y="106" width="330" height="42" rx="8" fill="#fff" stroke="#bfdbfe"/>
+      <text x="220" y="132" text-anchor="middle" font-size="12.5" fill="#1f2430">对象 · 关系（业务事物与它们的连线）</text>
+      <rect x="55" y="158" width="330" height="42" rx="8" fill="#fff" stroke="#bfdbfe"/>
+      <text x="220" y="178" text-anchor="middle" font-size="12.5" fill="#1f2430">动作 = 办事窗口</text>
+      <text x="220" y="194" text-anchor="middle" font-size="11" fill="#6b7280">编辑规则 / 副作用 / 函数背书</text>
+      <rect x="55" y="210" width="330" height="42" rx="8" fill="#fff" stroke="#bfdbfe"/>
+      <text x="220" y="230" text-anchor="middle" font-size="12.5" fill="#1f2430">函数：FEEL 公式 + Rhai 小脚本（本地智能）</text>
+      <text x="220" y="246" text-anchor="middle" font-size="11" fill="#6b7280">与规则引擎同源的两个内核</text>
+      <rect x="55" y="262" width="330" height="42" rx="8" fill="#fff" stroke="#bfdbfe"/>
+      <text x="220" y="282" text-anchor="middle" font-size="12.5" fill="#1f2430">权限 PEP：读侧硬门 + 写侧硬门</text>
+      <text x="220" y="298" text-anchor="middle" font-size="11" fill="#6b7280">行约束折进 SQL · 敏感列直接移除</text>
+      <!-- 右岛：规则引擎 -->
+      <rect x="570" y="64" width="380" height="300" rx="14" fill="#f5f3ff" stroke="#c4b5fd"/>
+      <text x="760" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#5b21b6">规则引擎 cmx-rule-server（:8094）</text>
+      <rect x="595" y="106" width="330" height="42" rx="8" fill="#fff" stroke="#ddd6fe"/>
+      <text x="760" y="126" text-anchor="middle" font-size="12.5" fill="#1f2430">决策图 JDM（画布上画的判断流程）</text>
+      <text x="760" y="142" text-anchor="middle" font-size="11" fill="#6b7280">frontend/cmx-decision-graph 组件</text>
+      <rect x="595" y="158" width="330" height="42" rx="8" fill="#fff" stroke="#ddd6fe"/>
+      <text x="760" y="178" text-anchor="middle" font-size="12.5" fill="#1f2430">版本发布 publish / versions</text>
+      <text x="760" y="194" text-anchor="middle" font-size="11" fill="#6b7280">图纸盖章定版，行为不漂移</text>
+      <rect x="595" y="210" width="330" height="42" rx="8" fill="#fff" stroke="#ddd6fe"/>
+      <text x="760" y="230" text-anchor="middle" font-size="12.5" fill="#1f2430">试算 evaluate（带着事实来问）</text>
+      <text x="760" y="246" text-anchor="middle" font-size="11" fill="#6b7280">POST /rules/v1/decisions/{key}/evaluate</text>
+      <rect x="595" y="262" width="330" height="42" rx="8" fill="#fff" stroke="#ddd6fe"/>
+      <text x="760" y="282" text-anchor="middle" font-size="12.5" fill="#1f2430">仿真 / 测试 / 决策日志</text>
+      <text x="760" y="298" text-anchor="middle" font-size="11" fill="#6b7280">沙箱推演 what-if + 全程留痕</text>
+      <!-- 中间 -->
+      <text x="490" y="118" text-anchor="middle" font-size="12" fill="#6b7280">血统相同：</text>
+      <text x="490" y="136" text-anchor="middle" font-size="12" fill="#6b7280">FEEL / Rhai 内核同源</text>
+      <line x1="418" y1="188" x2="562" y2="188" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#mRed)"/>
+      <text x="490" y="176" text-anchor="middle" font-size="12.5" font-weight="700" fill="#dc2626">✕ 缺专线：跑决策</text>
+      <text x="490" y="208" text-anchor="middle" font-size="11.5" fill="#6b7280">（本次对接要补的）</text>
+      <rect x="428" y="248" width="130" height="44" rx="8" fill="#ecfdf5" stroke="#6ee7b7"/>
+      <text x="493" y="275" text-anchor="middle" font-size="12" fill="#065f46">流程引擎 :8091</text>
+      <line x1="412" y1="270" x2="424" y2="270" stroke="#16a34a" stroke-width="2" marker-end="url(#mGrn)"/>
+      <text x="493" y="312" text-anchor="middle" font-size="11.5" fill="#15803d">已有专线：起审批实例</text>
+      <text x="490" y="404" text-anchor="middle" font-size="12.5" fill="#6b7280">现状：动作再聪明也只会在本地打转 —— 复杂业务判断没地方"沉淀"，也没版本可管</text>
+    </svg>
+    <figcaption>图1 · 两边资产盘点：唯一的"连接"是代码血统（内核同源），没有可调用的通道</figcaption>
+  </figure>
+
+  <h3>两边家底（白话盘点）</h3>
+  <table>
+    <tr><th style="width:130px">岛</th><th>已经有什么</th><th>白话解释</th></tr>
+    <tr><td><b>本体平台</b></td>
+      <td>对象 / 关系；动作三件套（编辑规则 logic、副作用 side_effects、函数背书 function_backing）；FEEL 子集引擎 + Rhai 沙箱；读侧 PEP + 写侧 PEP；出站专线目前只有 webhook 和"调流程引擎起审批实例"。</td>
+      <td>窗口会改档案、会发函，但窗口里的"聪明"只有两样：<b>FEEL 像单元格里的 Excel 公式</b>（提交校验够用），<b>Rhai 像一段被上了锁的小程序</b>（算个阶梯价可以，画审批路由不行）。</td></tr>
+    <tr><td><b>规则引擎</b></td>
+      <td>决策图建模（JDM，画布组件现成）；版本发布与历史版本；<code>evaluate</code> 同步试算；<code>simulate / analyze</code> 沙箱推演；决策测试与决策日志。</td>
+      <td>图纸厂设备齐全：<b>能画图、能定版、能算、能预演、能审计</b>——就差有客户上门。</td></tr>
+    <tr><td><b>断点</b></td>
+      <td>本体不依赖规则引擎的任何代码（"独立微服务"纪律）；跨服务只走 HTTP，而出站名单里没有规则引擎。</td>
+      <td>两个平台是<b>同源的亲兄弟</b>（FEEL/Rhai 内核一脉相承），但兄弟之间没装电话。</td></tr>
+  </table>
+
+  <div class="note">为什么这事"顺路"？因为本体已有成熟的出站模式（<code>outbound.rs</code>：配置键、服务间 API Key、超时、白名单、全局熄火开关），规则通道照着流程引擎那条线<b>抄一遍模式</b>即可，两边内核一行不用动。</div>
+</section>
+
+<!-- ====================== 第 2 章 ====================== -->
+<section>
+  <h2 class="purple"><span class="chip">2</span>接上之后，一次动作是怎么跑的</h2>
+  <p class="sub">以"提交授信申请"为例：动作的函数背书指向一张已发布的决策图。整条链路大模型完全不参与判定。</p>
+
+  <figure>
+    <svg viewBox="0 0 980 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="对接后时序图">
+      <defs>
+        <marker id="mInk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+      </defs>
+      <!-- 泳道头 -->
+      <rect x="20" y="16" width="180" height="36" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="110" y="39" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">业务员（浏览器）</text>
+      <rect x="260" y="16" width="200" height="36" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="360" y="39" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">本体平台 :8097</text>
+      <rect x="540" y="16" width="200" height="36" rx="8" fill="#f5f3ff" stroke="#c4b5fd"/><text x="640" y="39" text-anchor="middle" font-size="13" font-weight="700" fill="#5b21b6">规则引擎 :8094</text>
+      <rect x="800" y="16" width="170" height="36" rx="8" fill="#f8fafc" stroke="#cbd5e1"/><text x="885" y="39" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">本体对象库</text>
+      <!-- 生命线 -->
+      <line x1="110" y1="52" x2="110" y2="540" stroke="#cbd5e1" stroke-dasharray="4 5"/>
+      <line x1="360" y1="52" x2="360" y2="540" stroke="#cbd5e1" stroke-dasharray="4 5"/>
+      <line x1="640" y1="52" x2="640" y2="540" stroke="#cbd5e1" stroke-dasharray="4 5"/>
+      <line x1="885" y1="52" x2="885" y2="540" stroke="#cbd5e1" stroke-dasharray="4 5"/>
+      <!-- ① -->
+      <line x1="110" y1="88" x2="352" y2="88" stroke="#475569" stroke-width="1.6" marker-end="url(#mInk)"/>
+      <text x="232" y="80" text-anchor="middle" font-size="12" fill="#1f2430">① 点「提交」执行动作（带参数）</text>
+      <!-- ② -->
+      <rect x="248" y="112" width="224" height="30" rx="6" fill="#fff7ed" stroke="#fdba74"/>
+      <text x="360" y="132" text-anchor="middle" font-size="12" fill="#9a3412">② JWT 认证 + 写侧 PEP 权限门</text>
+      <!-- ③ -->
+      <rect x="192" y="160" width="336" height="30" rx="6" fill="#fff7ed" stroke="#fdba74"/>
+      <text x="360" y="180" text-anchor="middle" font-size="12" fill="#9a3412">③ 解析动作：函数背书 = 远端决策 creditApproval@v3</text>
+      <!-- ④ -->
+      <line x1="360" y1="228" x2="632" y2="228" stroke="#475569" stroke-width="1.6" marker-end="url(#mInk)"/>
+      <text x="497" y="214" text-anchor="middle" font-size="12" fill="#1f2430">④ POST /rules/v1/decisions/{key}/evaluate</text>
+      <text x="497" y="244" text-anchor="middle" font-size="11.5" fill="#6b7280">input = 动作参数 + 对象事实（金额、客户等级…）</text>
+      <!-- ⑤ -->
+      <rect x="518" y="266" width="244" height="30" rx="6" fill="#f5f3ff" stroke="#c4b5fd"/>
+      <text x="640" y="286" text-anchor="middle" font-size="12" fill="#5b21b6">⑤ 决策图 v3 求值（trace + 决策日志）</text>
+      <!-- ⑥ -->
+      <line x1="640" y1="326" x2="368" y2="326" stroke="#475569" stroke-width="1.6" marker-end="url(#mInk)"/>
+      <text x="497" y="318" text-anchor="middle" font-size="12" fill="#1f2430">⑥ 返回决策输出（含 trace）</text>
+      <!-- ⑦ -->
+      <line x1="360" y1="374" x2="877" y2="374" stroke="#475569" stroke-width="1.6" marker-end="url(#mInk)"/>
+      <text x="620" y="366" text-anchor="middle" font-size="12" fill="#1f2430">⑦ 输出映射成 edits，写回对象属性</text>
+      <text x="620" y="390" text-anchor="middle" font-size="11.5" fill="#6b7280">行列权限早已折进查询，写回天然带保安</text>
+      <!-- ⑧ -->
+      <line x1="360" y1="428" x2="118" y2="428" stroke="#475569" stroke-width="1.6" marker-end="url(#mInk)"/>
+      <text x="238" y="420" text-anchor="middle" font-size="12" fill="#1f2430">⑧ 回执 + 审计</text>
+      <!-- 失败语义 -->
+      <rect x="250" y="462" width="480" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="490" y="484" text-anchor="middle" font-size="12.3" font-weight="700" fill="#991b1b">待拍板的失败语义：远端求值失败怎么办？</text>
+      <text x="490" y="504" text-anchor="middle" font-size="11.8" fill="#7f1d1d">fail-closed（动作直接拒）或 outbox deferred（挂起重试）—— 建议与 ONTO_OUTBOUND=off 语义对齐</text>
+      <text x="490" y="566" text-anchor="middle" font-size="12.5" fill="#6b7280">整条链路里 LLM 不参与判定：选动作、填参数是它的活；「该不该过、怎么改」交给确定性决策图。</text>
+    </svg>
+    <figcaption>图2 · 一次"动作 → 决策图 → 写回"的完整旅程（Palantir 语境里的 Run decision rule）</figcaption>
+  </figure>
+
+  <div class="analogy"><b>打个比方：</b>业务员在窗口递交申请表（动作参数）。保安先查工牌（PEP），窗口发现这单要按行规判（函数背书指向图纸），于是打专线电话给图纸厂，报上材料和申请表数据（input）；图纸厂按<b>盖了章的 v3 图纸</b>算出"批 80 万、利率上浮 0.3"，回单寄回；窗口照回单改档案（edits 写回），全程有监控录像（决策日志 + 审计）。</div>
+</section>
+
+<!-- ====================== 第 3 章 ====================== -->
+<section>
+  <h2 class="green"><span class="chip">3</span>三档接法：由浅入深，每一档都独立可用</h2>
+  <p class="sub">对接不是一件事，是三件递进的事。第一档一两天能通，第二档才是价值核心，第三档是平台叙事。</p>
+
+  <div class="tiers">
+    <div class="tier">
+      <div class="no"><div class="lv" style="color:var(--green)">档1</div><div class="nm">副作用外呼</div></div>
+      <div class="bd">
+        <h4>窗口办完事，顺手打个电话 <span class="tag g">改动最小 · 一两天级</span></h4>
+        <div class="strip">
+          <div class="st">动作执行<span class="cap">编辑规则照旧走本地</span></div>
+          <div class="arr">→</div>
+          <div class="st pp">决策图 evaluate<span class="cap">POST /rules/v1/…/evaluate</span></div>
+          <div class="arr">→</div>
+          <div class="st">结果只转发<span class="cap">通知 / 触发下游，不写档案</span></div>
+        </div>
+        <p><b>改哪里：</b>动作 <code>side_effects</code> 本来就是 JSON，加一种 kind（如 <code>runDecision</code>）；<code>outbound.rs</code> 照 flow 模式加一条规则通道（<code>ONTO_RULE_URL</code> / API Key / 熄火开关）。<b>适合：</b>动作执行后通知风控、触发下游重算这类"发函"场景。</p>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="no"><div class="lv" style="color:var(--blue)">档2</div><div class="nm">编辑规则远端化<br>（核心价值）</div></div>
+      <div class="bd">
+        <h4>窗口收材料，图纸厂算出"档案该怎么改" <span class="tag b">写回闭环 · 中等工作量</span></h4>
+        <div class="strip">
+          <div class="st">动作提交<span class="cap">参数 + 对象事实</span></div>
+          <div class="arr">→</div>
+          <div class="st pp">决策图@v3 求值<span class="cap">版本钉死，不漂移</span></div>
+          <div class="arr">→</div>
+          <div class="st">输出映射成 edits<span class="cap">与函数背书同一契约</span></div>
+          <div class="arr">→</div>
+          <div class="st hl">写回对象属性<span class="cap">真本体 · 写回闭环</span></div>
+        </div>
+        <p><b>改哪里：</b><code>function_backing</code> 扩展出"远端决策模型引用"（decisionKey + 已发布版本），本体动作解析时调 evaluate，把输出映射成 <code>{"edits":[…],"sideEffects":[…]}</code>——这正是 Palantir 的 <b>Run decision rule</b>（本体已有 Run function rule，同一契约直接复用）。<b>价值：</b>审批路由、定价、额度这类复杂业务策略在 decision-graph 里画、可版本化治理，本体动作只引用。</p>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="no"><div class="lv" style="color:var(--purple)">档3</div><div class="nm">规则进本体建模面</div></div>
+      <div class="bd">
+        <h4>图纸厂的产品目录挂进大厅公告栏 <span class="tag p">平台能力建设 · 随 Skill 体系排期</span></h4>
+        <div class="strip">
+          <div class="st hl">本体工作台<span class="cap">规则=一等资产</span></div>
+          <div class="arr">⇄</div>
+          <div class="st">决策模型登记<span class="cap">引用 / 版本 / 挂接动作</span></div>
+          <div class="arr">←</div>
+          <div class="st">对象类型派生输入 schema<span class="cap">属性 / marking / 口径</span></div>
+        </div>
+        <p><b>改哪里：</b>元数据模型 + 工作台 UI + 与规则引擎的登记同步。<b>价值：</b>平台能力①的原文是"业务对象、关系、<b>规则</b>的建模与沉淀"——这一档兑现的就是"规则沉淀"，本体从此是"对象-关系-规则"三样齐全的完整本体。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">再往远一步的<b>反向档</b>：规则引擎的输入事实改为经本体读取 API 获取（继承读侧 PEP 的行约束和列脱敏），决策结果经动作回写——规则执行天然带语义和权限，规则引擎也被拉进"数据权限切在语义层"的体系。</div>
+</section>
+
+<!-- ====================== 第 4 章 ====================== -->
+<section>
+  <h2 class="red"><span class="chip">4</span>四条红线：接之前先说清楚</h2>
+  <p class="sub">这几条不守，对接会从"确定性护栏"退化成"新的不确定"。</p>
+  <div class="redlines">
+    <div class="redline">
+      <h4>① 别把所有判定都外呼</h4>
+      <p>动作校验（validations）继续留在本地 FEEL——同步、低延迟、离线可测是硬要求。单点计算留给公式和小脚本；<b>跨对象、多步、需要版本治理的业务策略</b>才走决策图。本体函数不能退化成规则引擎的薄代理。</p>
+    </div>
+    <div class="redline">
+      <h4>② 引用必须钉死版本</h4>
+      <p>动作引用决策模型必须引用<b>已发布版本快照</b>（如 creditApproval@v3），不能"永远取最新"。否则规则引擎侧改一张图，所有本体动作的行为静默漂移——这比 bug 更可怕，因为它不报错。</p>
+    </div>
+    <div class="redline">
+      <h4>③ 失败语义提前拍板</h4>
+      <p>远端求值失败是 <b>fail-closed</b>（动作拒绝，业务办不成但不会错）还是 <b>outbox deferred</b>（挂起重试，与 <code>ONTO_OUTBOUND=off</code> 的既有语义对齐），档2 动工前定死，不许"看情况"。</p>
+    </div>
+    <div class="redline">
+      <h4>④ 主体随请求走</h4>
+      <p>出站请求带服务 API Key + 租户（必要时带 subjects），沿用 flow 那套服务间身份——规则引擎的决策日志才能归因到"谁在哪笔业务里触发了这次判定"，审计才闭环。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 第 5 章 ====================== -->
+<section>
+  <h2 class="amber"><span class="chip">5</span>落地顺序：三步走，每步独立交付</h2>
+  <div class="timeline">
+    <div class="tstep">
+      <div class="dot" style="background:var(--green)">1</div>
+      <h4>档1 · 通道打通</h4>
+      <p>outbound 加规则通道 + side_effect 新 kind</p>
+      <p>产出：<b>动作能跑决策图</b>（发函式），联调演示首选</p>
+    </div>
+    <div class="tstep">
+      <div class="dot" style="background:var(--blue)">2</div>
+      <h4>档2 · 写回闭环</h4>
+      <p>function_backing 远端化 + 版本钉死 + 失败语义</p>
+      <p>产出：<b>Run decision rule</b>——复杂策略画进决策图，本体引用</p>
+    </div>
+    <div class="tstep">
+      <div class="dot" style="background:var(--purple)">3</div>
+      <h4>档3 · 规则沉淀</h4>
+      <p>建模面登记决策模型 + 输入 schema 从对象派生</p>
+      <p>产出：平台能力①补齐"规则"，可随 M3 Skill 体系一起排期</p>
+    </div>
+  </div>
+  <div class="note">三档全是<b>增量改动</b>：本体侧不动对象集代数与 PEP，规则引擎侧不动引擎内核；"本体不 path-dep、跨服务只走 HTTP"的独立微服务纪律全程不破。</div>
+</section>
+
+<!-- ====================== 第 6 章 ====================== -->
+<section>
+  <h2><span class="chip">6</span>往大里说：这一对接在平台蓝图中补哪块</h2>
+  <p class="sub">回到"平台四能力 + 两层三模块"的总图看位置。</p>
+
+  <figure>
+    <svg viewBox="0 0 980 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="平台四能力定位图">
+      <defs>
+        <marker id="mBlu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+      </defs>
+      <!-- 四能力 -->
+      <rect x="40" y="20" width="210" height="88" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+      <text x="145" y="46" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e40af">① 本体构建</text>
+      <text x="145" y="66" text-anchor="middle" font-size="11.5" fill="#1f2430">对象 · 关系 · 规则</text>
+      <text x="145" y="88" text-anchor="middle" font-size="11" font-weight="700" fill="#d97706">★ 本次补上"规则沉淀"</text>
+      <rect x="280" y="20" width="210" height="88" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+      <text x="385" y="46" text-anchor="middle" font-size="13.5" font-weight="700" fill="#374151">② 权限管理</text>
+      <text x="385" y="66" text-anchor="middle" font-size="11.5" fill="#6b7280">用户/角色/数据/功能</text>
+      <text x="385" y="86" text-anchor="middle" font-size="11.5" fill="#6b7280">项目与单位隔离</text>
+      <rect x="520" y="20" width="210" height="88" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+      <text x="625" y="46" text-anchor="middle" font-size="13.5" font-weight="700" fill="#374151">③ 模型适配</text>
+      <text x="625" y="66" text-anchor="middle" font-size="11.5" fill="#6b7280">大模型可插拔</text>
+      <text x="625" y="86" text-anchor="middle" font-size="11.5" fill="#6b7280">统一调用接口</text>
+      <rect x="760" y="20" width="210" height="88" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+      <text x="865" y="46" text-anchor="middle" font-size="13.5" font-weight="700" fill="#374151">④ Skill 管理</text>
+      <text x="865" y="66" text-anchor="middle" font-size="11.5" fill="#6b7280">注册·编排·运行·治理</text>
+      <text x="865" y="86" text-anchor="middle" font-size="11.5" fill="#6b7280">（最大缺口，另立项）</text>
+      <!-- 链路 -->
+      <rect x="40" y="180" width="190" height="52" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+      <text x="135" y="202" text-anchor="middle" font-size="12.5" font-weight="700" fill="#374151">大模型（能力③）</text>
+      <text x="135" y="221" text-anchor="middle" font-size="11" fill="#6b7280">理解意图</text>
+      <rect x="280" y="180" width="190" height="52" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="375" y="202" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e40af">本体动作（能力①）</text>
+      <text x="375" y="221" text-anchor="middle" font-size="11" fill="#6b7280">选动作 · 填参数 · 过权限</text>
+      <rect x="520" y="180" width="190" height="52" rx="10" fill="#f5f3ff" stroke="#c4b5fd"/>
+      <text x="615" y="202" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5b21b6">决策图（本次接入）</text>
+      <text x="615" y="221" text-anchor="middle" font-size="11" fill="#6b7280">确定性判定 · 版本 v3</text>
+      <rect x="760" y="180" width="190" height="52" rx="10" fill="#ecfdf5" stroke="#6ee7b7"/>
+      <text x="855" y="202" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065f46">动作 edits 回写业务</text>
+      <text x="855" y="221" text-anchor="middle" font-size="11" fill="#6b7280">真本体 · 写回闭环</text>
+      <line x1="230" y1="206" x2="276" y2="206" stroke="#2563eb" stroke-width="2" marker-end="url(#mBlu)"/>
+      <line x1="470" y1="206" x2="516" y2="206" stroke="#2563eb" stroke-width="2" marker-end="url(#mBlu)"/>
+      <line x1="710" y1="206" x2="756" y2="206" stroke="#2563eb" stroke-width="2" marker-end="url(#mBlu)"/>
+      <text x="490" y="300" text-anchor="middle" font-size="12" fill="#6b7280">对应客户架构图：语义层 = 本体；模型层·规则及模型 = 规则引擎；三模块（感知/决策/指挥）= 项目组用 Skill 编出来的应用。</text>
+    </svg>
+    <figcaption>图3 · 大模型只管"听懂并选对"，确定性的业务判断交给决策图，结果经本体动作写回业务系统</figcaption>
+  </figure>
+
+  <h3>对照 Palantir，这次对接补齐什么</h3>
+  <table>
+    <tr><th style="width:230px">Palantir 语境</th><th>我们现状</th><th>本次对接后</th></tr>
+    <tr><td>Run function rule（函数算编辑集）</td><td>✅ 已有（function_backing）</td><td>保持</td></tr>
+    <tr><td><b>Run decision rule（决策算编辑集）</b></td><td>❌ 无通路</td><td>✅ 档2：决策图按已发布版本算出编辑集</td></tr>
+    <tr><td>分支与沙箱推演（what-if）</td><td>❌ 本体无</td><td>✅ 复用规则引擎 simulate / analyze（现成）</td></tr>
+    <tr><td>LLM 确定性护栏</td><td>脚本级（FEEL/Rhai）</td><td>✅ 升级为决策图级：LLM 选动作填参数，判定交给图纸</td></tr>
+  </table>
+</section>
+
+<!-- ====================== 附录 ====================== -->
+<section>
+  <h2><span class="chip">A</span>点哪里：接口与代码索引</h2>
+  <p class="sub">讨论时对不上号就翻这张表。路径都在工作区根 <code>E:\Pansoft\cmx\cmx-workspace\</code> 下。</p>
+  <h3>规则引擎对外接口（现成，<code>/rules/v1</code> 前缀，:8094）</h3>
+  <table>
+    <tr><th style="width:330px">端点</th><th>干什么用</th></tr>
+    <tr><td><code>POST /rules/v1/decisions/{key}/evaluate</code></td><td>核心对接点：带 <code>{"input":{…},"options":{"trace":true,"log":true}}</code> 同步求值；请求体定义见 <code>cmx-rule-app/src/handlers.rs:142</code>（还支持内联 definition 试算，不落库）</td></tr>
+    <tr><td><code>/rules/v1/definitions/{key}/publish</code> · <code>/versions</code></td><td>版本发布与历史——档2"钉死版本"的数据来源</td></tr>
+    <tr><td><code>/rules/v1/decisions/{key}/simulate</code> · <code>/analyze</code></td><td>沙箱推演 / 分析——what-if 叙事的现成素材</td></tr>
+    <tr><td><code>/rules/v1/decisions/{key}/tests/run</code> · <code>/logs</code></td><td>决策测试与执行日志（审计）</td></tr>
+    <tr><td><code>/rules/v1/feel/eval</code> · <code>/script/eval</code></td><td>表达式 / 脚本试算服务</td></tr>
+  </table>
+  <h3>本体侧要动的位置</h3>
+  <table>
+    <tr><th style="width:330px">文件</th><th>角色</th></tr>
+    <tr><td><code>backend/cmx-ontology/crates/cmx-onto-app/src/outbound.rs</code></td><td>出站投递样板（flow 通道在此）——规则通道照此加：<code>ONTO_RULE_URL</code>、API Key、超时、白名单、<code>ONTO_OUTBOUND=off</code> 熄火</td></tr>
+    <tr><td><code>backend/cmx-ontology/crates/cmx-onto-model/src/action.rs</code></td><td>动作三件套定义与 <code>save_validate_action</code>（函数背书互斥校验，:745）——档2 的 function_backing 扩展点</td></tr>
+    <tr><td><code>backend/cmx-ontology/crates/cmx-onto-app/src/action_handlers.rs</code></td><td>动作执行链与写侧 PEP（<code>pep_check</code> :415）——远端求值插在解析环节</td></tr>
+    <tr><td><code>frontend/cmx-decision-graph/</code></td><td>决策图画布组件（JDM DAG）——业务专家"画图纸"的地方</td></tr>
+  </table>
+  <h3>联调速查（终端：Git Bash）</h3>
+  <pre><span class="c"># 1. 服务启停走 launcher 控制台（console 已在跑时不要手工起进程）</span>
+cd cmx-launcher &amp;&amp; ./run.bat      <span class="c"># 浏览器开 http://127.0.0.1:8100，起 cmx-ontology / cmx-rulesengine</span>
+
+<span class="c"># 2. 徒手验证规则引擎求值（服务开着时）</span>
+curl -s -X POST http://127.0.0.1:8094/rules/v1/decisions/credit-approval/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"input":{"amount":500000,"customerLevel":"B"},"options":{"trace":true,"log":true}}'
+<span class="c"># 若规则引擎 [auth] 开了 api_keys，加 -H "X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6"</span>
+
+<span class="c"># 3. 想看决策图怎么画：前端 dev</span>
+<span class="c">#    decision-graph 组件被 rulesengine 前端引用；本体工作室在 http://127.0.0.1:5173/view/onto-studio</span></pre>
+</section>
+
+<footer>平台侧讲解文档 · 依据 2026-09-20 源码现状整理 · 三档对接均为增量设计，未动任何既有内核</footer>
+</div>
+</body>
+</html>
