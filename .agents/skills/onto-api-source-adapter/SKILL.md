@@ -1,6 +1,6 @@
 ---
 name: onto-api-source-adapter
-description: 指导三方业务系统按 CMX 本体平台 API 查询协议 v1 开发数据源适配器（/onto-source/query · /onto-source/aggregate · /onto-source/schema 三端点）。当用户要求把业务系统数据以「API 数据源 / REST API 数据源 / 虚拟直查」方式接入本体平台、询问协议入参出参格式、filter 过滤 DSL 语法、能力矩阵 caps、错误码（40040/40044/40046/40047/40401）、要适配器示例代码或协议合规自测时必用。
+description: 指导三方业务系统按 CMX 本体平台 API 查询协议 v1 开发数据源适配器（/onto-source/query · /onto-source/aggregate · /onto-source/schema 三端点）。当用户要求把业务系统数据以「API 数据源 / REST API 数据源 / 虚拟直查」方式接入本体平台、询问协议入参出参格式、filter 过滤 DSL 语法、filter/JSON 转 SQL 怎么写、能力矩阵 caps、错误码（40040/40044/40046/40047/40401）、要适配器示例代码或协议合规自测时必用。
 ---
 
 # onto-api-source-adapter —— 本体 API 数据源适配器开发指南
@@ -39,6 +39,8 @@ CMX 本体平台（cmx-ontology）支持把外部业务系统的数据以「API 
    - `POST /onto-source/aggregate`——计数 / 分组计数 / 分组求和。
 2. **照抄示例改造**：[`references/adapter-example.py`](references/adapter-example.py) 是零依赖
    （Python 标准库）可运行模板，含采购订单「头+明细行」+ 供应商两个资源。把 `RESOURCES` 换成你的数据即可。
+   **底层是关系库的系统**：filter JSON → SQL 的翻译规则与可直接抄的编译器见
+   [`references/sql-translation.md`](references/sql-translation.md) + [`references/sql-builder.py`](references/sql-builder.py)。
 3. **跑合规自测**：`python3 scripts/conformance.py http://127.0.0.1:8000`（详见该文件头注释，
    支持 `--type` / `--pk-field` / `--filter-field` 等参数换成你的资源与字段）。全绿再接平台。
 4. **平台注册与绑定**（建模者在门户操作，无需写代码）：
@@ -92,7 +94,8 @@ CMX 本体平台（cmx-ontology）支持把外部业务系统的数据以「API 
 
 - filter 是**可嵌套 DSL**：`{"and":[…]}` / `{"or":[…]}` / `{"not":{…}}` / 叶子
   `{"prop":"<源字段>","op":"<算子>","value":…}`；九个算子 `eq/ne/gt/lt/ge/le/in/contains/isnull`
-  （`in` 的 `value` 是数组，`isnull` 无 `value`）。
+  （`in` 的 `value` 是数组，`isnull` 无 `value`）。关系库适配器如何把它编译成安全 SQL（白名单 +
+  参数绑定 + NULL 语义 + 方言分页）：见 [`references/sql-translation.md`](references/sql-translation.md)。
 - `filter` 里出现的字段名是**源字段名**（绑定映射的左侧），不是本体属性名——适配器直接拿它去查底层存储。
 - props 值类型约定：`string / number / boolean / ISO8601 字符串 / null / 数组`；
   **数组 = 单据明细行**（schema 里该字段 `baseType:"array"` 并带嵌套 `fields`）。
@@ -101,12 +104,17 @@ CMX 本体平台（cmx-ontology）支持把外部业务系统的数据以「API 
 - `totalMode` 三档：`exact`（回数字 total）/ `estimated`（约数）/ `none`（不给 total，
   平台前端显示「已加载 N 行」）。不声明时兜底为 `none`。
 - 资源名规则：`^[A-Za-z][A-Za-z0-9_.-]{0,127}$`（即绑定 mapping.resource 的合法值）。
+- **平台的多跳关系遍历（searchAround 链）不会整套发给你**：递归在平台侧被拆成逐跳的独立单资源
+  query，上一跳的 pk 变成下一跳的 `in` 值——适配器不做 JOIN、无状态、看不到链的全貌
+  （示例见 references/sql-translation.md §6.1）。
 
 ## 文件索引
 
 | 文件 | 用途 |
 | --- | --- |
 | `references/protocol-v1.md` | **协议 v1 全量规范（真源）**：信封 / 三端点字段表 / filter DSL 文法 / caps / 错误码 / 认证 / 单据头+行约定 |
+| `references/sql-translation.md` | **filter JSON → SQL 生成指南**：三铁律 / 九算子 WHERE 对照（NULL 语义）/ and·or·not 递归括号化 / 分页方言 / 聚合 / 明细行落地 / 端到端示例——底层是关系库的适配器必读 |
+| `references/sql-builder.py` | 可直接抄的方言感知 SQL 编译器（PG / MySQL / Oracle；白名单 + 参数绑定 + 40044/40046/40401 语义），`python3 sql-builder.py` 看编译演示 |
 | `references/adapter-example.py` | 零依赖可运行适配器模板（Python 标准库；含单据头+行）；`python3 adapter-example.py` 后用 conformance 自测 |
 | `scripts/conformance.py` | 协议合规自测（~20 项断言，参数化适配任意资源/字段） |
 | 平台侧 e2e | `backend/cmx-ontology/test/e2e/_onto_source_demo.py`（演示适配器）+ `virtual_api_source.sh`（平台全链路 37 断言），可作对照实现 |

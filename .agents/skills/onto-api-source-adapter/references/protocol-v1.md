@@ -222,8 +222,10 @@ page {offset:100, limit:50}                                   → SQL: LIMIT 50 
 ```
 
 > **SQL 拼接安全由适配器自负**：值只允许参数化绑定，字段名只允许出现在 schema 声明白名单里
-> （收到白名单外的 prop → 40044），这是适配器侧防注入的最低要求。参考实现 `eval_filter` 演示了
-> 白名单校验 + 值绑定的写法。
+> （收到白名单外的 prop → 40044），这是适配器侧防注入的最低要求。**关系库适配器的完整翻译规则
+> （九算子 WHERE 对照与 NULL 语义、and/or/not 括号化、方言分页、聚合、明细行落地）见
+> [sql-translation.md](sql-translation.md)，可直接抄的编译器见 [sql-builder.py](sql-builder.py)**；
+> 参考实现 `eval_filter` 演示了白名单校验 + 值绑定的内存求值写法。
 
 ## 5. 端点三：`POST {base}/onto-source/aggregate`
 
