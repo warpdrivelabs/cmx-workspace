@@ -27,7 +27,7 @@
 
 ## 幕③ 工作室建模治理（直改 live + 存档/回滚架构）
 
-- 页面：`/view/onto-studio`
+- 页面：`/view/onto-studio-next`
 - 上下文切换器：「供应商主数据（手动）」场景画布（4 成员+接口 GovernedMaster）→ ⟲ 重排 → ⤢ 适配
 - ⌘K 搜索「Contract」定位；点左栏「物料」→ Inspector 看共享属性挂接（lifecycleStatus 等 3 项）
 - 元素库：关系 6 / 接口 1 / 共享属性 3 / 动作 7 / 函数 4

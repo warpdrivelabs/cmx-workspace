@@ -458,7 +458,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 | 方法+路径 | 大白话作用 | 请求参数 | 谁在用 |
 | --- | --- | --- | --- |
 | `GET /funnel/mappings` | 列出全部源→对象映射 | 无 | — |
-| `POST /funnel/mappings/save` | 新建/更新映射（哪个源查询、主键取哪些列、字段怎么对应） | body：`{ objectType*, sourceQuery*, keyColumns*, titleColumn?, propertyMap*, required? }` | —（QA） |
+| `POST /funnel/mappings/save` | 新建/更新映射（哪个源查询、主键取哪些列、字段怎么对应、**读源走哪个库**） | body：`{ objectType*, sourceQuery（可空=生成式默认路径）, keyColumns*, titleColumn?, propertyMap*, required?, sourceDbId? }`；`sourceDbId` = 读源执行的数据库池 db_id（toml `[[databases]]` 池名如 `fico-db`，或注册源懒注册名 `ontosrc_<id>`），**缺省/空 = 本体库 onto_pg**；工作室「映射明细与源查询」弹框可配置（20260920 起支持） | 工作室（映射明细弹框）、onto-toolkit |
 | `POST /funnel/mappings/remove` | 删除某对象类型的映射 | body：`{ objectType* }` | — |
 | `POST /funnel/sync` | **全量同步**：读源 → 按映射转换 → 合格的写入对象库，违规的进隔离区。响应带 `{read, written, quarantined}`（原 `POST /funnel/sync/{objectType}` 已去路径化，objectType 入 body） | body：`{ objectType* }` | 工作室（数据集成卡）、onto-toolkit |
 | `GET /funnel/quarantine` | 看隔离区：哪些源行没进来、为什么（violations） | query：`objectType`（可选）、`limit`（默认100） | —（QA） |
