@@ -3,7 +3,7 @@
 > **20260919 同路径多方法整改**：**同一路径只挂一个 HTTP 方法**（GET 列表 + POST 写入不得复用同一路径，AGENTS.md §四.6 新增约束）。六类元素 / 本体 / 数据源 / 策略 / 漏斗映射等 **12 组集合路径拆分**——写侧移独立固定段：`POST /object-types` → `/object-types/save`、`POST /ontologies` → `/ontologies/create`、`POST /data-sources` → `/data-sources/create`、`DELETE /links` → `POST /links/remove`，其余同理（`/link-types/save`、`/interfaces/save`、`/shared-properties/save`、`/views/save`、`/action-types/save`、`/functions/save`、`/policies/save`、`/funnel/mappings/save`）。`GET /集合` 列表语义不变。前端四页 + dashboard + cmx-agent 测试 + onto-toolkit 脚本已同步适配。
 > **20260918 多本体改造（M1+M2）后版本**：全接口 `?ontology=` 必填（例外见 §0）、§3.7 去路径化（detail/remove/save/execute/evaluate 等 apiName 一律入 query/body）、新增 §2.5 本体管理五端点、SSE 按本体过滤。前端四页 + cmx-agent 连接器 + onto-toolkit 已同步适配。
 
-> **范围**：本体平台 `backend/cmx-ontology` 注册的全部 HTTP 接口（**98 个业务端点**，20260919 同路径拆分后口径 + 4 类服务级端点），逐个说明用途、请求参数、响应要点，并标注**哪些前端页面真的在用、哪些目前没有页面调用**。
+> **范围**：本体平台 `backend/cmx-ontology` 注册的全部 HTTP 接口（**97 个业务端点**，20260919 同路径拆分后口径、20260920 移除旧旁路 `/secure/object-sets/load` + 4 类服务级端点），逐个说明用途、请求参数、响应要点，并标注**哪些前端页面真的在用、哪些目前没有页面调用**。
 > **调用方代码依据**：`backend/cmx-container/assets/onto/web/ui-native/onto/` 下四个前端页（`designer.js` / `explorer.js` / `workshop.js` / `studio.js` + studio 八模块 + `page-kit.js`）+ `cmx-onto-app/src/dashboard.rs` 自带控制台 + 仓内 QA 脚本（`qa-backend.sh` / `qa-object.sh` / `test/e2e` 21 个 / `test/fe` 19 个）。
 > **写作日期**：2026-09-18，以当日 main 分支代码为准（cmx-ontology 最新提交 `5614a85`；对照重设计案 `documents/plans/20260917_cmx-ontology_状态生命周期与版本发布及场景机制重设计方案.md`）。
 
@@ -62,7 +62,7 @@
 | §14 对象实例 objects/links | 7 | — | ✔(钻取) | — | — | — | ✔ |
 | §15 对象集 load/aggregate | 2 | ✔(聚合) | ✔ | ✔ | ✔(计数) | — | ✔ |
 | §16 动作引擎辅助（日志/Outbox/代理） | 8 | ✔(模板/流程/报表) | — | — | — | — | ✔ |
-| §17 安全策略 policies/secure | 4 | — | — | — | — | — | ✔ |
+| §17 安全策略 policies | 3 | — | — | — | — | — | ✔ |
 | §18 数据集成 funnel | 7 | — | — | — | — | — | ✔(+MDM push) |
 | §19 反向导入 import + 流程回调 | 3 | — | — | — | — | — | ✔(+flow) |
 | §20 SDK 生成 osdk + 统计 stats | 2 | — | — | — | — | ✔(stats) | ✔ |
@@ -438,16 +438,15 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 
 ---
 
-## 17. 安全策略 policies / secure（4 个端点）——前端暂未使用
+## 17. 安全策略 policies（3 个端点）——前端暂未使用
 
-"策略"= 行级过滤 + 列级脱敏规则：谁能看哪些行、哪些列要打码。读侧已从"可选增强"升级为**硬门**（`/object-sets/load` 与 Search-Around 都过 PEP）；策略的管理界面还没建。
+"策略"= 行级过滤 + 列级脱敏规则：谁能看哪些行、哪些列要打码。读侧已从"可选增强"升级为**硬门**（`/object-sets/load`、聚合与 Search-Around 都过 PEP：deny 403 / 受控类型默认拒 / 行残差折入 / 命中 marking 的列直接移除）；策略的管理界面还没建。旧旁路 `POST /secure/object-sets/load` 已于 20260920 移除——主链路即唯一安全路径。
 
 | 方法+路径 | 大白话作用 | 请求参数 | 谁在用 |
 | --- | --- | --- | --- |
 | `GET /policies` | 列出全部策略 | 无 | — |
 | `POST /policies/save` | 新建/更新一条策略 | body：`{ apiName*，displayName?, objectType?(作用的对象类型), subjectKind?(role/user，默认role), subject*, rowFilter?: [谓词数组，命中则这些行可见], denyMarkings?: [禁止查看的列标记], denyActions?: [禁止执行的动作], status?(默认active) }` | —（QA） |
 | `POST /policies/remove` | 删除策略 | body：`{ apiName* }` | —（QA） |
-| `POST /secure/object-sets/load` | **显式带安全加载**：同 §15 的对象集查询，响应多 `appliedPolicies` 和 `subjects` | body：`{ objectSet*, limit?, offset?, subjects? }` | —（QA） |
 
 ---
 
@@ -500,7 +499,7 @@ Palantir 式**软治理**：资源状态 `experimental → active → deprecated
 - `GET /action-logs`、`GET /action-outbox`、`GET /action-outbox/config`、`POST /action-outbox/dispatch`、`POST /action-outbox/dispatched`（id 入 body）—— 审计与 Outbox 投递闭环（**定时自动投递已内置**，手动 dispatch 主要留运维补投；QA 脚本全覆盖）。
 
 **③ 治理能力先行、页面未建**
-- 安全策略 4 个（`policies` ×3 + `secure/object-sets/load`）——O6 动态安全已通 QA（且读侧硬门已在生产查询路径生效），缺策略管理界面；
+- 安全策略 3 个（`policies` ×3；旧旁路 `secure/object-sets/load` 已移除）——O6 动态安全已通 QA（且读侧硬门已在生产查询路径生效），缺策略管理界面；
 - 数据集成 6 个（`funnel/mappings|sync|quarantine|pipeline-status`）——O3 已通 QA，缺配置界面（`funnel/push` 由 MDM 调，不算闲置）；
 - 导入 2 个（`import/doc|dct`）——设计给 cmx-model 侧或运维脚本调用；
 - `GET /osdk/typescript`、openapi/swagger —— 工具向。

@@ -291,7 +291,6 @@ curl -s -X POST -H "$AK" -H 'Content-Type: application/json' \
 | `POST /api/onto/v1/object-sets/load?ontology=…` | 对象集加载（分页 limit/offset；view/include 可选） |
 | `POST /api/onto/v1/object-sets/aggregate?ontology=…` | 对象集聚合（count/groupCount/groupSum） |
 | `POST /api/onto/v1/functions/evaluate?ontology=…` | 函数求值（`apiName` 入 body；标量/对象/聚合三形态） |
-| `POST /api/onto/v1/secure/object-sets/load?ontology=…` | 同 load，显式主体读（subjects 权限覆盖的独立路径） |
 
 > 所有端点 `?ontology=` 必填；`ontology=default_ontology` 即演示本体。
 
