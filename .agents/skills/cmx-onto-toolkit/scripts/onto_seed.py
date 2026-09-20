@@ -32,12 +32,12 @@ DEFAULT_ONTOLOGY = "default_ontology"
 
 # 段 → (api 路径模板, 是否逐条 POST)
 SECTION_APIS = {
-    "sharedProperties": "/shared-properties",
-    "interfaces": "/interfaces",
-    "objectTypes": "/object-types",
-    "linkTypes": "/link-types",
-    "functions": "/functions",
-    "actions": "/action-types",
+    "sharedProperties": "/shared-properties/save",
+    "interfaces": "/interfaces/save",
+    "objectTypes": "/object-types/save",
+    "linkTypes": "/link-types/save",
+    "functions": "/functions/save",
+    "actions": "/action-types/save",
     "dctImports": "/import/dct",
     "docImports": "/import/doc",
 }
@@ -102,7 +102,7 @@ def run_section(name, spec, base, key, ontology, summary):
     elif name == "funnelMappings":
         for m in items:
             ot = m["objectType"]
-            call(base, "/funnel/mappings", m, key, ontology)
+            call(base, "/funnel/mappings/save", m, key, ontology)
             summary.append(f"funnel.mapping: {ot} (db={m.get('sourceDbId') or 'onto_pg'})")
             if not spec.get("_skipFunnelSync"):
                 rep = call(base, "/funnel/sync", {"objectType": ot}, key, ontology)
@@ -121,12 +121,12 @@ def run_section(name, spec, base, key, ontology, summary):
         for link, ls in by_link.items():
             ok = 0
             for l in ls:
-                call(base, "/links", {"link": l["link"], "aPk": l["aPk"], "bPk": l["bPk"]}, key, ontology)
+                call(base, "/links/save", {"link": l["link"], "aPk": l["aPk"], "bPk": l["bPk"]}, key, ontology)
                 ok += 1
             summary.append(f"links: {link} ×{ok}")
     elif name == "views":
         for v in items:
-            call(base, "/views", v, key, ontology)
+            call(base, "/views/save", v, key, ontology)
             summary.append(f"view: {v['apiName']}「{v.get('displayName')}」 objects={v.get('members', {}).get('objects')}")
     elif name == "snapshot":
         rep = call(base, "/snapshots", {"summary": items if isinstance(items, str) else items.get("summary", "")}, key, ontology)

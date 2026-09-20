@@ -17,7 +17,7 @@
      "status": "active"}
   ],
 
-  "objectTypes": [                    // POST /object-types（camelCase）
+  "objectTypes": [                    // POST /object-types/save（camelCase）
     {"apiName": "Supplier", "displayName": "供应商",
      "dam": {"domain": "supplychain", "application": "procurement", "module": "supplier-mgmt"},
      "primaryKey": "supplierCode", "titleProperty": "name",
@@ -100,7 +100,7 @@
     {"apiName": "Currency", "displayName": "币种", "items": [{"code": "CNY", "name": "人民币"}]}
   ],
 
-  "funnelMappings": [                 // POST /funnel/mappings + POST /funnel/sync（body {objectType}）
+  "funnelMappings": [                 // POST /funnel/mappings/save + POST /funnel/sync（body {objectType}）
     {"objectType": "Supplier",
      "sourceDbId": "fico-db",           // 缺省=本体库 onto_pg；跨库需 toml [[databases]] + source_db_id 列迁移
      "sourceQuery": "SELECT code, name, (CASE WHEN … END)::double precision AS rating FROM cm_supplier",
@@ -115,11 +115,11 @@
     "Material": [{"pk": "GYL-001", "title": "45号碳钢圆钢", "properties": {"materialCode": "GYL-001", …}}]
   },
 
-  "links": [                          // POST /links {link, aPk, bPk}（两端对象须已存在）
+  "links": [                          // POST /links/save {link, aPk, bPk}（两端对象须已存在）
     {"link": "supplierOf", "aPk": "SUP0001", "bPk": "GYL-001"}
   ],
 
-  "views": [                          // POST /views（manual 物化成员）
+  "views": [                          // POST /views/save（manual 物化成员）
     {"apiName": "view-supplier-master", "displayName": "供应商主数据", "description": "…",
      "dam": {…}, "source": "manual",
      "members": {"objects": ["Supplier", "Material"], "interfaces": ["GovernedMaster"]}}

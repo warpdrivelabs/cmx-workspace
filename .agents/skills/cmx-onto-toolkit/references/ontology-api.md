@@ -8,10 +8,10 @@
 
 | 接口 | body 要点 |
 |---|---|
-| `POST /object-types` | ObjectTypeDef 全量 upsert（camelCase；乐观锁 version 留 0 盲写） |
-| `POST /link-types` | objectTypeA/B 必填；cardinality 缺省 oneToMany。`backing` 页面形状：`{"fk":{"sourceProperty","side"?,"targetProperty"?}}`——side 缺省按基数推导（oneToMany→b / manyToOne→a / oneToOne→a），targetProperty 缺省=**对端主键 pk 列**（严格 Palantir 语义），显式指定=对端属性对属性 JOIN（外键存非 pk 列场景）；锚点跨端校验，对端无此属性 400 拒。多对多专用：`{"joinTable":{"table","leftColumn","rightColumn"}}` 或 `{"intermediary":{"objectType","leftProperty","rightProperty"}}`。缺 backing = Edge 物化 ol_edge（配合 `POST /links` 建边） |
-| `POST /interfaces` / `/shared-properties` | implements 校验：实现者须有同名同 baseType 属性 |
-| `POST /functions` / `/action-types` | status="active" 才可求值/执行 |
+| `POST /object-types/save` | ObjectTypeDef 全量 upsert（camelCase；乐观锁 version 留 0 盲写） |
+| `POST /link-types/save` | objectTypeA/B 必填；cardinality 缺省 oneToMany。`backing` 页面形状：`{"fk":{"sourceProperty","side"?,"targetProperty"?}}`——side 缺省按基数推导（oneToMany→b / manyToOne→a / oneToOne→a），targetProperty 缺省=**对端主键 pk 列**（严格 Palantir 语义），显式指定=对端属性对属性 JOIN（外键存非 pk 列场景）；锚点跨端校验，对端无此属性 400 拒。多对多专用：`{"joinTable":{"table","leftColumn","rightColumn"}}` 或 `{"intermediary":{"objectType","leftProperty","rightProperty"}}`。缺 backing = Edge 物化 ol_edge（配合 `POST /links/save` 建边） |
+| `POST /interfaces/save` / `/shared-properties/save` | implements 校验：实现者须有同名同 baseType 属性 |
+| `POST /functions/save` / `/action-types/save` | status="active" 才可求值/执行 |
 | `GET /manifest` | 六类薄清单（页面左树真源） |
 
 ## 实例层
@@ -19,7 +19,7 @@
 | 接口 | body 要点 |
 |---|---|
 | `POST /objects/save-batch` | body `{objectType, items:[{pk?, title?, properties:{…}}]}` 同事务；**空数组=只建表**（激活类型可查询） |
-| `POST /links` | `{link, aPk, bPk}`；两端对象须已存在 |
+| `POST /links/save` | `{link, aPk, bPk}`；两端对象须已存在（删边 `POST /links/remove`，同 body） |
 | `POST /objects/{type}/{pk}/modify` | `{set, expectedUpdatedAt?}`（None=盲写） |
 | `POST /object-sets/load` | 对象集代数：`base/filter/searchAround{source,link,direction}/union/intersect/subtract/static` 任意嵌套 → 编译为一条 SQL；谓词 eq/ne/gt/ge/lt/le/in/contains/isNull/and/or/not |
 | `POST /object-sets/aggregate` | `{objectSet, aggregation:{kind:"count"}}` 或 `{kind:"groupSum", groupBy, sum}` / groupCount |
@@ -31,7 +31,7 @@
 |---|---|
 | `POST /import/dct` | `{apiName, displayName, items:[{code,name}]}` 幂等；字典项当场物化 |
 | `POST /import/doc` | 单对象模型（行折叠嵌套属性）；不产 LinkType、不导实例；cmx_origin 溯源 |
-| `POST /funnel/mappings` | `{objectType, sourceDbId?, sourceQuery, keyColumns, titleColumn, propertyMap, required}` |
+| `POST /funnel/mappings/save` | `{objectType, sourceDbId?, sourceQuery, keyColumns, titleColumn, propertyMap, required}` |
 | `POST /funnel/sync` | body `{objectType}` 全量同步；返回 `{objectType, written}`；违规入 oo_quarantine；**sync 覆盖对象全部 props** |
 | `GET /funnel/quarantine?objectType=` / `GET /funnel/pipeline-status/{type}` | 隔离区 / 管道三段状态 |
 | `POST /action-types/{api}/dry-run` \| `/execute` | `{params:{…}, actor, subjects?}`；校验上下文含 `objects.<参数>`（object 参数自动装载对象状态，表达式可写 `objects.doc.status=='open'`）；dry-run/execute 响应含 `proposedChanges`（from→to diff）+ `executionLog` + `sideEffectPreview`，校验失败错误体带 `adminDetail`/`executionLog` |

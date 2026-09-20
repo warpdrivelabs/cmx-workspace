@@ -21,7 +21,7 @@
   Supplier 13 / Material 10 / Warehouse 3 / Contract 3 / Employee 8 / Currency 6 / Uom 14
   - `GET /funnel/pipeline-status/Supplier`：extract/map/index 三段 ready + objects=13 + quarantined=1
   - `GET /funnel/quarantine?objectType=Supplier`：SUP-BAD 行 + violations（name 缺失被拦）——数据质量闸门
-  - `POST /funnel/sync/Supplier` 现场 re-sync：read=14/written=13/quarantined=1
+  - `POST /funnel/sync`（body `Supplier`）现场 re-sync：read=14/written=13/quarantined=1
 - 讲：源是 fico 库 cm_* 主数据表（sourceDbId 跨库），SQL LEFT JOIN 派生显示列（物料分类/单位、部门/岗位）、CASE 派生评分/准时率；**类型定义与数据全部以主数据平台为真源**——MDM 元数据（DCT）deploy 建表，漏斗拉取进本体；点开任一供应商，对象列表 **id 列=cm_supplier.id 真实主键**（SUP0001→1，SUP0010→56051595943937 雪花号），这就是「MDM 主键在本体的镜像」
 - ⚠️ 演示日铁律：全场只允许这一处 sync（幕⑤ Supplier），其余类型一律不再 sync、不重跑 onto_seed
 
@@ -72,7 +72,7 @@
 - **见证自动回流：不手动 sync**——MDM Outbox 事件 → webhook → 本体 funnel/push 自动 sync → explorer/workshop **2 秒内出现新供应商**
 - 台后证据：`md_event_log` 事件 / `md_dispatch_log` delivered / onto 日志 `funnel/push 200`
 - 讲：动作发起的是治理申请（不绕过 MDM 唯一写入口）→ 审批 → 黄金记录 → 事件驱动秒级回流；**双向打通全程零手动集成**
-- 兜底：分发投递失败自动退避重试（幂等）；极端情况手动 `POST /funnel/sync/Supplier` 兜底
+- 兜底：分发投递失败自动退避重试（幂等）；极端情况手动 `POST /funnel/sync`（body `{"objectType":"Supplier"}`）兜底
 - 排查（2026-09-13 实测踩坑）：订阅行 `channel_config` 是保存时的**快照**，改端点后需重存订阅才刷新——残留旧地址会投递 404 直接置 dead（不重试）。自检 `GET /api/mdm/dispatches/stats`；重投 `POST /api/mdm/dispatches/retry {"ids":[…]}`（dead 行也可重投，重投后 delivered 即通）。两动作 E2E 已当日彩排验证：submitSupplierReview（SUP0008→已通过回写）与 applyNewSupplier（CR 激活→铸号→自动回流对象出现）全链路通。
 
 ## 幕⑥ 本体 action 发起流程（用 SUP0009 东华链条）
@@ -97,5 +97,5 @@ curl -s -X POST -H "$AK" -H "Content-Type: application/json" $B/action-types/sub
 curl -s -X POST -H "$AK" -H "Content-Type: application/json" $B/action-outbox/dispatch -d '{}'
 # 待办审批需委托令牌（sub=admin id 7503326638169403392，密钥 a7k9m2p4x8q1w5e3r6t0y7u2i9o4p1）——见 cmx-flow-toolkit 模式A
 # 幕⑤ 漏斗
-curl -s -X POST -H "$AK" $B/funnel/sync/Supplier
+curl -s -X POST -H "$AK" -H "Content-Type: application/json" -d '{"objectType":"Supplier"}' $B/funnel/sync
 ```
