@@ -11,7 +11,7 @@
 | `backend/` | 全部 Rust 后端仓（10 个独立 Git 仓，见 §1.2） |
 | `frontend/` | 全部前端仓（4 个独立 Git 仓：`cmx-enterprise-portal` npm workspace / `cmx-mega-sheet` / `cmx-ontology-graph` / `cmx-decision-graph`） |
 | `cmx-launcher/` | 开发服务控制台（独立仓，Python FastAPI + 原生 JS，http://127.0.0.1:8100）：一键启停 / 实时日志 / target 磁盘治理 |
-| `.agents/skills/` | 根级跨子项目技能 12 个（见 §三） |
+| `.agents/skills/` | 根级跨子项目技能 13 个（见 §三） |
 | `documents/` | 人工方案库（新方案唯一去处，见 §四、8） |
 | `docs/` | 历史 / 专题设计资料区（只读参考，见 §九） |
 | `scripts/` | 根级脚本：`publish-assets.sh` / `check-asset-ownership.py` / `generate_*.py` ×3 |
@@ -57,7 +57,7 @@
 
 ## 三、技能索引
 
-需要时点开 `.agents/skills/<name>/SKILL.md`，不要求预读。根目录 12 个 + `backend/cmx-container/.agents/skills/` 12 个。
+需要时点开 `.agents/skills/<name>/SKILL.md`，不要求预读。根目录 13 个 + `backend/cmx-container/.agents/skills/` 12 个。
 
 **cmx-container（Rust 后端）**：`axum-handler-generator`（REST handler）、`modql`（Filter/Entity 动态查询）、`cmx-sql-execution`（手写 SQL / DataValue）、`pg-table-generator`（建表 DDL）、`wasm-plugin-developer`、`plugin-metadata-generator`（插件表 / 种子）、`plugin-fn-doc`（`#[plugin_fn]` 注释）、`service-orchestration-generator`（编排 Flow JSON）、`rust-comment-convention`、`clippy-fix`、`rust-arch-review`、`doc-generator`。
 
@@ -77,6 +77,7 @@
 | `workspace-init` | 刚克隆根仓后的工作区初始化（"初始化工程"触发，幂等克隆 15 个子仓） |
 | `config-sync` | 全工作区唯一版（原 cmx-container 内同名技能已删除）：新增 / 修改 TOML 配置项或环境变量后同步模板与手册 |
 | `sql-guide` | 全工作区唯一版（原 cmx-container 内同名技能已删除）：SQL 真源在 `backend/cmx-container/docs/sql/` |
+| `onto-api-source-adapter` | 三方业务系统按协议 v1 开发本体 API 数据源适配器（onto-source 三端点入参出参 / filter DSL / caps / 错误码 / 可运行示例 + conformance 自测） |
 
 ## 四、全局通用规则
 
