@@ -2,15 +2,19 @@
 
 > 场景规格：`scenario-spec.json`（本目录）。数据全部梳理自 `frontend/cmx-ontology-graph/demo/收入确认本体Web原型_v1.3.3原始.html`（ONTOLOGY_OBJECTS / ONTOLOGY_RELATIONS / OBJECT_LOGIC / JUDGMENT_ROWS / BUSINESS_CHAIN_CONTEXT / EVIDENCE_LEDGER / ADJUSTMENT_ROWS / SETTLEMENT_GROUPS / CASES / ORG_HIERARCHY / RULE_DIMENSIONS）。
 >
-> **状态：仅归档，未执行入库**（2026-09-18 按用户要求暂缓执行）。执行命令见下节。
+> **状态：已入库**（2026-09-19 执行，落**独立本体 `finance_rev`**「收入确认（财务域）」，与采购域 default_ontology 隔离——多本体适配（方案 20260918 M1/M2）的首个实战）。重跑/补数命令见下节。
 
-## 一、执行方式（待用户指令后）
+## 一、执行方式
 
 ```bash
 # 前置：onto 服务已启动（cmx-launcher 或 cd backend/cmx-ontology && ./onto.sh）
+# 本体不存在先注册（全局接口，不带 ontology）：
+curl -s -X POST http://127.0.0.1:8097/api/onto/v1/ontologies/create \
+  -H 'X-API-Key: cmx_sk_dev_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6' -H 'Content-Type: application/json' \
+  -d '{"apiName":"finance_rev","displayName":"收入确认（财务域）","description":"收入确认演示场景——独立于采购域的第二本体，验证多本体隔离"}'
 python3 .agents/skills/cmx-onto-toolkit/scripts/onto_seed.py \
   --spec .agents/skills/cmx-onto-toolkit/examples/revenue-recognition/scenario-spec.json \
-  --base http://127.0.0.1:8097
+  --base http://127.0.0.1:8097 --ontology finance_rev
 ```
 
 - 规格**无 funnelMappings**，`--skip` 无需配置；全段 upsert 幂等可重跑。

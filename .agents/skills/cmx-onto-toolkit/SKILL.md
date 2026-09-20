@@ -10,11 +10,11 @@ description: 指导 AI 为任意企业业务场景设计并生成本体平台（
 本技能是**方法论**而非一次性造数器：指导 AI 为**任意企业业务场景**产出「场景规格 JSON」，再用参数化脚本执行。规格与执行分离——换场景只换规格，脚本通用。
 
 工具链：
-- `scripts/onto_seed.py` —— 场景规格驱动造数器（sharedProperties→interfaces→objectTypes→linkTypes→functions→actions→dctImports→funnelMappings(+sync)→objects→links→views→snapshot→docImports，全 upsert 幂等可重跑）。
+- `scripts/onto_seed.py` —— 场景规格驱动造数器（sharedProperties→interfaces→objectTypes→linkTypes→functions→actions→dctImports→datasourceBind→funnelMappings(+sync)→objects→links→views→snapshot→docImports，全 upsert 幂等可重跑）。
 - `scripts/onto_clean.py`（或手写 psql）—— 清库（见「清库」节）。
 - `examples/procurement/` —— 采购供应链完整范例（第一个实战归档）：`scenario-spec.json` + `seed_po_docs.py`（业务库单据灌数）+ `walkthrough.md`（演示走查手册）。
 
-架构口径（演示叙事的锚）：**主数据"存"本体（漏斗物化进 oo_*）· 单据"映射查"（import/doc 只入定义，实例留业务库，explorer「在业务系统中查看」跳转）· Action 只写 oo_ 不碰业务表**。
+架构口径（演示叙事的锚）：**主数据"存"本体（漏斗物化进 oo_*）· 实时下推（虚拟 bind，keyColumns 恰 1 列）是物化的对称替代（查询下发源库只读，不落 oo_）· 单据"映射查"（import/doc 只入定义，实例留业务库，explorer「在业务系统中查看」跳转）· Action 只写 oo_ 不碰业务表**。
 
 ## 七步方法论
 
@@ -33,7 +33,9 @@ description: 指导 AI 为任意企业业务场景设计并生成本体平台（
 
 先问「业务系统里已有什么」：
 - **简单字典**（币种/单位等 code+name）→ 规格写 `dctImports` 段（import/dct：建参照类型 + 字典项当场物化为对象）。
-- **富属性主数据**（供应商/物料等，业务库已有表）→ 规格写 `funnelMappings` 段：sourceQuery 可用 SQL CASE **派生**演示列（rating/onTimeRate），可 UNION 一行坏数据演示隔离区拦截；跨业务库读源须 `sourceDbId`（本体 toml 需配对应 `[[databases]]` 段，见坑表）。注意：**sourceQuery 只读，漏斗 sync 会整体覆盖对象 props**。
+- **富属性主数据**（供应商/物料等，业务库已有表）→ 二选一，物化/虚拟对称：
+  - **物化漏斗**（要落库可写、可隔离区演示）→ 规格写 `funnelMappings` 段：sourceQuery 可用 SQL CASE **派生**演示列（rating/onTimeRate），可 UNION 一行坏数据演示隔离区拦截，也可留空走生成式默认路径（resource+映射自动生成 SELECT）；跨业务库读源须 `sourceId`（注册源，优先）或 `sourceDbId`（本体 toml `[[databases]]` 段，见坑表）。注意：**sourceQuery 只读，漏斗 sync 会整体覆盖对象 props**。
+  - **虚拟直查**（只要实时只读下推、不落库）→ 规格写 `datasourceBind` 段（`POST /object-types/datasource/bind`，mode=virtual；keyColumns **恰 1 列**；查询实时下推源库，不产 oo_ 数据）。注册源先 `POST /data-sources/create`（密码走 passwordEnv）。
 - **本体扩展实体**（仓库/合同等业务系统没有的）→ 规格写 `objectTypes` + `objects` 段原生建模。
 - **单据**（订单/凭证）→ 规格写 `docImports` 段（import/doc：单对象模型，行折叠为嵌套层块属性，不产关系不导实例）；要页面看真实数据需另 deploy DOC 元数据到业务库（参考 examples/procurement/seed_po_docs.py 头注释与 cmx-model deploy API）。
 
@@ -49,7 +51,7 @@ python3 .agents/skills/cmx-onto-toolkit/scripts/onto_seed.py \
   [--api-key cmx_sk_dev_...] [--ontology default_ontology] \
   [--skip funnelSync,links] [--only objectTypes,functions]
 
-> M1 起全部 onto 接口必带 `?ontology=`（脚本 `--ontology` 缺省 default_ontology）；批量写对象与漏斗同步已去路径化（`POST /objects/save-batch`、`POST /funnel/sync`）。
+> M1 起全部 onto 接口必带 `?ontology=`（脚本 `--ontology` 缺省 default_ontology）；批量写对象与漏斗同步已去路径化（`POST /objects/save-batch`、`POST /funnel/sync`）。目标本体不存在先注册：`POST /ontologies/create {apiName, displayName}`（多本体隔离先例：收入确认场景独立 finance_rev 本体，与采购域 default_ontology 互不可见——**一场景一本体**是推荐隔离粒度；oo_ 表物理共享、行内 `ontology_id` 列隔离，同名类型跨本体可共存）。
 ```
 写规格前必读 `references/scenario-spec.md`（schema 契约）与 `references/ontology-api.md`（接口速查）。
 
@@ -77,6 +79,8 @@ psql "$ONTO_DB_URL" -c "DO \$\$ DECLARE t text; BEGIN FOR t IN SELECT tablename 
 ```
 清库前 `pg_dump` 备份；**只清本体库，业务库（fico 等）只增不清**。
 
+> **多本体注意**：上面 TRUNCATE 清的是**全部本体**的定义（om_* 表按 `ontology_id` 列区分本体）。只想清某一个本体：`DELETE FROM <om_表> WHERE ontology_id='<apiName>'`（oo_ 行同理：`DELETE FROM oo_<type> WHERE ontology_id=…`）；`om_ontology` 注册行与 `om_data_source` 注册源不在清库列表，保留。
+
 ## 常见坑（实战教训）
 
 | 坑 | 正解 |
@@ -94,9 +98,13 @@ psql "$ONTO_DB_URL" -c "DO \$\$ DECLARE t text; BEGIN FOR t IN SELECT tablename 
 | launcher 重启 | `POST {sid}/restart` 用的是**保存的 toml 设置**；显式传 toml 前先 `PUT /settings`，看响应 `injected` 字段确认 |
 | 外部进程占 8097 | launcher 重启杀不掉用户手动起的进程——先 `ss -tlnp \| grep 8097` 找 pid kill 再走 launcher |
 | studio ⚠1 告警 | 状态栏 ⚠ 计数来自类型定义校验（如 PurchaseOrder 嵌套层块），演示前看一眼 Inspector 消除 |
-| FK 关系遍历查不出数据 | 外键值与对端 pk 不同型（外键存代理 id、对端 pk 是业务键）——显式 `backing.fk.targetProperty` 指向对端真实存放的属性，或改数对齐；一跳便捷端点 `GET /objects/{type}/{pk}/links/{link}` 快速鉴别 |
+| FK 关系遍历查不出数据 | 外键值与对端 pk 不同型（外键存代理 id、对端 pk 是业务键）——显式 `backing.fk.targetProperty` 指向对端真实存放的属性，或改数对齐；一跳便捷端点 `POST /objects/links`（`{objectType, pk, link}`）快速鉴别 |
 | 对象保存后画布不刷新（studio） | 20260915 已修（保存后 overlay 清单 + 重渲画布）；若遇旧页面先强刷 |
 | 动作 logic 落库成 `[null]` | om_action_type.logic 必须是干净对象数组：空编辑集写 `[]`，禁止 null/`[null]`（脏项让 studio Inspector 渲染崩、执行解析挂）；onto_seed.py POST 前自动剔除，DB 手修参照 `UPDATE om_action_type SET logic='[]' WHERE api_name='…'` |
+| pipeline-status 查不到/404 | 参数名是 **snake_case `object_type`**（PipelineQuery 无 rename_all）：`?objectType=` 静默丢值返回空，路径段写法 `/funnel/pipeline-status/{type}` 直接 404；正解 `GET /funnel/pipeline-status?object_type=<apiName>`（20260920 实战教训） |
+| 虚拟直查 bind 400 | BindReq.keyColumns **恰 1 列**（pk 桥接 + 固定排序靠单列锚）；多列联合主键是物化映射的能力。resource 必填（schema.table）；mode 只接受 "virtual"，物化走 mappings/save 无须 bind |
+| 注册源 probe unreachable | om_data_source.config 只存 `passwordEnv`（环境变量名，如 ONTO_SRC_FICO_PW）不落明文——先确认该变量在 onto 进程环境里；`GET /data-sources/schema` 只认注册源 id，toml db_id 的反射走 `POST /data-sources/probe` |
+| 多本体造数落错域 | 接口/脚本不带 `--ontology` 一律落 default_ontology；先 `POST /ontologies/create` 注册目标本体再 `--ontology` 指定。oo_ 表行内 `ontology_id` 隔离，同名类型跨本体可共存；漏斗映射 `sourceId` 优先于 `sourceDbId`（`source_id`/`source_db_id` 双读） |
 
 ## 交付约定
 

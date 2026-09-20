@@ -1,6 +1,6 @@
 # 场景规格（scenario-spec）schema 契约
 
-> onto_seed.py 的输入。所有段可省略；执行顺序固定：sharedProperties → interfaces → objectTypes → linkTypes → functions → actions → dctImports → funnelMappings(+sync) → objects → links → views → snapshot → docImports。全部 upsert 幂等。
+> onto_seed.py 的输入。所有段可省略；执行顺序固定：sharedProperties → interfaces → objectTypes → linkTypes → functions → actions → dctImports → datasourceBind → funnelMappings(+sync) → objects → links → views → snapshot → docImports。全部 upsert 幂等。
 
 ```jsonc
 {
@@ -100,12 +100,28 @@
     {"apiName": "Currency", "displayName": "币种", "items": [{"code": "CNY", "name": "人民币"}]}
   ],
 
-  "funnelMappings": [                 // POST /funnel/mappings/save + POST /funnel/sync（body {objectType}）
+  "datasourceBind": [                 // POST /object-types/datasource/bind —— 虚拟直查绑定（唯一写入口；
+                                      //   物化模式无须 bind = 无绑定缺省，走 funnelMappings 即可）
+    {"objectType": "VCustomer", "mode": "virtual",
+     "sourceId": "fico-standalone",  // om_data_source 注册源 id（M1b 起）；也接受 toml [[databases]] db_id
+     "resource": "public.src_vcust", // schema.table 源表名，必填
+     "keyColumns": ["cust_id"],      // ★ 虚拟绑定恰 1 列（pk 桥接 + 固定排序都靠单列锚，多列 400）
+     "titleColumn": "cust_name",
+     "propertyMap": [{"source": "cust_id", "property": "id"}, {"source": "cust_name", "property": "name"}],
+     "required": []}                 // 查询实时下推源库只读，不落 oo_ 数据；普通 object-types/save
+  ],                                 //   会剥离 datasource 指针（E2）——绑定只能走本段或 bind API
+
+  "funnelMappings": [                 // POST /funnel/mappings/save + POST /funnel/sync（body {objectType}）。
+                                      //   只建物化映射（mode 恒 materialized）；virtual 只能经 datasourceBind 建立
     {"objectType": "Supplier",
-     "sourceDbId": "fico-db",           // 缺省=本体库 onto_pg；跨库需 toml [[databases]] + source_db_id 列迁移
+     "sourceId": "fico-standalone",  // 注册源 om_data_source.id（优先）；兼容旧 sourceDbId（toml [[databases]] db_id，
+                                     //   或生效池名 ontosrc_<注册源id>）；双双缺省 = 本体库 onto_pg
+     "resource": "public.cm_supplier", // 源表名（schema.table），选填；sourceQuery 为空时的生成式取数对象
      "sourceQuery": "SELECT code, name, (CASE WHEN … END)::double precision AS rating FROM cm_supplier",
-                                        // 原生 SQL；可用 CASE 派生演示列、UNION 坏行演示隔离区
-     "keyColumns": ["code"],            // 拼 pk（多列 '|' 连接）
+                                     // 原生 SQL，可空：空 = 由 resource+propertyMap 生成参数化 SELECT（生成式默认路径）；
+                                     //   可用 CASE 派生演示列、UNION 坏行演示隔离区。注意：sourceQuery 只读，
+                                     //   漏斗 sync 会整体覆盖对象 props
+     "keyColumns": ["code"],            // 拼 pk（多列 '|' 连接；物化可多列联合，虚拟绑定才限单列）
      "titleColumn": "name",
      "propertyMap": [{"source": "code", "property": "supplierCode"}],
      "required": ["name"]}              // 映射后为空 → 违规入 oo_quarantine（sync 前清旧隔离区）

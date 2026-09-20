@@ -6,7 +6,8 @@ onto_seed.py —— 本体平台演示数据·规格驱动造数器
 读「场景规格 JSON」（scenario-spec），按依赖顺序调 cmx-ontology REST API 灌数：
 
     sharedProperties → interfaces → objectTypes → linkTypes → functions → actions
-    → dctImports（import/dct，字典项物化） → funnelMappings（+sync，支持跨库 sourceDbId）
+    → dctImports（import/dct，字典项物化） → datasourceBind（虚拟直查绑定，keyColumns 恰 1 列）
+    → funnelMappings（+sync，物化映射；sourceQuery 可空=生成式路径，支持 sourceId/sourceDbId）
     → objects（批量 upsert） → links（关系边） → views（场景视图） → snapshot（存档基线）
     → docImports（import/doc，单据只入定义）
 
@@ -42,7 +43,7 @@ SECTION_APIS = {
     "docImports": "/import/doc",
 }
 ORDER = ["sharedProperties", "interfaces", "objectTypes", "linkTypes", "functions", "actions",
-         "dctImports", "funnelMappings", "objects", "links", "views", "snapshot", "docImports"]
+         "dctImports", "datasourceBind", "funnelMappings", "objects", "links", "views", "snapshot", "docImports"]
 
 
 class SeedError(Exception):
@@ -99,6 +100,10 @@ def run_section(name, spec, base, key, ontology, summary):
             call(base, path, sanitize_def(item), key, ontology)
             label = item.get("apiName") or item.get("objectType") or f"#{i + 1}"
             summary.append(f"{name}: {label}")
+    elif name == "datasourceBind":
+        for b in items:
+            call(base, "/object-types/datasource/bind", b, key, ontology)
+            summary.append(f"datasource.bind: {b['objectType']} → {b.get('sourceId')} ({b.get('mode', 'virtual')})")
     elif name == "funnelMappings":
         for m in items:
             ot = m["objectType"]
