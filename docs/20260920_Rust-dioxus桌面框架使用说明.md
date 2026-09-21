@@ -1,0 +1,566 @@
+# Rust Dioxus 桌面框架详细使用说明
+
+> **定位**：Dioxus 是**组件 + RSX + 信号**的全 Rust 跨端 UI 框架——用 React 的心智（组件 / Props / Hooks），但状态用**信号**、更新靠**订阅**（细粒度、非虚拟 DOM 全树 diff）。**一份代码目标 Web / 桌面 / 移动 / 全栈**。
+> **诚实前提**：**Dioxus 桌面今天 = 系统 WebView**（wry/tao，与 Tauri 同底座），并非 iced/egui 那样的自绘；差异在「UI 全用 Rust RSX 写」而非 JS/HTML。自研的 **Blitz/Dioxus Native**（WGPU 直渲 HTML/CSS）是未来方向、仍属实验。
+> **版本基线（2026-09）**：Dioxus **0.7.x**（dioxus-desktop 0.7.x）。0.7 带来 **Subsecond 热补丁**（连 Rust 逻辑都能热替换）。框架年轻、迭代极快，**版本间破坏性变更偏多**。
+> **一句话取舍**：给「前端背景、想 all-in Rust、能接受追新」的团队；桌面渲染现状与 Tauri 无本质区别，选它多半是为了「全 Rust + 一份代码多端」。
+> **图**：8 张内嵌 base64 SVG。所有易变 API 处均标注「以 docs.rs 对应版本为准」。
+
+> 姊妹篇：`docs/20260920_Rust-iced桌面框架使用说明.md`（Elm 保留模式·自绘）、`docs/20260920_Rust-egui桌面框架使用说明.md`（立即模式·自绘）、`docs/20260920_Rust桌面GUI框架横评.md`（五框架横评）。
+
+---
+
+## 目录
+
+1. [一、Dioxus 是什么：组件 + RSX + 信号](#一dioxus-是什么组件--rsx--信号)
+2. [二、安装与第一个程序](#二安装与第一个程序)
+3. [三、RSX：用 Rust 写 JSX](#三rsx用-rust-写-jsx)
+4. [四、组件与 Props](#四组件与-props)
+5. [五、信号 Signals：细粒度响应式](#五信号-signals细粒度响应式)
+6. [六、事件与受控输入](#六事件与受控输入)
+7. [七、派生与共享：use_memo · use_effect · use_context](#七派生与共享usememo--useeffect--usecontext)
+8. [八、异步：use_resource](#八异步useresource)
+9. [九、桌面 = 系统 WebView：与 Tauri 同底座](#九桌面--系统-webview与-tauri-同底座)
+10. [十、中文与 WebView：省心处与真正的坑](#十中文与-webview省心处与真正的坑)
+11. [十一、样式与资源：CSS · asset! · 双主题](#十一样式与资源css--asset--双主题)
+12. [十二、一份代码多端：Web/桌面/移动/全栈](#十二一份代码多端web桌面移动全栈)
+13. [十三、完整实例：待办事项 Todo](#十三完整实例待办事项-todo)
+14. [十四、常见坑速查](#十四常见坑速查)
+15. [十五、与 CMX 工作区的呼应](#十五与-cmx-工作区的呼应)
+16. [十六、版本与参考资源](#十六版本与参考资源)
+
+---
+
+## 一、Dioxus 是什么：组件 + RSX + 信号
+
+<p align="center"><img alt="图1：Dioxus 三支柱（组件+RSX+信号）" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDIwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQyMCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQyMCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjcwIiB5PSI2NiIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxNTYiIHJ4PSI4IiBmaWxsPSIjZjVmM2ZmIiBzdHJva2U9IiM3YzNhZWQiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNzAiIHk9IjY2IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzdjM2FlZCIvPjxyZWN0IHg9IjcwIiB5PSI4MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI4IiBmaWxsPSIjN2MzYWVkIi8+PHRleHQgeD0iODAiIHk9IjgyIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj7nu4Tku7YgQ29tcG9uZW50PC90ZXh0Pjx0ZXh0IHg9IjgwIiB5PSIxMDIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPmZuKCkgLSZndDsgRWxlbWVudDwvdGV4dD48dGV4dCB4PSI4MCIgeT0iMTE2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDlsLHmmK/kuKrlh73mlbDvvIzov5Tlm54gVUk8L3RleHQ+PHRleHQgeD0iODAiIHk9IjEzMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcgI1tjb21wb25lbnRdIOWjsOaYjiBQcm9wczwvdGV4dD48dGV4dCB4PSI4MCIgeT0iMTQ0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDlj6/ltYzlpZfnu4TlkIjmiJDnu4Tku7bmoJE8L3RleHQ+PHRleHQgeD0iODAiIHk9IjE1OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+PC90ZXh0Pjx0ZXh0IHg9IjgwIiB5PSIxNzIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuKJiCBSZWFjdCDnu4Tku7Y8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjM0NSIgeT0iNjYiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTU2IiByeD0iOCIgZmlsbD0iI2ZmZjdlZCIgc3Ryb2tlPSIjYzI0MTBjIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjM0NSIgeT0iNjYiIHdpZHRoPSIyNTAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjYzI0MTBjIi8+PHJlY3QgeD0iMzQ1IiB5PSI4MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI4IiBmaWxsPSIjYzI0MTBjIi8+PHRleHQgeD0iMzU1IiB5PSI4MiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+UlNYPC90ZXh0Pjx0ZXh0IHg9IjM1NSIgeT0iMTAyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7lo7DmmI7lvI8gVUnvvIjiiYggSlNY77yJPC90ZXh0Pjx0ZXh0IHg9IjM1NSIgeT0iMTE2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5yc3ghIHsgZGl2IHsgJnF1b3Q74oCmJnF1b3Q7IH0gfTwvdGV4dD48dGV4dCB4PSIzNTUiIHk9IjEzMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg5YWD57SgIC8g5bGe5oCnIC8g5a2Q6IqC54K5PC90ZXh0Pjx0ZXh0IHg9IjM1NSIgeT0iMTQ0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDmlofmnKzmj5LlgLwge3NpZ25hbH08L3RleHQ+PHRleHQgeD0iMzU1IiB5PSIxNTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPsK3IGZvciAvIGlmIOebtOaOpeWGheiBlDwvdGV4dD48dGV4dCB4PSIzNTUiIHk9IjE3MiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg57yW6K+R5pyf5qOA5p+l77yM6Z2e5a2X56ym5LiyPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI2MjAiIHk9IjY2IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjE1NiIgcng9IjgiIGZpbGw9IiNmMGZkZmEiIHN0cm9rZT0iIzBkOTQ4OCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI2MjAiIHk9IjY2IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzBkOTQ4OCIvPjxyZWN0IHg9IjYyMCIgeT0iODAiIHdpZHRoPSIyNTAiIGhlaWdodD0iOCIgZmlsbD0iIzBkOTQ4OCIvPjx0ZXh0IHg9IjYzMCIgeT0iODIiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPuS/oeWPtyBTaWduYWw8L3RleHQ+PHRleHQgeD0iNjMwIiB5PSIxMDIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuWTjeW6lOW8j+eKtuaAgTwvdGV4dD48dGV4dCB4PSI2MzAiIHk9IjExNiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+dXNlX3NpZ25hbCh8fCAwKTwvdGV4dD48dGV4dCB4PSI2MzAiIHk9IjEzMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg6K+7ID0g6K6i6ZiF77yM5pS5ID0g6YCa55+lPC90ZXh0Pjx0ZXh0IHg9IjYzMCIgeT0iMTQ0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyBDb3B577yM6ZqP5L6/5LygL+i/m+mXreWMhTwvdGV4dD48dGV4dCB4PSI2MzAiIHk9IjE1OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg57uG57KS5bqm77ya5Y+q6YeN5riy6K+75a6D55qEPC90ZXh0Pjx0ZXh0IHg9IjYzMCIgeT0iMTcyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj48L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gMTk1IDIyMiBMIDM2MCAyNjIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdjM2FlZCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjwvZz48Zz48cGF0aCBkPSJNIDQ3MCAyMjIgTCA0NzAgMjYyIiBmaWxsPSJub25lIiBzdHJva2U9IiNjMjQxMGMiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PGc+PHBhdGggZD0iTSA3NDUgMjIyIEwgNTgwIDI2MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMGQ5NDg4IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PC9nPjxnPjxyZWN0IHg9IjIzMCIgeT0iMjYyIiB3aWR0aD0iNDgwIiBoZWlnaHQ9Ijc0IiByeD0iOCIgZmlsbD0iI2YwZjlmZiIgc3Ryb2tlPSIjMDI4NGM3IiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjIzMCIgeT0iMjYyIiB3aWR0aD0iNDgwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzAyODRjNyIvPjxyZWN0IHg9IjIzMCIgeT0iMjc2IiB3aWR0aD0iNDgwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSIyNDAiIHk9IjI3OCIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+UmVhY3Qg55qE5b+D5pm677yMUnVzdCDnmoTouqvkvZM8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIyOTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPue7hOS7tiArIFByb3BzICsgSG9va3Mg55qE5YaZ5rOV5L2g5Lya6KeJ5b6X55y854af77yb5L2G54q25oCB55So44CM5L+h5Y+344CN44CBPC90ZXh0Pjx0ZXh0IHg9IjI0MCIgeT0iMzEyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7mm7TmlrDpnaDjgIzorqLpmIXjgI3igJTigJTkuI3mmK/omZrmi58gRE9NIOWFqOagkSBkaWZm77yM6ICM5piv57K+56Gu5pu05paw6K+75LqG5L+h5Y+355qE6YKj5Yeg5aSEPC90ZXh0PjwvZz48dGV4dCB4PSI0NzAiIHk9IjM5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMi41IiBmaWxsPSIjMzM0MTU1Ij5EaW94dXMg5LiJ5pSv5p+x77ya57uE5Lu277yI5Ye95pWw77yJ44CBUlNY77yI5aOw5piOIFVJ77yJ44CB5L+h5Y+377yI5ZON5bqU5byP54q25oCB77yJ44CC5YmN56uv6IOM5pmv6ICF5LiK5omL5p6B5b+r77yM5Luj5Lu35piv5qGG5p625bm06L2744CB54mI5pys6Ze056C05Z2P5oCn5Y+Y5pu05YGP5aSaPC90ZXh0Pjwvc3ZnPg=="></p>
+
+Dioxus 只有三个核心概念，凑齐就懂大半：
+
+- **组件 Component**：一个返回 `Element` 的普通函数（`fn App() -> Element`）。可带 Props、可嵌套组合成组件树——就是 React 组件的心智。
+- **RSX**：声明 UI 的宏（`rsx! { … }`），写法接近 JSX，但是**编译期宏、有类型检查**，不是字符串模板。
+- **信号 Signal**：响应式状态（`use_signal(|| 0)`）。**读它就订阅它，改它就通知订阅者**——只重新渲染读了这个信号的组件，天然细粒度。
+
+> 与 React 的最大不同：React 靠虚拟 DOM 全树 diff 找变化；Dioxus 靠**信号订阅**精确定位——改一个信号，框架直接知道该更新哪几处，不用比对整棵树。心智像 React，机制更省。
+
+> 与本系列另外两位的不同：iced 是 **Elm 保留模式**、egui 是**立即模式**，两者都**自绘**；Dioxus 是**组件/信号**，且桌面**走 WebView**（第 9 节详解）。三种世界观各有主场。
+
+## 二、安装与第一个程序
+
+`Cargo.toml`——桌面目标开 `desktop` feature：
+
+```toml
+[dependencies]
+dioxus = { version = "0.7", features = ["desktop"] }
+# 换目标只改 feature：web / mobile / fullstack
+
+# 推荐装 CLI（热重载/多端构建）：cargo binstall dioxus-cli  → 命令是 dx
+```
+
+`src/main.rs`——最小计数器，**全文如下**：
+
+```rust
+use dioxus::prelude::*;
+
+fn main() {
+    dioxus::launch(App);        // 启动一个组件
+}
+
+// 组件 = 返回 Element 的函数（约定用大驼峰命名，rsx 才认它是组件）
+fn App() -> Element {
+    // 信号：响应式状态。要改就加 mut
+    let mut count = use_signal(|| 0);
+
+    rsx! {
+        h1 { "计数: {count}" }                        // 读 count → 订阅；count 变这里自动更新
+        button { onclick: move |_| count += 1, "加一" }
+        button { onclick: move |_| count -= 1, "减一" }
+    }
+}
+```
+
+`dx serve` 跑起来（带热重载），或 `cargo run`。对比 iced 的四件套、egui 的每帧 `update`，Dioxus 这里是**组件 + 信号**：状态是 `use_signal`，界面是 `rsx!`，点击直接 `count += 1` 改信号，读了它的地方自动刷新。
+
+> 好消息：因为桌面是 WebView，**中文默认就能显示**（系统浏览器引擎提供字体），没有 iced/egui 那种「先装中文字体」的坑（第 10 节展开这个反转）。
+
+## 三、RSX：用 Rust 写 JSX
+
+<p align="center"><img alt="图2：RSX 解剖" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDUwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQ1MCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iI2ZiZmRmZiIvPjxyZWN0IHg9IjQ1IiB5PSI1NSIgd2lkdGg9IjU0NSIgaGVpZ2h0PSIzNTAiIHJ4PSIxMCIgZmlsbD0iIzFlMjkzYiIvPjxjaXJjbGUgY3g9IjY2IiBjeT0iNzYiIHI9IjQuNSIgZmlsbD0iI2ZmNWY1NyIvPjxjaXJjbGUgY3g9IjgwIiBjeT0iNzYiIHI9IjQuNSIgZmlsbD0iI2ZlYmMyZSIvPjxjaXJjbGUgY3g9Ijk0IiBjeT0iNzYiIHI9IjQuNSIgZmlsbD0iIzI4Yzg0MCIvPjx0ZXh0IHg9IjYyIiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZDZkZWViIj5yc3ghIHs8L3RleHQ+PHRleHQgeD0iOTAiIHk9IjEyMCIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNkNmRlZWIiPmRpdiB7PC90ZXh0Pjx0ZXh0IHg9IjExOCIgeT0iMTQwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+Y2xhc3M6ICZxdW90O2NhcmQmcXVvdDssPC90ZXh0Pjx0ZXh0IHg9IjExOCIgeT0iMTYwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+aDEgeyAmcXVvdDvorqHmlbA6IHtjb3VudH0mcXVvdDsgfTwvdGV4dD48dGV4dCB4PSIxMTgiIHk9IjE4MCIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNkNmRlZWIiPmJ1dHRvbiB7PC90ZXh0Pjx0ZXh0IHg9IjE0NiIgeT0iMjAwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+b25jbGljazogbW92ZSB8X3wgY291bnQgKz0gMSw8L3RleHQ+PHRleHQgeD0iMTQ2IiB5PSIyMjAiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZDZkZWViIj4mcXVvdDvliqDkuIAmcXVvdDs8L3RleHQ+PHRleHQgeD0iMTE4IiB5PSIyNDAiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZDZkZWViIj59PC90ZXh0Pjx0ZXh0IHg9IjExOCIgeT0iMjYwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+Zm9yIHQgaW4gdG9kb3MucmVhZCgpLml0ZXIoKSB7PC90ZXh0Pjx0ZXh0IHg9IjE0NiIgeT0iMjgwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+bGkgeyBrZXk6ICZxdW90O3t0LmlkfSZxdW90OywgJnF1b3Q7e3QudGV4dH0mcXVvdDsgfTwvdGV4dD48dGV4dCB4PSIxMTgiIHk9IjMwMCIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNkNmRlZWIiPn08L3RleHQ+PHRleHQgeD0iMTE4IiB5PSIzMjAiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZDZkZWViIj5pZiBjb3VudCgpICZndDsgNSB7PC90ZXh0Pjx0ZXh0IHg9IjE0NiIgeT0iMzQwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+cCB7ICZxdW90O+WkmuS6hu+8gSZxdW90OyB9PC90ZXh0Pjx0ZXh0IHg9IjExOCIgeT0iMzYwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+fTwvdGV4dD48dGV4dCB4PSI5MCIgeT0iMzgwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+fTwvdGV4dD48dGV4dCB4PSI2MiIgeT0iNDAwIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2Q2ZGVlYiI+fTwvdGV4dD48Zz48cGF0aCBkPSJNIDU5MCAxMjAgTCA2MzYgMTIyIiBmaWxsPSJub25lIiBzdHJva2U9IiM3YzNhZWQiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PHJlY3QgeD0iNjQwIiB5PSIxMDkiIHdpZHRoPSIyNTAiIGhlaWdodD0iMjYiIHJ4PSI2IiBmaWxsPSIjZmZmIiBzdHJva2U9IiM3YzNhZWQiIHN0cm9rZS13aWR0aD0iMS40Ii8+PHRleHQgeD0iNjUyIiB5PSIxMjYiIHRleHQtYW5jaG9yPSJzdGFydCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzFlMjkzYiI+5YWD57SgIC8g57uE5Lu2PC90ZXh0PjxnPjxwYXRoIGQ9Ik0gNTkwIDE0MCBMIDYzNiAxNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAyODRjNyIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjwvZz48cmVjdCB4PSI2NDAiIHk9IjE0NyIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIyNiIgcng9IjYiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzAyODRjNyIgc3Ryb2tlLXdpZHRoPSIxLjQiLz48dGV4dCB4PSI2NTIiIHk9IjE2NCIgdGV4dC1hbmNob3I9InN0YXJ0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMWUyOTNiIj7lsZ7mgKcgIGtleTogdmFsdWU8L3RleHQ+PGc+PHBhdGggZD0iTSA1OTAgMTYwIEwgNjM2IDIwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMGQ5NDg4IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PC9nPjxyZWN0IHg9IjY0MCIgeT0iMTg3IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI2IiByeD0iNiIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjMGQ5NDg4IiBzdHJva2Utd2lkdGg9IjEuNCIvPjx0ZXh0IHg9IjY1MiIgeT0iMjA0IiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxZTI5M2IiPuaWh+acrOaPkuWAvCB7c2lnbmFsfTwvdGV4dD48Zz48cGF0aCBkPSJNIDU5MCAyMDAgTCA2MzYgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNjMjQxMGMiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PHJlY3QgeD0iNjQwIiB5PSIyMjciIHdpZHRoPSIyNTAiIGhlaWdodD0iMjYiIHJ4PSI2IiBmaWxsPSIjZmZmIiBzdHJva2U9IiNjMjQxMGMiIHN0cm9rZS13aWR0aD0iMS40Ii8+PHRleHQgeD0iNjUyIiB5PSIyNDQiIHRleHQtYW5jaG9yPSJzdGFydCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzFlMjkzYiI+5LqL5Lu2ICBtb3ZlIHxffCDigKY8L3RleHQ+PGc+PHBhdGggZD0iTSA1OTAgMjYwIEwgNjM2IDI5MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYjQ1MzA5IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PC9nPjxyZWN0IHg9IjY0MCIgeT0iMjc3IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI2IiByeD0iNiIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjYjQ1MzA5IiBzdHJva2Utd2lkdGg9IjEuNCIvPjx0ZXh0IHg9IjY1MiIgeT0iMjk0IiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxZTI5M2IiPuW+queOryAgZm9yIOKApiB7fTwvdGV4dD48Zz48cGF0aCBkPSJNIDU5MCAzMjAgTCA2MzYgMzQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxNTgwM2QiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PHJlY3QgeD0iNjQwIiB5PSIzMjciIHdpZHRoPSIyNTAiIGhlaWdodD0iMjYiIHJ4PSI2IiBmaWxsPSIjZmZmIiBzdHJva2U9IiMxNTgwM2QiIHN0cm9rZS13aWR0aD0iMS40Ii8+PHRleHQgeD0iNjUyIiB5PSIzNDQiIHRleHQtYW5jaG9yPSJzdGFydCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzFlMjkzYiI+5p2h5Lu2ICBpZiDigKYge308L3RleHQ+PHRleHQgeD0iNDcwIiB5PSI0MzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIuNSIgZmlsbD0iIzMzNDE1NSI+UlNYIOaYr+e8luivkeacn+Wuj++8jOS4jeaYr+Wtl+espuS4suaooeadv++8muWFg+e0oC/lsZ7mgKcv5a2Q6IqC54K55YOPIEhUTUzvvIx7c2lnbmFsfSDmj5LlgLzjgIFmb3IvaWYg55u05o6l5YaF6IGU77yM5LiU5YWo56iL5pyJIFJ1c3Qg57G75Z6L5qOA5p+lPC90ZXh0Pjwvc3ZnPg=="></p>
+
+`rsx!` 是声明 UI 的宏，长得像 JSX/HTML，但**是编译期宏、带 Rust 类型检查**。要素：
+
+```rust
+rsx! {
+    // 元素：名字 + 花括号；属性写 key: value，子节点直接嵌套
+    div {
+        class: "card",
+        id: "main",
+
+        // 文本 + 插值：{signal} / {表达式} 直接插进字符串
+        h1 { "计数: {count}" }
+        p { "两倍是 {count() * 2}" }
+
+        // 事件：on 开头，值是闭包
+        button {
+            onclick: move |_| count += 1,
+            "加一"                                // 子节点也可以是纯文本
+        }
+
+        // 循环：for 直接写在 rsx 里；列表项给稳定的 key
+        for todo in todos.read().iter() {
+            li { key: "{todo.id}", "{todo.text}" }
+        }
+
+        // 条件：if / else 也直接内联
+        if count() > 5 {
+            p { class: "warn", "有点多了！" }
+        }
+    }
+}
+```
+
+| 语法 | 说明 |
+|---|---|
+| `div { … }` | 元素；小写=HTML 元素，大写=组件（`MyComp { … }`） |
+| `class: "x"`, `onclick: …` | 属性 / 事件，写成 `key: value` |
+| `"文本 {signal}"` | 文本子节点 + 插值（`{}` 里可放信号或表达式） |
+| `for x in it { … }` | 列表渲染；每项建议给 `key` |
+| `if cond { … } else { … }` | 条件渲染 |
+| `{ 表达式 }` | 内联任意返回 `Element` 的 Rust 表达式 |
+
+> `rsx!` 全程走 Rust 类型系统：属性名拼错、信号类型不对，**编译期就报错**——这是它比「字符串模板」强的地方。`dx serve` 下改 rsx 还能热重载即时看到。
+
+## 四、组件与 Props
+
+组件就是**返回 `Element` 的函数**。要接收参数（Props），用 `#[component]` 宏把函数参数变成属性：
+
+```rust
+use dioxus::prelude::*;
+
+// 用 #[component]：函数参数即 Props
+#[component]
+fn Greeting(name: String, count: i32) -> Element {
+    rsx! { p { "你好 {name}，这是第 {count} 次" } }
+}
+
+// 父组件里像写 HTML 标签一样用它（大驼峰名）
+fn App() -> Element {
+    rsx! {
+        Greeting { name: "张三".to_string(), count: 1 }
+        Greeting { name: "李四".to_string(), count: 2 }
+    }
+}
+
+// 需要更多控制（默认值/可选）时，手写 Props 结构体：
+#[derive(Props, PartialEq, Clone)]
+struct CardProps {
+    title: String,
+    #[props(default = false)]     // 可选属性带默认值
+    highlighted: bool,
+    children: Element,            // 接收子节点（类似 slot）
+}
+
+#[component]
+fn Card(props: CardProps) -> Element {
+    rsx! {
+        div { class: if props.highlighted { "card hot" } else { "card" },
+            h3 { "{props.title}" }
+            {props.children}                        // 渲染传进来的子节点
+        }
+    }
+}
+```
+
+要点：
+
+- **组件名用大驼峰**（`Greeting`），`rsx!` 靠大小写区分「组件」与「HTML 元素」。
+- **`children: Element`** 让组件接收子节点（`Card { Foo {} }` 里的 `Foo {}`），类似插槽。
+- Props 需要 `PartialEq`：Dioxus 靠它判断属性变没变、要不要重渲子组件。
+
+## 五、信号 Signals：细粒度响应式
+
+<p align="center"><img alt="图3：信号细粒度响应式" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDAwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQwMCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjYwIiB5PSIxNTAiIHdpZHRoPSIxOTAiIGhlaWdodD0iOTIiIHJ4PSI4IiBmaWxsPSIjZjBmZGZhIiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNjAiIHk9IjE1MCIgd2lkdGg9IjE5MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiMwZDk0ODgiLz48cmVjdCB4PSI2MCIgeT0iMTY0IiB3aWR0aD0iMTkwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDk0ODgiLz48dGV4dCB4PSI3MCIgeT0iMTY2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5TaWduYWwgIGNvdW50PC90ZXh0Pjx0ZXh0IHg9IjcwIiB5PSIxODYiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPnVzZV9zaWduYWwofHwgMCk8L3RleHQ+PHRleHQgeD0iNzAiIHk9IjIwMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5pS577yaY291bnQgKz0gMTwvdGV4dD48dGV4dCB4PSI3MCIgeT0iMjE0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7vvIhDb3B577yM5Y+v5Yiw5aSE5Lyg77yJPC90ZXh0PjwvZz48Zz48cmVjdCB4PSIzNTAiIHk9IjYwIiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjcyIiByeD0iOCIgZmlsbD0iI2YwZmRmNCIgc3Ryb2tlPSIjMTU4MDNkIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjM1MCIgeT0iNjAiIHdpZHRoPSIyMTAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjMTU4MDNkIi8+PHJlY3QgeD0iMzUwIiB5PSI3NCIgd2lkdGg9IjIxMCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTU4MDNkIi8+PHRleHQgeD0iMzYwIiB5PSI3NiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+57uE5Lu2IEE8L3RleHQ+PHRleHQgeD0iMzYwIiB5PSI5NiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+6K+75LqGIGNvdW50KCk8L3RleHQ+PHRleHQgeD0iMzYwIiB5PSIxMTAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuKGkiBjb3VudCDlj5jliJnph43ot5Eg4pyTPC90ZXh0PjwvZz48Zz48cmVjdCB4PSIzNTAiIHk9IjE1OCIgd2lkdGg9IjIxMCIgaGVpZ2h0PSI3MiIgcng9IjgiIGZpbGw9IiNmMGZkZjQiIHN0cm9rZT0iIzE1ODAzZCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSIzNTAiIHk9IjE1OCIgd2lkdGg9IjIxMCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiMxNTgwM2QiLz48cmVjdCB4PSIzNTAiIHk9IjE3MiIgd2lkdGg9IjIxMCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTU4MDNkIi8+PHRleHQgeD0iMzYwIiB5PSIxNzQiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPue7hOS7tiBCPC90ZXh0Pjx0ZXh0IHg9IjM2MCIgeT0iMTk0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7kuZ/or7vkuoYgY291bnQoKTwvdGV4dD48dGV4dCB4PSIzNjAiIHk9IjIwOCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+4oaSIOmHjei3kSDinJM8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjM1MCIgeT0iMjU2IiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjcyIiByeD0iOCIgZmlsbD0iI2YxZjVmOSIgc3Ryb2tlPSIjNDc1NTY5IiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjM1MCIgeT0iMjU2IiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzQ3NTU2OSIvPjxyZWN0IHg9IjM1MCIgeT0iMjcwIiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjgiIGZpbGw9IiM0NzU1NjkiLz48dGV4dCB4PSIzNjAiIHk9IjI3MiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+57uE5Lu2IEM8L3RleHQ+PHRleHQgeD0iMzYwIiB5PSIyOTIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuayoeivuyBjb3VudDwvdGV4dD48dGV4dCB4PSIzNjAiIHk9IjMwNiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+4oaSIOS4jemHjei3kSDinJfvvIjnnIHkuobvvIk8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gMjUwIDE3NSBMIDM1MCAxMDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBkOTQ4OCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjI4NyIgeT0iMTI4IiB3aWR0aD0iMjUuMiIgaGVpZ2h0PSIxNiIgcng9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC45NSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjAuNyIvPjx0ZXh0IHg9IjMwMCIgeT0iMTQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSI5IiBmaWxsPSIjMzM0MTU1Ij7orqLpmIU8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gMjUwIDE5NiBMIDM1MCAxOTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBkOTQ4OCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjI4NyIgeT0iMTg2IiB3aWR0aD0iMjUuMiIgaGVpZ2h0PSIxNiIgcng9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC45NSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjAuNyIvPjx0ZXh0IHg9IjMwMCIgeT0iMTk4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSI5IiBmaWxsPSIjMzM0MTU1Ij7orqLpmIU8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gMjUwIDIxNyBMIDM1MCAyODgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjIgNCIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjI4NCIgeT0iMjQ0IiB3aWR0aD0iMzEuNzk5OTk5OTk5OTk5OTk3IiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iMzAwIiB5PSIyNTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPuaXoOiuoumYhTwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNjEwIiB5PSIxMjAiIHdpZHRoPSIyOTAiIGhlaWdodD0iMTUwIiByeD0iOCIgZmlsbD0iI2YwZjlmZiIgc3Ryb2tlPSIjMDI4NGM3IiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjYxMCIgeT0iMTIwIiB3aWR0aD0iMjkwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzAyODRjNyIvPjxyZWN0IHg9IjYxMCIgeT0iMTM0IiB3aWR0aD0iMjkwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSI2MjAiIHk9IjEzNiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+57uG57KS5bqm5ZON5bqU5byPPC90ZXh0Pjx0ZXh0IHg9IjYyMCIgeT0iMTU2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDorqLpmIXlj5HnlJ/lnKjjgIzor7vjgI3nmoTpgqPkuIDliLs8L3RleHQ+PHRleHQgeD0iNjIwIiB5PSIxNzAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPsK3IOaUueS/oeWPtyDihpIg5Y+q6YCa55+l6K+75LqG5a6D55qE57uE5Lu2PC90ZXh0Pjx0ZXh0IHg9IjYyMCIgeT0iMTg0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDmsqHor7vnmoTnu4Tku7blrozlhajkuI3ph43ot5E8L3RleHQ+PHRleHQgeD0iNjIwIiB5PSIxOTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPsK3IOaXoOmcgOiZmuaLnyBET00g5YWo5qCRIGRpZmY8L3RleHQ+PHRleHQgeD0iNjIwIiB5PSIyMTIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPjwvdGV4dD48dGV4dCB4PSI2MjAiIHk9IjIyNiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+4oaSIOWkqeeEtueahOOAjOeyvuehruabtOaWsOOAjTwvdGV4dD48L2c+PHRleHQgeD0iNDcwIiB5PSIzNzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIuNSIgZmlsbD0iIzMzNDE1NSI+5YWz6ZSu5py65Yi277ya6K6i6ZiF5Zyo44CM6K+744CN5aSE5bu656uL44CB5pu05paw5Y+q5Y+R57uZ6K6i6ZiF6ICF44CC6L+Z6K6pIERpb3h1cyDkuI3pnaDlhajmoJEgZGlmZiDkuZ/og73nsr7noa7mm7TmlrDigJTigJTkuI4gUmVhY3Qg55qE5b+D5pm65YOP77yM5py65Yi25pu055yBPC90ZXh0Pjwvc3ZnPg=="></p>
+
+信号是 Dioxus 状态管理的核心。三件事记牢：**读=订阅、改=通知、Copy=随便传**。
+
+```rust
+let mut count = use_signal(|| 0);
+
+// —— 读 ——（在组件/rsx 里读 = 订阅它，之后它变你就重渲）
+let now = count();          // 调用语法，最常用
+let now = *count.read();    // 显式读
+
+// —— 改 ——
+count += 1;                 // 运算符
+count.set(10);              // 直接设
+count.write().push(x);      // 拿可变引用改内部（如 Vec/结构体）
+*count.write() += 1;        // 显式写
+
+// —— Copy ——：信号是 Copy，可直接传给子组件、丢进闭包/async，无需 clone
+let doubled = use_memo(move || count() * 2);   // 派生信号
+spawn(async move { count += 1; });             // 异步里也能用
+```
+
+**细粒度响应式**是它的精髓：
+
+- **订阅发生在「读」处**：某组件读了 `count`，`count` 变时**只有它**（及其它读者）重跑；没读的组件纹丝不动。
+- 因此**没有虚拟 DOM 全树 diff**——框架直接知道该更新谁。大列表、深层树里这很省。
+- 只读场景给子组件传 `ReadSignal<T>`（只读信号），读写场景传 `Signal<T>`。
+
+> 对比：iced 每次 `view` 重建整棵界面描述；egui 每帧重跑整个 UI；Dioxus 只重跑「读了变化信号」的组件——三者更新粒度递减，Dioxus 这点最接近 React 但更精确。
+
+## 六、事件与受控输入
+
+事件处理器是 `on*` 属性 + 闭包；受控输入把信号和输入框双向绑起来：
+
+```rust
+let mut name = use_signal(String::new);
+
+rsx! {
+    input {
+        value: "{name}",                        // 信号 → 输入框（受控）
+        oninput: move |e| name.set(e.value()),  // 输入框 → 信号
+        onkeydown: move |e| {
+            if e.key() == Key::Enter { /* 提交 */ }
+        },
+    }
+    p { "你好, {name}" }                          // name 一变，这里自动更新
+
+    // 常见事件：onclick / ondoubleclick / onmouseenter / onchange / onsubmit …
+    button {
+        onclick: move |e| {
+            e.stop_propagation();                // 事件对象有 DOM 那套方法
+            name.set(String::new());
+        },
+        "清空"
+    }
+}
+```
+
+| 事件 | 取值 |
+|---|---|
+| `oninput` / `onchange` | `e.value()` 拿输入内容 |
+| `onclick` / `onmouse*` | `e.stop_propagation()` / 坐标等 |
+| `onkeydown` / `onkeyup` | `e.key()`（`Key::Enter` 等） |
+| `onsubmit` | 表单提交（配 `prevent_default`） |
+
+> 因为渲染层是 WebView，事件对象就是**浏览器那套语义**（`value()`/`key()`/`stop_propagation()`…），前端经验可直接迁移。
+
+## 七、派生与共享：use_memo · use_effect · use_context
+
+除了 `use_signal`，常用 Hook 还有派生、副作用、跨组件共享：
+
+```rust
+// use_memo：派生值，依赖（这里是 count）变了才重算，结果本身也是信号
+let doubled = use_memo(move || count() * 2);
+
+// use_effect：副作用，依赖自动追踪；读了谁、谁变就重跑
+use_effect(move || {
+    println!("count 变成了 {}", count());       // 日志/订阅外部/同步 DOM 等
+});
+
+// use_context_provider / use_context：跨层级共享状态，免 prop drilling
+#[derive(Clone, Copy)]
+struct Theme(Signal<bool>);                     // 建议用 newtype 包一层（按类型取）
+
+fn App() -> Element {
+    use_context_provider(|| Theme(Signal::new(false)));  // 父：提供
+    rsx! { Child {} }
+}
+
+fn Child() -> Element {
+    let theme = use_context::<Theme>();          // 子：任意深度取用
+    rsx! { p { "暗色模式: {theme.0}" } }
+}
+```
+
+| Hook | 用途 |
+|---|---|
+| `use_signal` | 响应式状态（最常用） |
+| `use_memo` | 派生值（依赖变才重算） |
+| `use_effect` | 副作用（依赖自动追踪） |
+| `use_resource` | 异步数据（第 8 节） |
+| `use_context_provider` / `use_context` | 跨组件共享，免逐层传参 |
+| `use_future` / `spawn` | 起一个后台异步任务 |
+
+> Context 按**类型**（TypeId）索引，所以要存多个同底类型（如多个 `String`），各用一个 newtype 包起来区分。
+
+## 八、异步：use_resource
+
+<p align="center"><img alt="图4：use_resource 异步生命周期" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgMzkwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjM5MCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjM5MCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjMyMCIgeT0iNDYiIHdpZHRoPSIzMDAiIGhlaWdodD0iNjYiIHJ4PSI4IiBmaWxsPSIjZjBmOWZmIiBzdHJva2U9IiMwMjg0YzciIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iMzIwIiB5PSI0NiIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiMwMjg0YzciLz48cmVjdCB4PSIzMjAiIHk9IjYwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSIzMzAiIHk9IjYyIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj51c2VfcmVzb3VyY2UofHwgYXN5bmMge+KApn0pPC90ZXh0Pjx0ZXh0IHg9IjMzMCIgeT0iODIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPue7hOS7tumHjOWPkei1t+W8guatpeS7u+WKoe+8m+mmluW4p+eri+WNs+i/lOWbnjwvdGV4dD48dGV4dCB4PSIzMzAiIHk9Ijk2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7ku7vliqHlnKjlkI7lj7Dot5HvvIzor7vlroPnmoTlnLDmlrnkvJrorqLpmIU8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gNDMwIDExMiBMIDI0NSAxNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjMwOCIgeT0iMTIyIiB3aWR0aD0iNTguMTk5OTk5OTk5OTk5OTk2IiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iMzM4IiB5PSIxMzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPnBlbmRpbmc8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjEyMCIgeT0iMTUwIiB3aWR0aD0iMjEwIiBoZWlnaHQ9Ijc0IiByeD0iOCIgZmlsbD0iI2YxZjVmOSIgc3Ryb2tlPSIjNDc1NTY5IiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjEyMCIgeT0iMTUwIiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzQ3NTU2OSIvPjxyZWN0IHg9IjEyMCIgeT0iMTY0IiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjgiIGZpbGw9IiM0NzU1NjkiLz48dGV4dCB4PSIxMzAiIHk9IjE2NiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+Tm9uZTwvdGV4dD48dGV4dCB4PSIxMzAiIHk9IjE4NiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+6aaW5qyh77ya6L+Y5rKh57uT5p6cPC90ZXh0Pjx0ZXh0IHg9IjEzMCIgeT0iMjAwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5yc3gg6YeM5pi+56S644CM5Yqg6L295Lit4oCm44CNPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI0MDAiIHk9IjE1MCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI3NCIgcng9IjgiIGZpbGw9IiNmMGZkZjQiIHN0cm9rZT0iIzE1ODAzZCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI0MDAiIHk9IjE1MCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiMxNTgwM2QiLz48cmVjdCB4PSI0MDAiIHk9IjE2NCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTU4MDNkIi8+PHRleHQgeD0iNDEwIiB5PSIxNjYiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPlNvbWUoT2soZGF0YSkpPC90ZXh0Pjx0ZXh0IHg9IjQxMCIgeT0iMTg2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7lrozmiJDvvJrmi7/liLDmlbDmja48L3RleHQ+PHRleHQgeD0iNDEwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuiHquWKqOmHjea4suafk+aYvuekuuWHuuadpTwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNDAwIiB5PSIyNTgiIHdpZHRoPSIyMjAiIGhlaWdodD0iNjYiIHJ4PSI4IiBmaWxsPSIjZmVmMmYyIiBzdHJva2U9IiNkYzI2MjYiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNDAwIiB5PSIyNTgiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjZGMyNjI2Ii8+PHJlY3QgeD0iNDAwIiB5PSIyNzIiIHdpZHRoPSIyMjAiIGhlaWdodD0iOCIgZmlsbD0iI2RjMjYyNiIvPjx0ZXh0IHg9IjQxMCIgeT0iMjc0IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5Tb21lKEVycihlKSk8L3RleHQ+PHRleHQgeD0iNDEwIiB5PSIyOTQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuWksei0pe+8muaYvuekuumUmeivr+S/oeaBrzwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNjkwIiB5PSIxNTAiIHdpZHRoPSIyMTAiIGhlaWdodD0iNzQiIHJ4PSI4IiBmaWxsPSIjZmZmYmViIiBzdHJva2U9IiNiNDUzMDkiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNjkwIiB5PSIxNTAiIHdpZHRoPSIyMTAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjYjQ1MzA5Ii8+PHJlY3QgeD0iNjkwIiB5PSIxNjQiIHdpZHRoPSIyMTAiIGhlaWdodD0iOCIgZmlsbD0iI2I0NTMwOSIvPjx0ZXh0IHg9IjcwMCIgeT0iMTY2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj4ucmVzdGFydCgpPC90ZXh0Pjx0ZXh0IHg9IjcwMCIgeT0iMTg2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7miYvliqjph43ot5HvvIjlpoLliLfmlrDmjInpkq7vvIk8L3RleHQ+PHRleHQgeD0iNzAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuS+nei1luWPmOWMluS5n+S8muiHquWKqOmHjei3kTwvdGV4dD48L2c+PGc+PHBhdGggZD0iTSAzMzAgMTg3IEwgNDAwIDE4NyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTU4MDNkIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PHJlY3QgeD0iMzMzIiB5PSIxNzgiIHdpZHRoPSI2NC44IiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iMzY1IiB5PSIxOTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPmF3YWl0IOWujOaIkDwvdGV4dD48L2c+PGc+PHBhdGggZD0iTSAyNDAgMjI0IEwgNDcwIDI1OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZGMyNjI2IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PHJlY3QgeD0iMzQyIiB5PSIyMzIiIHdpZHRoPSIyNS4yIiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iMzU1IiB5PSIyNDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPuWHuumUmTwvdGV4dD48L2c+PGc+PHBhdGggZD0iTSA2MjAgMTg3IEwgNjkwIDE4NyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYjQ1MzA5IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PC9nPjxnPjxwYXRoIGQ9Ik0gNzk1IDE1MCBDIDc5NSAxMjUuMCA1NjAgMTI1LjAgNTYwIDEwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYjQ1MzA5IiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PHJlY3QgeD0iNjY1IiB5PSIxMTYiIHdpZHRoPSIyNS4yIiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iNjc4IiB5PSIxMjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPumHjei3kTwvdGV4dD48L2c+PHRleHQgeD0iNDcwIiB5PSIzNjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIuNSIgZmlsbD0iIzMzNDE1NSI+6K+7IHJlc291cmNlIOS8muiuoumYheWug++8muW8guatpeS7u+WKoeS4gOWujOaIkO+8jHJzeCDoh6rliqjph43muLLmn5PvvIzml6DpnIDmiYvliqggc2V0U3RhdGXvvJsucmVzdGFydCgpIOaIluS+nei1luWPmOWMluinpuWPkemHjei3kTwvdGV4dD48L3N2Zz4="></p>
+
+异步拉数据用 `use_resource`：组件里发起，任务后台跑，**结果一到自动重渲**——读它就订阅它。
+
+```rust
+fn UserCard() -> Element {
+    // 发起异步任务；返回一个 Resource，读它会订阅
+    let mut user = use_resource(move || async move {
+        reqwest::get("https://api.example.com/user")
+            .await?
+            .text()
+            .await
+    });
+
+    rsx! {
+        // 读 resource：None=还在跑，Some(Ok)=成功，Some(Err)=失败
+        match &*user.read() {
+            Some(Ok(text)) => rsx! { p { "用户：{text}" } },
+            Some(Err(e))   => rsx! { p { class: "err", "出错：{e}" } },
+            None           => rsx! { p { "加载中…" } },
+        }
+        button { onclick: move |_| user.restart(), "刷新" }   // 手动重跑
+    }
+}
+```
+
+要点：
+
+- `use_resource(|| async { … })` **首帧立即返回**（值为 `None`），任务在后台异步跑，完成后自动触发重渲。
+- 读到的是 `Option<Result<T, E>>`：`None` 加载中、`Some(Ok)` 成功、`Some(Err)` 失败。
+- **依赖自动追踪**：闭包里读了别的信号，那个信号变时 resource 会**自动重跑**；也可手动 `.restart()`。
+- 全栈项目里，把这里的 `reqwest::get` 换成 `#[server]` 服务端函数即可前后端同源（第 12 节）。
+
+> `match` 内联在 rsx 里的写法随版本略有差异，个别版本更推荐 `if let` 或把分支抽成函数——以你锁定版本的 docs.rs / 指南为准。
+
+## 九、桌面 = 系统 WebView：与 Tauri 同底座
+
+<p align="center"><img alt="图5：桌面 = 系统 WebView" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDU4IiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQ1OCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQ1OCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjMwMCIgeT0iNjAiIHdpZHRoPSIzNDAiIGhlaWdodD0iNjAiIHJ4PSI4IiBmaWxsPSIjZjVmM2ZmIiBzdHJva2U9IiM3YzNhZWQiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iMzAwIiB5PSI2MCIgd2lkdGg9IjM0MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiM3YzNhZWQiLz48cmVjdCB4PSIzMDAiIHk9Ijc0IiB3aWR0aD0iMzQwIiBoZWlnaHQ9IjgiIGZpbGw9IiM3YzNhZWQiLz48dGV4dCB4PSIzMTAiIHk9Ijc2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj7kvaDnmoQgUlNYICsg57uE5Lu277yIUnVzdO+8iTwvdGV4dD48dGV4dCB4PSIzMTAiIHk9Ijk2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5zaWduYWwg6amx5Yqo55qE5aOw5piO5byPIFVJPC90ZXh0PjwvZz48Zz48cGF0aCBkPSJNIDQ3MCAxMjAgTCA0NzAgMTM4IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NDc0OGIiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PGc+PHJlY3QgeD0iMzAwIiB5PSIxMzgiIHdpZHRoPSIzNDAiIGhlaWdodD0iNjAiIHJ4PSI4IiBmaWxsPSIjZjBmOWZmIiBzdHJva2U9IiMwMjg0YzciIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iMzAwIiB5PSIxMzgiIHdpZHRoPSIzNDAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjMDI4NGM3Ii8+PHJlY3QgeD0iMzAwIiB5PSIxNTIiIHdpZHRoPSIzNDAiIGhlaWdodD0iOCIgZmlsbD0iIzAyODRjNyIvPjx0ZXh0IHg9IjMxMCIgeT0iMTU0IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5WaXJ0dWFsRG9t77yIUnVzdCDkvqfvvIk8L3RleHQ+PHRleHQgeD0iMzEwIiB5PSIxNzQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuiZmuaLn+iKgueCueagkSArIOS/oeWPt+eyvuehriBkaWZmPC90ZXh0PjwvZz48Zz48cGF0aCBkPSJNIDQ3MCAxOTggTCA0NzAgMjE2IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NDc0OGIiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PGc+PHJlY3QgeD0iMzAwIiB5PSIyMTYiIHdpZHRoPSIzNDAiIGhlaWdodD0iNjAiIHJ4PSI4IiBmaWxsPSIjZjBmZGZhIiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iMzAwIiB5PSIyMTYiIHdpZHRoPSIzNDAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjMGQ5NDg4Ii8+PHJlY3QgeD0iMzAwIiB5PSIyMzAiIHdpZHRoPSIzNDAiIGhlaWdodD0iOCIgZmlsbD0iIzBkOTQ4OCIvPjx0ZXh0IHg9IjMxMCIgeT0iMjMyIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5kaW94dXMtZGVza3RvcDwvdGV4dD48dGV4dCB4PSIzMTAiIHk9IjI1MiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5oqK5Y+Y5pu05ZaC57uZIFdlYlZpZXc8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gNDcwIDI3NiBMIDQ3MCAyOTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjwvZz48Zz48cmVjdCB4PSIzMDAiIHk9IjI5NCIgd2lkdGg9IjM0MCIgaGVpZ2h0PSI2MCIgcng9IjgiIGZpbGw9IiNmMWY1ZjkiIHN0cm9rZT0iIzQ3NTU2OSIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSIzMDAiIHk9IjI5NCIgd2lkdGg9IjM0MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiM0NzU1NjkiLz48cmVjdCB4PSIzMDAiIHk9IjMwOCIgd2lkdGg9IjM0MCIgaGVpZ2h0PSI4IiBmaWxsPSIjNDc1NTY5Ii8+PHRleHQgeD0iMzEwIiB5PSIzMTAiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPndyeSAvIHRhbzwvdGV4dD48dGV4dCB4PSIzMTAiIHk9IjMzMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+6Leo5bmz5Y+wIFdlYlZpZXcgKyDnqpflj6PlsIHoo4U8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gNDcwIDM1NCBMIDQ3MCAzNzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjwvZz48Zz48cmVjdCB4PSIzMDAiIHk9IjM3MiIgd2lkdGg9IjM0MCIgaGVpZ2h0PSI2MCIgcng9IjgiIGZpbGw9IiNmZmZiZWIiIHN0cm9rZT0iI2I0NTMwOSIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSIzMDAiIHk9IjM3MiIgd2lkdGg9IjM0MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiNiNDUzMDkiLz48cmVjdCB4PSIzMDAiIHk9IjM4NiIgd2lkdGg9IjM0MCIgaGVpZ2h0PSI4IiBmaWxsPSIjYjQ1MzA5Ii8+PHRleHQgeD0iMzEwIiB5PSIzODgiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPuezu+e7nyBXZWJWaWV3IOa4suafkzwvdGV4dD48dGV4dCB4PSIzMTAiIHk9IjQwOCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+V2ViVmlldzIgwrcgV0tXZWJWaWV3IMK3IFdlYktpdEdUSzwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNjcwIiB5PSI3MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzAiIHJ4PSI4IiBmaWxsPSIjZmZmYmViIiBzdHJva2U9IiNiNDUzMDkiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNjcwIiB5PSI3MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiNiNDUzMDkiLz48cmVjdCB4PSI2NzAiIHk9Ijg0IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjgiIGZpbGw9IiNiNDUzMDkiLz48dGV4dCB4PSI2ODAiIHk9Ijg2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj7kuI4gVGF1cmkg5ZCM5bqV5bqnPC90ZXh0Pjx0ZXh0IHg9IjY4MCIgeT0iMTA2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7moYzpnaLmuLLmn5Pku4rlpKkgPSDns7vnu58gV2ViVmlld++8jDwvdGV4dD48dGV4dCB4PSI2ODAiIHk9IjEyMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5ZKMIFRhdXJpIOeUqOWQjOS4gOWllyB3cnkgLyB0YW/jgII8L3RleHQ+PHRleHQgeD0iNjgwIiB5PSIxMzQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPjwvdGV4dD48dGV4dCB4PSI2ODAiIHk9IjE0OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5beu5byC5LiN5Zyo5riy5p+T77yM5Zyo77yaPC90ZXh0Pjx0ZXh0IHg9IjY4MCIgeT0iMTYyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5VSSDlhajnlKggUnVzdCBSU1gg5YaZ77yMPC90ZXh0Pjx0ZXh0IHg9IjY4MCIgeT0iMTc2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7ogIzpnZ4gSlMvSFRNTC/liY3nq6/moYbmnrY8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjIwIiB5PSIyNDAiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMwIiByeD0iOCIgZmlsbD0iI2Y1ZjNmZiIgc3Ryb2tlPSIjN2MzYWVkIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjIwIiB5PSIyNDAiIHdpZHRoPSIyNTAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjN2MzYWVkIi8+PHJlY3QgeD0iMjAiIHk9IjI1NCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI4IiBmaWxsPSIjN2MzYWVkIi8+PHRleHQgeD0iMzAiIHk9IjI1NiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+QmxpdHogLyBEaW94dXMgTmF0aXZlPC90ZXh0Pjx0ZXh0IHg9IjMwIiB5PSIyNzYiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPu+8iOWunumqjOS4reeahOiHque7mOi3r+e6v++8iTwvdGV4dD48dGV4dCB4PSIzMCIgeT0iMjkwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7nlKggV0dQVSDnm7TmuLIgSFRNTC9DU1PvvIw8L3RleHQ+PHRleHQgeD0iMzAiIHk9IjMwNCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+VGFmZnkg5YGa5biD5bGA5byV5pOO44CCPC90ZXh0Pjx0ZXh0IHg9IjMwIiB5PSIzMTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuaIkOS6huaJjeaRhuiEseS4ieW5s+WPsDwvdGV4dD48dGV4dCB4PSIzMCIgeT0iMzMyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5XZWJWaWV3IOW3ruW8guKAlOKAlDwvdGV4dD48dGV4dCB4PSIzMCIgeT0iMzQ2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7kvYbnm67liY3ku43mmK/lrp7pqozlk4E8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjY3MCIgeT0iMjQwIiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjEwMCIgcng9IjgiIGZpbGw9IiNlZWYyZmYiIHN0cm9rZT0iIzQzMzhjYSIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI2NzAiIHk9IjI0MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiM0MzM4Y2EiLz48cmVjdCB4PSI2NzAiIHk9IjI1NCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI4IiBmaWxsPSIjNDMzOGNhIi8+PHRleHQgeD0iNjgwIiB5PSIyNTYiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPldlYiDnm67moIc8L3RleHQ+PHRleHQgeD0iNjgwIiB5PSIyNzYiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuWQjOS4gOS7vee7hOS7tue8luWIsCBXQVNN77yMPC90ZXh0Pjx0ZXh0IHg9IjY4MCIgeT0iMjkwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7nm7TmjqXot5HlnKjmtY/op4jlmajph4w8L3RleHQ+PHRleHQgeD0iNjgwIiB5PSIzMDQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPu+8iOaXoCBXZWJWaWV3IOS4remXtOWxgu+8iTwvdGV4dD48L2c+PHRleHQgeD0iNDcwIiB5PSI0NDgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIuNSIgZmlsbD0iIzMzNDE1NSI+6K+a5a6e5ouG6Kej77yaRGlveHVzIOahjOmdoueahOa4suafk+S7iuWkqeaJmOS7mOe7meezu+e7nyBXZWJWaWV377yI5LiOIFRhdXJpIOWQjOW6leW6p++8ie+8jOW3ruW8guWMluWcqOOAjFVJIOWFqOeUqCBSdXN0IOWGmeOAje+8m+iHque7mOeahCBCbGl0eiDmmK/mnKrmnaXjgIHlsJrlrp7pqow8L3RleHQ+PC9zdmc+"></p>
+
+**这是选型前必须看清的一节**：Dioxus **桌面今天的渲染 = 系统 WebView**，与 Tauri **同底座**（wry/tao）。
+
+- 你的 RSX/组件在 **Rust 侧**跑，维护一棵 VirtualDom，信号驱动精确 diff；变更喂给 `dioxus-desktop` → `wry/tao` → **系统 WebView**（Windows 的 WebView2 / macOS 的 WKWebView / Linux 的 WebKitGTK）渲染。
+- **与 Tauri 的真正区别不在渲染，而在「UI 用什么写」**：Dioxus 用 **Rust RSX**，Tauri 用**任意 Web 前端**（React/Vue/Svelte，或 Leptos/Yew）。二者甚至可组合——**Dioxus 可以当 Tauri 的前端**。
+- **自绘是未来、非现在**：Dioxus 押注的 **Blitz/Dioxus Native**（用 WGPU 直渲 HTML/CSS、Taffy 布局）成熟后才能摆脱三平台 WebView 差异，但目前仍是实验品。
+- **Web 目标**则没有 WebView 中间层：同一份组件编到 WASM 直接跑浏览器。
+
+> 一句诚实话：如果你冲着「像 iced/egui 那样的纯自绘、像素级跨平台一致」来，**Dioxus 桌面今天给不了**——它给的是「全 Rust 写 UI + 一份代码多端 + WebView 渲染」。想清楚要的是哪一个。
+
+## 十、中文与 WebView：省心处与真正的坑
+
+iced/egui 那节讲「怎么装中文字体」，到 Dioxus 这里**反转了**——因为渲染是 WebView：
+
+**省心的地方（WebView 白送）**：
+
+- **中文默认就显示**：系统浏览器引擎自带完整字体栈，`"中文"` 直接正常，**无需 `set_fonts` / 打包字体**。
+- **输入法（IME）成熟**：候选框、预编辑全由系统 WebView 处理，中文输入体验最省心。
+- **复杂排版最强**：换行、竖排、RTL、`emoji`——浏览器级排版能力全都有。
+- **CSS 生态全量复用**：Flexbox/Grid、动画、任意 CSS 框架照单全收。
+
+**真正的坑（转移到 WebView 跨平台差异）**：
+
+| 坑 | 说明 |
+|---|---|
+| 三平台内核不同 | WebView2 / WKWebView / WebKitGTK，CSS/JS 行为有差异 |
+| Linux 是重灾区 | WebKitGTK 兼容性/依赖是常见坑位，要留测试预算 |
+| 包体依赖系统 WebView | 包很小（不带引擎），但 Windows 老系统需分发 WebView2 Runtime |
+| 性能上限受 WebView 制约 | 虽无 JS 桥（UI 逻辑是 Rust），渲染仍是 WebView 天花板 |
+
+> 一句话：**Dioxus 把 iced/egui 的「字体坑」换成了「WebView 跨平台一致性坑」**。中文/IME/排版省心了，但三平台 WebView 内核差异要专门测——这和 Tauri 是同一类烦恼。
+
+## 十一、样式与资源：CSS · asset! · 双主题
+
+<p align="center"><img alt="图6：样式与资源" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDAwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQwMCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjUwIiB5PSI2MiIgd2lkdGg9IjI5MCIgaGVpZ2h0PSI3NiIgcng9IjgiIGZpbGw9IiNmMGY5ZmYiIHN0cm9rZT0iIzAyODRjNyIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI1MCIgeT0iNjIiIHdpZHRoPSIyOTAiIGhlaWdodD0iMjIiIHJ4PSI4IiBmaWxsPSIjMDI4NGM3Ii8+PHJlY3QgeD0iNTAiIHk9Ijc2IiB3aWR0aD0iMjkwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSI2MCIgeT0iNzgiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPmFzc2V0ISgmcXVvdDsvYXNzZXRzL21haW4uY3NzJnF1b3Q7KTwvdGV4dD48dGV4dCB4PSI2MCIgeT0iOTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPue8luivkeacn+eZu+iusOmdmeaAgei1hOa6kDwvdGV4dD48dGV4dCB4PSI2MCIgeT0iMTEyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7kuqflh7rluKblk4jluIznmoQgQXNzZXQg6Lev5b6EPC90ZXh0PjwvZz48Zz48cGF0aCBkPSJNIDM0MCAxMDAgTCA0MDAgMTAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNjMjQxMGMiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48L2c+PGc+PHJlY3QgeD0iNDAwIiB5PSI2MiIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI3NiIgcng9IjgiIGZpbGw9IiNmZmY3ZWQiIHN0cm9rZT0iI2MyNDEwYyIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI0MDAiIHk9IjYyIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iI2MyNDEwYyIvPjxyZWN0IHg9IjQwMCIgeT0iNzYiIHdpZHRoPSIzMDAiIGhlaWdodD0iOCIgZmlsbD0iI2MyNDEwYyIvPjx0ZXh0IHg9IjQxMCIgeT0iNzgiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPmRvY3VtZW50OjpTdHlsZXNoZWV0IHsgaHJlZiB9PC90ZXh0Pjx0ZXh0IHg9IjQxMCIgeT0iOTgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuaKiiBDU1Mg5rOo5YWl5paH5qGjICZsdDtoZWFkJmd0OzwvdGV4dD48dGV4dCB4PSI0MTAiIHk9IjExMiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5YWo5bGA5qC35byP5Y2z5Yi755Sf5pWIPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI1MCIgeT0iMTg2IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE0MCIgcng9IjgiIGZpbGw9IiNmMGZkZmEiIHN0cm9rZT0iIzBkOTQ4OCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI1MCIgeT0iMTg2IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzBkOTQ4OCIvPjxyZWN0IHg9IjUwIiB5PSIyMDAiIHdpZHRoPSI0MDAiIGhlaWdodD0iOCIgZmlsbD0iIzBkOTQ4OCIvPjx0ZXh0IHg9IjYwIiB5PSIyMDIiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPuS4u+mimCA9IENTU++8iFdlYiDnlJ/mgIHljp/moLflpI3nlKjvvIk8L3RleHQ+PHRleHQgeD0iNjAiIHk9IjIyMiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcgY2xhc3Mg5YiH5o2i77yaZGl2IHsgY2xhc3M6ICZxdW90O3t0aGVtZX0mcXVvdDsgfTwvdGV4dD48dGV4dCB4PSI2MCIgeT0iMjM2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyBDU1Mg5Y+Y6YeP77yaY29sb3I6IHZhcigtLWFjY2VudCk8L3RleHQ+PHRleHQgeD0iNjAiIHk9IjI1MCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg5aqS5L2T5p+l6K+i77yaQG1lZGlhIChwcmVmZXJzLWNvbG9yLXNjaGVtZTogZGFyayk8L3RleHQ+PHRleHQgeD0iNjAiIHk9IjI2NCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg5YaF6IGU5qC35byP77yaZGl2IHsgc3R5bGU6ICZxdW90O3BhZGRpbmc6IDE2cHgmcXVvdDsgfTwvdGV4dD48dGV4dCB4PSI2MCIgeT0iMjc4IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyDkuZ/og73kuIogVGFpbHdpbmQgLyDku7vmhI8gQ1NTIOahhuaetjwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNTAwIiB5PSIxODYiIHdpZHRoPSI0MDAiIGhlaWdodD0iMTQwIiByeD0iOCIgZmlsbD0iI2YwZmRmNCIgc3Ryb2tlPSIjMTU4MDNkIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjUwMCIgeT0iMTg2IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzE1ODAzZCIvPjxyZWN0IHg9IjUwMCIgeT0iMjAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjgiIGZpbGw9IiMxNTgwM2QiLz48dGV4dCB4PSI1MTAiIHk9IjIwMiIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+5a+56b2QIENNWCDlj4zkuLvpopjvvIjnoaznuqbmnZ8gIzTvvIk8L3RleHQ+PHRleHQgeD0iNTEwIiB5PSIyMjIiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuWboOS4uuahjOmdouWwseaYryBXZWJWaWV377yMV2ViIOmCo+Wll+eFp+aQrO+8mjwvdGV4dD48dGV4dCB4PSI1MTAiIHk9IjIzNiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcgQ01YIOeahCAtLXNhcCog5Y+Y6YeP5Y+v5Y6f5qC355SoPC90ZXh0Pjx0ZXh0IHg9IjUxMCIgeT0iMjUwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7CtyBkYXRhLWNteC1za2luIC8gZGF0YS1jbXgtc2tpbi10b25lIOWIh+iCpDwvdGV4dD48dGV4dCB4PSI1MTAiIHk9IjI2NCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+wrcg5LiOIFRhdXJpIOWJjeerr+WkjeeUqOWQjOS4gOWll+iuvuiuoei1hOS6pzwvdGV4dD48dGV4dCB4PSI1MTAiIHk9IjI3OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+4oaSIOWkqeeEtua7oei2s+OAjOWPjOS4u+mimOmAmui3r+WFvOWuueOAjTwvdGV4dD48L2c+PHRleHQgeD0iNDcwIiB5PSIzNzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIuNSIgZmlsbD0iIzMzNDE1NSI+5qC35byP5bCx5pivIENTU++8mmFzc2V0ISDnmbvorrAgKyBTdHlsZXNoZWV0IOazqOWFpe+8jOS4u+mimOi1sCBjbGFzcy9DU1Mg5Y+Y6YePL+WqkuS9k+afpeivouOAguWboOS4uuaYryBXZWLvvIxDTVgg546w5pyJ55qE5Y+M5Li76aKY6LWE5Lqn5Y+v5Y6f5qC35aSN55SoPC90ZXh0Pjwvc3ZnPg=="></p>
+
+Dioxus 的样式**就是 CSS**（因为渲染是 WebView）。静态资源用 `asset!` 登记、`Stylesheet` 注入：
+
+```rust
+use dioxus::prelude::*;
+
+// asset!：编译期登记资源，产出带哈希的路径（自动进产物）
+static MAIN_CSS: Asset = asset!("/assets/main.css");
+
+fn App() -> Element {
+    rsx! {
+        document::Stylesheet { href: MAIN_CSS }     // 注入全局样式表
+
+        // 主题：完全走 CSS 那套
+        div {
+            class: "card",                          // 类名切换
+            style: "padding: 16px",                 // 内联样式
+            "内容"
+        }
+    }
+}
+```
+
+主题切换有多种 Web 惯用法，任选：
+
+- **class 切换**：`div { class: "{theme}" }`，配一套 `.dark { … }` CSS。
+- **CSS 变量**：`color: var(--accent)`，切主题只改根变量。
+- **媒体查询**：`@media (prefers-color-scheme: dark)` 跟随系统。
+- 也能直接上 **Tailwind / 任意 CSS 框架**。
+
+> **对齐 CMX 硬约束 #4（双主题通路、禁硬编码色值）**：因为桌面就是 WebView，**CMX 现有的 `--sap*` 变量、`data-cmx-skin` / `data-cmx-skin-tone` 切肤那一整套可原样复用**（和给 Tauri 做前端时一模一样）——这也是 Dioxus 相对 iced/egui 在「双主题合规」上的天然便利：不用像自绘框架那样从 palette 手动派生，直接用你已有的 CSS 主题体系。
+
+## 十二、一份代码多端：Web/桌面/移动/全栈
+
+<p align="center"><img alt="图7：一份代码多端" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NDAgNDMwIiB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQzMCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iOTQwIiBoZWlnaHQ9IjQzMCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjM4NSIgeT0iMTc4IiB3aWR0aD0iMTcwIiBoZWlnaHQ9Ijg0IiByeD0iOCIgZmlsbD0iI2YwZjlmZiIgc3Ryb2tlPSIjMDI4NGM3IiBzdHJva2Utd2lkdGg9IjEuNyIvPjxyZWN0IHg9IjM4NSIgeT0iMTc4IiB3aWR0aD0iMTcwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzAyODRjNyIvPjxyZWN0IHg9IjM4NSIgeT0iMTkyIiB3aWR0aD0iMTcwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSIzOTUiIHk9IjE5NCIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEuNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+5L2g55qE57uE5Lu2PC90ZXh0Pjx0ZXh0IHg9IjM5NSIgeT0iMjE0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5SU1ggKyDkv6Hlj7c8L3RleHQ+PHRleHQgeD0iMzk1IiB5PSIyMjgiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPuS4gOS7veS7o+eggTwvdGV4dD48dGV4dCB4PSIzOTUiIHk9IjI0MiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+77yI57uE5Lu25Y+v6Leo56uv5aSN55So77yJPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI3MCIgeT0iNjAiIHdpZHRoPSIyMTAiIGhlaWdodD0iNzQiIHJ4PSI4IiBmaWxsPSIjZWVmMmZmIiBzdHJva2U9IiM0MzM4Y2EiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNzAiIHk9IjYwIiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iIzQzMzhjYSIvPjxyZWN0IHg9IjcwIiB5PSI3NCIgd2lkdGg9IjIxMCIgaGVpZ2h0PSI4IiBmaWxsPSIjNDMzOGNhIi8+PHRleHQgeD0iODAiIHk9Ijc2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5XZWLvvIhXQVNN77yJPC90ZXh0Pjx0ZXh0IHg9IjgwIiB5PSI5NiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+57yW5YiwIFdlYkFzc2VtYmx5PC90ZXh0Pjx0ZXh0IHg9IjgwIiB5PSIxMTAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPua1j+iniOWZqOebtOaOpei3kTwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNjYwIiB5PSI2MCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI3NCIgcng9IjgiIGZpbGw9IiNmZmZiZWIiIHN0cm9rZT0iI2I0NTMwOSIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI2NjAiIHk9IjYwIiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyIiByeD0iOCIgZmlsbD0iI2I0NTMwOSIvPjxyZWN0IHg9IjY2MCIgeT0iNzQiIHdpZHRoPSIyMjAiIGhlaWdodD0iOCIgZmlsbD0iI2I0NTMwOSIvPjx0ZXh0IHg9IjY3MCIgeT0iNzYiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPuahjOmdou+8iFdlYlZpZXfvvIk8L3RleHQ+PHRleHQgeD0iNjcwIiB5PSI5NiIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+d3J5IC8gdGFv77yM5pys5paH6YeN54K5PC90ZXh0Pjx0ZXh0IHg9IjY3MCIgeT0iMTEwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj7kuInlubPlj7Dljp/nlJ/nqpflj6M8L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjcwIiB5PSIzMDAiIHdpZHRoPSIyMTAiIGhlaWdodD0iNzQiIHJ4PSI4IiBmaWxsPSIjZjBmZGZhIiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHJlY3QgeD0iNzAiIHk9IjMwMCIgd2lkdGg9IjIxMCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiMwZDk0ODgiLz48cmVjdCB4PSI3MCIgeT0iMzE0IiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDk0ODgiLz48dGV4dCB4PSI4MCIgeT0iMzE2IiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMS41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj7np7vliqjvvIhpT1MvQW5kcm9pZO+8iTwvdGV4dD48dGV4dCB4PSI4MCIgeT0iMzM2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMWUyOTNiIj5keCBzZXJ2ZSAtLXBsYXRmb3JtIGFuZHJvaWQ8L3RleHQ+PHRleHQgeD0iODAiIHk9IjM1MCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzFlMjkzYiI+5a6Y5pa55pSv5oyBPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI2NjAiIHk9IjMwMCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI3NCIgcng9IjgiIGZpbGw9IiNmNWYzZmYiIHN0cm9rZT0iIzdjM2FlZCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cmVjdCB4PSI2NjAiIHk9IjMwMCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSIyMiIgcng9IjgiIGZpbGw9IiM3YzNhZWQiLz48cmVjdCB4PSI2NjAiIHk9IjMxNCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI4IiBmaWxsPSIjN2MzYWVkIi8+PHRleHQgeD0iNjcwIiB5PSIzMTYiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExLjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmYiPuWFqOagiO+8iHNlcnZlciBmdW5jdGlvbnPvvIk8L3RleHQ+PHRleHQgeD0iNjcwIiB5PSIzMzYiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPiNbc2VydmVyXSDliY3lkI7nq6/lkIzmupA8L3RleHQ+PHRleHQgeD0iNjcwIiB5PSIzNTAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxZTI5M2IiPkF4dW0g5bqV5bqnPC90ZXh0PjwvZz48Zz48cGF0aCBkPSJNIDM4NSAyMDAgTCAyODAgMTEwIiBmaWxsPSJub25lIiBzdHJva2U9IiM0MzM4Y2EiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtZGFzaGFycmF5PSI1IDMiIG1hcmtlci1lbmQ9InVybCgjYSkiLz48cmVjdCB4PSIzMTciIHk9IjE0NiIgd2lkdGg9IjMxLjc5OTk5OTk5OTk5OTk5NyIgaGVpZ2h0PSIxNiIgcng9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC45NSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjAuNyIvPjx0ZXh0IHg9IjMzMiIgeT0iMTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLFNGTW9uby1SZWd1bGFyLE1lbmxvLG1vbm9zcGFjZSIgZm9udC1zaXplPSI5IiBmaWxsPSIjMzM0MTU1Ij53ZWI8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gNTU1IDIwMCBMIDY2MCAxMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2I0NTMwOSIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjU3OCIgeT0iMTQ2IiB3aWR0aD0iNTguMTk5OTk5OTk5OTk5OTk2IiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iNjA4IiB5PSIxNTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPmRlc2t0b3A8L3RleHQ+PC9nPjxnPjxwYXRoIGQ9Ik0gMzg1IDI0MCBMIDI4MCAzMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBkOTQ4OCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1kYXNoYXJyYXk9IjUgMyIgbWFya2VyLWVuZD0idXJsKCNhKSIvPjxyZWN0IHg9IjMwNyIgeT0iMjc2IiB3aWR0aD0iNTEuNTk5OTk5OTk5OTk5OTk0IiBoZWlnaHQ9IjE2IiByeD0iNCIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjk1IiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMC43Ii8+PHRleHQgeD0iMzMyIiB5PSIyODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjkiIGZpbGw9IiMzMzQxNTUiPm1vYmlsZTwvdGV4dD48L2c+PGc+PHBhdGggZD0iTSA1NTUgMjQwIEwgNjYwIDMzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjN2MzYWVkIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWRhc2hhcnJheT0iNSAzIiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PHJlY3QgeD0iNTgyIiB5PSIyNzYiIHdpZHRoPSI1MS41OTk5OTk5OTk5OTk5OTQiIGhlaWdodD0iMTYiIHJ4PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuOTUiIHN0cm9rZT0iI2NiZDVlMSIgc3Ryb2tlLXdpZHRoPSIwLjciLz48dGV4dCB4PSI2MDgiIHk9IjI4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InVpLW1vbm9zcGFjZSxTRk1vbm8tUmVndWxhcixNZW5sbyxtb25vc3BhY2UiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzMzNDE1NSI+c2VydmVyPC90ZXh0PjwvZz48dGV4dCB4PSI0NzAiIHk9IjQwNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMi41IiBmaWxsPSIjMzM0MTU1Ij7kuIDku73nu4Tku7bku6PnoIHvvIxkeCBzZXJ2ZSDmjaIgLS1wbGF0Zm9ybSDljbPliIfnm67moIfvvIh3ZWIvZGVza3RvcC9hbmRyb2lk4oCm77yJ77ybc2VydmVyIGZ1bmN0aW9ucyDorqnliY3lkI7nq6/lhpnlnKjlkIzkuIDkuKogY3JhdGUg6YeM77yM5ZCM5rqQ6LCD55SoPC90ZXh0Pjwvc3ZnPg=="></p>
+
+Dioxus 的招牌是**一份组件代码、多端目标**——切目标基本只改 `dx serve --platform`：
+
+```bash
+dx serve                       # 默认平台（按 Cargo.toml feature）
+dx serve --platform desktop    # 桌面（WebView）
+dx serve --platform web        # 网页（WASM）
+dx serve --platform android    # 安卓模拟器/真机
+dx build --release --platform desktop   # 出包
+```
+
+| 目标 | 渲染 / 形态 | 成熟度 |
+|---|---|---|
+| **Web** | 编到 WASM，浏览器直接跑 | 一级 |
+| **桌面** | 系统 WebView（wry/tao） | 官方支持（本文重点） |
+| **移动** | iOS / Android | 官方支持，生态较年轻 |
+| **全栈** | `#[server]` 服务端函数（Axum 底座） | 一级 |
+
+全栈的 `#[server]` 让**前后端写在同一个 crate**、同源调用：
+
+```rust
+// 这个函数只在服务端执行；客户端「像调普通 async 函数」一样调用它
+#[server]
+async fn save_todo(text: String) -> Result<(), ServerFnError> {
+    // 只有服务端能碰 DB / 密钥
+    db::insert(&text).await?;
+    Ok(())
+}
+
+// 组件里（客户端）直接 await 它，框架负责生成 RPC
+fn AddButton(text: String) -> Element {
+    rsx! {
+        button {
+            onclick: move |_| {
+                let text = text.clone();
+                async move { let _ = save_todo(text).await; }
+            },
+            "保存到服务器"
+        }
+    }
+}
+```
+
+> 这套 server functions 与 CMX 后端天然同族——**Dioxus 全栈的底座就是 Axum**，和 CMX 各引擎（axum）是一门技术。这也是它值得放进 CMX 观察名单的主要理由（第 15 节）。
+
+## 十三、完整实例：待办事项 Todo
+
+<p align="center"><img alt="图8：Todo 应用界面" style="max-width:100%;height:auto;border:1px solid #e8eef5;border-radius:10px" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNDUwIiB3aWR0aD0iNjQwIiBoZWlnaHQ9IjQ1MCIgcm9sZT0iaW1nIj48ZGVmcz48bWFya2VyIGlkPSJhIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjguNSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgZmlsbD0iIzY0NzQ4YiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB3aWR0aD0iNjQwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iI2ZiZmRmZiIvPjxnPjxyZWN0IHg9IjgwIiB5PSI0MCIgd2lkdGg9IjQ4MCIgaGVpZ2h0PSIzNzAiIHJ4PSI5IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMS40Ii8+PHJlY3QgeD0iODAiIHk9IjQwIiB3aWR0aD0iNDgwIiBoZWlnaHQ9IjI2IiByeD0iOSIgZmlsbD0iIzAyODRjNyIvPjxyZWN0IHg9IjgwIiB5PSI1NyIgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI5IiBmaWxsPSIjMDI4NGM3Ii8+PGNpcmNsZSBjeD0iOTUiIGN5PSI1MyIgcj0iNC41IiBmaWxsPSIjZmY1ZjU3Ii8+PGNpcmNsZSBjeD0iMTEwIiBjeT0iNTMiIHI9IjQuNSIgZmlsbD0iI2ZlYmMyZSIvPjxjaXJjbGUgY3g9IjEyNSIgY3k9IjUzIiByPSI0LjUiIGZpbGw9IiMyOGM4NDAiLz48dGV4dCB4PSIzMjAuMCIgeT0iNTciIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsU0ZNb25vLVJlZ3VsYXIsTWVubG8sbW9ub3NwYWNlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5Ub2RvcyDigJQgRGlveHVzPC90ZXh0PjwvZz48dGV4dCB4PSIxMDUiIHk9Ijg0IiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMwZjE3MmEiPuW+heWKnuS6i+mhuTwvdGV4dD48Zz48cmVjdCB4PSIxMDUiIHk9IjEwMCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIzMiIgcng9IjYiIGZpbGw9IiNmZmYiIHN0cm9rZT0iI2NiZDVlMSIgc3Ryb2tlLXdpZHRoPSIxLjMiLz48dGV4dCB4PSIxMTUiIHk9IjEyMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzk0YTNiOCI+6KaB5YGa54K55LuA5LmI77yf77yI5Zue6L2m5re75Yqg77yJPC90ZXh0PjwvZz48Zz48cmVjdCB4PSI0MzgiIHk9IjEwMiIgd2lkdGg9Ijk2IiBoZWlnaHQ9IjI4IiByeD0iMTQiIGZpbGw9IiMwMjg0YzciLz48dGV4dCB4PSI0ODYuMCIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj7mt7vliqA8L3RleHQ+PC9nPjxsaW5lIHgxPSIxMDUiIHkxPSIxNTAiIHgyPSI1MzQiIHkyPSIxNTAiIHN0cm9rZT0iI2UyZThmMCIgc3Ryb2tlLXdpZHRoPSIxLjQiLz48cmVjdCB4PSIxMTIiIHk9IjE2NiIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiByeD0iNSIgZmlsbD0iIzAyODRjNyIvPjxwYXRoIGQ9Ik0gMTE2IDE3NiBsIDQgNCBsIDggLTkiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyLjIiIGZpbGw9Im5vbmUiLz48dGV4dCB4PSIxNDIiIHk9IjE4MSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMi41IiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWRlY29yYXRpb249ImxpbmUtdGhyb3VnaCI+5YaZIGRpb3h1cyDkvb/nlKjor7TmmI48L3RleHQ+PGc+PHJlY3QgeD0iNDk0IiB5PSIxNjQiIHdpZHRoPSI0MCIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiNmZWYyZjIiLz48dGV4dCB4PSI1MTQuMCIgeT0iMTgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjZGMyNjI2Ij7liKDpmaQ8L3RleHQ+PC9nPjxyZWN0IHg9IjExMiIgeT0iMjA4IiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjMDI4NGM3Ii8+PHBhdGggZD0iTSAxMTYgMjE4IGwgNCA0IGwgOCAtOSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIuMiIgZmlsbD0ibm9uZSIvPjx0ZXh0IHg9IjE0MiIgeT0iMjIzIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyLjUiIGZpbGw9IiM5NGEzYjgiIHRleHQtZGVjb3JhdGlvbj0ibGluZS10aHJvdWdoIj7nlLsgOCDlvKAgU1ZHIOWbvjwvdGV4dD48Zz48cmVjdCB4PSI0OTQiIHk9IjIwNiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiByeD0iNiIgZmlsbD0iI2ZlZjJmMiIvPjx0ZXh0IHg9IjUxNC4wIiB5PSIyMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI2MDAiIGZpbGw9IiNkYzI2MjYiPuWIoOmZpDwvdGV4dD48L2c+PHJlY3QgeD0iMTEyIiB5PSIyNTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcng9IjUiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzk0YTNiOCIgc3Ryb2tlLXdpZHRoPSIxLjgiLz48dGV4dCB4PSIxNDIiIHk9IjI2NSIgdGV4dC1hbmNob3I9InN0YXJ0IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyLjUiIGZvbnQtd2VpZ2h0PSI0MDAiIGZpbGw9IiMxZTI5M2IiPui3kSBnZW5fZGlveHVzLnB5IOagoemqjDwvdGV4dD48Zz48cmVjdCB4PSI0OTQiIHk9IjI0OCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiByeD0iNiIgZmlsbD0iI2ZlZjJmMiIvPjx0ZXh0IHg9IjUxNC4wIiB5PSIyNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI2MDAiIGZpbGw9IiNkYzI2MjYiPuWIoOmZpDwvdGV4dD48L2c+PGxpbmUgeDE9IjEwNSIgeTE9IjMwNiIgeDI9IjUzNCIgeTI9IjMwNiIgc3Ryb2tlPSIjZTJlOGYwIiBzdHJva2Utd2lkdGg9IjEuNCIvPjx0ZXh0IHg9IjExMiIgeT0iMzMwIiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnUGluZ0ZhbmcgU0MnLCdNaWNyb3NvZnQgWWFIZWknLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM2NDc0OGIiPuWFsSAzIOmhuSDCtyDlt7LlrozmiJAgMiDpobk8L3RleHQ+PHRleHQgeD0iMTA1IiB5PSIzOTYiIHRleHQtYW5jaG9yPSJzdGFydCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdQaW5nRmFuZyBTQycsJ01pY3Jvc29mdCBZYUhlaScsc2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjUiIGZvbnQtd2VpZ2h0PSI0MDAiIGZpbGw9IiM5NGEzYjgiPuW5suWHgOeahCBXZWIg6KeC5oSf77yI5qGM6Z2i5bCx5pivIFdlYlZpZXfvvInvvJvkuIrpnaLov5nkuIDlsY8gPSDnrKwgMTMg6IqC5a6M5pW05Luj56CB55qE5Lqn54mpPC90ZXh0Pjx0ZXh0IHg9IjMyMCIgeT0iNDM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJ1BpbmdGYW5nIFNDJywnTWljcm9zb2Z0IFlhSGVpJyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyLjUiIGZpbGw9IiMzMzQxNTUiPuesrCAxMyDoioLlrozmlbTku6PnoIHnmoTmiJDlk4HvvJrovpPlhaXooYwgKyDliJfooajvvIjli77pgIkv5Yig6Zmk77yJKyDorqHmlbDvvIznuqYgNjAg6KGMIFJTWDwvdGV4dD48L3N2Zz4="></p>
+
+把前面的概念串起来——一个可编译的待办事项应用：
+
+```rust
+use dioxus::prelude::*;
+
+fn main() {
+    dioxus::launch(App);
+}
+
+#[derive(Clone, PartialEq)]
+struct Todo {
+    id: u64,
+    text: String,
+    done: bool,
+}
+
+// 信号是 Copy，可原样传进普通函数（这样两个事件处理器能复用同一段逻辑）
+fn add_todo(mut input: Signal<String>, mut items: Signal<Vec<Todo>>, mut next_id: Signal<u64>) {
+    let text = input().trim().to_string();
+    if !text.is_empty() {
+        items.write().push(Todo { id: next_id(), text, done: false });
+        next_id.set(next_id() + 1);
+        input.set(String::new());
+    }
+}
+
+fn App() -> Element {
+    let input = use_signal(String::new);
+    let items = use_signal(Vec::<Todo>::new);
+    let next_id = use_signal(|| 0u64);
+
+    rsx! {
+        h1 { "待办事项" }
+
+        div {
+            input {
+                value: "{input}",
+                oninput: move |e| input.clone().set(e.value()),
+                onkeydown: move |e| if e.key() == Key::Enter { add_todo(input, items, next_id); },
+            }
+            button { onclick: move |_| add_todo(input, items, next_id), "添加" }
+        }
+
+        ul {
+            for item in items.read().iter() {
+                li { key: "{item.id}",
+                    input {
+                        r#type: "checkbox",
+                        checked: item.done,
+                        // item.id 是 Copy，被闭包按值捕获；items 是 Copy 信号
+                        onchange: move |_| {
+                            let mut items = items;
+                            if let Some(t) = items.write().iter_mut().find(|t| t.id == item.id) {
+                                t.done = !t.done;
+                            }
+                        },
+                    }
+                    span { "{item.text}" }
+                    button {
+                        onclick: move |_| { let mut items = items; items.write().retain(|t| t.id != item.id); },
+                        "删除"
+                    }
+                }
+            }
+        }
+
+        p { "共 {items().len()} 项 · 已完成 {items().iter().filter(|t| t.done).count()}" }
+    }
+}
+```
+
+这段覆盖了：**信号状态、`oninput` 受控输入、回车提交、`for` 列表 + `key`、闭包按值捕获 Copy 信号、`items.write()` 改集合**——就是图 8 那个界面。想接后端？把新增/删除换成 `#[server]` 函数即可（第 12 节）。中文无需额外处理（WebView 自带，第 10 节）。
+
+## 十四、常见坑速查
+
+| 坑 | 症状 | 正解 |
+|---|---|---|
+| 组件名用小写 | rsx 把它当 HTML 元素，渲染不出来 | 组件一律大驼峰（`MyComp`） |
+| 改了信号界面不动 | 那个组件根本没「读」它 | 订阅在读处；确保渲染里读了该信号 |
+| 列表少写 `key` | 增删时错位/状态串味 | `for` 项给稳定 `key: "{id}"` |
+| 闭包里 `clone` 报错/繁琐 | 以为信号要 clone | 信号是 Copy，直接传/捕获即可 |
+| Props 没 `PartialEq` | 编译报错或无法判断重渲 | Props `#[derive(Props, PartialEq, Clone)]` |
+| Linux 跑不起来/白屏 | 缺 WebKitGTK 依赖 | 装系统 WebKitGTK 开发库；留跨平台测试 |
+| 以为是自绘、追求像素一致 | 三平台观感有差异 | 桌面=WebView，与 Tauri 同类；差异要测 |
+| 照抄旧教程编译不过 | 0.4/0.5 API 差异大 | 认准 0.7 的 docs.rs / 指南，别跨版本抄 |
+| `dx` 命令找不到 | 没装 CLI | `cargo binstall dioxus-cli`（命令是 `dx`） |
+
+## 十五、与 CMX 工作区的呼应
+
+对照本工作区（元数据驱动企业平台，前端以 Web 资产为主）：
+
+1. **Dioxus 值得放进观察名单，但当下非首选**。横评（`docs/20260920_Rust桌面GUI框架横评.md`）结论：面向最终用户的桌面产品**首选 Tauri 2**（直接复用 `frontend/` 的 UI5/Tabler 与双主题资产）；Dioxus 桌面今天 = WebView，**与 Tauri 相比无渲染优势**，选它主要为「UI 也全用 Rust 写」。
+2. **它的独特价值 = 全栈同族**：`#[server]` 服务端函数的底座是 **Axum**，与 CMX 各引擎（axum）是一门技术。若未来希望「门户小工具类页面」也统一成 Rust、且前后端同源，Dioxus 全栈是顺理成章的路径。
+3. **双主题零成本对齐**：因为是 WebView，CMX 的 `--sap*` 变量 + `data-cmx-skin` 切肤体系**可原样复用**，天然满足硬约束 #4（第 11 节）——这点与给 Tauri 做前端完全一致。
+4. **中文/IME 省心**：WebView 自带，无自绘框架的字体坑（第 10 节）。
+5. **组合而非二选一**：Dioxus 甚至可作为 **Tauri 的前端**（全 Rust RSX + Tauri 的插件/打包/安全模型），这是很多团队的实际用法。
+
+> 与本系列的分工：**iced=架构可演进的自绘桌面产品；egui=最快出活的内部工具/诊断面板；Dioxus=前端背景、想全 Rust 一份代码多端（桌面走 WebView）**。三者主场不同，Dioxus 在 CMX 语境下更多是「未来若要 Rust 全栈前端」的候选。
+
+## 十六、版本与参考资源
+
+**版本基线（2026-09）**：Dioxus **0.7.x**。亮点是 **Subsecond 热补丁**（连 Rust 逻辑都能热替换，不只前端资源）。Dioxus **迭代极快、破坏性变更也最多**（0.4→0.5→0.6→0.7 每次 API 都有明显变化）——**把「升级成本」计入选型**，认准你锁定版本的文档。
+
+| 资源 | 地址 | 说明 |
+|---|---|---|
+| 官网 & 指南 | dioxuslabs.com（learn/0.7） | **按版本号的 Guide**，教程成体系 |
+| API 文档 | docs.rs/dioxus | **锁定你的版本看**，一切以此为准 |
+| 源码 & 示例 | github.com/DioxusLabs/dioxus（`examples/`） | todos / router / fullstack 等可跑范例 |
+| CLI | `dx`（cargo binstall dioxus-cli） | `dx new` 脚手架、`dx serve` 热重载 |
+| 迁移 | dioxuslabs.com/learn/0.7/migration | 升级到 0.7 的破坏性变更清单 |
+
+> 学习路径建议：`dx new` 生成模板，跑官方 `examples/` 里的 `todos` 与 `fullstack`（正好覆盖本文的信号 + server functions），再回头对照各节。遇到 API 对不上，第一反应是「看 0.7 的 docs.rs / Guide」——Dioxus 的锅九成是版本漂移。
+
+---
+
+### 一句话收束
+
+> **Dioxus = React 心智、Rust 身体、一份代码多端**：组件 + RSX + 信号，读即订阅、改即精确更新；桌面今天走系统 WebView（与 Tauri 同底座，中文/IME 省心、但要吃三平台差异），自绘的 Blitz 是未来。给「前端背景、想 all-in Rust、愿意追新」的团队；在 CMX 语境里，它更是「未来若要 Rust 全栈前端」的候选，而非当下替代 Tauri 的理由。
+
+> 参考：dioxuslabs.com（learn/0.7、blog）、docs.rs/dioxus 与 docs.rs/dioxus-desktop、github.com/DioxusLabs/dioxus（examples）。版本以 2026-09 的 0.7.x 线为准；凡涉及具体 API，请以你锁定版本的 docs.rs / Guide 为准，勿跨版本照抄。
